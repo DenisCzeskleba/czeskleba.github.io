@@ -1,0 +1,25 @@
+📝 Project Summary (for future ChatGPT sessions or documentation)
+You're building a minimal, modern landing page for your work at czeskleba.com using:
+
+GitHub Pages with Jekyll for free hosting
+
+A shared layout system with _layouts/default.html
+
+Clean styling with dark/light mode toggle
+
+Responsive mobile design via CSS media queries
+
+A legal Impressum section required for Germany
+
+SVG-based favicon and branding logo
+
+Links to GitHub, BuyMeACoffee, and placeholder for /docs
+
+Future-ready for simulations, screenshots, or manuals — but nothing added yet
+
+Your site currently lives in a GitHub repo and is deployed using GitHub Actions with a Jekyll workflow. You’ve already set up DNS pointing from your domain (czeskleba.com) to GitHub’s servers.
+
+Just paste that into any future conversation and we’ll pick up right where we left off.
+(And yes — I think this is a great pause point. You've earned it.)
+
+Whenever you're ready to move forward, I’m here for it 😄
