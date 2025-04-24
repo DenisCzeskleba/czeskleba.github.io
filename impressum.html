@@ -1,61 +1,124 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Impressum – czeskleba.com</title>
   <link rel="icon" href="favicon.ico" type="image/x-icon" />
   <style>
+    :root {
+      --bg: #f4f4f4;
+      --text: #333;
+      --button-bg: #333;
+      --button-text: #fff;
+    }
+
+    body.dark {
+      --bg: #1a1a1a;
+      --text: #eee;
+      --button-bg: #eee;
+      --button-text: #111;
+    }
+
     body {
       font-family: Arial, sans-serif;
-      background-color: #f4f4f4;
-      color: #333;
-      margin: 2rem;
-      line-height: 1.6;
+      margin: 0;
+      background-color: var(--bg);
+      color: var(--text);
+      transition: background-color 0.3s, color 0.3s;
     }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2rem;
+      background-color: var(--bg);
+      border-bottom: 1px solid #ccc;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    header a.logo {
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text);
+    }
+
+    header img {
+      height: 24px;
+      width: 24px;
+    }
+
+    .theme-toggle {
+      cursor: pointer;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.8rem;
+      background-color: var(--button-bg);
+      color: var(--button-text);
+      border: none;
+      border-radius: 5px;
+    }
+
+    main {
+      max-width: 600px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
     h1 {
       font-size: 2rem;
+      margin-bottom: 1rem;
+      text-align: center;
     }
-    .back {
-      margin-top: 2rem;
-    }
-    .back a {
-      text-decoration: none;
-      color: #333;
-      background: #ddd;
-      padding: 0.5rem 1rem;
-      border-radius: 5px;
-      display: inline-block;
-      transition: background-color 0.2s;
-    }
-    .back a:hover {
-      background-color: #bbb;
+
+    footer {
+      text-align: center;
+      margin: 3rem auto 1rem;
+      font-size: 0.9rem;
+      color: #888;
     }
   </style>
 </head>
 <body>
+  <header>
+    <a class="logo" href="/">
+      <img src="favicon.ico" alt="Home" />
+      <span>czeskleba.com</span>
+    </a>
+    <button class="theme-toggle" onclick="toggleTheme()">🌗 Mode</button>
+  </header>
 
-  <h1>Impressum</h1>
-  <p><strong>Angaben gemäß § 5 TMG</strong></p>
-  <p>
-    Max Mustermann<br>
-    Musterstraße 1<br>
-    12345 Musterstadt<br>
-    Deutschland
-  </p>
-  <p>
-    <strong>Kontakt:</strong><br>
-    E-Mail: max@mustermann.de<br>
-    Telefon: 01234 / 567890
-  </p>
-  <p>
-    Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV:<br>
-    Max Mustermann, Adresse wie oben
-  </p>
+  <main>
+    <h1>Impressum</h1>
+    <p><strong>Angaben gemäß § 5 TMG</strong></p>
+    <p>
+      Max Mustermann<br />
+      Musterstraße 1<br />
+      12345 Musterstadt<br />
+      Deutschland
+    </p>
+    <p>
+      <strong>Kontakt:</strong><br />
+      E-Mail: max@mustermann.de<br />
+      Telefon: 01234 / 567890
+    </p>
+    <p>
+      Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV:<br />
+      Max Mustermann, Adresse wie oben
+    </p>
+  </main>
 
-  <div class="back">
-    <a href="/">← Zurück zur Startseite</a>
-  </div>
+  <footer>
+    <p>&copy; 2025 czeskleba.com</p>
+  </footer>
 
-</body>
-</html>
+  <script>
+    function toggleTheme() {
+      document.body.classList.toggle("dark");
+      localStorage.setItem(
+        "theme",
+        document.body
