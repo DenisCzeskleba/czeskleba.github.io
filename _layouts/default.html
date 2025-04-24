@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ page.title }} – czeskleba.com</title>
+  <link rel="icon" href="/assets/favicon.ico" type="image/x-icon" />
+  <style>
+    /* styles from before, or import an external CSS file */
+  </style>
+</head>
+<body class="{{ site.theme }}">
+  <header>
+    <a class="logo" href="/">
+      <img src="/assets/favicon.ico" alt="Home" />
+      <span>czeskleba.com</span>
+    </a>
+    <div>
+      <a href="/impressum.html">📄 Impressum</a>
+      <button class="theme-toggle" onclick="toggleTheme()">🌗 Mode</button>
+    </div>
+  </header>
+
+  <main>
+    {{ content }}
+  </main>
+
+  <footer>
+    <p>&copy; 2025 czeskleba.com</p>
+  </footer>
+
+  <script>
+    // dark/light mode script
+  </script>
+</body>
+</html>
