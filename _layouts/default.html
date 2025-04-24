@@ -146,7 +146,9 @@
   <header>
     <a class="logo" href="/">
       <img src="/assets/logo.svg" alt="Home" />
-      <span>Back to Main</span>
+      {% unless page.url == "/" %}
+        <span>← Back to Main</span>
+      {% endunless %}
     </a>
     <div>
       <button class="theme-toggle" onclick="toggleTheme()">🌗 Mode</button>
