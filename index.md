@@ -7,7 +7,7 @@ title: Home
 
 A minimal landing page, since I don't really need a website. So for now just:
 
-<a href="/weldcraft/">
-  <img src="/assets/WeldCraft.png" alt="WeldCraft" style="width:150px;" />
-  <p><strong>WeldCraft</strong></p>
+<a href="/weldcraft/" style="text-decoration: none; display: inline-block; text-align: center;">
+  <img src="/assets/WeldCraft.png" alt="WeldCraft" style="width:150px;" /><br />
+  <strong>WeldCraft</strong>
 </a>
