@@ -5,8 +5,6 @@ title: Home
 
 # Welcome!
 
-A minimal landing page for my software and simulation projects. This is a place to share tools, documentation, and updates.
+A minimal landing page, since I don't really need a website. So for now just:
 
-<div class="links">
-  <a href="https://github.com/DenisCzeskleba/WeldCraft" target="_blank">📁 View on GitHub</a><a href="https://www.buymeacoffee.com/denisczeskleba" target="_blank">☕ Buy me a coffee</a><a href="/docs/">📖 Documentation</a>
-</div>
+[![WeldCraft Logo](/assets/WeldCraft.png){: style="width:150px; vertical-align:middle; margin-right:0.5rem;" } **WeldCraft**](/weldcraft/)
