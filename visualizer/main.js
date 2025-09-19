@@ -97,12 +97,14 @@ scene.add(groupDemo, groupPoints);
 // helpers
 // removed duplicate toPixelSize // legacy (unused for lattice points now)
 function resize(){
-  const rect = canvas.getBoundingClientRect();
-  const w = rect.width || canvas.clientWidth, h = rect.height || canvas.clientHeight || 400;
+  const w = Math.max(1, window.innerWidth || canvas.clientWidth || 800);
+  const h = Math.max(1, window.innerHeight || canvas.clientHeight || 600);
   renderer.setSize(w, h, false);
-  camera.aspect = w / h; camera.updateProjectionMatrix();
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
 }
-window.addEventListener('resize', resize); resize();
+window.addEventListener('resize', resize, { passive: true });
+resize();
 
 // interstitial positions for one cell
 function interstitialOneCell(lattice, scope){
@@ -122,6 +124,7 @@ function interstitialOneCell(lattice, scope){
 }
 
 // main update
+let __lastDemoKey=''; let __lastLatKey='';
 function update(p){
   const r0 = baseAtomicRadius(p.lattice);
   const isDemo = p.mode === 'demo';
@@ -134,7 +137,8 @@ function update(p){
     const n = unitCellCounts(p.lattice);
     const fe = generateFePositions(p.lattice, n);
     demo.setBase(fe, (r0 * p.feSize) / 0.15);
-    frameContent(fe);
+    const demoKey = p.lattice + ':' + unitCellCounts(p.lattice);
+    if(demoKey !== __lastDemoKey){ frameContent(fe); __lastDemoKey = demoKey; }
 
     const sites = interstitialOneCell(p.lattice, p.siteScope);
     demo.setSites(sites.t, sites.o);
@@ -159,9 +163,8 @@ demo.updateProjection(camera, renderer);
   // lattice mode
   const target = Math.max(100, Math.min(1_000_000, p.feCount));
   const fe = generateFePositions(p.lattice, target);
-  const total = Math.floor(fe.length/3);
-
-  // substitutionals: shuffle indices with rand
+  \1const latKey = p.lattice + ':' + (fe.length/3|0);
+// substitutionals: shuffle indices with rand
   const idx = Array.from({length: total}, (_,i)=>i);
   for(let i=idx.length-1;i>0;i--){ const j=Math.floor(rand()*(i+1)); const t=idx[i]; idx[i]=idx[j]; idx[j]=t; }
 
@@ -198,7 +201,12 @@ demo.updateProjection(camera, renderer);
   }
 
   // draw
-updateAllProj();
+  layers.base.setData(basePos, r0 * p.feSize, '#888888');
+  layers.A.setData(aPos,       r0 * p.feSize * p.cSize, '#000000');
+  layers.B.setData(bPos,       r0 * p.feSize * p.vSize, '#cc0000');
+  layers.H.setData(hPos,       r0 * p.feSize * p.hSize, '#2266ff');
+  updateAllProj();
+  if(latKey !== __lastLatKey){ frameContent(basePos); __lastLatKey = latKey; }
 
   setBadge(`Fe: ${basePos.length/3} | C: ${aCount} | V: ${bCount} | H: ${hN}`);
 }
