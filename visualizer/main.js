@@ -151,9 +151,14 @@ function update(p){
 }
 
 // badge + animate loop
-const { setBadge, push, shotBtn } = bindControls(update);
+const wired = bindControls(update);
+const { setBadge, push, shotBtn } = wired;
+
+// start render loop
 function animate(){ requestAnimationFrame(animate); renderer.setSize(canvas.clientWidth, canvas.clientHeight, false); renderer.render(scene, camera); }
 animate();
+
+// do the first reflect *after* setBadge exists
 push();
 
 // screenshot
