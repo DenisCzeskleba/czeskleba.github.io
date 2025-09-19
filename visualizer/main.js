@@ -37,6 +37,25 @@ camera.position.set(6,3,6);
 const controls = new OrbitControls(camera, renderer.domElement);
 
 // Frame the current content given a Float32Array of positions [x,y,z,...]
+
+// Build Fe positions for a single conventional unit cell (no tiling)
+// SC: 8 corners; BCC: 8 corners + 1 body center; FCC: 8 corners + 6 face centers
+function demoUnitCellFe(lattice){
+  const pts = [];
+  const push = (x,y,z)=>{ pts.push(x,y,z); };
+  // corners
+  const c=[0,1];
+  for (let i of c) for (let j of c) for (let k of c) push(i,j,k);
+  if (lattice === 'BCC'){
+    push(0.5,0.5,0.5); // body center
+  } else if (lattice === 'FCC'){
+    // face centers
+    push(0.5,0.5,0); push(0.5,0.5,1);
+    push(0.5,0,0.5); push(0.5,1,0.5);
+    push(0,0.5,0.5); push(1,0.5,0.5);
+  }
+  return new Float32Array(pts);
+}
 function frameContent(positions, pad=1.2){
   if(!positions || positions.length<3) return;
   const box = new THREE.Box3();
@@ -100,6 +119,8 @@ function resize(){
   const w = Math.max(1, window.innerWidth || canvas.clientWidth || 800);
   const h = Math.max(1, window.innerHeight || canvas.clientHeight || 600);
   renderer.setSize(w, h, false);
+  renderer.domElement.style.width = w + 'px';
+  renderer.domElement.style.height = h + 'px';
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
 }
@@ -134,14 +155,14 @@ function update(p){
   const rand = makeRand(p.seed);
 
   if (isDemo){
-    const n = unitCellCounts(p.lattice);
-    const fe = generateFePositions(p.lattice, n);
-    demo.setBase(fe, (r0 * p.feSize) / 0.15);
+    const fe = demoUnitCellFe(p.lattice);
+    const feR = r0 * p.feSize;
+    demo.setBase(fe, feR);
     const demoKey = p.lattice + ':' + unitCellCounts(p.lattice);
     if(demoKey !== __lastDemoKey){ frameContent(fe); __lastDemoKey = demoKey; }
 
     const sites = interstitialOneCell(p.lattice, p.siteScope);
-    demo.setSites(sites.t, sites.o);
+    demo.setSites(sites.t, sites.o, feR * 0.4);
 
     const allSites = new Float32Array([...sites.t, ...sites.o]);
     const hN = Math.min(p.hCount, Math.floor(allSites.length/3));
@@ -156,7 +177,7 @@ function update(p){
     }
 demo.updateProjection(camera, renderer);
 
-    setBadge(`Fe: ${n} | C: 0 | V: 0 | H: ${hN}`);
+    setBadge(`Base: ${(fe.length/3)|0} | A: 0 | B: 0 | H: ${hN}`);
     return;
   }
 
@@ -209,7 +230,7 @@ demo.updateProjection(camera, renderer);
   updateAllProj();
   if(latKey !== __lastLatKey){ frameContent(basePos); __lastLatKey = latKey; }
 
-  setBadge(`Fe: ${basePos.length/3} | C: ${aCount} | V: ${bCount} | H: ${hN}`);
+  setBadge(`Base: ${basePos.length/3} | A: ${aCount} | B: ${bCount} | H: ${hN}`);
 }
 
 // badge + animate loop
