@@ -1,7 +1,7 @@
 export const DEFAULTS = {
-  mode: 'lattice',
+  mode: 'demo',
   lattice: 'BCC',
-  feCount: 100000,
+  feCount:  100,
   feSize: 1.0,
   cFrac: 0.0,
   cSize: 1.0,
@@ -9,8 +9,8 @@ export const DEFAULTS = {
   vSize: 1.0,
   hCount: 0,
   hSize: 0.5,
-  siteScope: 'canonical',
-  seed: 1337,
+  siteScope: 'allFaces',
+  seed:  42,
 };
 export function clampParams(p){
   const clamp = (v,lo,hi)=> Math.min(hi, Math.max(lo, v));
