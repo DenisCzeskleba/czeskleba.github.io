@@ -13,7 +13,13 @@ export function tetraSites(lattice){
   const L = lattice;
   const pts = [];
   const push=(x,y,z)=>pts.push([x,y,z]);
-  if (L==='SC' || L==='BCC'){
+  if (L==='SC'){
+    // Canonical SC tetra: eight (1/4,1/4,1/4)-type positions
+    for (const x of [0.25, 0.75])
+      for (const y of [0.25, 0.75])
+        for (const z of [0.25, 0.75]) push(x,y,z);
+  } else if (L==='BCC'){
+    // BCC tetra: positions like (1/2, 0, 1/4) and permutations with 1/4/3/4 on the remaining axis
     const q=[0.25,0.75], m=[0.5], z=[0.0,1.0];
     const patterns = [
       [q,m,z],[m,q,z],[q,z,m],[m,z,q],[z,q,m],[z,m,q]
