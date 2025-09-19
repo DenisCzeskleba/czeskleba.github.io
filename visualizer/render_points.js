@@ -8,7 +8,7 @@ export function createPointsLayer(THREE){
         vec4 mv = modelViewMatrix * vec4(position, 1.0);
         gl_Position = projectionMatrix * mv;
         // convert world-space radius to pixels: 2 * projScale * r / -mv.z
-        float px = 2.0 * uProjScale * uWorldRadius / max(1.0, -mv.z);
+        float px = (2.0 * uProjScale * uWorldRadius) / (-mv.z);
         gl_PointSize = max(1.0, px);
       }`,
     fragmentShader: `
@@ -38,7 +38,8 @@ export function createPointsLayer(THREE){
     geom.computeBoundingSphere();
   }
   function updateProjection(camera, renderer){
-    const h = renderer.getSize(new THREE.Vector2()).y;
+    const size = renderer.getSize(new THREE.Vector2());
+    const h = size.y * renderer.getPixelRatio();
     const fovRad = (camera.fov || 60) * Math.PI/180.0;
     const projScale = h / (2.0 * Math.tan(fovRad/2.0));
     mat.uniforms.uProjScale.value = projScale;
