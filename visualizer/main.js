@@ -76,7 +76,7 @@ scene.add(dir, new THREE.AmbientLight(0xffffff, 0.35));
 // layers
 const demo = createDemoScene(THREE);
 const groupDemo = new THREE.Group(); groupDemo.add(demo.group);
-\1
+
 function updateAllProj(){
   layers.base.updateProjection(camera, renderer);
   layers.A.updateProjection(camera, renderer);
