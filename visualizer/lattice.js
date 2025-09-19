@@ -47,6 +47,5 @@ export function generateFePositions(lat, target){
           out.push(ix + b[0], iy + b[1], iz + b[2]);
         }
 
-  const atoms = Math.min(target, Math.floor(out.length/3));
-  return new Float32Array(out.slice(0, atoms*3));
+  return new Float32Array(out); // full cube: perCell * n^3 atoms (>= target); matches Python behavior
 }
