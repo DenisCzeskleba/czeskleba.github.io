@@ -1,8 +1,7 @@
-// Import Three from CDN (browser-friendly) and OrbitControls.
 import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
 import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
 
-// Import your local modules
+// Local modules
 import { bindControls } from './controls.js';
 import { DEFAULTS } from './params.js';
 import { BASIS, TETRA_SITES, OCTA_SITES, generateFePositions, unitCellCounts } from './lattice.js';
@@ -51,13 +50,13 @@ function resize(){
 }
 window.addEventListener('resize', resize); resize();
 
-// build interstitial positions for one unit cell; duplicate to faces if requested
+// interstitial positions for one cell
 function interstitialOneCell(lattice, scope){
   const t = TETRA_SITES[lattice] || [], o = OCTA_SITES[lattice] || [];
   const allT = t.flat(), allO = o.flat();
   if (scope === 'allFaces'){
     const offs = [[1,0,0],[0,1,0],[0,0,1],[-1,0,0],[0,-1,0],[0,0,-1]];
-    const dup = (src)=>{
+    const dup = src => {
       const out=[]; for(let i=0;i<src.length;i+=3){
         const x=src[i], y=src[i+1], z=src[i+2];
         for(const d of offs){ out.push(x+d[0], y+d[1], z+d[2]); }
