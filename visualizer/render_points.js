@@ -8,7 +8,7 @@ export function createPointsLayer(THREE){
       void main(){
         vec4 mv = viewMatrix * modelMatrix * vec4(position,1.0);
         gl_Position = projectionMatrix * mv;
-        gl_PointSize = uSize * (300.0 / -mv.z);
+        gl_PointSize = max(1.0, uSize * (300.0 / max(1.0, -mv.z)));
       }`,
     fragmentShader: `
       precision mediump float;
