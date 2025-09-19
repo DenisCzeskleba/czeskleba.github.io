@@ -28,13 +28,14 @@ function makeRand(seed){ let s=(seed>>>0)||1; return ()=>{ s=(1664525*s+10139042
 
 // renderer / scene / camera
 const canvas = document.getElementById('c');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, preserveDrawingBuffer: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xffffff);
 const camera = new THREE.PerspectiveCamera(50, 1, 0.01, 1000);
 camera.position.set(6,3,6);
 const controls = new OrbitControls(camera, renderer.domElement);
+renderer.setClearColor(0xffffff, 1);
 
 // Frame the current content given a Float32Array of positions [x,y,z,...]
 
@@ -129,19 +130,36 @@ resize();
 
 // interstitial positions for one cell
 function interstitialOneCell(lattice, scope){
-  const t = TETRA_SITES[lattice] || [], o = OCTA_SITES[lattice] || [];
-  const allT = t.flat(), allO = o.flat();
-  if (scope === 'allFaces'){
-    const offs = [[1,0,0],[0,1,0],[0,0,1],[-1,0,0],[0,-1,0],[0,0,-1]];
-    const dup = src => {
-      const out=[]; for(let i=0;i<src.length;i+=3){
-        const x=src[i], y=src[i+1], z=src[i+2];
-        for(const d of offs){ out.push(x+d[0], y+d[1], z+d[2]); }
-      } return out;
-    };
-    allT.push(...dup(allT)); allO.push(...dup(allO));
-  }
-  return { t:new Float32Array(allT), o:new Float32Array(allO) };
+  const baseT = TETRA_SITES[lattice] || [];
+  const baseO = OCTA_SITES[lattice]  || [];
+  const clamp01 = v => Math.min(1, Math.max(0, v));
+  const reflectAxis = v => {
+    if (v <= 0 || v >= 1){ return [clamp01(v)]; } // already on boundary
+    // interior point: keep as-is
+    return [v];
+  };
+  const reflectFaces = (x,y,z) => {
+    // Produce mirrored copies on opposite faces but keep within [0,1]
+    const xs = (x>0 && x<1) ? [x] : [0,1];
+    const ys = (y>0 && y<1) ? [y] : [0,1];
+    const zs = (z>0 && z<1) ? [z] : [0,1];
+    const out=[];
+    for(const X of xs) for(const Y of ys) for(const Z of zs) out.push(X,Y,Z);
+    return out;
+  };
+  const collect = (src) => {
+    const out=[];
+    for(const p of src){
+      const [x,y,z] = p;
+      if (scope === 'allFaces') out.push(...reflectFaces(x,y,z));
+      else { // canonical: keep representative in [0,1)
+        const X = (x===1)?0:x, Y=(y===1)?0:y, Z=(z===1)?0:z;
+        out.push(X,Y,Z);
+      }
+    }
+    return out;
+  };
+  return { t:new Float32Array(collect(baseT)), o:new Float32Array(collect(baseO)) };
 }
 
 // main update
@@ -157,7 +175,7 @@ function update(p){
   if (isDemo){
     const fe = demoUnitCellFe(p.lattice);
     const feR = r0 * p.feSize;
-    demo.setBase(fe, feR);
+    window.__DEMO_LATTICE = p.lattice; demo.setBase(fe, feR);
     const demoKey = p.lattice + ':' + unitCellCounts(p.lattice);
     if(demoKey !== __lastDemoKey){ frameContent(fe); __lastDemoKey = demoKey; }
 
@@ -246,6 +264,6 @@ push();
 
 // screenshot
 shotBtn.addEventListener('click', ()=>{
-  const url = renderer.domElement.toDataURL('image/png');
+  controls.update(); renderer.render(scene, camera); const url = renderer.domElement.toDataURL('image/png');
   const a = document.createElement('a'); a.href = url; a.download = 'lattice.png'; a.click();
 });
