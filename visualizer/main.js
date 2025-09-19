@@ -142,7 +142,7 @@ function update(p){
       h[3*i+1] = allSites[3*idx+1];
       h[3*i+2] = allSites[3*idx+2];
     }
-    \1    demo.updateProjection(camera, renderer);
+    demo.updateProjection(camera, renderer);
 
     setBadge(`Fe: ${n} | C: 0 | V: 0 | H: ${hN}`);
     return;
