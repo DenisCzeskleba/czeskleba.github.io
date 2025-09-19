@@ -4,15 +4,6 @@ title: Lattice Visualizer
 permalink: /visualizer/
 ---
 
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-    "three/examples/jsm/controls/OrbitControls.js": "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js"
-  }
-}
-</script>
-
 <!-- Make this page full width under your site layout -->
 <style>
   main, .page, .wrapper, .container, .content, .page-content {
@@ -115,5 +106,14 @@ permalink: /visualizer/
 
   <canvas id="c"></canvas>
 </div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/examples/jsm/controls/OrbitControls.js": "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js"
+  }
+}
+</script>
 
 <script type="module" src="/visualizer/main.js?v=fix6"></script>
