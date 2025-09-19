@@ -103,3 +103,5 @@ export function bindControls(onChange){
   
   return { controls: ui, setBadge: t => ui.badge.textContent = t, push: reflect, shotBtn: ui.shot };
 }
+
+  ui.feCount.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ state.feCount = parseInt(ui.feCount.value||'100',10); reflect(); } });
