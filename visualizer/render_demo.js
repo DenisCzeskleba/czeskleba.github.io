@@ -1,7 +1,31 @@
+import { createPointsLayer } from './render_points.js';
+
 export function createDemoScene(THREE){
   const group = new THREE.Group();
   const ico = r => new THREE.IcosahedronGeometry(r, 0);
 
+  // Wireframe helper to visualize the lattice bounds (AABB of base atoms)
+  const wireGroup = new THREE.Group();
+  group.add(wireGroup);
+
+  // Point-sprite layers (same shader pipeline as lattice)
+  const baseLayer  = createPointsLayer(THREE);
+  const tetraLayer = createPointsLayer(THREE);
+  const octaLayer  = createPointsLayer(THREE);
+  const hLayer     = createPointsLayer(THREE);
+
+  baseLayer.obj.renderOrder = 1;
+  tetraLayer.obj.renderOrder = 2;
+  octaLayer.obj.renderOrder = 2;
+  hLayer.obj.renderOrder = 3;
+
+  group.add(baseLayer.obj);
+  group.add(tetraLayer.obj);
+  group.add(octaLayer.obj);
+  group.add(hLayer.obj);
+
+  // Old instanced-mesh approach (kept for reference / possible reuse)
+  /* 
   // Base (grey)
   const baseGeom = ico(0.15);
   const baseMat  = new THREE.MeshStandardMaterial({ color: 0x888888, metalness:0.1, roughness:0.7 });
@@ -14,59 +38,54 @@ export function createDemoScene(THREE){
   const tetraMat = new THREE.MeshStandardMaterial({ color: 0x00aa00 }); // green
   const octaMat  = new THREE.MeshStandardMaterial({ color: 0xff8800 }); // orange
   const tetra = new THREE.InstancedMesh(siteGeom, tetraMat, 256);
-  const octa  = new THREE.InstancedMesh(siteGeom, octaMat, 256);
   tetra.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  const octa  = new THREE.InstancedMesh(siteGeom, octaMat, 256);
   octa.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-  group.add(tetra, octa);
+  group.add(tetra);
+  group.add(octa);
 
-  // Hydrogen (blue)
-  const hGeom = ico(0.08);
+  // H atoms (blue)
+  const hGeom = ico(0.06);
   const hMat  = new THREE.MeshStandardMaterial({ color: 0x2266ff });
   const hMesh = new THREE.InstancedMesh(hGeom, hMat, 64);
   hMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   group.add(hMesh);
+  */
 
-  const tmp = new THREE.Object3D();
+  function setBase(positions, feWorldRadius){
+    // Points: pass world radius directly
+    baseLayer.setData(positions, feWorldRadius, '#888888');
 
-  function setBase(positions, size){
-    const n = Math.min(Math.floor(positions.length/3), baseMesh.count);
-    baseMesh.count = n;
-    for(let i=0;i<n;i++){
-      tmp.position.set(positions[3*i], positions[3*i+1], positions[3*i+2]);
-      tmp.scale.setScalar(size);
-      tmp.updateMatrix();
-      baseMesh.setMatrixAt(i, tmp.matrix);
-    }
-    baseMesh.instanceMatrix.needsUpdate = true;
-  }
-
-  function setSites(tPositions, oPositions){
-    const set = (mesh, arr)=>{
-      const n = Math.min(Math.floor(arr.length/3), mesh.count);
-      mesh.count = n;
-      for(let i=0;i<n;i++){
-        tmp.position.set(arr[3*i], arr[3*i+1], arr[3*i+2]);
-        tmp.scale.setScalar(1);
-        tmp.updateMatrix();
-        mesh.setMatrixAt(i, tmp.matrix);
+    // Update lattice wireframe from base atom AABB
+    (function(){
+      while(wireGroup.children.length) wireGroup.remove(wireGroup.children[0]);
+      if (positions.length < 3) return;
+      const box = new THREE.Box3();
+      const v = new THREE.Vector3();
+      for(let i=0;i<positions.length;i+=3){
+        v.set(positions[i], positions[i+1], positions[i+2]);
+        box.expandByPoint(v);
       }
-      mesh.instanceMatrix.needsUpdate = true;
-    };
-    set(tetra, tPositions);
-    set(octa,  oPositions);
+      const helper = new THREE.Box3Helper(box, 0x444444);
+      wireGroup.add(helper);
+    })();
   }
 
-  function setH(positions, size){
-    const n = Math.min(Math.floor(positions.length/3), hMesh.count);
-    hMesh.count = n;
-    for(let i=0;i<n;i++){
-      tmp.position.set(positions[3*i], positions[3*i+1], positions[3*i+2]);
-      tmp.scale.setScalar(size);
-      tmp.updateMatrix();
-      hMesh.setMatrixAt(i, tmp.matrix);
-    }
-    hMesh.instanceMatrix.needsUpdate = true;
+  function setSites(tetraPositions, octaPositions, siteWorldRadius){
+    tetraLayer.setData(tetraPositions, siteWorldRadius, '#00aa00'); // green
+    octaLayer.setData(octaPositions,  siteWorldRadius, '#ff8800');  // orange
   }
 
-  return { group, setBase, setSites, setH };
+  function setH(positions, hWorldRadius){
+    hLayer.setData(positions, hWorldRadius, '#2266ff'); // blue
+  }
+
+  function updateProjection(camera, renderer){
+    baseLayer.updateProjection(camera, renderer);
+    tetraLayer.updateProjection(camera, renderer);
+    octaLayer.updateProjection(camera, renderer);
+    hLayer.updateProjection(camera, renderer);
+  }
+
+  return { group, setBase, setSites, setH, updateProjection };
 }
