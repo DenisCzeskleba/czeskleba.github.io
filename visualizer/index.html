@@ -4,12 +4,12 @@ title: Lattice Visualizer
 permalink: /visualizer/
 ---
 
-<p style="margin: 12px 0;">
+<p style="margin:12px 0;">
   Interactive lattice visualization (SC/BCC/FCC) with substitutionals and interstitial hydrogen.
 </p>
 
+<!-- Make this page full width under your site layout -->
 <style>
-  /* make the page full width under your layout */
   main, .page, .wrapper, .container, .content, .page-content {
     max-width: none !important;
     width: 100% !important;
@@ -19,13 +19,97 @@ permalink: /visualizer/
   }
 </style>
 
-<link rel="stylesheet" href="/visualizer/styles.css?v=fix1">
+<link rel="stylesheet" href="/visualizer/styles.css?v=fix3">
 
 <div id="app">
-  <!-- … your existing panel + canvas exactly as you have it … -->
-  <div id="panel">…</div>
+  <div id="panel">
+    <div class="row">
+      <label>Mode</label>
+      <select id="mode">
+        <option value="demo">Demo</option>
+        <option value="lattice" selected>Lattice</option>
+      </select>
+    </div>
+
+    <div class="row">
+      <label>Lattice</label>
+      <select id="lattice">
+        <option value="SC">SC</option>
+        <option value="BCC" selected>BCC</option>
+        <option value="FCC">FCC</option>
+      </select>
+    </div>
+
+    <div class="row" data-for="lattice">
+      <label>Target base atoms</label>
+      <input id="feCount" type="number" min="100" max="1000000" step="100" value="100000">
+    </div>
+
+    <div class="row">
+      <label>Base visual size</label>
+      <input id="feSize" type="range" min="0.01" max="1" step="0.01" value="1">
+      <span id="feSizeVal">1.00</span>
+    </div>
+
+    <fieldset data-for="lattice">
+      <legend>Substitutionals (A/B)</legend>
+      <div class="row">
+        <label>A fraction (black)</label>
+        <input id="cFrac" type="range" min="0" max="0.05" step="0.0005" value="0">
+        <span id="cFracVal">0.000</span>
+      </div>
+      <div class="row">
+        <label>A size</label>
+        <input id="cSize" type="range" min="0.01" max="5" step="0.01" value="1">
+        <span id="cSizeVal">1.00</span>
+      </div>
+      <div class="row">
+        <label>B fraction (red)</label>
+        <input id="vFrac" type="range" min="0" max="0.05" step="0.0005" value="0">
+        <span id="vFracVal">0.000</span>
+      </div>
+      <div class="row">
+        <label>B size</label>
+        <input id="vSize" type="range" min="0.01" max="5" step="0.01" value="1">
+        <span id="vSizeVal">1.00</span>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Interstitial (Blue)</legend>
+      <div class="row">
+        <label>H count</label>
+        <input id="hCount" type="number" min="0" max="30" step="1" value="0">
+      </div>
+      <div class="row">
+        <label>H size</label>
+        <input id="hSize" type="range" min="0.01" max="1" step="0.01" value="0.5">
+        <span id="hSizeVal">0.50</span>
+      </div>
+      <div class="row" data-for="demo">
+        <label>Show interstitial sites</label>
+        <select id="siteScope">
+          <option value="canonical" selected>Canonical</option>
+          <option value="allFaces">All faces</option>
+        </select>
+      </div>
+    </fieldset>
+
+    <div class="row">
+      <label>Random seed</label>
+      <input id="seed" type="number" step="1" value="42">
+    </div>
+
+    <div class="row">
+      <button id="reset">Reset</button>
+      <button id="shot">Screenshot</button>
+    </div>
+
+    <div id="badge">Fe: 0 | C: 0 | V: 0 | H: 0</div>
+  </div>
+
   <canvas id="c"></canvas>
 </div>
 
-<!-- Only ONE module script. main.js will import EVERYTHING else. -->
-<script type="module" src="/visualizer/main.js?v=fix1"></script>
+<!-- Only ONE module entry. main.js will import everything else (including Three). -->
+<script type="module" src="/visualizer/main.js?v=fix3"></script>
