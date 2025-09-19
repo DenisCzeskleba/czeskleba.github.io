@@ -39,39 +39,39 @@ permalink: /visualizer/
         </select>
       </div>
       <div class="row" data-for="lattice">
-        <label>Target Fe atoms</label>
-        <input id="feCount" type="number" min="100" max="1000000" step="100" value="100000">
+        <label>Target base atoms</label>
+        <input id="feCount" type="number" min="100" max="1000000" step="100" value="1000000">
       </div>
       <div class="row">
-        <label>Fe visual size</label>
+        <label>Base visual size</label>
         <input id="feSize" type="range" min="0.01" max="1" step="0.01" value="1">
         <span id="feSizeVal">1.00</span>
       </div>
       <fieldset>
         <legend>Substitutionals</legend>
         <div class="row">
-          <label>C fraction (black)</label>
+          <label>A fraction (black)</label>
           <input id="cFrac" type="range" min="0" max="0.05" step="0.0005" value="0">
           <span id="cFracVal">0.000</span>
         </div>
         <div class="row">
-          <label>C size</label>
+          <label>A size</label>
           <input id="cSize" type="range" min="0.01" max="5" step="0.01" value="1">
           <span id="cSizeVal">1.00</span>
         </div>
         <div class="row">
-          <label>V fraction (red)</label>
+          <label>B fraction (red)</label>
           <input id="vFrac" type="range" min="0" max="0.05" step="0.0005" value="0">
           <span id="vFracVal">0.000</span>
         </div>
         <div class="row">
-          <label>V size</label>
+          <label>B size</label>
           <input id="vSize" type="range" min="0.01" max="5" step="0.01" value="1">
           <span id="vSizeVal">1.00</span>
         </div>
       </fieldset>
       <fieldset>
-        <legend>Hydrogen (interstitial, blue)</legend>
+        <legend>Interstitial (Blue)</legend>
         <div class="row">
           <label>H count</label>
           <input id="hCount" type="number" min="0" max="30" step="1" value="0">
@@ -91,7 +91,7 @@ permalink: /visualizer/
       </fieldset>
       <div class="row">
         <label>Random seed</label>
-        <input id="seed" type="number" step="1" value="1337">
+        <input id="seed" type="number" step="1" value="42">
       </div>
       <div class="row">
         <button id="reset">Reset</button>
