@@ -24,6 +24,17 @@ export function createDemoScene(THREE){
   group.add(octaLayer.obj);
   group.add(hLayer.obj);
 
+  // Ensure site markers draw on top (no depth occlusion)
+  tetraLayer.obj.material.depthTest = false;
+  tetraLayer.obj.material.depthWrite = false;
+  octaLayer.obj.material.depthTest = false;
+  octaLayer.obj.material.depthWrite = false;
+  // Keep base and H with depth for spatial cues
+  baseLayer.obj.material.depthTest = true;
+  baseLayer.obj.material.depthWrite = true;
+  hLayer.obj.material.depthTest = true;
+  hLayer.obj.material.depthWrite = true;
+
   // Old instanced-mesh approach (kept for reference / possible reuse)
   /* 
   // Base (grey)
