@@ -9,6 +9,7 @@ export const DEFAULTS = {
   vSize: 1.0,
   hCount: 0,
   hSize: 0.5,
+  siteSize: 0.4,
   siteScope: 'allFaces',
   seed:  42,
 };
