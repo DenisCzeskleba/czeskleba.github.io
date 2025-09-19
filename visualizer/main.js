@@ -74,6 +74,13 @@ const dir = new THREE.DirectionalLight(0xffffff, 1.0); dir.position.set(3,4,2);
 scene.add(dir, new THREE.AmbientLight(0xffffff, 0.35));
 
 // layers
+// unified point-sprite layers used by Lattice (and kept available globally)
+const layers = {
+  base: createPointsLayer(THREE),
+  A:    createPointsLayer(THREE),
+  B:    createPointsLayer(THREE),
+  H:    createPointsLayer(THREE),
+};
 const demo = createDemoScene(THREE);
 const groupDemo = new THREE.Group(); groupDemo.add(demo.group);
 function updateAllProj(){
