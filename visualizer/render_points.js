@@ -15,7 +15,6 @@ export function createPointsLayer(THREE){
       precision mediump float;
       uniform vec3 uColor;
       uniform float uAlpha;
-uniform float uAlpha;
       void main(){
         vec2 uv = gl_PointCoord*2.0-1.0;
         float r2 = dot(uv,uv);
