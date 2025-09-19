@@ -64,10 +64,11 @@ export function createDemoScene(THREE){
   */
 
   function setBase(positions, feWorldRadius){
+    window.__DEMO_LATTICE = window.__DEMO_LATTICE || 'SC';
     // Points: pass world radius directly
     baseLayer.setData(positions, feWorldRadius, '#888888');
 
-    // Update lattice wireframe from base atom AABB
+    // Build Bravais-like wireframe
     (function(){
       while(wireGroup.children.length) wireGroup.remove(wireGroup.children[0]);
       if (positions.length < 3) return;
@@ -77,8 +78,44 @@ export function createDemoScene(THREE){
         v.set(positions[i], positions[i+1], positions[i+2]);
         box.expandByPoint(v);
       }
-      const helper = new THREE.Box3Helper(box, 0x444444);
-      wireGroup.add(helper);
+      // Clear and draw edges of the unit cube [0,1]^3
+    const mat = new THREE.LineBasicMaterial({ color: 0x666666 });
+    function addLines(points){
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
+      const ls = new THREE.LineSegments(g, mat);
+      wireGroup.add(ls);
+    }
+    const E = [
+      // 12 cube edges (pairs)
+      0,0,0, 1,0,0,  0,1,0, 1,1,0,  0,0,1, 1,0,1,  0,1,1, 1,1,1,
+      0,0,0, 0,1,0,  1,0,0, 1,1,0,  0,0,1, 0,1,1,  1,0,1, 1,1,1,
+      0,0,0, 0,0,1,  1,0,0, 1,0,1,  0,1,0, 0,1,1,  1,1,0, 1,1,1
+    ];
+    addLines(E);
+
+    // Lattice-specific hints
+    if (window.__DEMO_LATTICE === 'BCC'){
+      // body diagonals through center
+      const D = [
+        0,0,0, 1,1,1,  1,0,0, 0,1,1,  0,1,0, 1,0,1,  0,0,1, 1,1,0
+      ];
+      addLines(D);
+    } else if (window.__DEMO_LATTICE === 'FCC'){
+      // Face diagonals (an X on each face)
+      const F = [
+        // z=0 and z=1 faces
+        0,0,0, 1,1,0,  1,0,0, 0,1,0,
+        0,0,1, 1,1,1,  1,0,1, 0,1,1,
+        // x=0 and x=1 faces
+        0,0,0, 0,1,1,  0,1,0, 0,0,1,
+        1,0,0, 1,1,1,  1,1,0, 1,0,1,
+        // y=0 and y=1 faces
+        0,0,0, 1,0,1,  1,0,0, 0,0,1,
+        0,1,0, 1,1,1,  1,1,0, 0,1,1
+      ];
+      addLines(F);
+    }
     })();
   }
 
