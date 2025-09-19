@@ -8,6 +8,21 @@ import { BASIS, TETRA_SITES, OCTA_SITES, generateFePositions, unitCellCounts } f
 import { createPointsLayer } from './render_points.js';
 import { createDemoScene } from './render_demo.js';
 
+// Lattice-correct metallic radii (in units of the lattice parameter a)
+// SC: atoms touch along edges:     2r = a       => r = 0.5 a
+// BCC: atoms touch along body diag: 4r = √3 a   => r = √3/4 a ≈ 0.4330127 a
+// FCC: atoms touch along face diag: 4r = √2 a   => r = √2/4 a ≈ 0.3535534 a
+function baseAtomicRadius(lattice){
+  switch(lattice){
+    case 'SC':  return 0.5;
+    case 'BCC': return Math.sqrt(3)/4;
+    case 'FCC': return Math.sqrt(2)/4;
+    default:    return Math.sqrt(3)/4; // default to BCC
+  }
+}
+// Map a world-relative size factor to a point-size in pixels
+function toPixelSize(worldFactor){ return 2 + worldFactor * 12; } // slightly larger scale for clarity
+
 // tiny seeded RNG
 function makeRand(seed){ let s=(seed>>>0)||1; return ()=>{ s=(1664525*s+1013904223)>>>0; return ((s>>>8)/0x01000000); }; }
 
@@ -20,6 +35,37 @@ scene.background = new THREE.Color(0xffffff);
 const camera = new THREE.PerspectiveCamera(50, 1, 0.01, 1000);
 camera.position.set(6,3,6);
 const controls = new OrbitControls(camera, renderer.domElement);
+
+// Frame the current content given a Float32Array of positions [x,y,z,...]
+function frameContent(positions, pad=1.2){
+  if(!positions || positions.length<3) return;
+  const box = new THREE.Box3();
+  const v = new THREE.Vector3();
+  for(let i=0;i<positions.length;i+=3){
+    v.set(positions[i], positions[i+1], positions[i+2]);
+    box.expandByPoint(v);
+  }
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  const radius = 0.5 * Math.max(size.x, size.y, size.z) * pad;
+
+  const aspect = renderer.getSize(new THREE.Vector2()).x / Math.max(1, renderer.getSize(new THREE.Vector2()).y);
+  const vFOV = (camera.fov||60) * Math.PI/180.0;
+  const hFOV = 2*Math.atan(Math.tan(vFOV/2)*aspect);
+  const distV = radius / Math.sin(Math.max(0.01, vFOV/2));
+  const distH = radius / Math.sin(Math.max(0.01, hFOV/2));
+  const dist = Math.max(distV, distH);
+
+  controls.target.copy(center);
+  const dir = new THREE.Vector3(0,0,1);
+  const pos = center.clone().add(dir.multiplyScalar(dist));
+  camera.position.copy(pos);
+
+  camera.near = Math.max(0.001, dist/100);
+  camera.far  = Math.max(camera.near*10, dist*10);
+  camera.updateProjectionMatrix();
+  controls.update();
+}
 controls.target.set(1.5,1.5,1.5);
 controls.update();
 
@@ -30,18 +76,20 @@ scene.add(dir, new THREE.AmbientLight(0xffffff, 0.35));
 // layers
 const demo = createDemoScene(THREE);
 const groupDemo = new THREE.Group(); groupDemo.add(demo.group);
-const layers = {
-  base: createPointsLayer(THREE),
-  A:    createPointsLayer(THREE),
-  B:    createPointsLayer(THREE),
-  H:    createPointsLayer(THREE),
-};
+\1
+function updateAllProj(){
+  layers.base.updateProjection(camera, renderer);
+  layers.A.updateProjection(camera, renderer);
+  layers.B.updateProjection(camera, renderer);
+  layers.H.updateProjection(camera, renderer);
+}
+
 const groupPoints = new THREE.Group();
 groupPoints.add(layers.base.obj, layers.A.obj, layers.B.obj, layers.H.obj);
 scene.add(groupDemo, groupPoints);
 
 // helpers
-function toPixelSize(base){ return 2 + base*6; }
+function toPixelSize(base){ return 2 + base*6; } // legacy (unused for lattice points now)
 function resize(){
   const rect = canvas.getBoundingClientRect();
   const w = rect.width || canvas.clientWidth, h = rect.height || canvas.clientHeight || 400;
@@ -78,7 +126,8 @@ function update(p){
   if (isDemo){
     const n = unitCellCounts(p.lattice);
     const fe = generateFePositions(p.lattice, n);
-    demo.setBase(fe, p.feSize);
+    demo.setBase(fe, (r0 * p.feSize) / 0.15);
+    frameContent(fe);
 
     const sites = interstitialOneCell(p.lattice, p.siteScope);
     demo.setSites(sites.t, sites.o);
@@ -94,7 +143,7 @@ function update(p){
       h[3*i+1] = allSites[3*idx+1];
       h[3*i+2] = allSites[3*idx+2];
     }
-    demo.setH(h, p.hSize);
+    \1    demo.updateProjection(camera, renderer);
 
     setBadge(`Fe: ${n} | C: 0 | V: 0 | H: ${hN}`);
     return;
@@ -142,10 +191,7 @@ function update(p){
   }
 
   // draw
-  layers.base.setData(basePos, toPixelSize(p.feSize), '#888888');                 // Base (grey)
-  layers.A.setData(aPos,       toPixelSize(p.cSize * p.feSize), '#000000');       // A (black)
-  layers.B.setData(bPos,       toPixelSize(p.vSize * p.feSize), '#cc0000');       // B (red)
-  layers.H.setData(hPos,       toPixelSize(p.hSize * p.feSize), '#2266ff');       // H (blue)
+  \1  updateAllProj();
 
   setBadge(`Fe: ${basePos.length/3} | C: ${aCount} | V: ${bCount} | H: ${hN}`);
 }
