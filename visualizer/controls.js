@@ -100,7 +100,6 @@ export function bindControls(onChange){
   });
 
   // initial sync
-  reflect();
-
+  
   return { controls: ui, setBadge: t => ui.badge.textContent = t, push: reflect, shotBtn: ui.shot };
 }
