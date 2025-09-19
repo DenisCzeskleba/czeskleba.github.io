@@ -14,6 +14,7 @@ export function bindControls(onChange){
     cSize: $('cSize'),   cSizeVal: $('cSizeVal'),
     vFrac: $('vFrac'),   vFracVal: $('vFracVal'),
     vSize: $('vSize'),   vSizeVal: $('vSizeVal'),
+    siteSize: $('siteSize'), siteSizeVal: $('siteSizeVal'),
     hCount: $('hCount'),
     hSize: $('hSize'),   hSizeVal: $('hSizeVal'),
     siteScope: $('siteScope'),
@@ -30,7 +31,17 @@ export function bindControls(onChange){
     });
   }
 
+  
+  function toggleModeUI(){
+    const isDemo = state.mode === 'demo';
+    document.querySelectorAll('.demo-only').forEach(n=> n.style.display = isDemo ? 'flex' : 'none');
+    // hide Fe Count when demo
+    const feRow = document.getElementById('rowFeCount');
+    if (feRow) feRow.style.display = isDemo ? 'none' : 'flex';
+  }
+
   function reflect(){
+    toggleModeUI();
     const p = clampParams(state);
 
     // write state -> inputs
