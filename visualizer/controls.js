@@ -90,8 +90,8 @@ export function bindControls(onChange){
   ui.seed.addEventListener('input',     ()=>{ state.seed = parseInt(ui.seed.value||'0',10); reflect(); });
   ui.seed.addEventListener('change',    ()=>{ state.seed = parseInt(ui.seed.value||'0',10); reflect(); });
 
-  ui.reset.addEventListener('click', ()=>{
-    Object.assign(state, DEFAULTS);
+  ui.reset.addEventListener('click', ()=>{ const keepMode = state.mode;
+    Object.assign(state, DEFAULTS); state.mode = keepMode;
     ui.mode.value = state.mode;
     ui.lattice.value = state.lattice;
     reflect();
