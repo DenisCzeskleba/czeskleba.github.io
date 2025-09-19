@@ -76,7 +76,6 @@ scene.add(dir, new THREE.AmbientLight(0xffffff, 0.35));
 // layers
 const demo = createDemoScene(THREE);
 const groupDemo = new THREE.Group(); groupDemo.add(demo.group);
-
 function updateAllProj(){
   layers.base.updateProjection(camera, renderer);
   layers.A.updateProjection(camera, renderer);
@@ -89,6 +88,7 @@ groupPoints.add(layers.base.obj, layers.A.obj, layers.B.obj, layers.H.obj);
 scene.add(groupDemo, groupPoints);
 
 // helpers
+// removed duplicate toPixelSize // legacy (unused for lattice points now)
 function resize(){
   const rect = canvas.getBoundingClientRect();
   const w = rect.width || canvas.clientWidth, h = rect.height || canvas.clientHeight || 400;
@@ -142,7 +142,7 @@ function update(p){
       h[3*i+1] = allSites[3*idx+1];
       h[3*i+2] = allSites[3*idx+2];
     }
-    demo.updateProjection(camera, renderer);
+demo.updateProjection(camera, renderer);
 
     setBadge(`Fe: ${n} | C: 0 | V: 0 | H: ${hN}`);
     return;
@@ -190,7 +190,7 @@ function update(p){
   }
 
   // draw
-  updateAllProj();
+updateAllProj();
 
   setBadge(`Fe: ${basePos.length/3} | C: ${aCount} | V: ${bCount} | H: ${hN}`);
 }
