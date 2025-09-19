@@ -123,6 +123,7 @@ function interstitialOneCell(lattice, scope){
 
 // main update
 function update(p){
+  const r0 = baseAtomicRadius(p.lattice);
   const isDemo = p.mode === 'demo';
   groupDemo.visible = isDemo;
   groupPoints.visible = !isDemo;
