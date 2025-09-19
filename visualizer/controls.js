@@ -62,8 +62,6 @@ export function bindControls(onChange){
   // listeners
   ui.mode.addEventListener('change', ()=>{ state.mode = ui.mode.value; reflect(); });
   ui.lattice.addEventListener('change', ()=>{ state.lattice = ui.lattice.value; reflect(); });
-
-  ui.feCount.addEventListener('input',  ()=>{ state.feCount = parseInt(ui.feCount.value||'0',10); reflect(); });
   ui.feCount.addEventListener('change', ()=>{ state.feCount = parseInt(ui.feCount.value||'0',10); reflect(); });
 
   ui.feSize.addEventListener('input',   ()=>{ state.feSize = parseFloat(ui.feSize.value||'1');  ui.feSizeVal.textContent = state.feSize.toFixed(2); onChange(clampParams(state)); });
@@ -100,8 +98,8 @@ export function bindControls(onChange){
   });
 
   // initial sync
+  ui.feCount.addEventListener('change', ()=>{ state.feCount = parseInt(ui.feCount.value||'100',10); reflect(); });
+  ui.feCount.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ state.feCount = parseInt(ui.feCount.value||'100',10); reflect(); } });
   
   return { controls: ui, setBadge: t => ui.badge.textContent = t, push: reflect, shotBtn: ui.shot };
 }
-
-  ui.feCount.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ state.feCount = parseInt(ui.feCount.value||'100',10); reflect(); } });
