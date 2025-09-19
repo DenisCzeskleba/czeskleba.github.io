@@ -1,6 +1,6 @@
 html, body { height: 100%; margin: 0; background: #fff; color: #111; overflow: hidden; }
-#app { display: grid; grid-template-columns: minmax(300px, 28rem) 1fr; grid-template-rows: 1fr; width: 100vw; height: 100vh; }
-#app { display: grid; grid-template-columns: minmax(300px, 28rem) 1fr; grid-template-rows: 1fr; width: 100vw; height: 100vh; }
+#app { display:grid; grid-template-columns: minmax(340px, 34rem) 1fr; grid-template-rows: 1fr; width:100vw; height:100vh; }
+#app { display:grid; grid-template-columns: minmax(340px, 34rem) 1fr; grid-template-rows: 1fr; width:100vw; height:100vh; }
 
 #panel {
   box-sizing: border-box;
@@ -27,7 +27,7 @@ legend { padding:0 6px; font-size:12px; color: #666 }
 #c { width: 100%; height: 100%; display:block; background:#ffffff; }
 
 @media (max-width: 900px){
-  #app { display: grid; grid-template-columns: minmax(300px, 28rem) 1fr; grid-template-rows: 1fr; width: 100vw; height: 100vh; }
+  #app { display:grid; grid-template-columns: minmax(340px, 34rem) 1fr; grid-template-rows: 1fr; width:100vw; height:100vh; }
   #panel label { width: 140px; }
 }
 
@@ -62,3 +62,28 @@ button:focus-visible, .btn:focus-visible {
 
 
 .site-footer{display:none;}
+
+#legend{
+  position:absolute; top:10px; right:10px;
+  background: rgba(255,255,255,0.9);
+  border:1px solid #ddd; border-radius:8px;
+  padding:6px 8px; font:12px/1.2 system-ui,sans-serif;
+  color:#111; pointer-events:none;
+}
+.legend-row{ display:flex; align-items:center; gap:6px; margin:2px 0; }
+.legend-dot{ width:12px; height:12px; border-radius:50%; display:inline-block; }
+
+/* Sidebar width + horizontal safety */
+#controls, #sidebar, #controlPanel, #left, #panel {
+  height: 100vh;
+  overflow: auto;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 12px;
+  padding-bottom: 12px;
+  box-sizing: border-box;
+}
+#canvasWrap { position: relative; width:100%; height:100vh; overflow:hidden; }
+#controls input[type="range"]{ width:100%; box-sizing:border-box; }
+#controls input[type="number"], #controls select { max-width:100%; box-sizing:border-box; }
+#controls .val { margin-left:8px; white-space:nowrap; }
