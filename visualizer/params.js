@@ -25,5 +25,6 @@ export function clampParams(p){
     vSize:   clamp(p.vSize, 0.01, 5.0),
     hCount:  Math.round(clamp(p.hCount, 0, 30)),
     hSize:   clamp(p.hSize, 0.01, 1.0),
+    siteSize: clamp(p.siteSize, 0.01, 1.0),
   };
 }
