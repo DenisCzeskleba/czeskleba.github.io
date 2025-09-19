@@ -2,11 +2,14 @@ export function createPointsLayer(THREE){
   const geom = new THREE.BufferGeometry();
   const mat = new THREE.ShaderMaterial({
     vertexShader: `
-      uniform float uSize;
+      uniform float uWorldRadius; // radius in world units
+      uniform float uProjScale;   // viewportHeight / (2 * tan(fov/2))
       void main(){
         vec4 mv = modelViewMatrix * vec4(position, 1.0);
         gl_Position = projectionMatrix * mv;
-        gl_PointSize = max(1.0, uSize * (300.0 / max(1.0, -mv.z)));
+        // convert world-space radius to pixels: 2 * projScale * r / -mv.z
+        float px = 2.0 * uProjScale * uWorldRadius / max(1.0, -mv.z);
+        gl_PointSize = max(1.0, px);
       }`,
     fragmentShader: `
       precision mediump float;
@@ -14,27 +17,31 @@ export function createPointsLayer(THREE){
       void main(){
         vec2 uv = gl_PointCoord*2.0-1.0;
         float r2 = dot(uv,uv);
-        if (r2>1.0) discard;
-        float z = sqrt(1.0 - r2);
-        vec3 N = normalize(vec3(uv, z));
-        vec3 L = normalize(vec3(0.4,0.5,0.75));
-        float diff = max(dot(N,L),0.0);
-        float shade = 0.25 + 0.75*diff;
-        gl_FragColor = vec4(uColor*shade, 1.0);
+        if(r2>1.0) discard;
+        // cheap lambert-ish shading for a spherical look
+        float ndotl = clamp(0.6 + 0.4*uv.y, 0.0, 1.0);
+        gl_FragColor = vec4(uColor * (0.4 + 0.6*ndotl), 1.0);
       }`,
     uniforms: {
-      uSize: { value: 4.0 },
-      uColor: { value: new THREE.Color('white') }
+      uWorldRadius: { value: 0.1 },
+      uProjScale:   { value: 300.0 },
+      uColor:       { value: new THREE.Color('white') }
     },
     transparent: true,
     depthWrite: true,
   });
   const pts = new THREE.Points(geom, mat);
-  function setData(pos, sizePx, color){
+  function setData(pos, worldRadius, color){
     geom.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    mat.uniforms.uSize.value = sizePx;
+    mat.uniforms.uWorldRadius.value = worldRadius;
     mat.uniforms.uColor.value = new THREE.Color(color);
     geom.computeBoundingSphere();
   }
-  return { obj: pts, setData };
+  function updateProjection(camera, renderer){
+    const h = renderer.getSize(new THREE.Vector2()).y;
+    const fovRad = (camera.fov || 60) * Math.PI/180.0;
+    const projScale = h / (2.0 * Math.tan(fovRad/2.0));
+    mat.uniforms.uProjScale.value = projScale;
+  }
+  return { obj: pts, setData, updateProjection };
 }
