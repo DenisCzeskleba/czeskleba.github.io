@@ -4,7 +4,7 @@ import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/cont
 // Local modules
 import { bindControls } from './controls.js';
 import { DEFAULTS } from './params.js';
-import { BASIS, TETRA_SITES, OCTA_SITES, generateFePositions, unitCellCounts } from './lattice.js';
+import { BASIS, unitCellCounts, generateFePositions, tetraSites, octaSites } from './lattice.js';
 import { createPointsLayer } from './render_points.js';
 import { createDemoScene } from './render_demo.js';
 
@@ -144,8 +144,8 @@ resize();
 
 // interstitial positions for one cell
 function interstitialOneCell(lattice, scope){
-  const baseT = TETRA_SITES[lattice] || [];
-  const baseO = OCTA_SITES[lattice]  || [];
+  const baseT = /*was TETRA_SITES*/ (tetraSites(lattice] || [];
+  const baseO = /*was OCTA_SITES*/ (octaSites(lattice]  || [];
   const clamp01 = v => Math.min(1, Math.max(0, v));
   const reflectAxis = v => {
     if (v <= 0 || v >= 1){ return [clamp01(v)]; } // already on boundary
