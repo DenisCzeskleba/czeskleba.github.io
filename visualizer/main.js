@@ -35,6 +35,20 @@ scene.background = new THREE.Color(0xffffff);
 const camera = new THREE.PerspectiveCamera(50, 1, 0.01, 1000);
 camera.position.set(6,3,6);
 const controls = new OrbitControls(camera, renderer.domElement);
+
+const legendEl = document.getElementById('legend');
+function updateLegend(mode){
+  if(!legendEl) return;
+  const rows = [
+    ['Base',  '#888888'],
+    ['Tetra', '#00aa00'],
+    ['Octa',  '#ff8800'],
+    ['H',     '#2266ff'],
+  ];
+  legendEl.innerHTML = rows.map(([label,color])=>`<div class="legend-row"><span class="legend-dot" style="background:${color}"></span>${label}</div>`).join('');
+  legendEl.style.display = 'block';
+}
+
 renderer.setClearColor(0xffffff, 1);
 
 // Frame the current content given a Float32Array of positions [x,y,z,...]
@@ -57,7 +71,7 @@ function demoUnitCellFe(lattice){
   }
   return new Float32Array(pts);
 }
-function frameContent(positions, pad=1.2){
+function frameContent(positions, pad=1.8){
   if(!positions || positions.length<3) return;
   const box = new THREE.Box3();
   const v = new THREE.Vector3();
@@ -165,6 +179,7 @@ function interstitialOneCell(lattice, scope){
 // main update
 let __lastDemoKey=''; let __lastLatKey='';
 function update(p){
+  updateLegend(p.mode);
   const r0 = baseAtomicRadius(p.lattice);
   const isDemo = p.mode === 'demo';
   groupDemo.visible = isDemo;
@@ -180,7 +195,7 @@ function update(p){
     if(demoKey !== __lastDemoKey){ frameContent(fe); __lastDemoKey = demoKey; }
 
     const sites = interstitialOneCell(p.lattice, p.siteScope);
-    demo.setSites(sites.t, sites.o, feR * 0.4);
+    demo.setSites(sites.t, sites.o, feR * p.siteSize);
 
     const allSites = new Float32Array([...sites.t, ...sites.o]);
     const hN = Math.min(p.hCount, Math.floor(allSites.length/3));
