@@ -274,7 +274,6 @@ demo.updateProjection(camera, renderer);
   if(latKey !== __lastLatKey){ frameContent(basePos); __lastLatKey = latKey; }
 
   setBadge(`Base: ${basePos.length/3} | A: ${aCount} | B: ${bCount} | H: ${hN}`);
-}
 
 // badge + animate loop
 const wired = bindControls(update);
