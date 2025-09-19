@@ -17,23 +17,32 @@
 }
 
 html, body, #app { height: 100%; margin: 0; background: var(--bg); color: var(--fg); }
-#app { display: grid; grid-template-columns: 340px 1fr; }
+#app { display: grid; grid-template-columns: 360px minmax(0,1fr); }  /* <- minmax prevents right side cut-off */
 
 #panel {
+  box-sizing: border-box;
   padding: 12px;
   border-right: 1px solid var(--border);
   font-family: system-ui, sans-serif;
   background: var(--panel-bg);
   overflow-y: auto;
-  overflow-x: hidden;      /* no horizontal scrollbar */
+  overflow-x: hidden;  /* no horizontal scroll */
 }
 
 #panel .row { display:flex; align-items:center; gap:8px; margin:8px 0; }
-#panel label { width: 170px; font-size: 14px; color: var(--fg); }
+#panel label { width: 175px; font-size: 14px; color: var(--fg); }
 #panel input[type="range"]{ flex:1 }
-#panel input[type="number"]{ background: var(--bg); color: var(--fg); border: 1px solid var(--border); padding: 4px 6px; }
 
-fieldset { border:1px solid var(--border); padding:8px; margin:10px 0; }
+#panel input[type="number"], 
+#panel select, 
+#panel button {
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  padding: 4px 6px;
+}
+
+fieldset { border:1px solid var(--border); padding:8px; margin:10px 0; background: transparent; }
 legend { padding:0 6px; font-size:12px; color: var(--muted) }
 
 #badge { margin-top:10px; font-size:12px; padding:6px 8px; background: rgba(0,0,0,0.06); border-radius:6px; display:inline-block }
