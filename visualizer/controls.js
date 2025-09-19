@@ -1,83 +1,85 @@
 import { DEFAULTS, clampParams } from './params.js';
+
 export function bindControls(onChange){
-  const byId = id=> document.getElementById(id);
+  const $ = id => document.getElementById(id);
+
   const state = { ...DEFAULTS };
-  const controls = {
-    mode: byId('mode'),
-    lattice: byId('lattice'),
-    feCount: byId('feCount'),
-    feSize: byId('feSize'), feSizeVal: byId('feSizeVal'),
-    cFrac: byId('cFrac'), cFracVal: byId('cFracVal'),
-    cSize: byId('cSize'), cSizeVal: byId('cSizeVal'),
-    vFrac: byId('vFrac'), vFracVal: byId('vFracVal'),
-    vSize: byId('vSize'), vSizeVal: byId('vSizeVal'),
-    hCount: byId('hCount'),
-    hSize: byId('hSize'), hSizeVal: byId('hSizeVal'),
-    siteScope: byId('siteScope'),
-    seed: byId('seed'),
-    reset: byId('reset'),
-    shot: byId('shot'),
-    badge: byId('badge'),
+
+  const ui = {
+    mode: $('mode'),
+    lattice: $('lattice'),
+    feCount: $('feCount'),
+    feSize: $('feSize'), feSizeVal: $('feSizeVal'),
+    cFrac: $('cFrac'), cFracVal: $('cFracVal'),
+    cSize: $('cSize'), cSizeVal: $('cSizeVal'),
+    vFrac: $('vFrac'), vFracVal: $('vFracVal'),
+    vSize: $('vSize'), vSizeVal: $('vSizeVal'),
+    hCount: $('hCount'),
+    hSize: $('hSize'), hSizeVal: $('hSizeVal'),
+    siteScope: $('siteScope'),
+    seed: $('seed'),
+    reset: $('reset'),
+    shot: $('shot'),
+    badge: $('badge'),
   };
+
   function updateVisibility(){
+    // Show/hide any element with [data-for="lattice"] or [data-for="demo"]
     document.querySelectorAll('[data-for]').forEach(el=>{
-      const key = el.getAttribute('data-for');
-      el.style.display = (key === state.mode) ? '' : 'none';
+      const wants = el.getAttribute('data-for');
+      el.style.display = (wants === state.mode) ? '' : 'none';
     });
   }
-  function push(){
+
+  function reflect(){
     const p = clampParams(state);
-    controls.feSizeVal.textContent = p.feSize.toFixed(2);
-    controls.cFracVal.textContent = p.cFrac.toFixed(3);
-    controls.cSizeVal.textContent = p.cSize.toFixed(2);
-    controls.vFracVal.textContent = p.vFrac.toFixed(3);
-    controls.vSizeVal.textContent = p.vSize.toFixed(2);
-    controls.hSizeVal.textContent = p.hSize.toFixed(2);
+    // write state -> UI
+    ui.feCount.value = String(p.feCount);
+    ui.feSize.value  = String(p.feSize);
+    ui.cFrac.value   = String(p.cFrac);
+    ui.cSize.value   = String(p.cSize);
+    ui.vFrac.value   = String(p.vFrac);
+    ui.vSize.value   = String(p.vSize);
+    ui.hCount.value  = String(p.hCount);
+    ui.hSize.value   = String(p.hSize);
+    ui.siteScope.value = p.siteScope;
+    ui.seed.value    = String(p.seed);
+
+    // update the live labels
+    ui.feSizeVal.textContent = p.feSize.toFixed(2);
+    ui.cFracVal.textContent  = p.cFrac.toFixed(3);
+    ui.cSizeVal.textContent  = p.cSize.toFixed(2);
+    ui.vFracVal.textContent  = p.vFrac.toFixed(3);
+    ui.vSizeVal.textContent  = p.vSize.toFixed(2);
+    ui.hSizeVal.textContent  = p.hSize.toFixed(2);
+
     updateVisibility();
     onChange(p);
   }
-  function hookRange(ctrl, key){
-    ctrl.addEventListener('input', ()=>{ state[key] = parseFloat(ctrl.value); push(); });
-  }
-  controls.mode.value = state.mode;
-  controls.lattice.value = state.lattice;
-  controls.feCount.value = String(state.feCount);
-  controls.feSize.value = String(state.feSize);
-  controls.cFrac.value = String(state.cFrac);
-  controls.cSize.value = String(state.cSize);
-  controls.vFrac.value = String(state.vFrac);
-  controls.vSize.value = String(state.vSize);
-  controls.hCount.value = String(state.hCount);
-  controls.hSize.value = String(state.hSize);
-  controls.siteScope.value = state.siteScope;
-  controls.seed.value = String(state.seed);
-  controls.mode.addEventListener('change', ()=>{ state.mode = controls.mode.value; push(); });
-  controls.lattice.addEventListener('change', ()=>{ state.lattice = controls.lattice.value; push(); });
-  controls.feCount.addEventListener('input', ()=>{ state.feCount = parseInt(controls.feCount.value||'0',10); push(); });
-  hookRange(controls.feSize, 'feSize');
-  hookRange(controls.cFrac, 'cFrac');
-  hookRange(controls.cSize, 'cSize');
-  hookRange(controls.vFrac, 'vFrac');
-  hookRange(controls.vSize, 'vSize');
-  controls.hCount.addEventListener('input', ()=>{ state.hCount = parseInt(controls.hCount.value||'0',10); push(); });
-  hookRange(controls.hSize, 'hSize');
-  controls.siteScope.addEventListener('change', ()=>{ state.siteScope = controls.siteScope.value; push(); });
-  controls.seed.addEventListener('input', ()=>{ state.seed = parseInt(controls.seed.value||'0',10); push(); });
-  controls.reset.addEventListener('click', ()=>{
+
+  // listeners
+  ui.mode.addEventListener('change', ()=>{ state.mode = ui.mode.value; reflect(); });
+  ui.lattice.addEventListener('change', ()=>{ state.lattice = ui.lattice.value; reflect(); });
+
+  ui.feCount.addEventListener('input', ()=>{ state.feCount = parseInt(ui.feCount.value||'0',10); reflect(); });
+
+  ui.feSize.addEventListener('input', ()=>{ state.feSize = parseFloat(ui.feSize.value); ui.feSizeVal.textContent = state.feSize.toFixed(2); onChange(clampParams(state)); });
+  ui.cFrac.addEventListener('input', ()=>{ state.cFrac = parseFloat(ui.cFrac.value); ui.cFracVal.textContent = state.cFrac.toFixed(3); onChange(clampParams(state)); });
+  ui.cSize.addEventListener('input', ()=>{ state.cSize = parseFloat(ui.cSize.value); ui.cSizeVal.textContent = state.cSize.toFixed(2); onChange(clampParams(state)); });
+  ui.vFrac.addEventListener('input', ()=>{ state.vFrac = parseFloat(ui.vFrac.value); ui.vFracVal.textContent = state.vFrac.toFixed(3); onChange(clampParams(state)); });
+  ui.vSize.addEventListener('input', ()=>{ state.vSize = parseFloat(ui.vSize.value); ui.vSizeVal.textContent = state.vSize.toFixed(2); onChange(clampParams(state)); });
+  ui.hCount.addEventListener('input', ()=>{ state.hCount = parseInt(ui.hCount.value||'0',10); reflect(); });
+  ui.hSize.addEventListener('input', ()=>{ state.hSize = parseFloat(ui.hSize.value); ui.hSizeVal.textContent = state.hSize.toFixed(2); onChange(clampParams(state)); });
+
+  ui.siteScope.addEventListener('change', ()=>{ state.siteScope = ui.siteScope.value; reflect(); });
+  ui.seed.addEventListener('input', ()=>{ state.seed = parseInt(ui.seed.value||'0',10); reflect(); });
+
+  ui.reset.addEventListener('click', ()=>{
     Object.assign(state, DEFAULTS);
-    controls.mode.value = state.mode;
-    controls.lattice.value = state.lattice;
-    controls.feCount.value = String(state.feCount);
-    controls.feSize.value = String(state.feSize);
-    controls.cFrac.value = String(state.cFrac);
-    controls.cSize.value = String(state.cSize);
-    controls.vFrac.value = String(state.vFrac);
-    controls.vSize.value = String(state.vSize);
-    controls.hCount.value = String(state.hCount);
-    controls.hSize.value = String(state.hSize);
-    controls.siteScope.value = state.siteScope;
-    controls.seed.value = String(state.seed);
-    push();
+    ui.mode.value = state.mode;
+    ui.lattice.value = state.lattice;
+    reflect();
   });
-  return { controls, setBadge: t=> controls.badge.textContent = t, push, shotBtn: controls.shot };
+
+  return { controls: ui, setBadge: (t)=> ui.badge.textContent = t, push: reflect, shotBtn: ui.shot };
 }
