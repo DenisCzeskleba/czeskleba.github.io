@@ -89,7 +89,6 @@ groupPoints.add(layers.base.obj, layers.A.obj, layers.B.obj, layers.H.obj);
 scene.add(groupDemo, groupPoints);
 
 // helpers
-function toPixelSize(base){ return 2 + base*6; } // legacy (unused for lattice points now)
 function resize(){
   const rect = canvas.getBoundingClientRect();
   const w = rect.width || canvas.clientWidth, h = rect.height || canvas.clientHeight || 400;
