@@ -1,6 +1,6 @@
 export function createPointsLayer(THREE){
   const geom = new THREE.BufferGeometry();
-  const mat = new THREE.ShaderMaterial({
+  const mat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.NormalBlending,
     vertexShader: `
       uniform float uWorldRadius; // radius in world units
       uniform float uProjScale;   // viewportHeight / (2 * tan(fov/2))
@@ -14,6 +14,7 @@ export function createPointsLayer(THREE){
     fragmentShader: `
       precision mediump float;
       uniform vec3 uColor;
+      uniform float uAlpha;
       void main(){
         vec2 uv = gl_PointCoord*2.0-1.0;
         float r2 = dot(uv,uv);
@@ -35,6 +36,7 @@ export function createPointsLayer(THREE){
     geom.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     mat.uniforms.uWorldRadius.value = worldRadius;
     mat.uniforms.uColor.value = new THREE.Color(color);
+    mat.uniforms.uAlpha.value = alpha;
     geom.computeBoundingSphere();
   }
   function updateProjection(camera, renderer){
