@@ -144,8 +144,8 @@ resize();
 
 // interstitial positions for one cell
 function interstitialOneCell(lattice, scope){
-  const baseT = /*was TETRA_SITES*/ (tetraSites(lattice) || [];
-  const baseO = /*was OCTA_SITES*/ (octaSites(lattice)  || [];
+  const baseT = tetraSites(lattice) || [];
+  const baseO = octaSites(lattice) || [];
   const clamp01 = v => Math.min(1, Math.max(0, v));
   const reflectAxis = v => {
     if (v <= 0 || v >= 1){ return [clamp01(v)]; } // already on boundary
