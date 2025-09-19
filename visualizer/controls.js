@@ -58,21 +58,43 @@ export function bindControls(onChange){
   }
 
   // listeners
+  ui.mode.addEventListener('input', ()=>{ state.mode = ui.mode.value; reflect(); });
   ui.mode.addEventListener('change', ()=>{ state.mode = ui.mode.value; reflect(); });
+  });
+  ui.lattice.addEventListener('input', ()=>{ state.lattice = ui.lattice.value; reflect(); });
   ui.lattice.addEventListener('change', ()=>{ state.lattice = ui.lattice.value; reflect(); });
+  });
 
-  ui.feCount.addEventListener('input', ()=>{ state.feCount = parseInt(ui.feCount.value||'0',10); reflect(); });
+  ui.feCount.addEventListener('input',  ()=>{ state.feCount = parseInt(ui.feCount.value||'0',10); reflect(); });
+  ui.feCount.addEventListener('change',  ()=>{ state.feCount = parseInt(ui.feCount.value||'0',10); reflect(); });
+  reflect(); });
 
-  ui.feSize.addEventListener('input', ()=>{ state.feSize = parseFloat(ui.feSize.value); ui.feSizeVal.textContent = state.feSize.toFixed(2); onChange(clampParams(state)); });
-  ui.cFrac.addEventListener('input', ()=>{ state.cFrac = parseFloat(ui.cFrac.value); ui.cFracVal.textContent = state.cFrac.toFixed(3); onChange(clampParams(state)); });
-  ui.cSize.addEventListener('input', ()=>{ state.cSize = parseFloat(ui.cSize.value); ui.cSizeVal.textContent = state.cSize.toFixed(2); onChange(clampParams(state)); });
-  ui.vFrac.addEventListener('input', ()=>{ state.vFrac = parseFloat(ui.vFrac.value); ui.vFracVal.textContent = state.vFrac.toFixed(3); onChange(clampParams(state)); });
-  ui.vSize.addEventListener('input', ()=>{ state.vSize = parseFloat(ui.vSize.value); ui.vSizeVal.textContent = state.vSize.toFixed(2); onChange(clampParams(state)); });
-  ui.hCount.addEventListener('input', ()=>{ state.hCount = parseInt(ui.hCount.value||'0',10); reflect(); });
-  ui.hSize.addEventListener('input', ()=>{ state.hSize = parseFloat(ui.hSize.value); ui.hSizeVal.textContent = state.hSize.toFixed(2); onChange(clampParams(state)); });
+  ui.feSize.addEventListener('input',  ()=>{ state.feSize = parseFloat(ui.feSize.value||'1'); ui.feSizeVal.textContent = state.feSize.toFixed(2); reflect(); });
+  ui.feSize.addEventListener('change',  ()=>{ state.feSize = parseFloat(ui.feSize.value||'1'); ui.feSizeVal.textContent = state.feSize.toFixed(2); reflect(); });
+  ui.feSizeVal.textContent = state.feSize.toFixed(2); onChange(clampParams(state)); });
+  ui.cFrac.addEventListener('input',  ()=>{ state.cFrac = parseFloat(ui.cFrac.value||'0'); ui.cFracVal.textContent = state.cFrac.toFixed(3); reflect(); });
+  ui.cFrac.addEventListener('change',  ()=>{ state.cFrac = parseFloat(ui.cFrac.value||'0'); ui.cFracVal.textContent = state.cFrac.toFixed(3); reflect(); });
+  ui.cFracVal.textContent = state.cFrac.toFixed(3); onChange(clampParams(state)); });
+  ui.cSize.addEventListener('input',  ()=>{ state.cSize = parseFloat(ui.cSize.value||'1'); ui.cSizeVal.textContent = state.cSize.toFixed(2); reflect(); });
+  ui.cSize.addEventListener('change',  ()=>{ state.cSize = parseFloat(ui.cSize.value||'1'); ui.cSizeVal.textContent = state.cSize.toFixed(2); reflect(); });
+  ui.cSizeVal.textContent = state.cSize.toFixed(2); onChange(clampParams(state)); });
+  ui.vFrac.addEventListener('input',  ()=>{ state.vFrac = parseFloat(ui.vFrac.value||'0'); ui.vFracVal.textContent = state.vFrac.toFixed(3); reflect(); });
+  ui.vFrac.addEventListener('change',  ()=>{ state.vFrac = parseFloat(ui.vFrac.value||'0'); ui.vFracVal.textContent = state.vFrac.toFixed(3); reflect(); });
+  ui.vFracVal.textContent = state.vFrac.toFixed(3); onChange(clampParams(state)); });
+  ui.vSize.addEventListener('input',  ()=>{ state.vSize = parseFloat(ui.vSize.value||'1'); ui.vSizeVal.textContent = state.vSize.toFixed(2); reflect(); });
+  ui.vSize.addEventListener('change',  ()=>{ state.vSize = parseFloat(ui.vSize.value||'1'); ui.vSizeVal.textContent = state.vSize.toFixed(2); reflect(); });
+  ui.vSizeVal.textContent = state.vSize.toFixed(2); onChange(clampParams(state)); });
+  ui.hCount.addEventListener('input',  ()=>{ state.hCount = parseInt(ui.hCount.value||'0',10); reflect(); });
+  ui.hCount.addEventListener('change',  ()=>{ state.hCount = parseInt(ui.hCount.value||'0',10); reflect(); });
+  reflect(); });
+  ui.hSize.addEventListener('input',  ()=>{ state.hSize = parseFloat(ui.hSize.value||'0.5'); ui.hSizeVal.textContent = state.hSize.toFixed(2); reflect(); });
+  ui.hSize.addEventListener('change',  ()=>{ state.hSize = parseFloat(ui.hSize.value||'0.5'); ui.hSizeVal.textContent = state.hSize.toFixed(2); reflect(); });
+  ui.hSizeVal.textContent = state.hSize.toFixed(2); onChange(clampParams(state)); });
 
   ui.siteScope.addEventListener('change', ()=>{ state.siteScope = ui.siteScope.value; reflect(); });
-  ui.seed.addEventListener('input', ()=>{ state.seed = parseInt(ui.seed.value||'0',10); reflect(); });
+  ui.seed.addEventListener('input',  ()=>{ state.seed = parseInt(ui.seed.value||'0',10); reflect(); });
+  ui.seed.addEventListener('change',  ()=>{ state.seed = parseInt(ui.seed.value||'0',10); reflect(); });
+  reflect(); });
 
   ui.reset.addEventListener('click', ()=>{
     Object.assign(state, DEFAULTS);
@@ -81,5 +103,7 @@ export function bindControls(onChange){
     reflect();
   });
 
+  // initial sync
+  reflect();
   return { controls: ui, setBadge: (t)=> ui.badge.textContent = t, push: reflect, shotBtn: ui.shot };
 }
