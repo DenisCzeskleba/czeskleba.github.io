@@ -202,16 +202,7 @@ function update(p){
     const chosen = new Set();
     const h = new Float32Array(hN*3);
     for(let i=0;i<hN;i++){
-      let idx;
-      do {
-        idx = Math.floor(rand() * (allSites.length / 3));
-      } while (chosen.has(idx));
-      chosen.add(idx);
-      h[3*i]   = allSites[3*idx];
-      h[3*i+1] = allSites[3*idx+1];
-      h[3*i+2] = allSites[3*idx+2];
-      }
-      demo.setH(h, feR * p.hSize);
+      let idx; do { idx = Math.floor(rand()*(allSites.length/3)); }     demo.setH(h, feR * p.hSize);
 while (chosen.has(idx));
       chosen.add(idx);
       h[3*i]   = allSites[3*idx];
@@ -274,6 +265,7 @@ demo.updateProjection(camera, renderer);
   if(latKey !== __lastLatKey){ frameContent(basePos); __lastLatKey = latKey; }
 
   setBadge(`Base: ${basePos.length/3} | A: ${aCount} | B: ${bCount} | H: ${hN}`);
+}
 
 // badge + animate loop
 const wired = bindControls(update);
