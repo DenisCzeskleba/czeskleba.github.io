@@ -4,10 +4,13 @@ title: Lattice Visualizer
 permalink: /visualizer/
 ---
 
-<!-- OVERRIDES: make this page full-width and remove the layout's tight max-width -->
+<p style="margin: 12px 0;">
+  Interactive lattice visualization (SC/BCC/FCC) with substitutionals and interstitial hydrogen.
+</p>
+
+<!-- FORCE FULL WIDTH no matter what the layout container is called -->
 <style>
-  /* Your layout uses <main> with max-width:700px; override it here */
-  main {
+  main, .page, .wrapper, .container, .content, .page-content {
     max-width: none !important;
     width: 100% !important;
     margin: 0 !important;
@@ -16,7 +19,8 @@ permalink: /visualizer/
   }
 </style>
 
-<link rel="stylesheet" href="/visualizer/styles.css">
+<link rel="stylesheet" href="/visualizer/styles.css?v=3">
+
 <div id="app">
   <div id="panel">
     <div class="row">
@@ -49,7 +53,6 @@ permalink: /visualizer/
 
     <fieldset data-for="lattice">
       <legend>Substitutionals (A/B)</legend>
-
       <div class="row">
         <label>A fraction (black)</label>
         <input id="cFrac" type="range" min="0" max="0.05" step="0.0005" value="0">
@@ -60,7 +63,6 @@ permalink: /visualizer/
         <input id="cSize" type="range" min="0.01" max="5" step="0.01" value="1">
         <span id="cSizeVal">1.00</span>
       </div>
-
       <div class="row">
         <label>B fraction (red)</label>
         <input id="vFrac" type="range" min="0" max="0.05" step="0.0005" value="0">
@@ -109,7 +111,7 @@ permalink: /visualizer/
   <canvas id="c"></canvas>
 </div>
 
-<!-- Load Three.js (pinned version) from CDN for now -->
+<!-- load three -->
 <script type="module">
   import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
   import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
@@ -117,10 +119,10 @@ permalink: /visualizer/
   window.OrbitControls = OrbitControls;
 </script>
 
-<!-- Your app modules -->
-<script type="module" src="/visualizer/params.js"></script>
-<script type="module" src="/visualizer/controls.js"></script>
-<script type="module" src="/visualizer/lattice.js"></script>
-<script type="module" src="/visualizer/render_points.js"></script>
-<script type="module" src="/visualizer/render_demo.js"></script>
-<script type="module" src="/visualizer/main.js"></script>
+<!-- your modules with cache-busting -->
+<script type="module" src="/visualizer/params.js?v=3"></script>
+<script type="module" src="/visualizer/controls.js?v=3"></script>
+<script type="module" src="/visualizer/lattice.js?v=3"></script>
+<script type="module" src="/visualizer/render_points.js?v=3"></script>
+<script type="module" src="/visualizer/render_demo.js?v=3"></script>
+<script type="module" src="/visualizer/main.js?v=3"></script>
