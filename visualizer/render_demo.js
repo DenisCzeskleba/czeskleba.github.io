@@ -121,7 +121,7 @@ export function createDemoScene(THREE){
 
   function setSites(tetraPositions, octaPositions, siteWorldRadius){
     tetraLayer.setData(tetraPositions, siteWorldRadius, '#00aa00'); // green
-    octaLayer.setData(octaPositions,  siteWorldRadius, '#ff8800');  // orange
+    octaLayer.setData(octaPositions, siteWorldRadius, '#ff8800');  // orange
   }
 
   function setH(positions, hWorldRadius){
