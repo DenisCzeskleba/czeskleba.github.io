@@ -2,11 +2,9 @@ export function createPointsLayer(THREE){
   const geom = new THREE.BufferGeometry();
   const mat = new THREE.ShaderMaterial({
     vertexShader: `
-      attribute vec3 position;
-      uniform mat4 projectionMatrix, viewMatrix, modelMatrix;
       uniform float uSize;
       void main(){
-        vec4 mv = viewMatrix * modelMatrix * vec4(position,1.0);
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
         gl_Position = projectionMatrix * mv;
         gl_PointSize = max(1.0, uSize * (300.0 / max(1.0, -mv.z)));
       }`,
