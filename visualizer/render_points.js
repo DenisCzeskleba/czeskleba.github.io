@@ -15,24 +15,26 @@ export function createPointsLayer(THREE){
       precision mediump float;
       uniform vec3 uColor;
       uniform float uAlpha;
+uniform float uAlpha;
       void main(){
         vec2 uv = gl_PointCoord*2.0-1.0;
         float r2 = dot(uv,uv);
         if(r2>1.0) discard;
         // cheap lambert-ish shading for a spherical look
         float ndotl = clamp(0.6 + 0.4*uv.y, 0.0, 1.0);
-        gl_FragColor = vec4(uColor * (0.4 + 0.6*ndotl), 1.0);
+        gl_FragColor = vec4(uColor * (0.4 + 0.6*ndotl), uAlpha);
       }`,
     uniforms: {
       uWorldRadius: { value: 0.1 },
       uProjScale:   { value: 300.0 },
-      uColor:       { value: new THREE.Color('white') }
+      uColor:       { value: new THREE.Color('white') },
+      uAlpha:       { value: 1.0 }
     },
     transparent: true,
     depthWrite: true,
   });
   const pts = new THREE.Points(geom, mat);
-  function setData(pos, worldRadius, color){
+  function setData(pos, worldRadius, color, alpha = 1.0){
     geom.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     mat.uniforms.uWorldRadius.value = worldRadius;
     mat.uniforms.uColor.value = new THREE.Color(color);
