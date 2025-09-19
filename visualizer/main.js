@@ -78,7 +78,7 @@ function update(p){
   if (isDemo){
     const n = unitCellCounts(p.lattice);
     const fe = generateFePositions(p.lattice, n);
-    demo.setFe(fe, p.feSize);
+    demo.setBase(fe, p.feSize);
 
     const sites = interstitialOneCell(p.lattice, p.siteScope);
     demo.setSites(sites.t, sites.o);
