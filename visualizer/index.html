@@ -8,8 +8,19 @@ permalink: /visualizer/
   Interactive lattice visualization (SC/BCC/FCC) with substitutionals and interstitial hydrogen.
 </p>
 
-<link rel="stylesheet" href="/visualizer/styles.css">
+<!-- OVERRIDES: make this page full-width and remove the layout's tight max-width -->
+<style>
+  /* Your layout uses <main> with max-width:700px; override it here */
+  main {
+    max-width: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    text-align: left !important;
+  }
+</style>
 
+<link rel="stylesheet" href="/visualizer/styles.css">
 <div id="app">
   <div id="panel">
     <div class="row">
