@@ -190,7 +190,7 @@ function update(p){
   }
 
   // draw
-  \1  updateAllProj();
+  updateAllProj();
 
   setBadge(`Fe: ${basePos.length/3} | C: ${aCount} | V: ${bCount} | H: ${hN}`);
 }
