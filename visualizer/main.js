@@ -163,7 +163,8 @@ demo.updateProjection(camera, renderer);
   // lattice mode
   const target = Math.max(100, Math.min(1_000_000, p.feCount));
   const fe = generateFePositions(p.lattice, target);
-  const latKey = p.lattice + ':' + (fe.length/3|0);
+  const total = Math.floor(fe.length/3);
+  const latKey = p.lattice + ':' + ((fe.length/3)|0);
 // substitutionals: shuffle indices with rand
   const idx = Array.from({length: total}, (_,i)=>i);
   for(let i=idx.length-1;i>0;i--){ const j=Math.floor(rand()*(i+1)); const t=idx[i]; idx[i]=idx[j]; idx[j]=t; }
