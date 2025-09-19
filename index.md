@@ -9,12 +9,12 @@ A minimal landing page. For now just:
 
 <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 24px;">
   <a href="/weldcraft/" style="text-decoration: none; display: inline-block; text-align: center;">
-    <img src="/assets/WeldCraft.png" alt="WeldCraft" style="width:150px;" /><br />
+    <img src="/assets/WeldCraft.png" alt="WeldCraft" style="width:250px;" /><br />
     <strong>WeldCraft</strong>
   </a>
 
   <a href="/visualizer/" style="text-decoration: none; display: inline-block; text-align: center;">
-    <img src="/assets/Visualizer.png" alt="Lattice Visualizer" style="width:150px;" /><br />
+    <img src="/assets/Visualizer.png" alt="Lattice Visualizer" style="width:250px;" /><br />
     <strong>Lattice Visualizer</strong>
   </a>
 </div>
