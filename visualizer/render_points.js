@@ -30,7 +30,7 @@ export function createPointsLayer(THREE){
       uAlpha:       { value: 1.0 }
     },
     transparent: true,
-    depthWrite: true,
+    depthWrite: false,
   });
   const pts = new THREE.Points(geom, mat);
   function setData(pos, worldRadius, color, alpha = 1.0){
