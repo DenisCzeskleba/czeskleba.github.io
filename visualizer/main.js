@@ -9,7 +9,7 @@ import { createPointsLayer } from './render_points.js';
 import { createDemoScene } from './render_demo.js';
 
 // Lattice-correct metallic radii (in units of the lattice parameter a)
-// SC: atoms touch along edges:     2r = a       => r = 0.5 a THIS WORKS
+// SC: atoms touch along edges:     2r = a       => r = 0.5 a
 // BCC: atoms touch along body diag: 4r = √3 a   => r = √3/4 a ≈ 0.4330127 a
 // FCC: atoms touch along face diag: 4r = √2 a   => r = √2/4 a ≈ 0.3535534 a
 function baseAtomicRadius(lattice){
