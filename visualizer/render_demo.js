@@ -76,15 +76,15 @@ export function createDemoScene(THREE){
   function applySites(){
     if(!state.tetraRaw || !state.octaRaw) return;
     const { tetraOut, octaOut } = filterSites(state.tetraRaw, state.octaRaw, state.hPos);
-    tetraLayer.setData(tetraOut, state.siteRadius, '#00aa00', 0.6); // green, slightly transparent
-    octaLayer.setData(octaOut,  state.siteRadius, '#ff8800', 0.6); // orange, slightly transparent
+    tetraLayer.setData(tetraOut, state.siteRadius, '#00aa00', state.siteAlpha); // green
+    octaLayer.setData(octaOut,  state.siteRadius, '#ff8800', state.siteAlpha); // orange
   }
 
-  function setSites(tetra, octa, siteWorldRadius){
-    // store raw copies then draw with current H-occupied filtering
+  function setSites(tetra, octa, siteWorldRadius, siteAlpha){
     state.tetraRaw = tetra;
     state.octaRaw  = octa;
     state.siteRadius = siteWorldRadius;
+    state.siteAlpha = siteAlpha ?? 0.6;
     applySites();
   }
 
