@@ -37,7 +37,6 @@ camera.position.set(6,3,6);
 const controls = new OrbitControls(camera, renderer.domElement);
 
 const legendEl = document.getElementById('legend');
-const scaleEl = document.getElementById('scaleIndicator');
 const axesHud = createAxesHud();
 
 function updateLegend(mode){
@@ -89,42 +88,18 @@ function calcBounds(positions){
   return { min: [minX, minY, minZ], max: [maxX, maxY, maxZ] };
 }
 
-function updateScaleDisplay(lattice, bounds){
-  if(!scaleEl) return;
-  if(!bounds){
-    scaleEl.innerHTML = '';
-    scaleEl.setAttribute('aria-hidden', 'true');
-    return;
-  }
-  const unitNm = latticeParameterNm(lattice);
-  const lengths = [
-    { axis: 'X', cls: 'x', value: (bounds.max[0] - bounds.min[0]) * unitNm },
-    { axis: 'Y', cls: 'y', value: (bounds.max[1] - bounds.min[1]) * unitNm },
-    { axis: 'Z', cls: 'z', value: (bounds.max[2] - bounds.min[2]) * unitNm },
+function formatCubeSideLength(lattice, bounds){
+  if(!bounds) return 'n/a';
+  const spans = [
+    bounds.max[0] - bounds.min[0],
+    bounds.max[1] - bounds.min[1],
+    bounds.max[2] - bounds.min[2],
   ];
-  const maxLen = Math.max(...lengths.map(item => item.value));
-  if(!(maxLen > 0)){
-    scaleEl.innerHTML = '';
-    scaleEl.setAttribute('aria-hidden', 'true');
-    return;
-  }
-  const MAX_BAR = 140;
-  const rows = lengths.map(({ axis, cls, value }) => {
-    const barWidth = Math.max(16, (value / maxLen) * MAX_BAR);
-    return `
-      <div class="scale-row">
-        <span class="axis-label ${cls}">${axis}</span>
-        <div class="scale-column">
-          <div class="scale-bar" style="width:${barWidth.toFixed(1)}px"></div>
-          <div class="scale-range"><span>0</span><span>${value.toFixed(2)} nm</span></div>
-        </div>
-      </div>
-    `;
-  }).join('');
-  scaleEl.innerHTML = `<div class="scale-title">Extent (nm)</div>${rows}`;
-  scaleEl.setAttribute('aria-hidden', 'false');
+  const maxSpan = Math.max(...spans);
+  if(!(maxSpan > 0)) return 'n/a';
+  const lengthNm = latticeParameterNm(lattice) * maxSpan;
+  return `${lengthNm.toFixed(2)} nm`;
 }
-
 function createAxesHud(){
   const canvas = document.getElementById('axesHud');
   if(!canvas) return null;
@@ -371,7 +346,7 @@ function update(p){
   if (isDemo){
     const fe = demoUnitCellFe(p.lattice);
     const boundsDemo = calcBounds(fe);
-    updateScaleDisplay(p.lattice, boundsDemo);
+    const cubeSideText = formatCubeSideLength(p.lattice, boundsDemo);
     const feR = r0 * p.feSize;
     const interstitialR = feR * p.interstitialSize;
     const interstitialAlpha = p.interstitialAlpha;
@@ -399,7 +374,7 @@ function update(p){
     demo.setH(h, feR * p.hSize);
     demo.updateProjection(camera, renderer);
 
-    setBadge(`Base: ${(fe.length/3)|0} | A: 0 | B: 0 | H: ${hN}`);
+    setBadge(`Base: ${(fe.length/3)|0} | A: 0 | B: 0 | H: ${hN} | Cube side length: ${cubeSideText}`);
     return;
   }
 
@@ -407,7 +382,7 @@ function update(p){
   const target = Math.max(100, Math.min(1_000_000, p.feCount));
   const fe = generateFePositions(p.lattice, target);
   const boundsLattice = calcBounds(fe);
-  updateScaleDisplay(p.lattice, boundsLattice);
+  const cubeSideText = formatCubeSideLength(p.lattice, boundsLattice);
   const total = Math.floor(fe.length/3);
   const latKey = p.lattice + ':' + ((fe.length/3)|0);
 // substitutionals: shuffle indices with rand
@@ -454,7 +429,7 @@ function update(p){
   updateAllProj();
   if(latKey !== __lastLatKey){ frameContent(basePos); __lastLatKey = latKey; }
 
-  setBadge(`Base: ${basePos.length/3} | A: ${aCount} | B: ${bCount} | H: ${hN}`);
+  setBadge(`Base: ${basePos.length/3} | A: ${aCount} | B: ${bCount} | H: ${hN} | Cube side length: ${cubeSideText}`);
 }
 
 // badge + animate loop
@@ -473,5 +448,3 @@ shotBtn.addEventListener('click', ()=>{
   controls.update(); renderer.render(scene, camera); const url = renderer.domElement.toDataURL('image/png');
   const a = document.createElement('a'); a.href = url; a.download = 'lattice.png'; a.click();
 });
-
-
