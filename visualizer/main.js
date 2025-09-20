@@ -200,12 +200,13 @@ function createAxesHud(){
   function render(mainCamera){
     ensureHudSize();
     mainCamera.getWorldQuaternion(tmpQuat);
-    hudCamera.quaternion.copy(tmpQuat);
+    hudScene.quaternion.copy(tmpQuat);
     rendererHud.render(hudScene, hudCamera);
   }
 
   return { render };
 }
+
 
 
 renderer.setClearColor(0xffffff, 1);
