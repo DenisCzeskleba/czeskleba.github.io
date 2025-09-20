@@ -15,7 +15,7 @@ export function createDemoScene(THREE){
   const octaLayer  = createPointsLayer(THREE);
   const hLayer     = createPointsLayer(THREE);
 
-  group.add(baseLayer.obj, tetraLayer.obj, octaLayer.obj, hLayer.obj);
+  group.add(baseLayer.obj, hLayer.obj, tetraLayer.obj, octaLayer.obj);
 
   function setWire(bounds){ // bounds: [minX,minY,minZ,maxX,maxY,maxZ]
     wireGroup.clear();
