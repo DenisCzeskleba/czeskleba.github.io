@@ -43,8 +43,8 @@ permalink: /visualizer/
 
     <div class="row">
       <label>Base visual size</label>
-      <input id="feSize" type="range" min="0.01" max="1" step="0.01" value="1">
-      <span id="feSizeVal">1.00</span>
+      <input id="feSize" type="range" min="0.01" max="1" step="0.01" value="0.60">
+      <span id="feSizeVal">0.60</span>
     </div>
 
     <fieldset data-for="lattice">
@@ -124,6 +124,8 @@ permalink: /visualizer/
       <div class="legend-row"><span class="legend-dot" style="background:rgba(255,136,0,0.6);"></span>Octahedral site</div>
       <div class="legend-row"><span class="legend-dot" style="background:#26f;"></span>H (interstitial)</div>
     </div>
+    <div id="scaleIndicator" aria-hidden="true"></div>
+    <canvas id="axesHud" width="120" height="120" aria-hidden="true"></canvas>
   </div>
 
 </div>

@@ -2,7 +2,7 @@ export const DEFAULTS = {
   mode: 'demo',
   lattice: 'BCC',
   feCount:  100,
-  feSize: 1.0,
+  feSize: 0.6,
   cFrac: 0.0,
   cSize: 1.0,
   vFrac: 0.0,
@@ -32,3 +32,4 @@ export function clampParams(p){
     interstitialAlpha: clamp(p.interstitialAlpha, 0.05, 1.0),
   };
 }
+

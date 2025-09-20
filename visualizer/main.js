@@ -37,6 +37,9 @@ camera.position.set(6,3,6);
 const controls = new OrbitControls(camera, renderer.domElement);
 
 const legendEl = document.getElementById('legend');
+const scaleEl = document.getElementById('scaleIndicator');
+const axesHud = createAxesHud();
+
 function updateLegend(mode){
   if(!legendEl) return;
   if (mode === 'demo') {
@@ -59,6 +62,151 @@ function updateLegend(mode){
     legendEl.setAttribute('aria-hidden', 'true');
   }
 }
+
+const FE_METALLIC_RADIUS_PM = 126; // metallic radius of Fe in picometers
+
+function latticeParameterNm(lattice){
+  const key = (lattice || 'BCC').toUpperCase();
+  switch(key){
+    case 'SC': return (2 * FE_METALLIC_RADIUS_PM) / 1000;
+    case 'FCC': return (2 * Math.SQRT2 * FE_METALLIC_RADIUS_PM) / 1000;
+    case 'BCC':
+    default: return (4 * FE_METALLIC_RADIUS_PM / Math.sqrt(3)) / 1000;
+  }
+}
+
+function calcBounds(positions){
+  if(!positions || positions.length < 3) return null;
+  let minX = positions[0], maxX = positions[0];
+  let minY = positions[1], maxY = positions[1];
+  let minZ = positions[2], maxZ = positions[2];
+  for(let i=3;i<positions.length;i+=3){
+    const x = positions[i];
+    const y = positions[i+1];
+    const z = positions[i+2];
+    if(x < minX) minX = x; else if(x > maxX) maxX = x;
+    if(y < minY) minY = y; else if(y > maxY) maxY = y;
+    if(z < minZ) minZ = z; else if(z > maxZ) maxZ = z;
+  }
+  return { min: [minX, minY, minZ], max: [maxX, maxY, maxZ] };
+}
+
+function updateScaleDisplay(lattice, bounds){
+  if(!scaleEl) return;
+  if(!bounds){
+    scaleEl.innerHTML = '';
+    scaleEl.setAttribute('aria-hidden', 'true');
+    return;
+  }
+  const unitNm = latticeParameterNm(lattice);
+  const lengths = [
+    { axis: 'X', cls: 'x', value: (bounds.max[0] - bounds.min[0]) * unitNm },
+    { axis: 'Y', cls: 'y', value: (bounds.max[1] - bounds.min[1]) * unitNm },
+    { axis: 'Z', cls: 'z', value: (bounds.max[2] - bounds.min[2]) * unitNm },
+  ];
+  const maxLen = Math.max(...lengths.map(item => item.value));
+  if(!(maxLen > 0)){
+    scaleEl.innerHTML = '';
+    scaleEl.setAttribute('aria-hidden', 'true');
+    return;
+  }
+  const MAX_BAR = 140;
+  const rows = lengths.map(({ axis, cls, value }) => {
+    const barWidth = Math.max(16, (value / maxLen) * MAX_BAR);
+    return `
+      <div class="scale-row">
+        <span class="axis-label ${cls}">${axis}</span>
+        <div class="scale-column">
+          <div class="scale-bar" style="width:${barWidth.toFixed(1)}px"></div>
+          <div class="scale-range"><span>0</span><span>${value.toFixed(2)} nm</span></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  scaleEl.innerHTML = `<div class="scale-title">Extent (nm)</div>${rows}`;
+  scaleEl.setAttribute('aria-hidden', 'false');
+}
+
+function createAxesHud(){
+  const canvas = document.getElementById('axesHud');
+  if(!canvas) return null;
+  const rendererHud = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  rendererHud.setClearColor(0x000000, 0);
+
+  const hudScene = new THREE.Scene();
+  const hudCamera = new THREE.PerspectiveCamera(45, 1, 0.1, 10);
+  hudCamera.position.set(0, 0, 3);
+
+  const axisLength = 0.95;
+  const headLength = 0.28;
+  const headWidth = 0.16;
+  const origin = new THREE.Vector3(0, 0, 0);
+  const axes = [
+    { dir: new THREE.Vector3(1, 0, 0), color: 0xff6b4a, label: 'X' },
+    { dir: new THREE.Vector3(0, 1, 0), color: 0x44aa73, label: 'Y' },
+    { dir: new THREE.Vector3(0, 0, 1), color: 0x3366ff, label: 'Z' },
+  ];
+
+  axes.forEach(({ dir, color, label }) => {
+    const arrow = new THREE.ArrowHelper(dir, origin, axisLength, color, headLength, headWidth);
+    hudScene.add(arrow);
+    const sprite = makeLabelSprite(label, color);
+    sprite.position.copy(dir.clone().setLength(axisLength + headLength * 0.7));
+    hudScene.add(sprite);
+  });
+
+  hudScene.add(new THREE.AmbientLight(0xffffff, 0.9));
+
+  function makeLabelSprite(text, color){
+    const size = 128;
+    const canvas2 = document.createElement('canvas');
+    canvas2.width = canvas2.height = size;
+    const ctx = canvas2.getContext('2d');
+    ctx.clearRect(0, 0, size, size);
+    ctx.font = 'bold 90px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineWidth = 12;
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+    ctx.strokeText(text, size/2, size/2);
+    ctx.fillStyle = '#' + color.toString(16).padStart(6, '0');
+    ctx.fillText(text, size/2, size/2);
+    const texture = new THREE.CanvasTexture(canvas2);
+    const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+    const sprite = new THREE.Sprite(material);
+    sprite.scale.set(0.6, 0.6, 0.6);
+    return sprite;
+  }
+
+  const tmpQuat = new THREE.Quaternion();
+
+  function ensureHudSize(){
+    const rect = canvas.getBoundingClientRect();
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+    const width = Math.max(1, Math.round(rect.width * pixelRatio));
+    const height = Math.max(1, Math.round(rect.height * pixelRatio));
+    if(canvas.width !== width || canvas.height !== height){
+      rendererHud.setPixelRatio(pixelRatio);
+      rendererHud.setSize(width, height, false);
+    }
+    const aspect = rect.height > 0 ? rect.width / rect.height : 1;
+    hudCamera.aspect = aspect;
+    hudCamera.updateProjectionMatrix();
+  }
+
+  ensureHudSize();
+  window.addEventListener('resize', ensureHudSize, { passive: true });
+
+  function render(mainCamera){
+    ensureHudSize();
+    mainCamera.getWorldQuaternion(tmpQuat);
+    hudCamera.quaternion.copy(tmpQuat);
+    rendererHud.render(hudScene, hudCamera);
+  }
+
+  return { render };
+}
+
 
 renderer.setClearColor(0xffffff, 1);
 
@@ -223,6 +371,8 @@ function update(p){
 
   if (isDemo){
     const fe = demoUnitCellFe(p.lattice);
+    const boundsDemo = calcBounds(fe);
+    updateScaleDisplay(p.lattice, boundsDemo);
     const feR = r0 * p.feSize;
     const interstitialR = feR * p.interstitialSize;
     const interstitialAlpha = p.interstitialAlpha;
@@ -257,6 +407,8 @@ function update(p){
   // lattice mode
   const target = Math.max(100, Math.min(1_000_000, p.feCount));
   const fe = generateFePositions(p.lattice, target);
+  const boundsLattice = calcBounds(fe);
+  updateScaleDisplay(p.lattice, boundsLattice);
   const total = Math.floor(fe.length/3);
   const latKey = p.lattice + ':' + ((fe.length/3)|0);
 // substitutionals: shuffle indices with rand
@@ -311,7 +463,7 @@ const wired = bindControls(update);
 const { setBadge, push, shotBtn } = wired;
 
 // start render loop
-function animate(){ requestAnimationFrame(animate); renderer.setSize(canvas.clientWidth, canvas.clientHeight, false); renderer.render(scene, camera); }
+function animate(){ requestAnimationFrame(animate); renderer.setSize(canvas.clientWidth, canvas.clientHeight, false); renderer.render(scene, camera); if(axesHud) axesHud.render(camera); }
 animate();
 
 // do the first reflect *after* setBadge exists
@@ -322,4 +474,5 @@ shotBtn.addEventListener('click', ()=>{
   controls.update(); renderer.render(scene, camera); const url = renderer.domElement.toDataURL('image/png');
   const a = document.createElement('a'); a.href = url; a.download = 'lattice.png'; a.click();
 });
+
 
