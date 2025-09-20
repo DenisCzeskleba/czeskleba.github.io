@@ -114,18 +114,18 @@ permalink: /visualizer/
 
     <div id="badge">Fe: 0 | C: 0 | V: 0 | H: 0</div>
   </div>
+  <div id="canvasWrap">
+    <canvas id="c"></canvas>
+    <div id="legend" class="legend" aria-hidden="true">
+      <div class="legend-row"><span class="legend-dot" style="background:#888;"></span>Fe (base)</div>
+      <div class="legend-row"><span class="legend-dot" style="background:#000;"></span>Subst A (black)</div>
+      <div class="legend-row"><span class="legend-dot" style="background:#c00;"></span>Subst B (red)</div>
+      <div class="legend-row"><span class="legend-dot" style="background:rgba(0,170,0,0.6);"></span>Tetrahedral site</div>
+      <div class="legend-row"><span class="legend-dot" style="background:rgba(255,136,0,0.6);"></span>Octahedral site</div>
+      <div class="legend-row"><span class="legend-dot" style="background:#26f;"></span>H (interstitial)</div>
+    </div>
+  </div>
 
-  
-<div id="legend" class="legend">
-  <div><span class="swatch" style="background:#888;"></span>Fe (base)</div>
-  <div><span class="swatch" style="background:#000;"></span>Subst A — C (black)</div>
-  <div><span class="swatch" style="background:#c00;"></span>Subst B — V (red)</div>
-  <div><span class="swatch" style="background:rgba(0,170,0,0.6);"></span>Tetrahedral site</div>
-  <div><span class="swatch" style="background:rgba(255,136,0,0.6);"></span>Octahedral site</div>
-  <div><span class="swatch" style="background:#26f;"></span>H (interstitial)</div>
-</div>
-
-  <canvas id="c"></canvas>
 </div>
 
 <script type="importmap">
@@ -138,3 +138,4 @@ permalink: /visualizer/
 </script>
 
 <script type="module" src="/visualizer/main.js?v=fix6"></script>
+

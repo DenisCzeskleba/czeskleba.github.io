@@ -52,8 +52,12 @@ function updateLegend(mode){
     legendEl.innerHTML = rows.map(([label,color])=>
       `<div class="legend-row"><span class="legend-dot" style="background:${color}"></span>${label}</div>`
     ).join('');
+    legendEl.classList.add('legend--visible');
+    legendEl.setAttribute('aria-hidden', 'false');
+  } else {
+    legendEl.classList.remove('legend--visible');
+    legendEl.setAttribute('aria-hidden', 'true');
   }
-  legendEl.style.display = 'block';
 }
 
 renderer.setClearColor(0xffffff, 1);

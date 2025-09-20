@@ -39,7 +39,7 @@ export function createDemoScene(THREE){
     wireGroup.clear();
     if(!bounds) return;
     const [x0,y0,z0,x1,y1,z1] = bounds;
-    const mat = new THREE.LineBasicMaterial({ color: 0x222222, opacity: 0.35, transparent: true });
+    const mat = new THREE.LineBasicMaterial({ color: 0x222222, opacity: 0.8, transparent: true });
     const seg = (a,b)=> new THREE.LineSegments(
       new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...a), new THREE.Vector3(...b)]),
       mat
