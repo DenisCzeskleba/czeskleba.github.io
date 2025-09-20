@@ -39,13 +39,20 @@ const controls = new OrbitControls(camera, renderer.domElement);
 const legendEl = document.getElementById('legend');
 function updateLegend(mode){
   if(!legendEl) return;
-  const rows = [
-    ['Base',  '#888888'],
-    ['Tetra', '#00aa00'],
-    ['Octa',  '#ff8800'],
-    ['H',     '#2266ff'],
-  ];
-  legendEl.innerHTML = rows.map(([label,color])=>`<div class="legend-row"><span class="legend-dot" style="background:${color}"></span>${label}</div>`).join('');
+  if (mode === 'demo') {
+    // Demo mode: use full crystallographic phrases
+    const rows = [
+      ['Fe (base)',      '#888888'],
+      ['Subst A — C (black)', '#000'],
+      ['Subst B — V (red)',   '#c00'],
+      ['Tetrahedral site',    'rgba(0,170,0,0.6)'],
+      ['Octahedral site',     'rgba(255,136,0,0.6)'],
+      ['H (interstitial)',    '#26f'],
+    ];
+    legendEl.innerHTML = rows.map(([label,color])=>
+      `<div class="legend-row"><span class="legend-dot" style="background:${color}"></span>${label}</div>`
+    ).join('');
+  }
   legendEl.style.display = 'block';
 }
 
