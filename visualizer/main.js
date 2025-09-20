@@ -220,12 +220,15 @@ function update(p){
   if (isDemo){
     const fe = demoUnitCellFe(p.lattice);
     const feR = r0 * p.feSize;
+    const interstitialR = feR * p.interstitialSize;
+    const interstitialAlpha = p.interstitialAlpha;
+    
     window.__DEMO_LATTICE = p.lattice; demo.setBase(fe, feR);
     const demoKey = p.lattice + ':' + unitCellCounts(p.lattice);
     if(demoKey !== __lastDemoKey){ frameContent(fe); __lastDemoKey = demoKey; }
 
     const sites = interstitialOneCell(p.lattice, p.siteScope);
-    demo.setSites(sites.t, sites.o, feR * p.siteSize);
+    demo.setSites(sites.t, sites.o, interstitialR, interstitialAlpha);
 
     const allSites = new Float32Array([...sites.t, ...sites.o]);
     const hN = Math.min(p.hCount, Math.floor(allSites.length/3));
