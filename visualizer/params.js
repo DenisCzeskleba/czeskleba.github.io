@@ -28,5 +28,7 @@ export function clampParams(p){
     hCount:  Math.round(clamp(p.hCount, 0, 30)),
     hSize:   clamp(p.hSize, 0.01, 1.0),
     siteSize: clamp(p.siteSize, 0.01, 1.0),
+    interstitialSize: clamp(p.interstitialSize, 0.01, 1.0),
+    interstitialAlpha: clamp(p.interstitialAlpha, 0.05, 1.0),
   };
 }
