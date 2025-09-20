@@ -17,7 +17,25 @@ export function createDemoScene(THREE){
 
   group.add(baseLayer.obj, hLayer.obj, tetraLayer.obj, octaLayer.obj);
 
-  function setWire(bounds){ // bounds: [minX,minY,minZ,maxX,maxY,maxZ]
+  function computeBounds(positions){
+    if(!positions || positions.length < 3) return null;
+    let minX = positions[0], maxX = positions[0];
+    let minY = positions[1], maxY = positions[1];
+    let minZ = positions[2], maxZ = positions[2];
+    for(let i=3;i<positions.length;i+=3){
+      const x = positions[i];
+      const y = positions[i+1];
+      const z = positions[i+2];
+      if(x < minX) minX = x;
+      else if(x > maxX) maxX = x;
+      if(y < minY) minY = y;
+      else if(y > maxY) maxY = y;
+      if(z < minZ) minZ = z;
+      else if(z > maxZ) maxZ = z;
+    }
+    return [minX, minY, minZ, maxX, maxY, maxZ];
+  }
+  function setWire(lattice, bounds){
     wireGroup.clear();
     if(!bounds) return;
     const [x0,y0,z0,x1,y1,z1] = bounds;
@@ -26,20 +44,59 @@ export function createDemoScene(THREE){
       new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...a), new THREE.Vector3(...b)]),
       mat
     );
-    const edges = [
-      [[x0,y0,z0],[x1,y0,z0]], [[x0,y1,z0],[x1,y1,z0]],
-      [[x0,y0,z1],[x1,y0,z1]], [[x0,y1,z1],[x1,y1,z1]],
-      [[x0,y0,z0],[x0,y1,z0]], [[x1,y0,z0],[x1,y1,z0]],
-      [[x0,y0,z1],[x0,y1,z1]], [[x1,y0,z1],[x1,y1,z1]],
-      [[x0,y0,z0],[x0,y0,z1]], [[x1,y0,z0],[x1,y0,z1]],
-      [[x0,y1,z0],[x0,y1,z1]], [[x1,y1,z0],[x1,y1,z1]],
+    const corners = [
+      [x0,y0,z0],[x1,y0,z0],[x0,y1,z0],[x1,y1,z0],
+      [x0,y0,z1],[x1,y0,z1],[x0,y1,z1],[x1,y1,z1],
     ];
-    for(const [a,b] of edges) wireGroup.add(seg(a,b));
+    const addEdgeSegments = (pairs)=>{
+      for(const [i,j] of pairs){
+        wireGroup.add(seg(corners[i], corners[j]));
+      }
+    };
+
+    addEdgeSegments([
+      [0,1],[0,2],[1,3],[2,3],
+      [4,5],[4,6],[5,7],[6,7],
+      [0,4],[1,5],[2,6],[3,7],
+    ]);
+
+    const latticeKey = (lattice || '').toUpperCase();
+    if(latticeKey === 'BCC'){
+      const center = [(x0+x1)/2, (y0+y1)/2, (z0+z1)/2];
+      for(const corner of corners){
+        wireGroup.add(seg(center, corner));
+      }
+    } else if(latticeKey === 'FCC'){
+      const cx = (x0+x1)/2, cy = (y0+y1)/2, cz = (z0+z1)/2;
+      const faces = [
+        { center: [cx, cy, z0], corners: [0,1,3,2] },
+        { center: [cx, cy, z1], corners: [4,5,7,6] },
+        { center: [cx, y0, cz], corners: [0,1,5,4] },
+        { center: [cx, y1, cz], corners: [2,3,7,6] },
+        { center: [x0, cy, cz], corners: [0,2,6,4] },
+        { center: [x1, cy, cz], corners: [1,3,7,5] },
+      ];
+      for(const face of faces){
+        for(const idx of face.corners){
+          wireGroup.add(seg(face.center, corners[idx]));
+        }
+      }
+    }
   }
 
-  function setBase(positions, worldRadius, bounds){
+  function setBase(positions, worldRadius, latticeOrOptions){
     baseLayer.setData(positions, worldRadius, '#888888'); // grey
-    setWire(bounds);
+    let lattice = latticeOrOptions;
+    let bounds;
+    if(Array.isArray(latticeOrOptions) || ArrayBuffer.isView(latticeOrOptions)){
+      bounds = latticeOrOptions;
+      lattice = undefined;
+    } else if(latticeOrOptions && typeof latticeOrOptions === 'object'){
+      lattice = latticeOrOptions.lattice;
+      bounds = latticeOrOptions.bounds;
+    }
+    if(!bounds) bounds = computeBounds(positions);
+    setWire(lattice, bounds);
   }
 
   // --- Demo "replace marker when H is placed" state ---
@@ -105,3 +162,4 @@ export function createDemoScene(THREE){
 
   return { group, setBase, setSites, setH, updateProjection };
 }
+

@@ -223,7 +223,7 @@ function update(p){
     const interstitialR = feR * p.interstitialSize;
     const interstitialAlpha = p.interstitialAlpha;
     
-    window.__DEMO_LATTICE = p.lattice; demo.setBase(fe, feR);
+    window.__DEMO_LATTICE = p.lattice; demo.setBase(fe, feR, { lattice: p.lattice });
     const demoKey = p.lattice + ':' + unitCellCounts(p.lattice);
     if(demoKey !== __lastDemoKey){ frameContent(fe); __lastDemoKey = demoKey; }
 
@@ -318,3 +318,4 @@ shotBtn.addEventListener('click', ()=>{
   controls.update(); renderer.render(scene, camera); const url = renderer.domElement.toDataURL('image/png');
   const a = document.createElement('a'); a.href = url; a.download = 'lattice.png'; a.click();
 });
+
