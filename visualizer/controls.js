@@ -59,6 +59,8 @@ export function bindControls(onChange){
     ui.hSize.value   = String(p.hSize);
     ui.siteScope.value = p.siteScope;
     ui.seed.value    = String(p.seed);
+    ui.interstitialSize.value = p.interstitialSize;
+    ui.interstitialAlpha.value = p.interstitialAlpha;
 
     // live labels
     ui.feSizeVal.textContent = p.feSize.toFixed(2);
@@ -67,6 +69,8 @@ export function bindControls(onChange){
     ui.vFracVal.textContent  = p.vFrac.toFixed(3);
     ui.vSizeVal.textContent  = p.vSize.toFixed(2);
     ui.hSizeVal.textContent  = p.hSize.toFixed(2);
+    ui.interstitialSizeVal.textContent = p.interstitialSize.toFixed(2);
+    ui.interstitialAlphaVal.textContent = p.interstitialAlpha.toFixed(2);
 
     updateVisibility();
     onChange(p);
@@ -103,6 +107,9 @@ export function bindControls(onChange){
   ui.seed.addEventListener('input',     ()=>{ state.seed = parseInt(ui.seed.value||'0',10); reflect(); });
   ui.seed.addEventListener('change',    ()=>{ state.seed = parseInt(ui.seed.value||'0',10); reflect(); });
 
+  ui.interstitialSize.addEventListener('input', ()=> {state.interstitialSize = parseFloat(ui.interstitialSize.value || '0.4'); ui.interstitialSizeVal.textContent = state.interstitialSize.toFixed(2); onChange(clampParams(state)); });
+  ui.interstitialAlpha.addEventListener('input', ()=> {state.interstitialAlpha = parseFloat(ui.interstitialAlpha.value || '0.6'); ui.interstitialAlphaVal.textContent = state.interstitialAlpha.toFixed(2); onChange(clampParams(state)); });
+  
   ui.reset.addEventListener('click', ()=>{ const keepMode = state.mode;
     Object.assign(state, DEFAULTS); state.mode = keepMode;
     ui.mode.value = state.mode;
