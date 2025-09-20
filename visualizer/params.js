@@ -12,6 +12,8 @@ export const DEFAULTS = {
   siteSize: 0.4,
   siteScope: 'allFaces',
   seed:  42,
+  interstitialSize: 0.4,
+  interstitialAlpha: 0.6,
 };
 export function clampParams(p){
   const clamp = (v,lo,hi)=> Math.min(hi, Math.max(lo, v));
