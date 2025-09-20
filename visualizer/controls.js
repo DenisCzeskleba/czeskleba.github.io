@@ -22,6 +22,8 @@ export function bindControls(onChange){
     reset: $('reset'),
     shot: $('shot'),
     badge: $('badge'),
+    interstitialSize: $('interstitialSize'), interstitialSizeVal: $('interstitialSizeVal'),
+    interstitialAlpha: $('interstitialAlpha'), interstitialAlphaVal: $('interstitialAlphaVal'),
   };
 
   function updateVisibility(){
