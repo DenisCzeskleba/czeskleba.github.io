@@ -46,8 +46,6 @@ function updateLegend(mode){
     // Demo mode: use full crystallographic phrases
     const rows = [
       ['Base (Fe)',      '#888888'],
-      ['Subst A', '#000'],
-      ['Subst B',   '#c00'],
       ['Tetrahedral site',    'rgba(0,170,0,0.6)'],
       ['Octahedral site',     'rgba(255,136,0,0.6)'],
       ['Interstitial (H)',    '#26f'],
