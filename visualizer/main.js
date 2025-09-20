@@ -180,7 +180,30 @@ function interstitialOneCell(lattice, scope){
     }
     return out;
   };
-  return { t:new Float32Array(collect(baseT)), o:new Float32Array(collect(baseO)) };
+
+  // --- PATCH: Deduplicate output positions to avoid stacking ---
+  function dedupeSites(arr, eps=1e-6) {
+    const keys = new Set();
+    const out = [];
+    for (let i=0; i<arr.length; i+=3) {
+      const x = Math.round(arr[i]   / eps);
+      const y = Math.round(arr[i+1] / eps);
+      const z = Math.round(arr[i+2] / eps);
+      const k = `${x},${y},${z}`;
+      if (!keys.has(k)) {
+        keys.add(k);
+        out.push(arr[i], arr[i+1], arr[i+2]);
+      }
+    }
+    return new Float32Array(out);
+  }
+
+  const rawT = new Float32Array(collect(baseT));
+  const rawO = new Float32Array(collect(baseO));
+  return {
+    t: dedupeSites(rawT),
+    o: dedupeSites(rawO),
+  };
 }
 
 // main update
