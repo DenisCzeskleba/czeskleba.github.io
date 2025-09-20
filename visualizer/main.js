@@ -45,8 +45,8 @@ function updateLegend(mode){
     // Demo mode: use full crystallographic phrases
     const rows = [
       ['Base (Fe)',      '#888888'],
-      ['Tetrahedral site',    'rgba(0,170,0,0.6)'],
-      ['Octahedral site',     'rgba(255,136,0,0.6)'],
+      ['Tetrahedral site',    '#00aa0099'],
+      ['Octahedral site',     '#ff8800ff'],
       ['Interstitial (H)',    '#26f'],
     ];
     legendEl.innerHTML = rows.map(([label,color])=>

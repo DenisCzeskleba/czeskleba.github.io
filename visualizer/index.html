@@ -1,141 +1,309 @@
 ---
+
 layout: default
+
 title: Lattice Visualizer
+
 permalink: /visualizer/
+
 ---
 
+
+
 <!-- Make this page full width under your site layout -->
+
 <style>
+
   main, .page, .wrapper, .container, .content, .page-content {
+
     max-width: none !important;
+
     width: 100% !important;
+
     margin: 0 !important;
+
     padding: 0 !important;
+
     text-align: left !important;
+
   }
+
 </style>
+
+
 
 <link rel="stylesheet" href="/visualizer/styles.css?v=fix3">
 
+
+
 <div id="app">
+
   <div id="panel">
-    <div class="row">
-      <label>Mode</label>
-      <select id="mode">
-        <option value="demo">Demo</option>
-        <option value="lattice" selected>Lattice</option>
-      </select>
-    </div>
 
     <div class="row">
-      <label>Lattice</label>
-      <select id="lattice">
-        <option value="SC">SC</option>
-        <option value="BCC" selected>BCC</option>
-        <option value="FCC">FCC</option>
+
+      <label>Mode</label>
+
+      <select id="mode" title="Switch between the guided demo and the full lattice builder.">
+
+        <option value="demo">Demo</option>
+
+        <option value="lattice" selected>Lattice</option>
+
       </select>
+
     </div>
+
+
+
+    <div class="row">
+
+      <label>Lattice</label>
+
+      <select id="lattice" title="Choose the crystal structure you want to explore.">
+
+        <option value="SC">SC</option>
+
+        <option value="BCC" selected>BCC</option>
+
+        <option value="FCC">FCC</option>
+
+      </select>
+
+    </div>
+
+
 
     <div class="row" data-for="lattice">
+
       <label>Target base atoms</label>
-      <input id="feCount" type="number" min="100" max="1000000" step="100" value="100">
+
+      <input id="feCount" type="number" min="100" max="1000000" step="100" value="100" title="Approximate number of base Fe atoms to generate in lattice mode.">
+
     </div>
 
+
+
     <div class="row">
+
       <label>Base visual size</label>
-      <input id="feSize" type="range" min="0.01" max="1" step="0.01" value="0.60">
+
+      <input id="feSize" type="range" min="0.01" max="1" step="0.01" value="0.60" title="Scale factor for the radius of base Fe atoms.">
+
       <span id="feSizeVal">0.60</span>
+
     </div>
+
+
 
     <fieldset data-for="lattice">
+
       <legend>Substitutionals (A/B)</legend>
+
       <div class="row">
+
         <label>A fraction (black)</label>
-        <input id="cFrac" type="range" min="0" max="0.05" step="0.0005" value="0">
+
+        <input id="cFrac" type="range" min="0" max="0.05" step="0.0005" value="0" title="Fraction of base atoms replaced by A species (black points).">
+
         <span id="cFracVal">0.000</span>
+
       </div>
+
       <div class="row">
+
         <label>A size</label>
-        <input id="cSize" type="range" min="0.01" max="5" step="0.01" value="1">
+
+        <input id="cSize" type="range" min="0.01" max="5" step="0.01" value="1" title="Visual size multiplier for A substitutional atoms.">
+
         <span id="cSizeVal">1.00</span>
+
       </div>
+
       <div class="row">
+
         <label>B fraction (red)</label>
-        <input id="vFrac" type="range" min="0" max="0.05" step="0.0005" value="0">
+
+        <input id="vFrac" type="range" min="0" max="0.05" step="0.0005" value="0" title="Fraction of base atoms replaced by B species (red points).">
+
         <span id="vFracVal">0.000</span>
+
       </div>
-           
+
+
+
       <div class="row">
+
         <label>B size</label>
-        <input id="vSize" type="range" min="0.01" max="5" step="0.01" value="1">
+
+        <input id="vSize" type="range" min="0.01" max="5" step="0.01" value="1" title="Visual size multiplier for B substitutional atoms.">
+
         <span id="vSizeVal">1.00</span>
+
       </div>
+
     </fieldset>
+
+
 
     <fieldset>
+
       <legend>Interstitial (Blue)</legend>
+
       <div class="row">
+
         <label>H count</label>
-        <input id="hCount" type="number" min="0" max="30" step="1" value="0">
+
+        <input id="hCount" type="number" min="0" max="30" step="1" value="0" title="Number of interstitial H atoms (blue) to distribute.">
+
       </div>
+
       <div class="row">
+
         <label>H size</label>
-        <input id="hSize" type="range" min="0.01" max="1" step="0.01" value="0.5">
+
+        <input id="hSize" type="range" min="0.01" max="1" step="0.01" value="0.5" title="Visual radius multiplier for interstitial H atoms.">
+
         <span id="hSizeVal">0.50</span>
+
       </div>
+
       <div class="row" data-for="demo">
+
         <label>Show interstitial sites</label>
-        <select id="siteScope">
+
+        <select id="siteScope" title="Choose which interstitial sites appear in demo mode.">
+
           <option value="canonical" selected>Canonical</option>
+
           <option value="allFaces">All faces</option>
+
         </select>
+
       </div>
+
       <div class="row" data-for="demo">
+
         <label>Interstitial site size</label>
-        <input id="interstitialSize" type="range" min="0.01" max="1.0" step="0.01" value="0.40">
+
+        <input id="interstitialSize" type="range" min="0.01" max="1.0" step="0.01" value="0.40" title="Size of interstitial site markers in demo mode.">
+
         <span id="interstitialSizeVal">0.40</span>
+
       </div>
+
       <div class="row" data-for="demo">
+
         <label>Interstitial site alpha</label>
-        <input id="interstitialAlpha" type="range" min="0.05" max="1.0" step="0.01" value="0.6">
+
+        <input id="interstitialAlpha" type="range" min="0.05" max="1.0" step="0.01" value="0.6" title="Opacity of interstitial site markers in demo mode.">
+
         <span id="interstitialAlphaVal">0.60</span>
+
       </div>
+
     </fieldset>
 
+
+
     <div class="row">
+
       <label>Random seed</label>
-      <input id="seed" type="number" step="1" value="42">
+
+      <input id="seed" type="number" step="1" value="42" title="Random seed for reproducible atom placement.">
+
     </div>
+
+
 
     <div class="row">
-      <button id="reset">Reset</button>
-      <button id="shot">Screenshot</button>
+
+      <button id="reset" title="Reset all controls to their defaults (keeps current mode).">Reset</button>
+
+      <button id="shot" title="Capture the current viewport as a PNG image.">Screenshot</button>
+
     </div>
 
-    <div id="badge">Fe: 0 | C: 0 | V: 0 | H: 0</div>
+
+
+    <div id="badge">Base: 0 | A: 0 | B: 0 | H: 0 | Cube side length: n/a</div>
+
+
+
+    <details id="infoBox">
+
+      <summary>About the lattice visualizer &amp; downloads</summary>
+
+      <div class="info-body">
+
+        <p>This began as a quick PhD helper to show how tiny 1&nbsp;ppm hydrogen really is inside iron. The lattice mode lets you spawn up to a million Fe atoms so you can feel how impossible it is to spot that single H hiding among them.</p>
+
+        <p>The standalone Python build handles those heavy point clouds with ease, adds a small challenge to hunt down that lone hydrogen atom, and stays flexible thanks to a simple YAML config. The web version sticks around for fast demos of SC, BCC, and FCC&mdash;perfect for talks or a quick phone demo.</p>
+
+        <p>For additional functionality, grab the desktop build or the Python bundle below and tweak away. Everything is open source.</p>
+
+        <div class="info-buttons">
+
+          <a id="downloadExe" class="btn info-btn" href="#" title="Download the packaged Windows desktop build (EXE)." download role="button">Download Windows .exe</a>
+
+          <a id="downloadScripts" class="btn info-btn" href="#" title="Download the Python source bundle (script + YAML)." download role="button">Download Python scripts</a>
+
+        </div>
+
+        <p class="info-footnote">Prefer GitHub? Grab everything there instead: <a id="githubRepoLink" href="https://github.com/DenisCzeskleba/lattice-visualizer" title="Open the GitHub repository with source files and releases." target="_blank" rel="noopener">github.com/DenisCzeskleba/lattice-visualizer</a>.</p>
+
+      </div>
+
+    </details>
+
   </div>
   <div id="canvasWrap">
+
     <canvas id="c"></canvas>
+
     <div id="legend" class="legend" aria-hidden="true">
+
       <div class="legend-row"><span class="legend-dot" style="background:#888;"></span>Fe (base)</div>
+
       <div class="legend-row"><span class="legend-dot" style="background:#000;"></span>Subst A (black)</div>
+
       <div class="legend-row"><span class="legend-dot" style="background:#c00;"></span>Subst B (red)</div>
+
       <div class="legend-row"><span class="legend-dot" style="background:rgba(0,170,0,0.6);"></span>Tetrahedral site</div>
+
       <div class="legend-row"><span class="legend-dot" style="background:rgba(255,136,0,0.6);"></span>Octahedral site</div>
+
       <div class="legend-row"><span class="legend-dot" style="background:#26f;"></span>H (interstitial)</div>
+
     </div>
+
     <canvas id="axesHud" width="100" height="100" aria-hidden="true"></canvas>
+
   </div>
+
+
 
 </div>
 
+
+
 <script type="importmap">
+
 {
+
   "imports": {
+
     "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+
     "three/examples/jsm/controls/OrbitControls.js": "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js"
+
   }
+
 }
+
 </script>
 
+
+
 <script type="module" src="/visualizer/main.js?v=fix6"></script>
+
