@@ -131,9 +131,7 @@ button:focus-visible, .btn:focus-visible {
   pointer-events: none;
   box-shadow: 0 18px 38px -20px rgba(15,23,42,0.65);
   backdrop-filter: blur(5px);
-  display: flex;
-  flex-direction: column;
-  gap: clamp(6px, 0.8vw, 12px);
+  display: flex;\r\n  flex-direction: column;\r\n  width: fit-content;\r\n  max-width: clamp(220px, 24vw, 320px);\r\n  gap: clamp(6px, 0.8vw, 12px);
 }
 
 .scale-title {
@@ -205,7 +203,7 @@ button:focus-visible, .btn:focus-visible {
   padding-bottom: 12px;
   box-sizing: border-box;
 }
-#canvasWrap { position: relative; width:100%; min-height: clamp(520px, 100vh, 100vh); height:100%; overflow:hidden; padding: 0 clamp(18px, 2vw, 32px) clamp(22px, 3vh, 48px) clamp(18px, 2vw, 32px); box-sizing: border-box; }
+#canvasWrap { position: relative; width:100%; height: calc(100vh - 64px); min-height: 520px; overflow:hidden; padding: clamp(12px, 1.4vw, 24px); box-sizing: border-box; }
 #controls input[type="range"]{ width:100%; box-sizing:border-box; }
 #controls input[type="number"], #controls select { max-width:100%; box-sizing:border-box; }
 #controls .val { margin-left:8px; white-space:nowrap; }
@@ -214,6 +212,9 @@ button:focus-visible, .btn:focus-visible {
 
 /* Demo-only rows toggle (default visible; JS can hide/show) */
 .row.demo-only { display:flex; }
+
+
+
 
 
 
