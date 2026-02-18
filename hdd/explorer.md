@@ -48,7 +48,7 @@ During early development we can drop a mock dataset at `assets/sample-data/hydro
 <section data-state="loading">
   <div id="hydrogen-explorer-app" data-endpoint="/data/hydrogen-diffusivity-groups.json"></div>
 </section>
-<script src="/assets/js/hydrogen-explorer.js" defer></script>
+<script src="/hdd/hdd-explorer.js" defer></script>
 ```
 
 The script will hydrate this container once we implement the evaluator or wire in precomputed samples.

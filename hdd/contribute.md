@@ -40,7 +40,7 @@ Help expand the hydrogen diffusivity dataset by submitting peer-reviewed, open-a
 
   <button type="submit">Submit for Review</button>
 </form>
-<script src="/assets/js/hydrogen-contribution.js" defer></script>
+<script src="/hdd/hdd-contribution.js" defer></script>
 ```
 
 We will wire this form to the real email/webhook endpoint once stakeholders confirm the preferred review pipeline.

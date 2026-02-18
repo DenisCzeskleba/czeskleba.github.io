@@ -19,9 +19,7 @@ A minimal landing page. For now just:
   </a>
 
   <a href="/hydrogen/" style="text-decoration: none; display: inline-block; text-align: center;">
-    <div style="width:250px;height:250px;border:2px dashed #aaa;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;">
-      <span style="padding:0 12px;">Hydrogen Diffusion Hub<br /><small>(in development)</small></span>
-    </div>
-    <strong>Hydrogen Diffusivity Explorer</strong>
+    <img src="/assets/hdd.png" alt="Hydrogen Diffusion Database" style="width:250px;" /><br />
+    <strong>Hydrogen Diffusion Database</strong>
   </a>
 </div>
