@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Contribute Hydrogen Data
-permalink: /hydrogen/contribute/
+permalink: /hydrogen-diffusion-database/contribute/
 ---
 
 # Contribution Form

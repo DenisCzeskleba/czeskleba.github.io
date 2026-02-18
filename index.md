@@ -18,7 +18,7 @@ Have a look at the following:
     <strong>Lattice Visualizer</strong>
   </a>
 
-  <a href="/hydrogen/" style="text-decoration: none; display: inline-block; text-align: center;">
+  <a href="/hydrogen-diffusion-database/" style="text-decoration: none; display: inline-block; text-align: center;">
     <img src="/assets/hdd.png" alt="Hydrogen Diffusion Database" style="width:250px;" /><br />
     <strong>Hydrogen Diffusion Database</strong>
   </a>

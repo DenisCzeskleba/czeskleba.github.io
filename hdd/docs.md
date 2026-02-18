@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Hydrogen Diffusion Docs
-permalink: /hydrogen/docs/
+permalink: /hydrogen-diffusion-database/docs/
 ---
 
 # Documentation & FAQ

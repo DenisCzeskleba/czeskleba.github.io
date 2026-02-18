@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Hydrogen Diffusion Hub
-permalink: /hydrogen/
+permalink: /hydrogen-diffusion-database/
 ---
 
 # Hydrogen Diffusion Data Hub
@@ -10,9 +10,9 @@ Welcome to the future home of the hydrogen diffusivity browser for czeskleba.com
 
 ## Quick Navigation
 
-- [Data Explorer](/hydrogen/explorer/) – filter datasets and render plots with Kelvin/°C toggles, envelope fills, numbered legends, and download buttons.
-- [Contribute Data](/hydrogen/contribute/) – share new publications or models for manual vetting.
-- [Docs & FAQ](/hydrogen/docs/) – learn how we validate sources, understand the sampling workflow, and prep submissions.
+- [Data Explorer](/hydrogen-diffusion-database/explorer/) – filter datasets and render plots with Kelvin/°C toggles, envelope fills, numbered legends, and download buttons.
+- [Contribute Data](/hydrogen-diffusion-database/contribute/) – share new publications or models for manual vetting.
+- [Docs & FAQ](/hydrogen-diffusion-database/docs/) – learn how we validate sources, understand the sampling workflow, and prep submissions.
 
 ## Roadmap Highlights
 

@@ -1,0 +1,328 @@
+:root {
+  --hdd-panel-width: 320px;
+}
+
+.hdd-explorer-shell {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+  width: 100%;
+  margin: 2rem 0;
+}
+
+.hdd-panel {
+  flex: 0 0 var(--hdd-panel-width);
+  background: #fff;
+  border: 1px solid #d8d8d8;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 96px;
+}
+
+body.dark .hdd-panel {
+  background: #181818;
+  border-color: #303030;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.45);
+}
+
+.hdd-panel h3 {
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+}
+
+.hdd-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.hdd-control label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.hdd-control small {
+  display: block;
+  margin-top: 0.2rem;
+  color: #666;
+  font-weight: 400;
+}
+
+body.dark .hdd-control small {
+  color: #aaa;
+}
+
+.hdd-control input[type="search"],
+.hdd-control input[type="number"],
+.hdd-control select,
+.hdd-control textarea {
+  width: 100%;
+  padding: 0.65rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid #cfcfcf;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+  background: #fff;
+  color: inherit;
+}
+
+body.dark .hdd-control input[type="search"],
+body.dark .hdd-control input[type="number"],
+body.dark .hdd-control select {
+  background: #1f1f1f;
+  border-color: #3a3a3a;
+  color: #eee;
+}
+
+.hdd-toggle-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.hdd-toggle-group input[type="number"] {
+  flex: 1;
+  border-radius: 8px;
+  border: 1px solid #cfcfcf;
+  padding: 0.45rem 0.5rem;
+  font-size: 0.95rem;
+}
+
+body.dark .hdd-toggle-group input[type="number"] {
+  background: #1f1f1f;
+  border-color: #3a3a3a;
+  color: #eee;
+}
+
+.hdd-toggle-group button {
+  flex: 1;
+  border-radius: 8px;
+  border: 1px solid #cfcfcf;
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.hdd-toggle-group button.is-active {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+body.dark .hdd-toggle-group button.is-active {
+  background: #fafafa;
+  color: #111;
+  border-color: #fafafa;
+}
+
+.hdd-checkbox {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  font-weight: 500;
+}
+
+.hdd-group-list {
+  border: 1px solid #cfcfcf;
+  border-radius: 12px;
+  padding: 0.5rem;
+  max-height: 260px;
+  overflow-y: auto;
+  background: #fafafa;
+}
+
+body.dark .hdd-group-list {
+  background: #111;
+  border-color: #3a3a3a;
+}
+
+.hdd-group-option {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.6rem;
+  align-items: flex-start;
+  padding: 0.35rem 0.45rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+}
+
+.hdd-group-option:hover {
+  border-color: #999;
+}
+
+.hdd-group-option input {
+  margin-right: 0.45rem;
+}
+
+.hdd-group-option strong {
+  font-size: 0.95rem;
+}
+
+.hdd-group-meta {
+  font-size: 0.82rem;
+  color: #666;
+}
+
+.hdd-group-option input[type="checkbox"] {
+  margin-top: 0.35rem;
+}
+
+body.dark .hdd-group-meta {
+  color: #aaa;
+}
+
+.hdd-data-status.is-warn {
+  color: #b35d00;
+}
+
+.hdd-data-status.is-error {
+  color: #b00020;
+}
+
+.hdd-data-status.is-ok {
+  color: #2e7d32;
+}
+
+body.dark .hdd-data-status.is-warn {
+  color: #ffb74d;
+}
+
+body.dark .hdd-data-status.is-error {
+  color: #ff8a80;
+}
+
+body.dark .hdd-data-status.is-ok {
+  color: #9ccc65;
+}
+
+.hdd-panel button[type="button"],
+.hdd-downloads button {
+  border: none;
+  border-radius: 999px;
+  padding: 0.65rem 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: #111;
+  color: #fff;
+  transition: opacity 0.2s ease;
+}
+
+.hdd-panel button[type="button"]:hover,
+.hdd-downloads button:hover {
+  opacity: 0.8;
+}
+
+body.dark .hdd-panel button[type="button"],
+body.dark .hdd-downloads button {
+  background: #eee;
+  color: #111;
+}
+
+.hdd-stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.hdd-stage-card {
+  border: 1px solid #d8d8d8;
+  border-radius: 16px;
+  padding: 1.5rem;
+  background: #fff;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+}
+
+body.dark .hdd-stage-card {
+  background: #151515;
+  border-color: #2a2a2a;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+}
+
+.hdd-stage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.hdd-data-status {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+body.dark .hdd-data-status {
+  color: #bbb;
+}
+
+.hdd-chart {
+  min-height: 360px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border: 2px dashed #cfcfcf;
+  border-radius: 12px;
+  padding: 1.5rem;
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(17, 17, 17, 0.02),
+    rgba(17, 17, 17, 0.02) 20px,
+    rgba(17, 17, 17, 0.05) 20px,
+    rgba(17, 17, 17, 0.05) 40px
+  );
+}
+
+body.dark .hdd-chart {
+  border-color: #3a3a3a;
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.05),
+    rgba(255, 255, 255, 0.05) 20px,
+    rgba(255, 255, 255, 0.03) 20px,
+    rgba(255, 255, 255, 0.03) 40px
+  );
+}
+
+.hdd-chart ul {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0;
+}
+
+.hdd-downloads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.hdd-summary {
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.hdd-summary ul {
+  padding-left: 1rem;
+  margin: 0.5rem 0 0;
+}
+
+.hdd-empty {
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+  color: #777;
+}
+
+@media (max-width: 960px) {
+  .hdd-explorer-shell {
+    flex-direction: column;
+  }
+
+  .hdd-panel {
+    width: 100%;
+    position: static;
+  }
+}
