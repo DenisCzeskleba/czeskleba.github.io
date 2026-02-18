@@ -1,3 +1,4 @@
+---
 layout: default
 title: Hydrogen Diffusion Database
 permalink: /hydrogen-diffusion-database/
@@ -23,7 +24,7 @@ Browse curated diffusivity datasets, mirror the `plot_diffusivity_groups.py` plo
           <label>Temperature units</label>
           <div class="hdd-toggle-group" role="group" aria-label="Temperature units">
             <button type="button" data-unit="K" class="is-active">Kelvin</button>
-            <button type="button" data-unit="C">°C</button>
+            <button type="button" data-unit="C">&deg;C</button>
           </div>
           <small>Mirrors the `temperature_units` toggle in `plotting.config.json`.</small>
         </div>
@@ -44,7 +45,7 @@ Browse curated diffusivity datasets, mirror the `plot_diffusivity_groups.py` plo
             <input type="number" id="hdd-temp-min" placeholder="min" min="0" />
             <input type="number" id="hdd-temp-max" placeholder="max" min="0" />
           </div>
-          <small>Optional clamp; leaving blank uses each model’s `[Tmin, Tmax]`.</small>
+          <small>Optional clamp; leaving blank uses each model's `[Tmin, Tmax]`.</small>
         </div>
 
         <div class="hdd-control">
@@ -67,7 +68,7 @@ Browse curated diffusivity datasets, mirror the `plot_diffusivity_groups.py` plo
         <div id="hdd-chart" class="hdd-chart" role="img" aria-live="polite">
           <div>
             <p>Select one or more groups to preview logarithmic diffusivity curves.</p>
-            <p style="font-size:0.9rem;color:#777;">Arrhenius / power samples will render here with Kelvin/°C toggles and envelope shading.</p>
+            <p style="font-size:0.9rem;color:#777;">Arrhenius / power samples will render here with Kelvin/&deg;C toggles and envelope shading.</p>
           </div>
         </div>
         <div class="hdd-downloads">
