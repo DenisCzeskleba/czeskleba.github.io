@@ -5,7 +5,7 @@ title: Home
 
 # Welcome!
 
-A minimal landing page. For now just:
+Have a look at the following:
 
 <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 24px;">
   <a href="/weldcraft/" style="text-decoration: none; display: inline-block; text-align: center;">
