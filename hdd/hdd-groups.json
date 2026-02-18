@@ -1,0 +1,385 @@
+{
+  "schema_version": "1.0.0",
+  "generated_at": "2026-02-18T16:25:01.463531+00:00",
+  "entries_dir": "F:\\100_WebSite and Hosted Projects\\hydrogen-diffusion-database\\data\\entries",
+  "group_count": 3,
+  "entry_count": 11,
+  "groups": [
+    {
+      "group_id": "boellinghaus1995_max",
+      "source_id": "boellinghaus_1995_scatterband",
+      "label": "Max Envelope (boellinghaus1995_max)",
+      "entry_ids": [
+        "boellinghaus1995_max_20_200C",
+        "boellinghaus1995_max_200_740C_power",
+        "boellinghaus1995_max_740_1450C"
+      ],
+      "temperature_range_K": [
+        293.15,
+        1723.15
+      ],
+      "segments": [
+        {
+          "entry_id": "boellinghaus1995_max_20_200C",
+          "model": {
+            "type": "arrhenius",
+            "D0_mm2_per_s": 0.076,
+            "Q_J_per_mol": 9562,
+            "R_J_per_molK": 8.315
+          },
+          "temperature_validity_K": [
+            293.15,
+            473.15
+          ],
+          "reported_as": "effective",
+          "material": {
+            "designation": "structural_steel_band",
+            "family": "carbon_steel"
+          },
+          "conditions": {
+            "measurement_method": "simulation_assumption"
+          },
+          "metadata": {
+            "band": "max_envelope",
+            "temperature_range_C": [
+              20,
+              200
+            ]
+          }
+        },
+        {
+          "entry_id": "boellinghaus1995_max_200_740C_power",
+          "model": {
+            "type": "power",
+            "A_mm2_per_s": 8.1056e-06,
+            "n": 1.2528,
+            "input": "theta_C"
+          },
+          "temperature_validity_K": [
+            473.15,
+            1013.15
+          ],
+          "reported_as": "effective",
+          "material": {
+            "designation": "structural_steel_band",
+            "family": "carbon_steel"
+          },
+          "conditions": {
+            "measurement_method": "simulation_assumption"
+          },
+          "metadata": {
+            "band": "max_envelope",
+            "temperature_range_C": [
+              200,
+              740
+            ]
+          }
+        },
+        {
+          "entry_id": "boellinghaus1995_max_740_1450C",
+          "model": {
+            "type": "arrhenius",
+            "D0_mm2_per_s": 1.0691,
+            "Q_J_per_mol": 41624,
+            "R_J_per_molK": 8.315
+          },
+          "temperature_validity_K": [
+            1013.15,
+            1723.15
+          ],
+          "reported_as": "effective",
+          "material": {
+            "designation": "structural_steel_band",
+            "family": "carbon_steel"
+          },
+          "conditions": {
+            "measurement_method": "simulation_assumption"
+          },
+          "metadata": {
+            "band": "max_envelope",
+            "temperature_range_C": [
+              740,
+              1450
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "group_id": "boellinghaus1995_mean",
+      "source_id": "boellinghaus_1995_scatterband",
+      "label": "Mean Curve (boellinghaus1995_mean)",
+      "entry_ids": [
+        "boellinghaus1995_mean_20_200C",
+        "boellinghaus1995_mean_200_740C",
+        "boellinghaus1995_mean_740_1450C",
+        "boellinghaus1995_mean_1450_1540C",
+        "boellinghaus1995_mean_1540_2000C"
+      ],
+      "temperature_range_K": [
+        293.15,
+        2273.15
+      ],
+      "segments": [
+        {
+          "entry_id": "boellinghaus1995_mean_20_200C",
+          "model": {
+            "type": "arrhenius",
+            "D0_mm2_per_s": 0.07465,
+            "Q_J_per_mol": 11072,
+            "R_J_per_molK": 8.315
+          },
+          "temperature_validity_K": [
+            293.15,
+            473.15
+          ],
+          "reported_as": "effective",
+          "material": {
+            "designation": "structural_steel_band",
+            "family": "carbon_steel"
+          },
+          "conditions": {
+            "measurement_method": "simulation_assumption"
+          },
+          "metadata": {
+            "band": "mean_curve",
+            "temperature_range_C": [
+              20,
+              200
+            ]
+          }
+        },
+        {
+          "entry_id": "boellinghaus1995_mean_200_740C",
+          "model": {
+            "type": "arrhenius",
+            "D0_mm2_per_s": 0.1104,
+            "Q_J_per_mol": 12437,
+            "R_J_per_molK": 8.315
+          },
+          "temperature_validity_K": [
+            473.15,
+            1013.15
+          ],
+          "reported_as": "effective",
+          "material": {
+            "designation": "structural_steel_band",
+            "family": "carbon_steel"
+          },
+          "conditions": {
+            "measurement_method": "simulation_assumption"
+          },
+          "metadata": {
+            "band": "mean_curve",
+            "temperature_range_C": [
+              200,
+              740
+            ]
+          }
+        },
+        {
+          "entry_id": "boellinghaus1995_mean_740_1450C",
+          "model": {
+            "type": "arrhenius",
+            "D0_mm2_per_s": 0.8753,
+            "Q_J_per_mol": 46396,
+            "R_J_per_molK": 8.315
+          },
+          "temperature_validity_K": [
+            1013.15,
+            1723.15
+          ],
+          "reported_as": "effective",
+          "material": {
+            "designation": "structural_steel_band",
+            "family": "carbon_steel"
+          },
+          "conditions": {
+            "measurement_method": "simulation_assumption"
+          },
+          "metadata": {
+            "band": "mean_curve",
+            "temperature_range_C": [
+              740,
+              1450
+            ]
+          }
+        },
+        {
+          "entry_id": "boellinghaus1995_mean_1450_1540C",
+          "model": {
+            "type": "arrhenius",
+            "D0_mm2_per_s": 1.2104,
+            "Q_J_per_mol": 37785,
+            "R_J_per_molK": 8.315
+          },
+          "temperature_validity_K": [
+            1723.15,
+            1813.15
+          ],
+          "reported_as": "effective",
+          "material": {
+            "designation": "structural_steel_band",
+            "family": "carbon_steel"
+          },
+          "conditions": {
+            "measurement_method": "simulation_assumption"
+          },
+          "metadata": {
+            "band": "mean_curve",
+            "temperature_range_C": [
+              1450,
+              1540
+            ]
+          }
+        },
+        {
+          "entry_id": "boellinghaus1995_mean_1540_2000C",
+          "model": {
+            "type": "arrhenius",
+            "D0_mm2_per_s": 1.1578,
+            "Q_J_per_mol": 37007,
+            "R_J_per_molK": 8.315
+          },
+          "temperature_validity_K": [
+            1813.15,
+            2273.15
+          ],
+          "reported_as": "effective",
+          "material": {
+            "designation": "structural_steel_band",
+            "family": "carbon_steel"
+          },
+          "conditions": {
+            "measurement_method": "simulation_assumption"
+          },
+          "metadata": {
+            "band": "mean_curve",
+            "temperature_range_C": [
+              1540,
+              2000
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "group_id": "boellinghaus1995_min",
+      "source_id": "boellinghaus_1995_scatterband",
+      "label": "Min Envelope (boellinghaus1995_min)",
+      "entry_ids": [
+        "boellinghaus1995_min_20_200C_power",
+        "boellinghaus1995_min_200_740C_power",
+        "boellinghaus1995_min_740_1450C"
+      ],
+      "temperature_range_K": [
+        293.15,
+        1723.15
+      ],
+      "segments": [
+        {
+          "entry_id": "boellinghaus1995_min_20_200C_power",
+          "model": {
+            "type": "power",
+            "A_mm2_per_s": 8.7615e-09,
+            "n": 2.2285,
+            "input": "theta_C"
+          },
+          "temperature_validity_K": [
+            293.15,
+            473.15
+          ],
+          "reported_as": "effective",
+          "material": {
+            "designation": "structural_steel_band",
+            "family": "carbon_steel"
+          },
+          "conditions": {
+            "measurement_method": "simulation_assumption"
+          },
+          "metadata": {
+            "band": "min_envelope",
+            "temperature_range_C": [
+              20,
+              200
+            ]
+          }
+        },
+        {
+          "entry_id": "boellinghaus1995_min_200_740C_power",
+          "model": {
+            "type": "power",
+            "A_mm2_per_s": 8.9963e-09,
+            "n": 2.248,
+            "input": "theta_C"
+          },
+          "temperature_validity_K": [
+            473.15,
+            1013.15
+          ],
+          "reported_as": "effective",
+          "material": {
+            "designation": "structural_steel_band",
+            "family": "carbon_steel"
+          },
+          "conditions": {
+            "measurement_method": "simulation_assumption"
+          },
+          "metadata": {
+            "band": "min_envelope",
+            "temperature_range_C": [
+              200,
+              740
+            ]
+          }
+        },
+        {
+          "entry_id": "boellinghaus1995_min_740_1450C",
+          "model": {
+            "type": "arrhenius",
+            "D0_mm2_per_s": 0.6736,
+            "Q_J_per_mol": 45086,
+            "R_J_per_molK": 8.315
+          },
+          "temperature_validity_K": [
+            1013.15,
+            1723.15
+          ],
+          "reported_as": "effective",
+          "material": {
+            "designation": "structural_steel_band",
+            "family": "carbon_steel"
+          },
+          "conditions": {
+            "measurement_method": "simulation_assumption"
+          },
+          "metadata": {
+            "band": "min_envelope",
+            "temperature_range_C": [
+              740,
+              1450
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "sources": {
+    "boellinghaus_1995_scatterband": {
+      "source_id": "boellinghaus_1995_scatterband",
+      "type": "journal_article",
+      "title": "A scatterband for hydrogen diffusion coefficients in micro-alloyed and low carbon structural steels",
+      "authors": [
+        "T. Boellinghaus",
+        "H. Hoffmeister",
+        "C. M. Enzinger"
+      ],
+      "year": 1995,
+      "journal": "Welding in the World",
+      "doi": null,
+      "url_open_access": null,
+      "license_hint": "unknown",
+      "notes": "Provides temperature-dependent scatterband envelopes (min, max, mean) for hydrogen diffusion in structural steels. Used here as reference curves for testing and benchmarking."
+    }
+  }
+}

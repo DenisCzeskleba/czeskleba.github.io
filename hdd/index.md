@@ -10,7 +10,7 @@ Browse curated diffusivity datasets, mirror the `plot_diffusivity_groups.py` plo
 
 <link rel="stylesheet" href="/hdd/hdd-explorer.css">
 
-<div id="hydrogen-explorer-app" data-endpoint="/data/hydrogen-diffusivity-groups.json">
+<div id="hydrogen-explorer-app" data-endpoint="/hdd/hdd-groups.json">
   <div class="hdd-explorer-shell" data-state="loading">
     <aside class="hdd-panel">
       <h3>Dataset Controls</h3>
