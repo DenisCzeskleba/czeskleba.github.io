@@ -1123,26 +1123,31 @@
     const steps = Math.max(2, Math.round(logMax - logMin));
     const decadeMin = Math.floor(logMin);
     const decadeMax = Math.ceil(logMax);
-    const factors = [1, 2, 5];
+    const factors = [1, 2, 3, 4, 5, 6, 7, 8, 9];
     for (let decade = decadeMin; decade <= decadeMax; decade++) {
       for (const factor of factors) {
         const value = factor * Math.pow(10, decade);
         if (value < axisMinY || value > axisMaxY) continue;
         const y = yToPx(value);
         if (drawGrid) {
+          ctx.save();
           ctx.strokeStyle = theme.line;
-          ctx.lineWidth = 1;
+          ctx.lineWidth = factor === 1 ? 1.2 : 1;
+          ctx.globalAlpha = factor === 1 ? 0.7 : 0.25;
           ctx.beginPath();
           ctx.moveTo(margin.left, y);
           ctx.lineTo(margin.left + width, y);
           ctx.stroke();
+          ctx.restore();
         }
         const tickLen = factor === 1 ? 6 : 3;
         ctx.beginPath();
         ctx.moveTo(margin.left - tickLen, y);
         ctx.lineTo(margin.left, y);
         ctx.stroke();
-        ctx.fillText(value.toExponential(1), margin.left - 8, y + 3);
+        if (factor === 1 || factor === 2 || factor === 5) {
+          ctx.fillText(value.toExponential(1), margin.left - 8, y + 3);
+        }
       }
     }
   }
