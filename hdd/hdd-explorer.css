@@ -25,17 +25,17 @@ body {
 
 body.dark {
   color-scheme: dark;
-  --ink: #e2e8f0;
-  --muted: #94a3b8;
-  --panel: #0f172a;
-  --panel-strong: #111827;
-  --canvas: #0b1220;
-  --line: #1f2937;
-  --accent: #2dd4bf;
-  --accent-soft: rgba(45, 212, 191, 0.2);
-  --accent-warm: #fb923c;
-  --shadow: 0 20px 40px rgba(2, 6, 23, 0.5);
-  background: radial-gradient(circle at top, #0b1220 0%, #111827 45%, #020617 100%);
+  --ink: #e5e7eb;
+  --muted: #9ca3af;
+  --panel: #15181d;
+  --panel-strong: #1a1f26;
+  --canvas: #111418;
+  --line: #2b313a;
+  --accent: #7dd3c7;
+  --accent-soft: rgba(125, 211, 199, 0.18);
+  --accent-warm: #f3a954;
+  --shadow: 0 20px 40px rgba(0, 0, 0, 0.55);
+  background: radial-gradient(circle at top, #2a2f36 0%, #1b2027 45%, #101317 100%);
 }
 
 main {
