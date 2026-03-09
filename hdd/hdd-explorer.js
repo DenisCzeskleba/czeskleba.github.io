@@ -22,7 +22,7 @@
   if (!mount) return;
 
   const endpoint =
-    mount.getAttribute("data-endpoint") || "/hdd/hdd-groups.json";
+    mount.getAttribute("data-endpoint") || "/hdd/hdd-groups-public.json";
 
   const dom = {
     shell: mount.querySelector(".hdd-explorer-shell"),
@@ -65,7 +65,7 @@
 
     if (!normalized.summaries.length) {
       setStatus(
-        "No groups available. Ensure hdd-groups.json is published.",
+        "No groups available. Ensure hdd-groups-public.json is published.",
         "error"
       );
       renderEmptyChart(
