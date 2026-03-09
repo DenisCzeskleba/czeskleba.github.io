@@ -33,6 +33,7 @@
     tempMax: document.getElementById("hdd-temp-max"),
     downloadButtons: document.querySelectorAll(".hdd-downloads button"),
     clearFilters: document.getElementById("hdd-clear-filters"),
+    selectAll: document.getElementById("hdd-select-all"),
     filterSource: document.getElementById("hdd-filter-source"),
     filterClass: document.getElementById("hdd-filter-class"),
     filterGrade: document.getElementById("hdd-filter-grade"),
@@ -72,6 +73,10 @@
     }
 
     state.dataset = payload;
+    const validationIssues = validateDataset(payload);
+    if (validationIssues.length) {
+      reportValidationIssues(validationIssues);
+    }
     const { seriesList, seriesById } = normalizeDataset(payload);
     state.seriesList = seriesList;
     state.seriesById = seriesById;
@@ -85,7 +90,9 @@
     populateFilters(payload);
     renderSeriesList(seriesList);
     updateSummary();
-    renderEmptyChart("Select one or more series, then click Plot.");
+    if (!validationIssues.length) {
+      renderEmptyChart("Select one or more series, then click Plot.");
+    }
     setShellState("ready");
   }
 
@@ -140,6 +147,82 @@
     });
 
     return { seriesList, seriesById };
+  }
+
+  function validateDataset(payload) {
+    const issues = [];
+    (payload.groups || []).forEach((group) => {
+      (group.series || []).forEach((series) => {
+        (series.segments || []).forEach((segment) => {
+          const model = segment.model || {};
+          const range = segment.temperature_validity_K;
+          if (!Array.isArray(range) || range.length !== 2) {
+            issues.push(
+              `Entry ${segment.entry_id} missing temperature_validity_K [Tmin, Tmax].`
+            );
+            return;
+          }
+          const Tmin = range[0];
+          const Tmax = range[1];
+          if (!isFiniteNumber(Tmin) || !isFiniteNumber(Tmax)) {
+            issues.push(
+              `Entry ${segment.entry_id} has invalid temperature_validity_K values.`
+            );
+            return;
+          }
+
+          if (model.type === "single_point") {
+            if (Tmin !== Tmax) {
+              issues.push(
+                `Single-point entry ${segment.entry_id} has a temperature range (${Tmin}–${Tmax} K). Expected [T, T].`
+              );
+            }
+            if (!isFiniteNumber(model.diffusivity_mm2_per_s)) {
+              issues.push(
+                `Single-point entry ${segment.entry_id} missing diffusivity_mm2_per_s.`
+              );
+            }
+          } else {
+            if (!(Tmax > Tmin)) {
+              issues.push(
+                `Entry ${segment.entry_id} has a non-positive temperature range (${Tmin}–${Tmax} K).`
+              );
+            }
+            if (model.type === "arrhenius") {
+              if (!isFiniteNumber(model.D0_mm2_per_s) || !isFiniteNumber(model.Q_J_per_mol)) {
+                issues.push(
+                  `Arrhenius entry ${segment.entry_id} missing D0_mm2_per_s or Q_J_per_mol.`
+                );
+              }
+            }
+            if (model.type === "power") {
+              if (!isFiniteNumber(model.A_mm2_per_s) || !isFiniteNumber(model.n)) {
+                issues.push(
+                  `Power entry ${segment.entry_id} missing A_mm2_per_s or n.`
+                );
+              }
+            }
+          }
+        });
+      });
+    });
+    return issues;
+  }
+
+  function reportValidationIssues(issues) {
+    const message = `Dataset validation failed with ${issues.length} issue(s). Check console for details.`;
+    setStatus(message, "error");
+    console.error("HDD dataset validation issues:", issues);
+    if (dom.summary) {
+      const list = issues.slice(0, 12).map((item) => `<li>${item}</li>`).join("");
+      const tail = issues.length > 12 ? `<li>…and ${issues.length - 12} more.</li>` : "";
+      dom.summary.innerHTML = `
+        <strong>Data issues detected.</strong>
+        <p>${message}</p>
+        <ul>${list}${tail}</ul>
+      `;
+    }
+    renderEmptyChart("Dataset has validation errors. Fix them before plotting.");
   }
 
   function collectSeriesMeta(segments) {
@@ -210,6 +293,7 @@
       button.addEventListener("click", () => handleDownload(button))
     );
     dom.clearFilters?.addEventListener("click", clearFilters);
+    dom.selectAll?.addEventListener("click", selectAllVisible);
 
     [
       dom.filterSource,
@@ -344,6 +428,16 @@
       fragment.appendChild(option);
     });
     dom.list.appendChild(fragment);
+  }
+
+  function selectAllVisible() {
+    const checkboxes = dom.list?.querySelectorAll("input[type='checkbox']");
+    if (!checkboxes || !checkboxes.length) return;
+    checkboxes.forEach((checkbox) => {
+      checkbox.checked = true;
+      state.selected.add(checkbox.value);
+    });
+    updateSummary();
   }
 
   function handleSelectionChange(event) {
@@ -485,14 +579,16 @@
   }
 
   function resolveSinglePointTemperature(segment) {
-    if (segment.variant_key === "Temperature" && isFiniteNumber(segment.variant_value)) {
-      return segment.variant_value;
-    }
     const range = segment.temperature_validity_K;
     if (Array.isArray(range) && range.length === 2 && isFiniteNumber(range[0]) && isFiniteNumber(range[1])) {
       if (range[0] === range[1]) return range[0];
-      return (range[0] + range[1]) / 2;
+      failLoudly(
+        `Single-point entry ${segment.entry_id} has a temperature range (${range[0]}–${range[1]} K). ` +
+          "Expected [T, T] for single_point entries."
+      );
+      return null;
     }
+    failLoudly(`Single-point entry ${segment.entry_id} is missing temperature_validity_K.`);
     return null;
   }
 
@@ -535,6 +631,7 @@
     dom.chart.appendChild(canvas);
     const ctx = canvas.getContext("2d");
     currentCanvas = canvas;
+    const theme = getThemeColors();
 
     const axisMinX = Math.min(...temps);
     const axisMaxX = Math.max(...temps);
@@ -562,10 +659,10 @@
     }
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#f9fafb";
+    ctx.fillStyle = theme.canvas;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.strokeStyle = "#d1d5db";
+    ctx.strokeStyle = theme.line;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(margin.left, margin.top);
@@ -573,7 +670,7 @@
     ctx.lineTo(margin.left + width, margin.top + height);
     ctx.stroke();
 
-    ctx.fillStyle = "#4b5563";
+    ctx.fillStyle = theme.muted;
     ctx.font = "12px IBM Plex Sans, Arial, sans-serif";
     ctx.textAlign = "center";
     ctx.fillText(
@@ -587,8 +684,8 @@
     ctx.fillText("Diffusivity [mm²/s] (log scale)", 0, 0);
     ctx.restore();
 
-    drawXTicks(ctx, axisMinX, axisMaxX, margin, width, height, xToPx);
-    drawYTicks(ctx, logMin, logMax, margin, height, yToPx);
+    drawXTicks(ctx, axisMinX, axisMaxX, margin, width, height, xToPx, theme);
+    drawYTicks(ctx, logMin, logMax, margin, height, yToPx, theme);
 
     fillEnvelopes(series, xToPx, yToPx);
 
@@ -629,7 +726,7 @@
       }
     });
 
-    drawLegend(ctx, series, margin, width);
+    drawLegend(ctx, series, margin, width, theme);
   }
 
   function fillEnvelopes(series, xToPx, yToPx) {
@@ -721,9 +818,9 @@
     return groupId.replace(/_(mean|min|max)$/, "");
   }
 
-  function drawXTicks(ctx, min, max, margin, width, height, xToPx) {
+  function drawXTicks(ctx, min, max, margin, width, height, xToPx, theme) {
     const steps = 5;
-    ctx.fillStyle = "#6b7280";
+    ctx.fillStyle = theme.muted;
     ctx.textAlign = "center";
     ctx.font = "11px IBM Plex Sans, Arial, sans-serif";
     for (let i = 0; i <= steps; i++) {
@@ -737,9 +834,9 @@
     }
   }
 
-  function drawYTicks(ctx, logMin, logMax, margin, height, yToPx) {
+  function drawYTicks(ctx, logMin, logMax, margin, height, yToPx, theme) {
     ctx.textAlign = "right";
-    ctx.fillStyle = "#6b7280";
+    ctx.fillStyle = theme.muted;
     ctx.font = "11px IBM Plex Sans, Arial, sans-serif";
     const steps = Math.max(2, Math.round(logMax - logMin));
     for (let i = 0; i <= steps; i++) {
@@ -754,7 +851,7 @@
     }
   }
 
-  function drawLegend(ctx, series, margin, width) {
+  function drawLegend(ctx, series, margin, width, theme) {
     const legendX = margin.left + width - 10;
     let legendY = margin.top + 10;
     ctx.font = "11px IBM Plex Sans, Arial, sans-serif";
@@ -762,7 +859,7 @@
     series.forEach((item, index) => {
       ctx.fillStyle = item.color;
       ctx.fillRect(legendX - 12, legendY - 8, 10, 10);
-      ctx.fillStyle = "#111827";
+      ctx.fillStyle = theme.ink;
       ctx.fillText(`${index + 1}. ${item.label} · ${item.seriesLabel}`, legendX - 16, legendY);
       legendY += 16;
     });
@@ -909,5 +1006,23 @@
     if (min != null && value < min) return false;
     if (max != null && value > max) return false;
     return true;
+  }
+
+  function getThemeColors() {
+    const styles = getComputedStyle(document.body);
+    return {
+      ink: styles.getPropertyValue("--ink").trim() || "#111827",
+      muted: styles.getPropertyValue("--muted").trim() || "#6b7280",
+      line: styles.getPropertyValue("--line").trim() || "#d1d5db",
+      canvas: styles.getPropertyValue("--canvas").trim() || "#f9fafb",
+    };
+  }
+
+  function failLoudly(message) {
+    console.error(message);
+    setStatus(message, "error");
+    if (dom.summary) {
+      dom.summary.innerHTML = `<strong>Data issue detected.</strong><p>${message}</p>`;
+    }
   }
 })();

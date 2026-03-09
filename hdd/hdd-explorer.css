@@ -5,6 +5,7 @@
   --ink: #0f172a;
   --muted: #475569;
   --panel: #ffffff;
+  --panel-strong: #f8fafc;
   --canvas: #f8fafc;
   --line: #e2e8f0;
   --accent: #0f766e;
@@ -22,11 +23,37 @@ body {
   background: radial-gradient(circle at top, #ecfeff 0%, #fdf2f8 45%, #ffffff 100%);
 }
 
+body.dark {
+  color-scheme: dark;
+  --ink: #e2e8f0;
+  --muted: #94a3b8;
+  --panel: #0f172a;
+  --panel-strong: #111827;
+  --canvas: #0b1220;
+  --line: #1f2937;
+  --accent: #2dd4bf;
+  --accent-soft: rgba(45, 212, 191, 0.2);
+  --accent-warm: #fb923c;
+  --shadow: 0 20px 40px rgba(2, 6, 23, 0.5);
+  background: radial-gradient(circle at top, #0b1220 0%, #111827 45%, #020617 100%);
+}
+
+main {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding: 1rem 1rem 3rem;
+  text-align: left;
+  align-self: stretch;
+  box-sizing: border-box;
+}
+
 .hdd-explorer-shell {
   display: grid;
   grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
   gap: 28px;
   margin-top: 24px;
+  width: 100%;
 }
 
 .hdd-panel,
@@ -92,7 +119,7 @@ body {
   border-radius: 12px;
   border: 1px solid var(--line);
   padding: 10px 12px;
-  background: #fff;
+  background: var(--panel-strong);
   color: var(--ink);
 }
 
@@ -120,7 +147,7 @@ body {
   padding: 10px 12px;
   border-radius: 12px;
   border: 1px solid var(--line);
-  background: #f8fafc;
+  background: var(--panel-strong);
   font-weight: 600;
   cursor: pointer;
 }
@@ -166,7 +193,7 @@ body {
   padding: 12px;
   max-height: 320px;
   overflow: auto;
-  background: #f9fafb;
+  background: var(--panel-strong);
 }
 
 .hdd-group-option {
@@ -175,7 +202,7 @@ body {
   gap: 10px;
   padding: 10px 12px;
   border-radius: 12px;
-  background: #fff;
+  background: var(--panel);
   border: 1px solid transparent;
 }
 
@@ -200,6 +227,7 @@ body {
 }
 
 .hdd-controls button#hdd-plot-btn,
+.hdd-controls button#hdd-select-all,
 .hdd-controls button#hdd-clear-filters,
 .hdd-downloads button {
   padding: 12px 14px;
@@ -214,8 +242,14 @@ body {
   color: #fff;
 }
 
+#hdd-select-all {
+  background: var(--panel-strong);
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
 #hdd-clear-filters {
-  background: #f1f5f9;
+  background: var(--panel-strong);
   color: var(--ink);
 }
 
@@ -265,12 +299,12 @@ body {
 }
 
 .hdd-downloads button {
-  background: #0f172a;
+  background: var(--ink);
   color: #fff;
 }
 
 .hdd-summary {
-  background: linear-gradient(135deg, #f8fafc, #ecfeff);
+  background: linear-gradient(135deg, var(--panel-strong), var(--accent-soft));
 }
 
 .hdd-summary ul {
@@ -285,7 +319,7 @@ body {
   font-size: 0.8rem;
   padding: 6px 10px;
   border-radius: 999px;
-  background: #e2e8f0;
+  background: var(--panel-strong);
   color: var(--muted);
 }
 

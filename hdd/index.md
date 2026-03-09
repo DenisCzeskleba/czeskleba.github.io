@@ -102,6 +102,7 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
           </div>
         </div>
 
+        <button type="button" id="hdd-select-all">Select all listed series</button>
         <button type="button" id="hdd-plot-btn">Plot selected series</button>
       </form>
     </aside>

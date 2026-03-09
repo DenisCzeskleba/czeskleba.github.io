@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.1",
-  "export_date": "2026.03.09.14.10",
+  "export_date": "2026.03.09.15.05",
   "group_count": 259,
   "series_count": 505,
   "entry_count": 2335,
@@ -17640,8 +17640,8 @@
       "variant_unit": null,
       "series_key": null,
       "temperature_range_K": [
-        294.0,
-        296.0
+        298.15,
+        298.15
       ],
       "series": [
         {
@@ -17659,12 +17659,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.000188
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -17724,12 +17724,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.00021
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -17790,8 +17790,8 @@
       "variant_unit": null,
       "series_key": null,
       "temperature_range_K": [
-        294.0,
-        296.0
+        298.15,
+        298.15
       ],
       "series": [
         {
@@ -17809,12 +17809,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.00030000000000000003
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -17874,12 +17874,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.00017
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -17939,12 +17939,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.00015700000000000002
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -18004,12 +18004,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.000167
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -18069,12 +18069,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 3.88e-05
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -18134,12 +18134,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.000254
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -18199,12 +18199,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.000171
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -18268,8 +18268,8 @@
                 "diffusivity_mm2_per_s": 0.000152
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -18329,12 +18329,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.00015900000000000002
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -18394,12 +18394,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 4.8200000000000006e-05
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -18460,8 +18460,8 @@
       "variant_unit": null,
       "series_key": null,
       "temperature_range_K": [
-        294.0,
-        296.0
+        298.15,
+        298.15
       ],
       "series": [
         {
@@ -18479,12 +18479,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.000229
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -18544,12 +18544,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.000302
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -18610,8 +18610,8 @@
       "variant_unit": null,
       "series_key": null,
       "temperature_range_K": [
-        294.0,
-        296.0
+        298.15,
+        298.15
       ],
       "series": [
         {
@@ -18629,12 +18629,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.000409
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -18694,12 +18694,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.00019700000000000002
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -18763,8 +18763,8 @@
                 "diffusivity_mm2_per_s": 0.00017700000000000002
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -18824,12 +18824,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.0002
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -18889,12 +18889,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 5.900000000000001e-05
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -18954,12 +18954,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.000371
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -19019,12 +19019,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.00022500000000000002
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -19084,12 +19084,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.00020600000000000002
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -19149,12 +19149,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.00021400000000000002
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -19214,12 +19214,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 5.6200000000000004e-05
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -19280,8 +19280,8 @@
       "variant_unit": null,
       "series_key": null,
       "temperature_range_K": [
-        294.0,
-        296.0
+        298.15,
+        298.15
       ],
       "series": [
         {
@@ -19299,12 +19299,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.00037000000000000005
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -19364,12 +19364,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.000487
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -19430,8 +19430,8 @@
       "variant_unit": null,
       "series_key": null,
       "temperature_range_K": [
-        294.0,
-        296.0
+        298.15,
+        298.15
       ],
       "series": [
         {
@@ -19449,12 +19449,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.000566
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -19515,8 +19515,8 @@
       "variant_unit": null,
       "series_key": null,
       "temperature_range_K": [
-        294.0,
-        296.0
+        298.15,
+        298.15
       ],
       "series": [
         {
@@ -19534,12 +19534,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.000746
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -19599,12 +19599,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.000401
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -19664,12 +19664,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.000382
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -19729,12 +19729,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.000362
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -19794,12 +19794,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 7.87e-05
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -19860,8 +19860,8 @@
       "variant_unit": null,
       "series_key": null,
       "temperature_range_K": [
-        294.0,
-        296.0
+        298.15,
+        298.15
       ],
       "series": [
         {
@@ -19879,12 +19879,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.000458
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -19944,12 +19944,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.00021
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -20013,8 +20013,8 @@
                 "diffusivity_mm2_per_s": 0.000133
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -20074,12 +20074,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.000168
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -20139,12 +20139,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 3.8400000000000005e-05
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -20204,12 +20204,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.0005400000000000001
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -20269,12 +20269,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.000305
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -20334,12 +20334,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.000215
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -20399,12 +20399,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 0.00028
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -20464,12 +20464,12 @@
               "series_value": null,
               "model": {
                 "type": "single_point",
-                "temperature_K": 295.0,
+                "temperature_K": 298.15,
                 "diffusivity_mm2_per_s": 6.0400000000000004e-05
               },
               "temperature_validity_K": [
-                294.0,
-                296.0
+                298.15,
+                298.15
               ],
               "reported_as": "effective",
               "material": {
@@ -108319,7 +108319,7 @@
       "series_key": null,
       "temperature_range_K": [
         298.15,
-        298.15
+        2273.15
       ],
       "series": [
         {
@@ -108342,7 +108342,7 @@
               },
               "temperature_validity_K": [
                 298.15,
-                298.15
+                2273.15
               ],
               "reported_as": "lattice",
               "material": {
@@ -108401,7 +108401,7 @@
               },
               "temperature_validity_K": [
                 298.15,
-                298.15
+                2273.15
               ],
               "reported_as": "lattice",
               "material": {
@@ -108460,7 +108460,7 @@
               },
               "temperature_validity_K": [
                 298.15,
-                298.15
+                2273.15
               ],
               "reported_as": "lattice",
               "material": {
@@ -108516,7 +108516,7 @@
       "series_key": null,
       "temperature_range_K": [
         298.15,
-        298.15
+        2273.15
       ],
       "series": [
         {
@@ -108539,7 +108539,7 @@
               },
               "temperature_validity_K": [
                 298.15,
-                298.15
+                2273.15
               ],
               "reported_as": "lattice",
               "material": {
@@ -108598,7 +108598,7 @@
               },
               "temperature_validity_K": [
                 298.15,
-                298.15
+                2273.15
               ],
               "reported_as": "lattice",
               "material": {
@@ -108657,7 +108657,7 @@
               },
               "temperature_validity_K": [
                 298.15,
-                298.15
+                2273.15
               ],
               "reported_as": "lattice",
               "material": {

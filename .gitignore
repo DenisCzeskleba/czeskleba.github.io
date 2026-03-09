@@ -2,3 +2,5 @@
 .vscode/
 
 AGENTS.md
+# Local validation helpers
+scripts/validate_hdd_public_bundle.py
