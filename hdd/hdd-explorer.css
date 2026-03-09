@@ -50,7 +50,7 @@ main {
 
 .hdd-explorer-shell {
   display: grid;
-  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+  grid-template-columns: 360px minmax(0, 1fr);
   gap: 28px;
   margin-top: 24px;
   width: 100%;
@@ -71,6 +71,7 @@ main {
   align-self: start;
   max-height: calc(100vh - 60px);
   overflow: auto;
+  min-width: 0;
 }
 
 .hdd-panel-left {
@@ -275,6 +276,7 @@ body.dark .hdd-toggle-group button.is-active {
 .hdd-stage {
   display: grid;
   gap: 20px;
+  min-width: 0;
 }
 
 .hdd-stage-card {
@@ -284,9 +286,11 @@ body.dark .hdd-toggle-group button.is-active {
 .hdd-stage-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 10px;
   margin-bottom: 16px;
+  position: relative;
+  min-height: 40px;
 }
 
 .hdd-stage-controls {
@@ -301,6 +305,10 @@ body.dark .hdd-toggle-group button.is-active {
   border-radius: 999px;
   padding: 6px 12px;
   background: var(--panel-strong);
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 2;
 }
 
 .hdd-plot-options summary {
@@ -315,6 +323,8 @@ body.dark .hdd-toggle-group button.is-active {
 
 .hdd-plot-options[open] {
   border-radius: 16px;
+  padding: 10px 12px;
+  width: 240px;
 }
 
 .hdd-plot-options-body {
@@ -403,6 +413,9 @@ body.dark .hdd-downloads button {
   .hdd-panel {
     position: static;
     max-height: none;
+  }
+  .hdd-plot-options {
+    position: static;
   }
 }
 .hdd-panel-footer {

@@ -90,31 +90,28 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
       <div class="hdd-stage-card">
         <div class="hdd-stage-header">
           <h3>Plot Preview</h3>
-          <div class="hdd-stage-controls">
-            <details class="hdd-plot-options">
-              <summary>Plot options</summary>
-              <div class="hdd-plot-options-body">
-                <div class="hdd-toggle-group" role="group" aria-label="Temperature units">
-                  <button type="button" data-unit="K" class="is-active">Kelvin</button>
-                  <button type="button" data-unit="C">&deg;C</button>
-                </div>
-                <div class="hdd-toggle-group" role="group" aria-label="Y-axis scale">
-                  <button type="button" data-scale="log" class="is-active">Log scale</button>
-                  <button type="button" data-scale="linear">Linear</button>
-                </div>
-                <label class="hdd-inline-checkbox">
-                  <input type="checkbox" id="hdd-envelope" checked />
-                  <span>Envelope fill</span>
-                </label>
-                <label class="hdd-inline-checkbox">
-                  <input type="checkbox" id="hdd-numbering" checked />
-                  <span>Numbered legend</span>
-                </label>
-                <div class="hdd-plot-option-note">More options (grid, styling) coming soon.</div>
+          <details class="hdd-plot-options">
+            <summary>Plot options</summary>
+            <div class="hdd-plot-options-body">
+              <div class="hdd-toggle-group" role="group" aria-label="Temperature units">
+                <button type="button" data-unit="K" class="is-active">Kelvin</button>
+                <button type="button" data-unit="C">&deg;C</button>
               </div>
-            </details>
-            <span class="hdd-stage-note">Log-scale diffusivity vs temperature</span>
-          </div>
+              <div class="hdd-toggle-group" role="group" aria-label="Y-axis scale">
+                <button type="button" data-scale="log" class="is-active">Log scale</button>
+                <button type="button" data-scale="linear">Linear</button>
+              </div>
+              <label class="hdd-inline-checkbox">
+                <input type="checkbox" id="hdd-envelope" checked />
+                <span>Envelope fill</span>
+              </label>
+              <label class="hdd-inline-checkbox">
+                <input type="checkbox" id="hdd-numbering" checked />
+                <span>Numbered legend</span>
+              </label>
+              <div class="hdd-plot-option-note">More options (grid, styling) coming soon.</div>
+            </div>
+          </details>
         </div>
         <div id="hdd-chart" class="hdd-chart" role="img" aria-live="polite">
           <div>
