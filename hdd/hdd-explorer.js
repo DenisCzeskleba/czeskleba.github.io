@@ -712,19 +712,16 @@
     ctx.fillStyle = theme.muted;
     ctx.font = "12px IBM Plex Sans, Arial, sans-serif";
     ctx.textAlign = "center";
+    const tempUnitLabel = state.units === "C" ? "°C" : "°K";
     ctx.fillText(
-      `Temperature [${state.units === "C" ? "°C" : "K"}]`,
+      `Temperature [${tempUnitLabel}]`,
       margin.left + plotWidth / 2,
       canvas.height - 10
     );
     ctx.save();
     ctx.translate(15, margin.top + plotHeight / 2);
     ctx.rotate(-Math.PI / 2);
-    ctx.fillText(
-      `Diffusivity [mm²/s] (${state.scale === "linear" ? "linear" : "log"} scale)`,
-      0,
-      0
-    );
+    ctx.fillText("Apparent Diffusivity [mm²/s]", 0, 0);
     ctx.restore();
 
     drawXTicks(ctx, axisMinX, axisMaxX, margin, plotWidth, plotHeight, xToPx, theme);

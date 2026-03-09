@@ -6,7 +6,7 @@ permalink: /hydrogen-diffusion-database/
 
 # Hydrogen Diffusion Database
 
-Browse curated diffusivity datasets, filter by material or source, and plot series directly in the browser. Export images and data, and contribute peer-reviewed open-access results back to the database.
+Browse curated diffusivity datasets, filter by material or source, and plot series directly in the browser. Export images and data, and contribute your peer-reviewed open-access results back to the database.
 
 <link rel="stylesheet" href="/hdd/hdd-explorer.css">
 
@@ -33,38 +33,46 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
         <div class="hdd-divider"></div>
 
         <div class="hdd-control hdd-filter-grid">
-          <div>
-            <label for="hdd-filter-source">Source</label>
+          <details class="hdd-filter-block" open>
+            <summary>Source</summary>
+            <label for="hdd-filter-source" class="hdd-sr-only">Source</label>
             <select id="hdd-filter-source" multiple></select>
-          </div>
-          <div>
-            <label for="hdd-filter-class">Material class</label>
+          </details>
+          <details class="hdd-filter-block" open>
+            <summary>Material class</summary>
+            <label for="hdd-filter-class" class="hdd-sr-only">Material class</label>
             <select id="hdd-filter-class" multiple></select>
-          </div>
-          <div>
-            <label for="hdd-filter-grade">Material grade</label>
+          </details>
+          <details class="hdd-filter-block" open>
+            <summary>Material grade</summary>
+            <label for="hdd-filter-grade" class="hdd-sr-only">Material grade</label>
             <select id="hdd-filter-grade" multiple></select>
-          </div>
-          <div>
-            <label for="hdd-filter-reported">Reported as</label>
+          </details>
+          <details class="hdd-filter-block" open>
+            <summary>Reported as</summary>
+            <label for="hdd-filter-reported" class="hdd-sr-only">Reported as</label>
             <select id="hdd-filter-reported" multiple></select>
-          </div>
-          <div>
-            <label for="hdd-filter-series">Series key</label>
+          </details>
+          <details class="hdd-filter-block" open>
+            <summary>Series key</summary>
+            <label for="hdd-filter-series" class="hdd-sr-only">Series key</label>
             <select id="hdd-filter-series" multiple></select>
-          </div>
-          <div>
-            <label for="hdd-filter-effect">Studied effect</label>
+          </details>
+          <details class="hdd-filter-block" open>
+            <summary>Studied effect</summary>
+            <label for="hdd-filter-effect" class="hdd-sr-only">Studied effect</label>
             <select id="hdd-filter-effect" multiple></select>
-          </div>
-          <div>
-            <label for="hdd-filter-method">Measurement method</label>
+          </details>
+          <details class="hdd-filter-block" open>
+            <summary>Measurement method</summary>
+            <label for="hdd-filter-method" class="hdd-sr-only">Measurement method</label>
             <select id="hdd-filter-method" multiple></select>
-          </div>
-          <div>
-            <label for="hdd-filter-model">Model type</label>
+          </details>
+          <details class="hdd-filter-block" open>
+            <summary>Model type</summary>
+            <label for="hdd-filter-model" class="hdd-sr-only">Model type</label>
             <select id="hdd-filter-model" multiple></select>
-          </div>
+          </details>
         </div>
 
         <button type="button" id="hdd-clear-filters">Clear filters</button>

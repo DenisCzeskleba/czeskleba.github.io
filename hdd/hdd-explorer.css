@@ -205,6 +205,39 @@ body.dark .hdd-toggle-group button.is-active {
   grid-template-columns: minmax(0, 1fr);
 }
 
+.hdd-filter-block {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--panel-strong);
+}
+
+.hdd-filter-block summary {
+  cursor: pointer;
+  font-weight: 600;
+  list-style: none;
+}
+
+.hdd-filter-block summary::-webkit-details-marker {
+  display: none;
+}
+
+.hdd-filter-block select {
+  margin-top: 8px;
+}
+
+.hdd-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .hdd-group-list {
   display: grid;
   gap: 10px;
