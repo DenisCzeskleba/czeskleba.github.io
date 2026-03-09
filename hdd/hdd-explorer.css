@@ -256,6 +256,10 @@ body.dark .hdd-toggle-group button.is-active {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  align-items: stretch;
+  align-content: flex-start;
+  justify-content: flex-start;
+  text-align: left;
   resize: vertical;
 }
 
@@ -268,6 +272,8 @@ body.dark .hdd-toggle-group button.is-active {
   text-align: left;
   padding: 6px 8px;
   border-radius: 10px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .hdd-filter-item:hover {
