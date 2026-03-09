@@ -31,6 +31,7 @@
     scaleButtons: document.querySelectorAll("[data-scale]"),
     envelope: document.getElementById("hdd-envelope"),
     numbering: document.getElementById("hdd-numbering"),
+    monochrome: document.getElementById("hdd-monochrome"),
     gridX: document.getElementById("hdd-grid-x"),
     gridY: document.getElementById("hdd-grid-y"),
     tempMin: document.getElementById("hdd-temp-min"),
@@ -57,6 +58,7 @@
     scale: "log",
     envelope: true,
     numbering: true,
+    monochrome: false,
     gridX: true,
     gridY: true,
     tempMin: null,
@@ -95,6 +97,7 @@
     );
 
     bindEvents();
+    state.monochrome = dom.monochrome?.checked ?? false;
     state.gridX = dom.gridX?.checked ?? true;
     state.gridY = dom.gridY?.checked ?? true;
     populateFilters(payload);
@@ -299,6 +302,10 @@
     });
     dom.numbering?.addEventListener("change", () => {
       state.numbering = dom.numbering.checked;
+      plotSelectedSeries();
+    });
+    dom.monochrome?.addEventListener("change", () => {
+      state.monochrome = dom.monochrome.checked;
       plotSelectedSeries();
     });
     dom.gridX?.addEventListener("change", () => {
@@ -766,11 +773,12 @@
         diffusivity: sample.diffusivity,
       }));
 
+      const color = state.monochrome ? "#111111" : COLORS[index % COLORS.length];
       result.push({
         id: entry.id,
         label: entry.label,
         seriesLabel: entry.seriesLabel,
-        color: COLORS[index % COLORS.length],
+        color,
         axisLine,
         axisPoints,
         descriptor: entry,
@@ -1113,23 +1121,29 @@
       return;
     }
     const steps = Math.max(2, Math.round(logMax - logMin));
-    for (let i = 0; i <= steps; i++) {
-      const logValue = logMin + ((logMax - logMin) / steps) * i;
-      const value = Math.pow(10, logValue);
-      const y = yToPx(value);
-      if (drawGrid) {
-        ctx.strokeStyle = theme.line;
-        ctx.lineWidth = 1;
+    const decadeMin = Math.floor(logMin);
+    const decadeMax = Math.ceil(logMax);
+    const factors = [1, 2, 5];
+    for (let decade = decadeMin; decade <= decadeMax; decade++) {
+      for (const factor of factors) {
+        const value = factor * Math.pow(10, decade);
+        if (value < axisMinY || value > axisMaxY) continue;
+        const y = yToPx(value);
+        if (drawGrid) {
+          ctx.strokeStyle = theme.line;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(margin.left, y);
+          ctx.lineTo(margin.left + width, y);
+          ctx.stroke();
+        }
+        const tickLen = factor === 1 ? 6 : 3;
         ctx.beginPath();
-        ctx.moveTo(margin.left, y);
-        ctx.lineTo(margin.left + width, y);
+        ctx.moveTo(margin.left - tickLen, y);
+        ctx.lineTo(margin.left, y);
         ctx.stroke();
+        ctx.fillText(value.toExponential(1), margin.left - 8, y + 3);
       }
-      ctx.beginPath();
-      ctx.moveTo(margin.left - 5, y);
-      ctx.lineTo(margin.left, y);
-      ctx.stroke();
-      ctx.fillText(value.toExponential(1), margin.left - 8, y + 3);
     }
   }
 

@@ -114,16 +114,22 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
               </label>
               <label class="hdd-inline-checkbox">
                 <input type="checkbox" id="hdd-numbering" checked />
-                <span>Numbered legend</span>
+                <span>Numbered plots</span>
               </label>
               <label class="hdd-inline-checkbox">
-                <input type="checkbox" id="hdd-grid-x" checked />
-                <span>X grid</span>
+                <input type="checkbox" id="hdd-monochrome" />
+                <span>Black &amp; white</span>
               </label>
-              <label class="hdd-inline-checkbox">
-                <input type="checkbox" id="hdd-grid-y" checked />
-                <span>Y grid</span>
-              </label>
+              <div class="hdd-inline-row">
+                <label class="hdd-inline-checkbox">
+                  <input type="checkbox" id="hdd-grid-x" checked />
+                  <span>X grid</span>
+                </label>
+                <label class="hdd-inline-checkbox">
+                  <input type="checkbox" id="hdd-grid-y" checked />
+                  <span>Y grid</span>
+                </label>
+              </div>
               <div class="hdd-plot-option-note">More options (grid, styling) coming soon.</div>
             </div>
           </details>

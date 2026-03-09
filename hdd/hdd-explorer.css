@@ -202,6 +202,12 @@ body.dark .hdd-toggle-group button.is-active {
   font-weight: 500;
 }
 
+.hdd-inline-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .hdd-inline-checkbox input {
   accent-color: var(--accent);
 }
