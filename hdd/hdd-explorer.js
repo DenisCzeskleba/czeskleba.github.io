@@ -38,8 +38,8 @@
     filterSource: document.getElementById("hdd-filter-source"),
     filterClass: document.getElementById("hdd-filter-class"),
     filterGrade: document.getElementById("hdd-filter-grade"),
+    filterComposition: document.getElementById("hdd-filter-composition"),
     filterReported: document.getElementById("hdd-filter-reported"),
-    filterSeriesKey: document.getElementById("hdd-filter-series"),
     filterEffect: document.getElementById("hdd-filter-effect"),
     filterMethod: document.getElementById("hdd-filter-method"),
     filterModel: document.getElementById("hdd-filter-model"),
@@ -237,6 +237,7 @@
       material_phase: new Set(),
       material_processing: new Set(),
       material_tags: new Set(),
+      chemical_composition: new Set(),
       reported_as: new Set(),
       studied_effects: new Set(),
       measurement_method: new Set(),
@@ -251,6 +252,7 @@
       addIfPresent(meta.material_phase, material.phase);
       (material.processing || []).forEach((value) => addIfPresent(meta.material_processing, value));
       (material.tags || []).forEach((value) => addIfPresent(meta.material_tags, value));
+      addIfPresent(meta.chemical_composition, formatChemicalComposition(material.chemical_composition));
 
       addIfPresent(meta.reported_as, segment.reported_as);
       addIfPresent(meta.model_type, segment.model?.type);
@@ -308,8 +310,8 @@
       dom.filterSource,
       dom.filterClass,
       dom.filterGrade,
+      dom.filterComposition,
       dom.filterReported,
-      dom.filterSeriesKey,
       dom.filterEffect,
       dom.filterMethod,
       dom.filterModel,
@@ -332,8 +334,8 @@
     setSelectOptions(dom.filterSource, sourceOptions);
     setSelectOptions(dom.filterClass, toOptions(payload.filters?.material_class));
     setSelectOptions(dom.filterGrade, toOptions(payload.filters?.material_grade));
+    setSelectOptions(dom.filterComposition, toOptions(collectMetaValues(state.seriesList, "chemical_composition")));
     setSelectOptions(dom.filterReported, toOptions(payload.filters?.reported_as));
-    setSelectOptions(dom.filterSeriesKey, toOptions(payload.filters?.series_key));
     setSelectOptions(dom.filterEffect, toOptions(payload.filters?.studied_effects));
     setSelectOptions(dom.filterMethod, toOptions(payload.filters?.measurement_method));
     setSelectOptions(dom.filterModel, toOptions(payload.filters?.model_type));
@@ -369,8 +371,39 @@
       .sort((a, b) => a.label.localeCompare(b.label));
   }
 
+  function collectMetaValues(seriesList, key) {
+    const values = new Set();
+    seriesList.forEach((entry) => {
+      const set = entry.meta?.[key];
+      if (!set) return;
+      set.forEach((value) => {
+        if (value == null) return;
+        values.add(String(value));
+      });
+    });
+    return Array.from(values);
+  }
+
+  function formatChemicalComposition(composition) {
+    if (!composition || typeof composition !== "object") return null;
+    const basis = composition.basis || "unknown";
+    const values = composition.values || {};
+    const parts = Object.keys(values)
+      .sort()
+      .map((key) => {
+        const value = values[key];
+        if (value == null || value === "") return null;
+        const number = Number(value);
+        const display = Number.isFinite(number) ? number.toPrecision(4) : String(value);
+        return `${key}=${display}`;
+      })
+      .filter(Boolean);
+    if (!parts.length) return null;
+    return `${basis}: ${parts.join(", ")}`;
+  }
+
   function clearFilters() {
-    [dom.filterSource, dom.filterClass, dom.filterGrade, dom.filterReported, dom.filterSeriesKey, dom.filterEffect, dom.filterMethod, dom.filterModel]
+    [dom.filterSource, dom.filterClass, dom.filterGrade, dom.filterComposition, dom.filterReported, dom.filterEffect, dom.filterMethod, dom.filterModel]
       .forEach((select) => {
         if (!select) return;
         Array.from(select.options).forEach((opt) => (opt.selected = false));
@@ -385,8 +418,8 @@
       source: selectedValues(dom.filterSource),
       materialClass: selectedValues(dom.filterClass),
       materialGrade: selectedValues(dom.filterGrade),
+      chemicalComposition: selectedValues(dom.filterComposition),
       reportedAs: selectedValues(dom.filterReported),
-      seriesKey: selectedValues(dom.filterSeriesKey),
       studiedEffects: selectedValues(dom.filterEffect),
       measurementMethod: selectedValues(dom.filterMethod),
       modelType: selectedValues(dom.filterModel),
@@ -422,8 +455,8 @@
     if (ignoreKey !== "source" && filters.source.length && !filters.source.includes(entry.sourceId)) return false;
     if (ignoreKey !== "materialClass" && !matchesSet(filters.materialClass, entry.meta.material_class)) return false;
     if (ignoreKey !== "materialGrade" && !matchesSet(filters.materialGrade, entry.meta.material_grade)) return false;
+    if (ignoreKey !== "chemicalComposition" && !matchesSet(filters.chemicalComposition, entry.meta.chemical_composition)) return false;
     if (ignoreKey !== "reportedAs" && !matchesSet(filters.reportedAs, entry.meta.reported_as)) return false;
-    if (ignoreKey !== "seriesKey" && filters.seriesKey.length && !filters.seriesKey.includes(entry.seriesKey)) return false;
     if (ignoreKey !== "studiedEffects" && !matchesSet(filters.studiedEffects, entry.meta.studied_effects)) return false;
     if (ignoreKey !== "measurementMethod" && !matchesSet(filters.measurementMethod, entry.meta.measurement_method)) return false;
     if (ignoreKey !== "modelType" && !matchesSet(filters.modelType, entry.meta.model_type)) return false;
@@ -468,8 +501,8 @@
       source: new Set(),
       materialClass: new Set(),
       materialGrade: new Set(),
+      chemicalComposition: new Set(),
       reportedAs: new Set(),
-      seriesKey: new Set(),
       studiedEffects: new Set(),
       measurementMethod: new Set(),
       modelType: new Set(),
@@ -491,13 +524,15 @@
     });
 
     state.seriesList.forEach((entry) => {
-      if (!entryMatchesFilters(entry, filters, query, "reportedAs")) return;
-      entry.meta.reported_as?.forEach((value) => availability.reportedAs.add(String(value)));
+      if (!entryMatchesFilters(entry, filters, query, "chemicalComposition")) return;
+      entry.meta.chemical_composition?.forEach((value) =>
+        availability.chemicalComposition.add(String(value))
+      );
     });
 
     state.seriesList.forEach((entry) => {
-      if (!entryMatchesFilters(entry, filters, query, "seriesKey")) return;
-      if (entry.seriesKey != null) availability.seriesKey.add(String(entry.seriesKey));
+      if (!entryMatchesFilters(entry, filters, query, "reportedAs")) return;
+      entry.meta.reported_as?.forEach((value) => availability.reportedAs.add(String(value)));
     });
 
     state.seriesList.forEach((entry) => {
@@ -520,8 +555,8 @@
     updateSelectAvailability(dom.filterSource, availability.source);
     updateSelectAvailability(dom.filterClass, availability.materialClass);
     updateSelectAvailability(dom.filterGrade, availability.materialGrade);
+    updateSelectAvailability(dom.filterComposition, availability.chemicalComposition);
     updateSelectAvailability(dom.filterReported, availability.reportedAs);
-    updateSelectAvailability(dom.filterSeriesKey, availability.seriesKey);
     updateSelectAvailability(dom.filterEffect, availability.studiedEffects);
     updateSelectAvailability(dom.filterMethod, availability.measurementMethod);
     updateSelectAvailability(dom.filterModel, availability.modelType);

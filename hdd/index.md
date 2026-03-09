@@ -21,18 +21,6 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
       </div>
 
       <form class="hdd-controls" id="hdd-controls" autocomplete="off">
-        <details class="hdd-control hdd-filter-block">
-          <summary>Temperature window (K)</summary>
-          <label class="hdd-sr-only" for="hdd-temp-min">Temperature min (K)</label>
-          <label class="hdd-sr-only" for="hdd-temp-max">Temperature max (K)</label>
-          <div class="hdd-toggle-group">
-            <input type="number" id="hdd-temp-min" placeholder="min" min="0" />
-            <input type="number" id="hdd-temp-max" placeholder="max" min="0" />
-          </div>
-        </details>
-
-        <div class="hdd-divider"></div>
-
         <div class="hdd-control hdd-filter-grid">
           <details class="hdd-filter-block">
             <summary>Source</summary>
@@ -50,19 +38,9 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
             <select id="hdd-filter-grade" multiple></select>
           </details>
           <details class="hdd-filter-block">
-            <summary>Reported as</summary>
-            <label for="hdd-filter-reported" class="hdd-sr-only">Reported as</label>
-            <select id="hdd-filter-reported" multiple></select>
-          </details>
-          <details class="hdd-filter-block">
-            <summary>Series key</summary>
-            <label for="hdd-filter-series" class="hdd-sr-only">Series key</label>
-            <select id="hdd-filter-series" multiple></select>
-          </details>
-          <details class="hdd-filter-block">
-            <summary>Studied effect</summary>
-            <label for="hdd-filter-effect" class="hdd-sr-only">Studied effect</label>
-            <select id="hdd-filter-effect" multiple></select>
+            <summary>Chemical composition</summary>
+            <label for="hdd-filter-composition" class="hdd-sr-only">Chemical composition</label>
+            <select id="hdd-filter-composition" multiple></select>
           </details>
           <details class="hdd-filter-block">
             <summary>Measurement method</summary>
@@ -73,6 +51,25 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
             <summary>Model type</summary>
             <label for="hdd-filter-model" class="hdd-sr-only">Model type</label>
             <select id="hdd-filter-model" multiple></select>
+          </details>
+          <details class="hdd-filter-block">
+            <summary>Temperature window</summary>
+            <label class="hdd-sr-only" for="hdd-temp-min">Temperature min</label>
+            <label class="hdd-sr-only" for="hdd-temp-max">Temperature max</label>
+            <div class="hdd-toggle-group">
+              <input type="number" id="hdd-temp-min" placeholder="min" min="0" />
+              <input type="number" id="hdd-temp-max" placeholder="max" min="0" />
+            </div>
+          </details>
+          <details class="hdd-filter-block">
+            <summary>Reported as</summary>
+            <label for="hdd-filter-reported" class="hdd-sr-only">Reported as</label>
+            <select id="hdd-filter-reported" multiple></select>
+          </details>
+          <details class="hdd-filter-block">
+            <summary>Studied effect</summary>
+            <label for="hdd-filter-effect" class="hdd-sr-only">Studied effect</label>
+            <select id="hdd-filter-effect" multiple></select>
           </details>
         </div>
 
