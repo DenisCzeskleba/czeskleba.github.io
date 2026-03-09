@@ -149,10 +149,6 @@ body.dark .hdd-actions {
   margin-bottom: 10px;
 }
 
-.hdd-control select[multiple] {
-  min-height: 150px;
-}
-
 .hdd-control small {
   color: var(--muted);
   display: block;
@@ -246,6 +242,47 @@ body.dark .hdd-toggle-group button.is-active {
 
 .hdd-filter-block select {
   margin-top: 8px;
+}
+
+.hdd-filter-list {
+  margin-top: 8px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  max-height: 420px;
+  min-height: 150px;
+  overflow: auto;
+  padding: 6px;
+  display: grid;
+  gap: 6px;
+  resize: vertical;
+}
+
+.hdd-filter-item {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 8px;
+  align-items: start;
+  padding: 6px 8px;
+  border-radius: 10px;
+}
+
+.hdd-filter-item:hover {
+  background: var(--panel-strong);
+}
+
+.hdd-filter-item input {
+  margin-top: 2px;
+  accent-color: var(--accent);
+}
+
+.hdd-filter-item.is-disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.hdd-filter-item.is-hidden {
+  display: none;
 }
 
 .hdd-sr-only {

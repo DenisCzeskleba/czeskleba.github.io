@@ -24,32 +24,32 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
           <details class="hdd-filter-block">
             <summary>Source</summary>
             <label for="hdd-filter-source" class="hdd-sr-only">Source</label>
-            <select id="hdd-filter-source" multiple></select>
+            <div id="hdd-filter-source" class="hdd-filter-list" role="listbox" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Material class</summary>
             <label for="hdd-filter-class" class="hdd-sr-only">Material class</label>
-            <select id="hdd-filter-class" multiple></select>
+            <div id="hdd-filter-class" class="hdd-filter-list" role="listbox" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Material grade</summary>
             <label for="hdd-filter-grade" class="hdd-sr-only">Material grade</label>
-            <select id="hdd-filter-grade" multiple></select>
+            <div id="hdd-filter-grade" class="hdd-filter-list" role="listbox" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Chemical composition</summary>
             <label for="hdd-filter-composition" class="hdd-sr-only">Chemical composition</label>
-            <select id="hdd-filter-composition" multiple></select>
+            <div id="hdd-filter-composition" class="hdd-filter-list" role="listbox" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Measurement method</summary>
             <label for="hdd-filter-method" class="hdd-sr-only">Measurement method</label>
-            <select id="hdd-filter-method" multiple></select>
+            <div id="hdd-filter-method" class="hdd-filter-list" role="listbox" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Model type</summary>
             <label for="hdd-filter-model" class="hdd-sr-only">Model type</label>
-            <select id="hdd-filter-model" multiple></select>
+            <div id="hdd-filter-model" class="hdd-filter-list" role="listbox" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Temperature window</summary>
@@ -63,12 +63,12 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
           <details class="hdd-filter-block">
             <summary>Reported as</summary>
             <label for="hdd-filter-reported" class="hdd-sr-only">Reported as</label>
-            <select id="hdd-filter-reported" multiple></select>
+            <div id="hdd-filter-reported" class="hdd-filter-list" role="listbox" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Studied effect</summary>
             <label for="hdd-filter-effect" class="hdd-sr-only">Studied effect</label>
-            <select id="hdd-filter-effect" multiple></select>
+            <div id="hdd-filter-effect" class="hdd-filter-list" role="listbox" aria-multiselectable="true"></div>
           </details>
         </div>
 

@@ -339,10 +339,9 @@
       dom.filterEffect,
       dom.filterMethod,
       dom.filterModel,
-    ].forEach((select) => {
-      if (!select) return;
-      select.addEventListener("change", applyFilters);
-      enableMultiSelectToggle(select);
+    ].forEach((listbox) => {
+      if (!listbox) return;
+      listbox.addEventListener("change", applyFilters);
     });
   }
 
@@ -365,26 +364,18 @@
     setSelectOptions(dom.filterModel, toOptions(payload.filters?.model_type));
   }
 
-  function setSelectOptions(select, options) {
-    if (!select) return;
-    select.innerHTML = "";
+  function setSelectOptions(listbox, options) {
+    if (!listbox) return;
+    listbox.innerHTML = "";
     options.forEach((option) => {
-      const opt = document.createElement("option");
-      opt.value = option.value;
-      opt.textContent = option.label;
-      select.appendChild(opt);
-    });
-  }
-
-  function enableMultiSelectToggle(select) {
-    if (select.dataset.toggleBound === "true") return;
-    select.dataset.toggleBound = "true";
-    select.addEventListener("mousedown", (event) => {
-      const target = event.target;
-      if (!target || target.tagName !== "OPTION") return;
-      event.preventDefault();
-      target.selected = !target.selected;
-      select.dispatchEvent(new Event("change", { bubbles: true }));
+      const item = document.createElement("label");
+      item.className = "hdd-filter-item";
+      item.dataset.value = option.value;
+      item.innerHTML = `
+        <input type="checkbox" value="${escapeHtml(option.value)}" />
+        <span>${escapeHtml(option.label)}</span>
+      `;
+      listbox.appendChild(item);
     });
   }
 
@@ -428,9 +419,11 @@
 
   function clearFilters() {
     [dom.filterSource, dom.filterClass, dom.filterGrade, dom.filterComposition, dom.filterReported, dom.filterEffect, dom.filterMethod, dom.filterModel]
-      .forEach((select) => {
-        if (!select) return;
-        Array.from(select.options).forEach((opt) => (opt.selected = false));
+      .forEach((listbox) => {
+        if (!listbox) return;
+        listbox.querySelectorAll("input[type='checkbox']").forEach((checkbox) => {
+          checkbox.checked = false;
+        });
       });
     if (dom.search) dom.search.value = "";
     applyFilters();
@@ -480,21 +473,30 @@
       dom.filterEffect,
       dom.filterMethod,
       dom.filterModel,
-    ].forEach((select) => {
-      if (!select) return;
-      map.set(select, select.scrollTop);
+    ].forEach((listbox) => {
+      if (!listbox) return;
+      map.set(listbox, listbox.scrollTop);
     });
     return map;
   }
 
   function restoreSelectScroll(map) {
     if (!map) return;
-    map.forEach((scrollTop, select) => {
-      if (!select) return;
+    map.forEach((scrollTop, listbox) => {
+      if (!listbox) return;
       requestAnimationFrame(() => {
-        select.scrollTop = scrollTop;
+        listbox.scrollTop = scrollTop;
       });
     });
+  }
+
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 
   function syncSelectionToVisible(visibleList) {
@@ -622,17 +624,21 @@
     updateSelectAvailability(dom.filterModel, availability.modelType);
   }
 
-  function updateSelectAvailability(select, available) {
-    if (!select) return;
-    Array.from(select.options).forEach((option) => {
-      if (option.selected) {
-        option.disabled = false;
-        option.hidden = false;
+  function updateSelectAvailability(listbox, available) {
+    if (!listbox) return;
+    const items = listbox.querySelectorAll(".hdd-filter-item");
+    items.forEach((item) => {
+      const checkbox = item.querySelector("input");
+      if (!checkbox) return;
+      if (checkbox.checked) {
+        checkbox.disabled = false;
+        item.classList.remove("is-disabled", "is-hidden");
         return;
       }
-      const isAvailable = available.size ? available.has(option.value) : true;
-      option.disabled = !isAvailable;
-      option.hidden = !isAvailable;
+      const isAvailable = available.size ? available.has(checkbox.value) : true;
+      checkbox.disabled = !isAvailable;
+      item.classList.toggle("is-disabled", !isAvailable);
+      item.classList.toggle("is-hidden", !isAvailable);
     });
   }
 
@@ -1292,9 +1298,11 @@
     return Number.isFinite(parsed) ? parsed : null;
   }
 
-  function selectedValues(select) {
-    if (!select) return [];
-    return Array.from(select.selectedOptions).map((opt) => opt.value);
+  function selectedValues(listbox) {
+    if (!listbox) return [];
+    return Array.from(listbox.querySelectorAll("input[type='checkbox']:checked")).map(
+      (input) => input.value
+    );
   }
 
   function matchesSet(selected, set) {
