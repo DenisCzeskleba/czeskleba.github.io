@@ -8,17 +8,19 @@
   <link rel="icon" href="/assets/favicon.ico" type="image/x-icon" />
   <style>
     :root {
-      --bg: #f4f4f4;
-      --text: #333;
-      --button-bg: #333;
+      --bg: #f6f7f9;
+      --text: #1f2937;
+      --button-bg: #1f2937;
       --button-text: #fff;
+      --border: #d7dbe2;
     }
 
     body.dark {
-      --bg: #1a1a1a;
-      --text: #eee;
-      --button-bg: #eee;
-      --button-text: #111;
+      --bg: #15181d;
+      --text: #e5e7eb;
+      --button-bg: #e5e7eb;
+      --button-text: #111827;
+      --border: #2b313a;
     }
 
     body {
@@ -40,7 +42,7 @@
       justify-content: space-between;
       padding: 1rem 2rem; /* this is good, maybe change to 1.5rem or more */
       background-color: var(--bg);
-      border-bottom: 1px solid #ccc;
+      border-bottom: 1px solid var(--border);
       position: sticky;
       top: 0;
       width: 100%;

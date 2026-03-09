@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.1",
-  "export_date": "2026.03.09.15.05",
+  "export_date": "2026.03.09.15.42",
   "group_count": 259,
   "series_count": 505,
   "entry_count": 2335,
@@ -19,7 +19,7 @@
       "series": [
         {
           "series_id": "low-t-293-573-k",
-          "series_value": "Low-T (293?573 K)",
+          "series_value": "Low-T (293-573 K)",
           "segments": [
             {
               "entry_id": "abe_2013_crmov_arrhenius_below_300C",
@@ -29,7 +29,7 @@
               "variant_value": null,
               "variant_unit": "K",
               "series_key": "Segment",
-              "series_value": "Low-T (293?573 K)",
+              "series_value": "Low-T (293-573 K)",
               "model": {
                 "type": "arrhenius",
                 "D0_mm2_per_s": 11.0,
@@ -66,7 +66,7 @@
         },
         {
           "series_id": "mid-t-573-773-k",
-          "series_value": "Mid-T (573?773 K)",
+          "series_value": "Mid-T (573-773 K)",
           "segments": [
             {
               "entry_id": "abe_2013_crmov_arrhenius_300_500C",
@@ -76,7 +76,7 @@
               "variant_value": null,
               "variant_unit": "K",
               "series_key": "Segment",
-              "series_value": "Mid-T (573?773 K)",
+              "series_value": "Mid-T (573-773 K)",
               "model": {
                 "type": "arrhenius",
                 "D0_mm2_per_s": 0.104,
@@ -113,7 +113,7 @@
         },
         {
           "series_id": "high-t-773-1473-k",
-          "series_value": "High-T (773?1473 K)",
+          "series_value": "High-T (773-1473 K)",
           "segments": [
             {
               "entry_id": "abe_2013_crmov_arrhenius_above_500C",
@@ -123,7 +123,7 @@
               "variant_value": null,
               "variant_unit": "K",
               "series_key": "Segment",
-              "series_value": "High-T (773?1473 K)",
+              "series_value": "High-T (773-1473 K)",
               "model": {
                 "type": "arrhenius",
                 "D0_mm2_per_s": 1.51,
@@ -53187,7 +53187,7 @@
               "conditions": {
                 "measurement_method": "Electrochemical permeation",
                 "surface_coating": "Ni-plated detection face, Pd-free entry face",
-                "temperature_control": "300?325 K thermostatic bath",
+                "temperature_control": "300-325 K thermostatic bath",
                 "electrolyte": "charging_electrolyte=0.5 mol/L H2SO4 (cathodic), 10 mA/cm^2 + oxidation_electrolyte=0.1 mol/L NaOH (anodic)"
               },
               "metadata": {
@@ -53258,7 +53258,7 @@
               "conditions": {
                 "measurement_method": "Electrochemical permeation",
                 "surface_coating": "Ni-plated detection face",
-                "temperature_control": "293?313 K thermostatic bath",
+                "temperature_control": "293-313 K thermostatic bath",
                 "electrolyte": "charging_electrolyte=0.005 mol/L H2SO4 + oxidation_electrolyte=0.1 mol/L NaOH",
                 "charging_current_density_mA_cm2": 10.0
               },
@@ -116689,7 +116689,7 @@
       "source_id": "kikuta_1977_a_study_on_hydrogen",
       "clear_name": "Kikuta 1977",
       "type": "journal_article",
-      "title": "A Study on Hydrogen Embrittlement and Microscopic Behavior of Hydrogen in Steel (Report 2)\nHydrogen Gathering Analysis at Plastically Deformed Notch Region by Electro-Chemical Flux Monitoring Technique",
+      "title": "A Study on Hydrogen Embrittlement and Microscopic Behavior of Hydrogen in Steel (Report 2) Hydrogen Gathering Analysis at Plastically Deformed Notch Region by Electro-Chemical Flux Monitoring Technique",
       "authors": [
         "Yoneo Kikuta",
         "Takao Araki",
@@ -118215,7 +118215,7 @@
       "source_id": "zhong_2025_new_insights_from_crystallography",
       "clear_name": "Zhong 2025",
       "type": "journal_article",
-      "title": "New insights from crystallography into the effect of boundaries on hydrogen embrittlement susceptibility of a 1000\u202fMPa grade heavy gauge high-strength low-alloy steel",
+      "title": "New insights from crystallography into the effect of boundaries on hydrogen embrittlement susceptibility of a 1000 MPa grade heavy gauge high-strength low-alloy steel",
       "authors": [
         "Rui Zhong",
         "Jingxiao Zhao",

@@ -1,4 +1,4 @@
----
+﻿---
 layout: default
 title: WeldCraft
 permalink: /weldcraft/
@@ -13,7 +13,7 @@ Still a work in progress, but here are some links:
 
 
 <div class="links">
-  <a href="https://github.com/DenisCzeskleba/WeldCraft" target="_blank">ðŸ“ Get it on GitHub</a>
-  <a href="https://www.buymeacoffee.com/denisczeskleba" target="_blank">ðŸº Buy me a beer</a>
-  <a href="/docs/">ðŸ“– Documentation</a>
+  <a href="https://github.com/DenisCzeskleba/WeldCraft" target="_blank">Get it on GitHub</a>
+  <a href="https://www.buymeacoffee.com/denisczeskleba" target="_blank">Buy me a beer</a>
+  <a href="/docs/">Documentation</a>
 </div>
