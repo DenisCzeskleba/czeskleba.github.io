@@ -31,6 +31,8 @@
     scaleButtons: document.querySelectorAll("[data-scale]"),
     envelope: document.getElementById("hdd-envelope"),
     numbering: document.getElementById("hdd-numbering"),
+    gridX: document.getElementById("hdd-grid-x"),
+    gridY: document.getElementById("hdd-grid-y"),
     tempMin: document.getElementById("hdd-temp-min"),
     tempMax: document.getElementById("hdd-temp-max"),
     downloadButtons: document.querySelectorAll(".hdd-downloads button"),
@@ -55,6 +57,8 @@
     scale: "log",
     envelope: true,
     numbering: true,
+    gridX: true,
+    gridY: true,
     tempMin: null,
     tempMax: null,
     summaryExpanded: false,
@@ -91,6 +95,8 @@
     );
 
     bindEvents();
+    state.gridX = dom.gridX?.checked ?? true;
+    state.gridY = dom.gridY?.checked ?? true;
     populateFilters(payload);
     applyFilters();
     selectAllVisible();
@@ -293,6 +299,14 @@
     });
     dom.numbering?.addEventListener("change", () => {
       state.numbering = dom.numbering.checked;
+      plotSelectedSeries();
+    });
+    dom.gridX?.addEventListener("change", () => {
+      state.gridX = dom.gridX.checked;
+      plotSelectedSeries();
+    });
+    dom.gridY?.addEventListener("change", () => {
+      state.gridY = dom.gridY.checked;
       plotSelectedSeries();
     });
     [dom.tempMin, dom.tempMax].forEach((input) =>
@@ -647,16 +661,22 @@
     }
     const allItems = Array.from(state.selected)
       .map((id) => state.seriesById.get(id))
-      .filter(Boolean)
-      .map((series) => {
+      .filter(Boolean);
+    const seriesOrder = currentSeries.length
+      ? currentSeries.map((series, index) => ({ id: series.id, index }))
+      : allItems.map((series, index) => ({ id: series.id, index }));
+    const orderMap = new Map(seriesOrder.map((item) => [item.id, item.index]));
+
+    const allItemLines = allItems.map((series, fallbackIndex) => {
         const range = series.temperatureRange?.length === 2
           ? `${series.temperatureRange[0]?.toFixed?.(0) ?? "?"}–${series.temperatureRange[1]?.toFixed?.(0) ?? "?"} K`
           : "range unknown";
-        return `<li><strong>${series.label}</strong> · ${series.seriesLabel} · ${range}</li>`;
+        const ordinal = orderMap.has(series.id) ? orderMap.get(series.id) + 1 : fallbackIndex + 1;
+        return `<li><span class="hdd-ordinal">${ordinal}.</span> <strong>${series.label}</strong> · ${series.seriesLabel} · ${range}</li>`;
       });
     const previewCount = 4;
-    const previewItems = allItems.slice(0, previewCount).join("\n");
-    const remainingItems = allItems.slice(previewCount).join("\n");
+    const previewItems = allItemLines.slice(0, previewCount).join("\n");
+    const remainingItems = allItemLines.slice(previewCount).join("\n");
 
     const plottedText = seriesList && seriesList.length
       ? `Currently plotting ${seriesList.length} series.`
@@ -861,7 +881,7 @@
     const logMin = Math.log10(axisMinY);
     const logMax = Math.log10(axisMaxY);
 
-    const margin = { top: 30, right: 40, bottom: 70, left: 80 };
+    const margin = { top: 30, right: 340, bottom: 70, left: 80 };
     const plotWidth = width - margin.left - margin.right;
     const plotHeight = height - margin.top - margin.bottom;
 
@@ -909,8 +929,8 @@
     ctx.fillText("Apparent Diffusivity [mm²/s]", 0, 0);
     ctx.restore();
 
-    drawXTicks(ctx, axisMinX, axisMaxX, margin, plotWidth, plotHeight, xToPx, theme);
-    drawYTicks(ctx, axisMinY, axisMaxY, logMin, logMax, margin, plotHeight, yToPx, theme);
+    drawXTicks(ctx, axisMinX, axisMaxX, margin, plotWidth, plotHeight, xToPx, theme, state.gridX);
+    drawYTicks(ctx, axisMinY, axisMaxY, logMin, logMax, margin, plotWidth, plotHeight, yToPx, theme, state.gridY);
 
     fillEnvelopes(series, xToPx, yToPx);
 
@@ -1043,7 +1063,7 @@
     return groupId.replace(/_(mean|min|max)$/, "");
   }
 
-  function drawXTicks(ctx, min, max, margin, width, height, xToPx, theme) {
+  function drawXTicks(ctx, min, max, margin, width, height, xToPx, theme, drawGrid) {
     const steps = 5;
     ctx.fillStyle = theme.muted;
     ctx.textAlign = "center";
@@ -1051,6 +1071,14 @@
     for (let i = 0; i <= steps; i++) {
       const value = min + ((max - min) / steps) * i;
       const x = xToPx(value);
+      if (drawGrid) {
+        ctx.strokeStyle = theme.line;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x, margin.top);
+        ctx.lineTo(x, margin.top + height);
+        ctx.stroke();
+      }
       ctx.beginPath();
       ctx.moveTo(x, margin.top + height);
       ctx.lineTo(x, margin.top + height + 5);
@@ -1059,7 +1087,7 @@
     }
   }
 
-  function drawYTicks(ctx, axisMinY, axisMaxY, logMin, logMax, margin, height, yToPx, theme) {
+  function drawYTicks(ctx, axisMinY, axisMaxY, logMin, logMax, margin, width, height, yToPx, theme, drawGrid) {
     ctx.textAlign = "right";
     ctx.fillStyle = theme.muted;
     ctx.font = "11px IBM Plex Sans, Arial, sans-serif";
@@ -1068,6 +1096,14 @@
       for (let i = 0; i <= steps; i++) {
         const value = axisMinY + ((axisMaxY - axisMinY) / steps) * i;
         const y = yToPx(value);
+        if (drawGrid) {
+          ctx.strokeStyle = theme.line;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(margin.left, y);
+          ctx.lineTo(margin.left + width, y);
+          ctx.stroke();
+        }
         ctx.beginPath();
         ctx.moveTo(margin.left - 5, y);
         ctx.lineTo(margin.left, y);
@@ -1081,6 +1117,14 @@
       const logValue = logMin + ((logMax - logMin) / steps) * i;
       const value = Math.pow(10, logValue);
       const y = yToPx(value);
+      if (drawGrid) {
+        ctx.strokeStyle = theme.line;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(margin.left, y);
+        ctx.lineTo(margin.left + width, y);
+        ctx.stroke();
+      }
       ctx.beginPath();
       ctx.moveTo(margin.left - 5, y);
       ctx.lineTo(margin.left, y);
@@ -1090,15 +1134,15 @@
   }
 
   function drawLegend(ctx, series, margin, width, theme) {
-    const legendX = margin.left + width - 10;
+    const legendX = margin.left + width + 10;
     let legendY = margin.top + 10;
     ctx.font = "11px IBM Plex Sans, Arial, sans-serif";
-    ctx.textAlign = "right";
+    ctx.textAlign = "left";
     series.forEach((item, index) => {
       ctx.fillStyle = item.color;
-      ctx.fillRect(legendX - 12, legendY - 8, 10, 10);
+      ctx.fillRect(legendX, legendY - 8, 10, 10);
       ctx.fillStyle = theme.ink;
-      ctx.fillText(`${index + 1}. ${item.label} · ${item.seriesLabel}`, legendX - 16, legendY);
+      ctx.fillText(`${index + 1}. ${item.label} · ${item.seriesLabel}`, legendX + 14, legendY);
       legendY += 16;
     });
   }

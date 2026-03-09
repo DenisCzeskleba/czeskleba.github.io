@@ -108,16 +108,18 @@ main {
 
 .hdd-actions {
   position: sticky;
-  top: 0;
-  z-index: 3;
+  bottom: 0;
+  z-index: 4;
   display: grid;
   gap: 10px;
-  padding: 8px 0;
-  background: linear-gradient(180deg, var(--panel) 0%, rgba(255, 255, 255, 0) 100%);
+  padding: 12px 0 6px;
+  background: linear-gradient(0deg, var(--panel) 0%, rgba(255, 255, 255, 0) 100%);
+  box-shadow: 0 -12px 24px rgba(15, 23, 42, 0.08);
 }
 
 body.dark .hdd-actions {
-  background: linear-gradient(180deg, var(--panel) 0%, rgba(21, 24, 29, 0) 100%);
+  background: linear-gradient(0deg, var(--panel) 0%, rgba(21, 24, 29, 0) 100%);
+  box-shadow: 0 -12px 24px rgba(0, 0, 0, 0.35);
 }
 
 .hdd-control label {
@@ -454,6 +456,13 @@ body.dark .hdd-downloads button {
   list-style: none;
   display: grid;
   gap: 6px;
+}
+
+.hdd-ordinal {
+  display: inline-block;
+  min-width: 2.4ch;
+  color: var(--muted);
+  font-weight: 600;
 }
 
 .hdd-data-status {

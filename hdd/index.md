@@ -73,9 +73,9 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
         </div>
 
         <div class="hdd-actions">
-          <button type="button" id="hdd-select-all">Select all listed series</button>
-          <button type="button" id="hdd-plot-btn">Plot visible selection</button>
-          <button type="button" id="hdd-clear-filters">Clear filters</button>
+          <button type="button" id="hdd-select-all">Select All</button>
+          <button type="button" id="hdd-plot-btn">Plot Selected</button>
+          <button type="button" id="hdd-clear-filters">Clear Filters</button>
         </div>
 
         <div class="hdd-control">
@@ -115,6 +115,14 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
               <label class="hdd-inline-checkbox">
                 <input type="checkbox" id="hdd-numbering" checked />
                 <span>Numbered legend</span>
+              </label>
+              <label class="hdd-inline-checkbox">
+                <input type="checkbox" id="hdd-grid-x" checked />
+                <span>X grid</span>
+              </label>
+              <label class="hdd-inline-checkbox">
+                <input type="checkbox" id="hdd-grid-y" checked />
+                <span>Y grid</span>
               </label>
               <div class="hdd-plot-option-note">More options (grid, styling) coming soon.</div>
             </div>
