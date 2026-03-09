@@ -436,6 +436,18 @@ body.dark .hdd-downloads button {
   display: none;
 }
 
+.hdd-summary-less {
+  display: none;
+}
+
+.hdd-summary-details[open] .hdd-summary-more {
+  display: none;
+}
+
+.hdd-summary-details[open] .hdd-summary-less {
+  display: inline;
+}
+
 .hdd-summary-details ul {
   margin-top: 8px;
 }

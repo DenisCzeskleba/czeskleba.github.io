@@ -33,42 +33,42 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
         <div class="hdd-divider"></div>
 
         <div class="hdd-control hdd-filter-grid">
-          <details class="hdd-filter-block" open>
+          <details class="hdd-filter-block">
             <summary>Source</summary>
             <label for="hdd-filter-source" class="hdd-sr-only">Source</label>
             <select id="hdd-filter-source" multiple></select>
           </details>
-          <details class="hdd-filter-block" open>
+          <details class="hdd-filter-block">
             <summary>Material class</summary>
             <label for="hdd-filter-class" class="hdd-sr-only">Material class</label>
             <select id="hdd-filter-class" multiple></select>
           </details>
-          <details class="hdd-filter-block" open>
+          <details class="hdd-filter-block">
             <summary>Material grade</summary>
             <label for="hdd-filter-grade" class="hdd-sr-only">Material grade</label>
             <select id="hdd-filter-grade" multiple></select>
           </details>
-          <details class="hdd-filter-block" open>
+          <details class="hdd-filter-block">
             <summary>Reported as</summary>
             <label for="hdd-filter-reported" class="hdd-sr-only">Reported as</label>
             <select id="hdd-filter-reported" multiple></select>
           </details>
-          <details class="hdd-filter-block" open>
+          <details class="hdd-filter-block">
             <summary>Series key</summary>
             <label for="hdd-filter-series" class="hdd-sr-only">Series key</label>
             <select id="hdd-filter-series" multiple></select>
           </details>
-          <details class="hdd-filter-block" open>
+          <details class="hdd-filter-block">
             <summary>Studied effect</summary>
             <label for="hdd-filter-effect" class="hdd-sr-only">Studied effect</label>
             <select id="hdd-filter-effect" multiple></select>
           </details>
-          <details class="hdd-filter-block" open>
+          <details class="hdd-filter-block">
             <summary>Measurement method</summary>
             <label for="hdd-filter-method" class="hdd-sr-only">Measurement method</label>
             <select id="hdd-filter-method" multiple></select>
           </details>
-          <details class="hdd-filter-block" open>
+          <details class="hdd-filter-block">
             <summary>Model type</summary>
             <label for="hdd-filter-model" class="hdd-sr-only">Model type</label>
             <select id="hdd-filter-model" multiple></select>

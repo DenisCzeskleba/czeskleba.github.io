@@ -90,7 +90,7 @@
 
     bindEvents();
     populateFilters(payload);
-    renderSeriesList(seriesList);
+    applyFilters();
     updateSummary();
     if (!validationIssues.length) {
       renderEmptyChart("Select one or more series, then click Plot.");
@@ -388,35 +388,118 @@
       modelType: selectedValues(dom.filterModel),
     };
 
-    const filtered = state.seriesList.filter((entry) => {
-      if (filters.source.length && !filters.source.includes(entry.sourceId)) return false;
-      if (!matchesSet(filters.materialClass, entry.meta.material_class)) return false;
-      if (!matchesSet(filters.materialGrade, entry.meta.material_grade)) return false;
-      if (!matchesSet(filters.reportedAs, entry.meta.reported_as)) return false;
-      if (filters.seriesKey.length && !filters.seriesKey.includes(entry.seriesKey)) return false;
-      if (!matchesSet(filters.studiedEffects, entry.meta.studied_effects)) return false;
-      if (!matchesSet(filters.measurementMethod, entry.meta.measurement_method)) return false;
-      if (!matchesSet(filters.modelType, entry.meta.model_type)) return false;
-
-      if (query) {
-        const haystack = [
-          entry.label,
-          entry.groupId,
-          entry.seriesLabel,
-          entry.seriesKey,
-          entry.sourceTitle,
-          entry.materialLabel,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-        if (!haystack.includes(query)) return false;
-      }
-
-      return true;
-    });
+    const filtered = state.seriesList.filter((entry) =>
+      entryMatchesFilters(entry, filters, query)
+    );
 
     renderSeriesList(filtered);
+    updateFilterAvailability(filters, query);
+  }
+
+  function entryMatchesFilters(entry, filters, query, ignoreKey = null) {
+    if (ignoreKey !== "source" && filters.source.length && !filters.source.includes(entry.sourceId)) return false;
+    if (ignoreKey !== "materialClass" && !matchesSet(filters.materialClass, entry.meta.material_class)) return false;
+    if (ignoreKey !== "materialGrade" && !matchesSet(filters.materialGrade, entry.meta.material_grade)) return false;
+    if (ignoreKey !== "reportedAs" && !matchesSet(filters.reportedAs, entry.meta.reported_as)) return false;
+    if (ignoreKey !== "seriesKey" && filters.seriesKey.length && !filters.seriesKey.includes(entry.seriesKey)) return false;
+    if (ignoreKey !== "studiedEffects" && !matchesSet(filters.studiedEffects, entry.meta.studied_effects)) return false;
+    if (ignoreKey !== "measurementMethod" && !matchesSet(filters.measurementMethod, entry.meta.measurement_method)) return false;
+    if (ignoreKey !== "modelType" && !matchesSet(filters.modelType, entry.meta.model_type)) return false;
+
+    if (query) {
+      const haystack = [
+        entry.label,
+        entry.groupId,
+        entry.seriesLabel,
+        entry.seriesKey,
+        entry.sourceTitle,
+        entry.materialLabel,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      if (!haystack.includes(query)) return false;
+    }
+
+    return true;
+  }
+
+  function updateFilterAvailability(filters, query) {
+    const availability = {
+      source: new Set(),
+      materialClass: new Set(),
+      materialGrade: new Set(),
+      reportedAs: new Set(),
+      seriesKey: new Set(),
+      studiedEffects: new Set(),
+      measurementMethod: new Set(),
+      modelType: new Set(),
+    };
+
+    state.seriesList.forEach((entry) => {
+      if (!entryMatchesFilters(entry, filters, query, "source")) return;
+      if (entry.sourceId) availability.source.add(String(entry.sourceId));
+    });
+
+    state.seriesList.forEach((entry) => {
+      if (!entryMatchesFilters(entry, filters, query, "materialClass")) return;
+      entry.meta.material_class?.forEach((value) => availability.materialClass.add(String(value)));
+    });
+
+    state.seriesList.forEach((entry) => {
+      if (!entryMatchesFilters(entry, filters, query, "materialGrade")) return;
+      entry.meta.material_grade?.forEach((value) => availability.materialGrade.add(String(value)));
+    });
+
+    state.seriesList.forEach((entry) => {
+      if (!entryMatchesFilters(entry, filters, query, "reportedAs")) return;
+      entry.meta.reported_as?.forEach((value) => availability.reportedAs.add(String(value)));
+    });
+
+    state.seriesList.forEach((entry) => {
+      if (!entryMatchesFilters(entry, filters, query, "seriesKey")) return;
+      if (entry.seriesKey != null) availability.seriesKey.add(String(entry.seriesKey));
+    });
+
+    state.seriesList.forEach((entry) => {
+      if (!entryMatchesFilters(entry, filters, query, "studiedEffects")) return;
+      entry.meta.studied_effects?.forEach((value) => availability.studiedEffects.add(String(value)));
+    });
+
+    state.seriesList.forEach((entry) => {
+      if (!entryMatchesFilters(entry, filters, query, "measurementMethod")) return;
+      entry.meta.measurement_method?.forEach((value) =>
+        availability.measurementMethod.add(String(value))
+      );
+    });
+
+    state.seriesList.forEach((entry) => {
+      if (!entryMatchesFilters(entry, filters, query, "modelType")) return;
+      entry.meta.model_type?.forEach((value) => availability.modelType.add(String(value)));
+    });
+
+    updateSelectAvailability(dom.filterSource, availability.source);
+    updateSelectAvailability(dom.filterClass, availability.materialClass);
+    updateSelectAvailability(dom.filterGrade, availability.materialGrade);
+    updateSelectAvailability(dom.filterReported, availability.reportedAs);
+    updateSelectAvailability(dom.filterSeriesKey, availability.seriesKey);
+    updateSelectAvailability(dom.filterEffect, availability.studiedEffects);
+    updateSelectAvailability(dom.filterMethod, availability.measurementMethod);
+    updateSelectAvailability(dom.filterModel, availability.modelType);
+  }
+
+  function updateSelectAvailability(select, available) {
+    if (!select) return;
+    Array.from(select.options).forEach((option) => {
+      if (option.selected) {
+        option.disabled = false;
+        option.hidden = false;
+        return;
+      }
+      const isAvailable = available.size ? available.has(option.value) : true;
+      option.disabled = !isAvailable;
+      option.hidden = !isAvailable;
+    });
   }
 
   function renderSeriesList(list) {
@@ -502,7 +585,10 @@
       <ul>${previewItems}</ul>
       ${allItems.length > previewCount ? `
         <details class="hdd-summary-details">
-          <summary>Show all ${allItems.length} series</summary>
+          <summary>
+            <span class="hdd-summary-more">Show all ${allItems.length} series</span>
+            <span class="hdd-summary-less">Show fewer</span>
+          </summary>
           <ul>${remainingItems}</ul>
         </details>
       ` : ""}
