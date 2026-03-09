@@ -27,6 +27,7 @@
     chart: document.getElementById("hdd-chart"),
     summary: document.getElementById("hdd-selected-summary"),
     unitButtons: document.querySelectorAll("[data-unit]"),
+    scaleButtons: document.querySelectorAll("[data-scale]"),
     envelope: document.getElementById("hdd-envelope"),
     numbering: document.getElementById("hdd-numbering"),
     tempMin: document.getElementById("hdd-temp-min"),
@@ -50,6 +51,7 @@
     seriesById: new Map(),
     selected: new Set(),
     units: "K",
+    scale: "log",
     envelope: true,
     numbering: true,
     tempMin: null,
@@ -274,6 +276,9 @@
     dom.unitButtons?.forEach((btn) =>
       btn.addEventListener("click", () => toggleUnits(btn))
     );
+    dom.scaleButtons?.forEach((btn) =>
+      btn.addEventListener("click", () => toggleScale(btn))
+    );
     dom.envelope?.addEventListener("change", () => {
       state.envelope = dom.envelope.checked;
       plotSelectedSeries();
@@ -488,6 +493,14 @@
     plotSelectedSeries();
   }
 
+  function toggleScale(button) {
+    state.scale = button.dataset.scale === "linear" ? "linear" : "log";
+    dom.scaleButtons.forEach((btn) =>
+      btn.classList.toggle("is-active", btn === button)
+    );
+    plotSelectedSeries();
+  }
+
   function plotSelectedSeries(force = false) {
     if (!state.selected.size) {
       renderEmptyChart("Select at least one series.");
@@ -659,6 +672,10 @@
     }
 
     function yToPx(value) {
+      if (state.scale === "linear") {
+        const ratio = (value - axisMinY) / (axisMaxY - axisMinY || 1);
+        return margin.top + (1 - ratio) * plotHeight;
+      }
       const logValue = Math.log10(value);
       const ratio = (logValue - logMin) / (logMax - logMin || 1);
       return margin.top + (1 - ratio) * plotHeight;
@@ -687,11 +704,15 @@
     ctx.save();
     ctx.translate(15, margin.top + plotHeight / 2);
     ctx.rotate(-Math.PI / 2);
-    ctx.fillText("Diffusivity [mm²/s] (log scale)", 0, 0);
+    ctx.fillText(
+      `Diffusivity [mm²/s] (${state.scale === "linear" ? "linear" : "log"} scale)`,
+      0,
+      0
+    );
     ctx.restore();
 
     drawXTicks(ctx, axisMinX, axisMaxX, margin, plotWidth, plotHeight, xToPx, theme);
-    drawYTicks(ctx, logMin, logMax, margin, plotHeight, yToPx, theme);
+    drawYTicks(ctx, axisMinY, axisMaxY, logMin, logMax, margin, plotHeight, yToPx, theme);
 
     fillEnvelopes(series, xToPx, yToPx);
 
@@ -840,10 +861,23 @@
     }
   }
 
-  function drawYTicks(ctx, logMin, logMax, margin, height, yToPx, theme) {
+  function drawYTicks(ctx, axisMinY, axisMaxY, logMin, logMax, margin, height, yToPx, theme) {
     ctx.textAlign = "right";
     ctx.fillStyle = theme.muted;
     ctx.font = "11px IBM Plex Sans, Arial, sans-serif";
+    if (state.scale === "linear") {
+      const steps = 5;
+      for (let i = 0; i <= steps; i++) {
+        const value = axisMinY + ((axisMaxY - axisMinY) / steps) * i;
+        const y = yToPx(value);
+        ctx.beginPath();
+        ctx.moveTo(margin.left - 5, y);
+        ctx.lineTo(margin.left, y);
+        ctx.stroke();
+        ctx.fillText(value.toExponential(1), margin.left - 8, y + 3);
+      }
+      return;
+    }
     const steps = Math.max(2, Math.round(logMax - logMin));
     for (let i = 0; i <= steps; i++) {
       const logValue = logMin + ((logMax - logMin) / steps) * i;

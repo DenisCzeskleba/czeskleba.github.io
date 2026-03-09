@@ -21,18 +21,6 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
       </div>
 
       <form class="hdd-controls" id="hdd-controls" autocomplete="off">
-        <div class="hdd-control hdd-toggle-row">
-          <label>Plot options</label>
-          <label class="hdd-inline-checkbox">
-            <input type="checkbox" id="hdd-envelope" checked />
-            <span>Envelope fill</span>
-          </label>
-          <label class="hdd-inline-checkbox">
-            <input type="checkbox" id="hdd-numbering" checked />
-            <span>Numbered legend</span>
-          </label>
-        </div>
-
         <div class="hdd-control">
           <label>Temperature window (K)</label>
           <div class="hdd-toggle-group">
@@ -110,7 +98,19 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
                   <button type="button" data-unit="K" class="is-active">Kelvin</button>
                   <button type="button" data-unit="C">&deg;C</button>
                 </div>
-                <div class="hdd-plot-option-note">More options (log/grid) coming soon.</div>
+                <div class="hdd-toggle-group" role="group" aria-label="Y-axis scale">
+                  <button type="button" data-scale="log" class="is-active">Log scale</button>
+                  <button type="button" data-scale="linear">Linear</button>
+                </div>
+                <label class="hdd-inline-checkbox">
+                  <input type="checkbox" id="hdd-envelope" checked />
+                  <span>Envelope fill</span>
+                </label>
+                <label class="hdd-inline-checkbox">
+                  <input type="checkbox" id="hdd-numbering" checked />
+                  <span>Numbered legend</span>
+                </label>
+                <div class="hdd-plot-option-note">More options (grid, styling) coming soon.</div>
               </div>
             </details>
             <span class="hdd-stage-note">Log-scale diffusivity vs temperature</span>
