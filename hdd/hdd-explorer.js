@@ -309,7 +309,11 @@
       dom.filterEffect,
       dom.filterMethod,
       dom.filterModel,
-    ].forEach((select) => select?.addEventListener("change", applyFilters));
+    ].forEach((select) => {
+      if (!select) return;
+      select.addEventListener("change", applyFilters);
+      enableMultiSelectToggle(select);
+    });
   }
 
   function populateFilters(payload) {
@@ -339,6 +343,18 @@
       opt.value = option.value;
       opt.textContent = option.label;
       select.appendChild(opt);
+    });
+  }
+
+  function enableMultiSelectToggle(select) {
+    if (select.dataset.toggleBound === "true") return;
+    select.dataset.toggleBound = "true";
+    select.addEventListener("mousedown", (event) => {
+      const target = event.target;
+      if (!target || target.tagName !== "OPTION") return;
+      event.preventDefault();
+      target.selected = !target.selected;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
     });
   }
 
