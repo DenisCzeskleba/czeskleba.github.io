@@ -150,7 +150,7 @@ body.dark .hdd-actions {
 }
 
 .hdd-control select[multiple] {
-  min-height: 90px;
+  min-height: 150px;
 }
 
 .hdd-control small {

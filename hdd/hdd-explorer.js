@@ -438,6 +438,7 @@
 
   function applyFilters() {
     const previousScrollTop = dom.panelLeft ? dom.panelLeft.scrollTop : null;
+    const selectScroll = captureSelectScroll();
     const query = dom.search?.value.trim().toLowerCase() || "";
     const filters = {
       source: selectedValues(dom.filterSource),
@@ -460,11 +461,40 @@
     renderSeriesList(filtered);
     updateFilterAvailability(filters, query);
     updateSummary(currentSeries);
+    restoreSelectScroll(selectScroll);
     if (dom.panelLeft && previousScrollTop != null) {
       requestAnimationFrame(() => {
         dom.panelLeft.scrollTop = previousScrollTop;
       });
     }
+  }
+
+  function captureSelectScroll() {
+    const map = new Map();
+    [
+      dom.filterSource,
+      dom.filterClass,
+      dom.filterGrade,
+      dom.filterComposition,
+      dom.filterReported,
+      dom.filterEffect,
+      dom.filterMethod,
+      dom.filterModel,
+    ].forEach((select) => {
+      if (!select) return;
+      map.set(select, select.scrollTop);
+    });
+    return map;
+  }
+
+  function restoreSelectScroll(map) {
+    if (!map) return;
+    map.forEach((scrollTop, select) => {
+      if (!select) return;
+      requestAnimationFrame(() => {
+        select.scrollTop = scrollTop;
+      });
+    });
   }
 
   function syncSelectionToVisible(visibleList) {
