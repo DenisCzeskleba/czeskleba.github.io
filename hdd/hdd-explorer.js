@@ -26,6 +26,7 @@
     plotButton: document.getElementById("hdd-plot-btn"),
     chart: document.getElementById("hdd-chart"),
     summary: document.getElementById("hdd-selected-summary"),
+    panelLeft: mount.querySelector(".hdd-panel-left"),
     unitButtons: document.querySelectorAll("[data-unit]"),
     scaleButtons: document.querySelectorAll("[data-scale]"),
     envelope: document.getElementById("hdd-envelope"),
@@ -92,8 +93,10 @@
     bindEvents();
     populateFilters(payload);
     applyFilters();
+    selectAllVisible();
+    plotSelectedSeries(true);
     updateSummary();
-    if (!validationIssues.length) {
+    if (!validationIssues.length && !state.selected.size) {
       renderEmptyChart("Select one or more series, then click Plot.");
     }
     setShellState("ready");
@@ -413,6 +416,7 @@
   }
 
   function applyFilters() {
+    const previousScrollTop = dom.panelLeft ? dom.panelLeft.scrollTop : null;
     const query = dom.search?.value.trim().toLowerCase() || "";
     const filters = {
       source: selectedValues(dom.filterSource),
@@ -435,6 +439,11 @@
     renderSeriesList(filtered);
     updateFilterAvailability(filters, query);
     updateSummary(currentSeries);
+    if (dom.panelLeft && previousScrollTop != null) {
+      requestAnimationFrame(() => {
+        dom.panelLeft.scrollTop = previousScrollTop;
+      });
+    }
   }
 
   function syncSelectionToVisible(visibleList) {
@@ -852,7 +861,7 @@
     const logMin = Math.log10(axisMinY);
     const logMax = Math.log10(axisMaxY);
 
-    const margin = { top: 30, right: 40, bottom: 50, left: 80 };
+    const margin = { top: 30, right: 40, bottom: 70, left: 80 };
     const plotWidth = width - margin.left - margin.right;
     const plotHeight = height - margin.top - margin.bottom;
 
@@ -885,14 +894,14 @@
     ctx.lineTo(margin.left + plotWidth, margin.top + plotHeight);
     ctx.stroke();
 
-    ctx.fillStyle = theme.muted;
+    ctx.fillStyle = theme.ink;
     ctx.font = "12px IBM Plex Sans, Arial, sans-serif";
     ctx.textAlign = "center";
     const tempUnitLabel = state.units === "C" ? "°C" : "°K";
     ctx.fillText(
       `Temperature [${tempUnitLabel}]`,
       margin.left + plotWidth / 2,
-      canvas.height - 10
+      margin.top + plotHeight + 36
     );
     ctx.save();
     ctx.translate(15, margin.top + plotHeight / 2);

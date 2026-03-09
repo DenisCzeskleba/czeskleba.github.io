@@ -15,7 +15,6 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
     <aside class="hdd-panel hdd-panel-left">
       <div class="hdd-panel-header">
         <div>
-          <p class="hdd-eyebrow">Hydrogen Diffusion</p>
           <h3>Explorer Controls</h3>
         </div>
       </div>
@@ -73,7 +72,11 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
           </details>
         </div>
 
-        <button type="button" id="hdd-clear-filters">Clear filters</button>
+        <div class="hdd-actions">
+          <button type="button" id="hdd-select-all">Select all listed series</button>
+          <button type="button" id="hdd-plot-btn">Plot visible selection</button>
+          <button type="button" id="hdd-clear-filters">Clear filters</button>
+        </div>
 
         <div class="hdd-control">
           <label>Series</label>
@@ -83,8 +86,6 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
           </div>
         </div>
 
-        <button type="button" id="hdd-select-all">Select all listed series</button>
-        <button type="button" id="hdd-plot-btn">Plot selected series</button>
       </form>
 
       <div class="hdd-panel-footer">
