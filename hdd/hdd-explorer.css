@@ -253,7 +253,8 @@ body.dark .hdd-toggle-group button.is-active {
   min-height: 150px;
   overflow: auto;
   padding: 6px;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 6px;
   resize: vertical;
 }
@@ -262,7 +263,9 @@ body.dark .hdd-toggle-group button.is-active {
   display: grid;
   grid-template-columns: 18px 1fr;
   gap: 8px;
-  align-items: start;
+  align-items: center;
+  justify-items: start;
+  text-align: left;
   padding: 6px 8px;
   border-radius: 10px;
 }
@@ -274,6 +277,7 @@ body.dark .hdd-toggle-group button.is-active {
 .hdd-filter-item input {
   margin-top: 2px;
   accent-color: var(--accent);
+  justify-self: start;
 }
 
 .hdd-filter-item.is-disabled {
