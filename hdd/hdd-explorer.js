@@ -479,7 +479,7 @@
         "<strong>No series selected.</strong><p>Use the checklist to the left to choose datasets for plotting.</p>";
       return;
     }
-    const items = Array.from(state.selected)
+    const allItems = Array.from(state.selected)
       .map((id) => state.seriesById.get(id))
       .filter(Boolean)
       .map((series) => {
@@ -487,8 +487,10 @@
           ? `${series.temperatureRange[0]?.toFixed?.(0) ?? "?"}–${series.temperatureRange[1]?.toFixed?.(0) ?? "?"} K`
           : "range unknown";
         return `<li><strong>${series.label}</strong> · ${series.seriesLabel} · ${range}</li>`;
-      })
-      .join("\n");
+      });
+    const previewCount = 4;
+    const previewItems = allItems.slice(0, previewCount).join("\n");
+    const remainingItems = allItems.slice(previewCount).join("\n");
 
     const plottedText = seriesList && seriesList.length
       ? `Currently plotting ${seriesList.length} series.`
@@ -497,7 +499,13 @@
     dom.summary.innerHTML = `
       <strong>${state.selected.size} series selected.</strong>
       <p>${plottedText}</p>
-      <ul>${items}</ul>
+      <ul>${previewItems}</ul>
+      ${allItems.length > previewCount ? `
+        <details class="hdd-summary-details">
+          <summary>Show all ${allItems.length} series</summary>
+          <ul>${remainingItems}</ul>
+        </details>
+      ` : ""}
     `;
   }
 

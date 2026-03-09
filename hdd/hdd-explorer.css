@@ -421,6 +421,25 @@ body.dark .hdd-downloads button {
   gap: 6px;
 }
 
+.hdd-summary-details {
+  margin-top: 10px;
+}
+
+.hdd-summary-details summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--accent);
+  list-style: none;
+}
+
+.hdd-summary-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.hdd-summary-details ul {
+  margin-top: 8px;
+}
+
 .hdd-data-status {
   font-size: 0.8rem;
   padding: 6px 10px;
