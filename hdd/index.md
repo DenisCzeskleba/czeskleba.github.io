@@ -21,14 +21,15 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
       </div>
 
       <form class="hdd-controls" id="hdd-controls" autocomplete="off">
-        <div class="hdd-control">
-          <label>Temperature window (K)</label>
+        <details class="hdd-control hdd-filter-block">
+          <summary>Temperature window (K)</summary>
+          <label class="hdd-sr-only" for="hdd-temp-min">Temperature min (K)</label>
+          <label class="hdd-sr-only" for="hdd-temp-max">Temperature max (K)</label>
           <div class="hdd-toggle-group">
             <input type="number" id="hdd-temp-min" placeholder="min" min="0" />
             <input type="number" id="hdd-temp-max" placeholder="max" min="0" />
           </div>
-          <small>Optional clamp; leaving blank uses each segment's `[Tmin, Tmax]`.</small>
-        </div>
+        </details>
 
         <div class="hdd-divider"></div>
 

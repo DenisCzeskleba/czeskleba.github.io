@@ -56,6 +56,7 @@
     numbering: true,
     tempMin: null,
     tempMax: null,
+    summaryExpanded: false,
   };
 
   let currentSeries = [];
@@ -120,7 +121,8 @@
         source.clear_name || source.title || group.source_id || "Unknown source";
 
       (group.series || []).forEach((series, index) => {
-        const seriesId = `${group.group_id}::${series.series_id || index}`;
+        const seriesKeyPart = series.series_id ?? index;
+        const seriesId = `${group.group_id}::${seriesKeyPart}::${index}`;
         const segments = series.segments || [];
         const meta = collectSeriesMeta(segments);
         const materialLabel = deriveMaterialLabel(meta);
@@ -273,6 +275,7 @@
   function bindEvents() {
     dom.search?.addEventListener("input", applyFilters);
     dom.list?.addEventListener("change", handleSelectionChange);
+    dom.summary?.addEventListener("click", handleSummaryToggle);
     dom.unitButtons?.forEach((btn) =>
       btn.addEventListener("click", () => toggleUnits(btn))
     );
@@ -291,6 +294,7 @@
       input?.addEventListener("input", () => {
         state.tempMin = parseNumber(dom.tempMin?.value);
         state.tempMax = parseNumber(dom.tempMax?.value);
+        applyFilters();
       })
     );
     dom.plotButton?.addEventListener("click", () => plotSelectedSeries(true));
@@ -386,14 +390,32 @@
       studiedEffects: selectedValues(dom.filterEffect),
       measurementMethod: selectedValues(dom.filterMethod),
       modelType: selectedValues(dom.filterModel),
+      tempMin: state.tempMin,
+      tempMax: state.tempMax,
     };
 
     const filtered = state.seriesList.filter((entry) =>
       entryMatchesFilters(entry, filters, query)
     );
 
+    syncSelectionToVisible(filtered);
     renderSeriesList(filtered);
     updateFilterAvailability(filters, query);
+    updateSummary(currentSeries);
+  }
+
+  function syncSelectionToVisible(visibleList) {
+    const visibleIds = new Set(visibleList.map((entry) => entry.id));
+    let changed = false;
+    state.selected.forEach((id) => {
+      if (!visibleIds.has(id)) {
+        state.selected.delete(id);
+        changed = true;
+      }
+    });
+    if (changed) {
+      currentSeries = currentSeries.filter((series) => visibleIds.has(series.id));
+    }
   }
 
   function entryMatchesFilters(entry, filters, query, ignoreKey = null) {
@@ -405,6 +427,7 @@
     if (ignoreKey !== "studiedEffects" && !matchesSet(filters.studiedEffects, entry.meta.studied_effects)) return false;
     if (ignoreKey !== "measurementMethod" && !matchesSet(filters.measurementMethod, entry.meta.measurement_method)) return false;
     if (ignoreKey !== "modelType" && !matchesSet(filters.modelType, entry.meta.model_type)) return false;
+    if (ignoreKey !== "tempRange" && !matchesTemperatureRange(entry, filters.tempMin, filters.tempMax)) return false;
 
     if (query) {
       const haystack = [
@@ -422,6 +445,22 @@
     }
 
     return true;
+  }
+
+  function matchesTemperatureRange(entry, min, max) {
+    if (min == null && max == null) return true;
+    const segments = entry.segments || [];
+    for (const segment of segments) {
+      const range = segment.temperature_validity_K || [];
+      if (range.length !== 2) continue;
+      const segMin = Number(range[0]);
+      const segMax = Number(range[1]);
+      if (!Number.isFinite(segMin) || !Number.isFinite(segMax)) continue;
+      if (min != null && segMax < min) continue;
+      if (max != null && segMin > max) continue;
+      return true;
+    }
+    return false;
   }
 
   function updateFilterAvailability(filters, query) {
@@ -579,20 +618,28 @@
       ? `Currently plotting ${seriesList.length} series.`
       : "Hit Plot selected series to render.";
 
+    const canExpand = allItems.length > previewCount;
+    const expanded = state.summaryExpanded && canExpand;
     dom.summary.innerHTML = `
-      <strong>${state.selected.size} series selected.</strong>
+      <div class="hdd-summary-header">
+        <strong>${state.selected.size} series selected.</strong>
+        ${canExpand ? `
+          <button type="button" class="hdd-summary-toggle" data-summary-toggle="true">
+            ${expanded ? "Show fewer" : `Show all ${allItems.length} series`}
+          </button>
+        ` : ""}
+      </div>
       <p>${plottedText}</p>
       <ul>${previewItems}</ul>
-      ${allItems.length > previewCount ? `
-        <details class="hdd-summary-details">
-          <summary>
-            <span class="hdd-summary-more">Show all ${allItems.length} series</span>
-            <span class="hdd-summary-less">Show fewer</span>
-          </summary>
-          <ul>${remainingItems}</ul>
-        </details>
-      ` : ""}
+      ${canExpand && expanded ? `<ul>${remainingItems}</ul>` : ""}
     `;
+  }
+
+  function handleSummaryToggle(event) {
+    const button = event.target?.closest?.("[data-summary-toggle]");
+    if (!button) return;
+    state.summaryExpanded = !state.summaryExpanded;
+    updateSummary(currentSeries);
   }
 
   function toggleUnits(button) {

@@ -50,7 +50,7 @@ main {
 
 .hdd-explorer-shell {
   display: grid;
-  grid-template-columns: clamp(360px, 34vw, 520px) minmax(0, 1fr);
+  grid-template-columns: clamp(420px, 38vw, 640px) minmax(0, 1fr);
   gap: 28px;
   margin-top: 24px;
   width: 100%;
@@ -413,43 +413,33 @@ body.dark .hdd-downloads button {
   background: linear-gradient(135deg, var(--panel-strong), var(--accent-soft));
 }
 
+.hdd-summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hdd-summary-toggle {
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.hdd-summary-toggle:hover {
+  text-decoration: underline;
+}
+
 .hdd-summary ul {
   margin: 8px 0 0;
   padding: 0;
   list-style: none;
   display: grid;
   gap: 6px;
-}
-
-.hdd-summary-details {
-  margin-top: 10px;
-}
-
-.hdd-summary-details summary {
-  cursor: pointer;
-  font-weight: 600;
-  color: var(--accent);
-  list-style: none;
-}
-
-.hdd-summary-details summary::-webkit-details-marker {
-  display: none;
-}
-
-.hdd-summary-less {
-  display: none;
-}
-
-.hdd-summary-details[open] .hdd-summary-more {
-  display: none;
-}
-
-.hdd-summary-details[open] .hdd-summary-less {
-  display: inline;
-}
-
-.hdd-summary-details ul {
-  margin-top: 8px;
 }
 
 .hdd-data-status {
