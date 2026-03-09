@@ -625,11 +625,17 @@
     }
 
     const canvas = document.createElement("canvas");
-    canvas.width = 960;
-    canvas.height = 540;
+    const width = 960;
+    const height = 540;
+    const ratio = window.devicePixelRatio || 1;
+    canvas.width = width * ratio;
+    canvas.height = height * ratio;
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
     dom.chart.innerHTML = "";
     dom.chart.appendChild(canvas);
     const ctx = canvas.getContext("2d");
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     currentCanvas = canvas;
     const theme = getThemeColors();
 
@@ -642,20 +648,20 @@
     const logMax = Math.log10(axisMaxY);
 
     const margin = { top: 30, right: 40, bottom: 50, left: 80 };
-    const width = canvas.width - margin.left - margin.right;
-    const height = canvas.height - margin.top - margin.bottom;
+    const plotWidth = width - margin.left - margin.right;
+    const plotHeight = height - margin.top - margin.bottom;
 
     function xToPx(value) {
       return (
         margin.left +
-        ((value - axisMinX) / (axisMaxX - axisMinX || 1)) * width
+        ((value - axisMinX) / (axisMaxX - axisMinX || 1)) * plotWidth
       );
     }
 
     function yToPx(value) {
       const logValue = Math.log10(value);
       const ratio = (logValue - logMin) / (logMax - logMin || 1);
-      return margin.top + (1 - ratio) * height;
+      return margin.top + (1 - ratio) * plotHeight;
     }
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -666,8 +672,8 @@
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(margin.left, margin.top);
-    ctx.lineTo(margin.left, margin.top + height);
-    ctx.lineTo(margin.left + width, margin.top + height);
+    ctx.lineTo(margin.left, margin.top + plotHeight);
+    ctx.lineTo(margin.left + plotWidth, margin.top + plotHeight);
     ctx.stroke();
 
     ctx.fillStyle = theme.muted;
@@ -675,17 +681,17 @@
     ctx.textAlign = "center";
     ctx.fillText(
       `Temperature [${state.units === "C" ? "°C" : "K"}]`,
-      margin.left + width / 2,
+      margin.left + plotWidth / 2,
       canvas.height - 10
     );
     ctx.save();
-    ctx.translate(15, margin.top + height / 2);
+    ctx.translate(15, margin.top + plotHeight / 2);
     ctx.rotate(-Math.PI / 2);
     ctx.fillText("Diffusivity [mm²/s] (log scale)", 0, 0);
     ctx.restore();
 
-    drawXTicks(ctx, axisMinX, axisMaxX, margin, width, height, xToPx, theme);
-    drawYTicks(ctx, logMin, logMax, margin, height, yToPx, theme);
+    drawXTicks(ctx, axisMinX, axisMaxX, margin, plotWidth, plotHeight, xToPx, theme);
+    drawYTicks(ctx, logMin, logMax, margin, plotHeight, yToPx, theme);
 
     fillEnvelopes(series, xToPx, yToPx);
 
@@ -726,7 +732,7 @@
       }
     });
 
-    drawLegend(ctx, series, margin, width, theme);
+    drawLegend(ctx, series, margin, plotWidth, theme);
   }
 
   function fillEnvelopes(series, xToPx, yToPx) {

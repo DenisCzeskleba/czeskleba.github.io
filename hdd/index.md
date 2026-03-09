@@ -6,35 +6,21 @@ permalink: /hydrogen-diffusion-database/
 
 # Hydrogen Diffusion Database
 
-Browse curated diffusivity datasets, filter by material or source, and plot series directly in the browser. The explorer below mirrors the database plot grouping rules (`group_id`, `variant_*`, `series_*`) and lets you export PNG/CSV/JSON.
+Browse curated diffusivity datasets, filter by material or source, and plot series directly in the browser. Export images and data, and contribute peer-reviewed open-access results back to the database.
 
 <link rel="stylesheet" href="/hdd/hdd-explorer.css">
 
 <div id="hydrogen-explorer-app" data-endpoint="/hdd/hdd-groups-public.json">
   <div class="hdd-explorer-shell" data-state="loading">
-    <aside class="hdd-panel">
+    <aside class="hdd-panel hdd-panel-left">
       <div class="hdd-panel-header">
         <div>
           <p class="hdd-eyebrow">Hydrogen Diffusion</p>
           <h3>Explorer Controls</h3>
         </div>
-        <span id="hdd-data-status" class="hdd-data-status">Waiting for dataset...</span>
       </div>
 
       <form class="hdd-controls" id="hdd-controls" autocomplete="off">
-        <div class="hdd-control">
-          <label for="hdd-search">Search sources, groups, or series</label>
-          <input type="search" id="hdd-search" placeholder="e.g., Boellinghaus, CrMoV, weld" />
-        </div>
-
-        <div class="hdd-control">
-          <label>Temperature units</label>
-          <div class="hdd-toggle-group" role="group" aria-label="Temperature units">
-            <button type="button" data-unit="K" class="is-active">Kelvin</button>
-            <button type="button" data-unit="C">&deg;C</button>
-          </div>
-        </div>
-
         <div class="hdd-control hdd-toggle-row">
           <label>Plot options</label>
           <label class="hdd-inline-checkbox">
@@ -97,6 +83,7 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
 
         <div class="hdd-control">
           <label>Series</label>
+          <input type="search" id="hdd-search" placeholder="Search series, sources, groups..." />
           <div id="hdd-series-list" class="hdd-group-list" aria-live="polite">
             <p class="hdd-empty">Loading series...</p>
           </div>
@@ -105,13 +92,29 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
         <button type="button" id="hdd-select-all">Select all listed series</button>
         <button type="button" id="hdd-plot-btn">Plot selected series</button>
       </form>
+
+      <div class="hdd-panel-footer">
+        <span id="hdd-data-status" class="hdd-data-status">Waiting for dataset...</span>
+      </div>
     </aside>
 
     <section class="hdd-stage">
       <div class="hdd-stage-card">
         <div class="hdd-stage-header">
           <h3>Plot Preview</h3>
-          <span class="hdd-stage-note">Log-scale diffusivity vs temperature</span>
+          <div class="hdd-stage-controls">
+            <details class="hdd-plot-options">
+              <summary>Plot options</summary>
+              <div class="hdd-plot-options-body">
+                <div class="hdd-toggle-group" role="group" aria-label="Temperature units">
+                  <button type="button" data-unit="K" class="is-active">Kelvin</button>
+                  <button type="button" data-unit="C">&deg;C</button>
+                </div>
+                <div class="hdd-plot-option-note">More options (log/grid) coming soon.</div>
+              </div>
+            </details>
+            <span class="hdd-stage-note">Log-scale diffusivity vs temperature</span>
+          </div>
         </div>
         <div id="hdd-chart" class="hdd-chart" role="img" aria-live="polite">
           <div>

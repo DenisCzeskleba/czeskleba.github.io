@@ -73,6 +73,10 @@ main {
   overflow: auto;
 }
 
+.hdd-panel-left {
+  overflow-x: hidden;
+}
+
 .hdd-panel-header {
   display: flex;
   align-items: center;
@@ -121,6 +125,10 @@ main {
   padding: 10px 12px;
   background: var(--panel-strong);
   color: var(--ink);
+}
+
+.hdd-control input[type="search"] {
+  margin-bottom: 10px;
 }
 
 .hdd-control select[multiple] {
@@ -270,6 +278,45 @@ main {
   margin-bottom: 16px;
 }
 
+.hdd-stage-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hdd-plot-options {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: var(--panel-strong);
+}
+
+.hdd-plot-options summary {
+  list-style: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.hdd-plot-options summary::-webkit-details-marker {
+  display: none;
+}
+
+.hdd-plot-options[open] {
+  border-radius: 16px;
+}
+
+.hdd-plot-options-body {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.hdd-plot-option-note {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
 .hdd-stage-note {
   color: var(--muted);
   font-size: 0.85rem;
@@ -341,4 +388,11 @@ main {
     position: static;
     max-height: none;
   }
+}
+.hdd-panel-footer {
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: flex-end;
 }
