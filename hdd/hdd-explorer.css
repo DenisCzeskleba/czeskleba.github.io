@@ -264,16 +264,15 @@ body.dark .hdd-toggle-group button.is-active {
 }
 
 .hdd-filter-item {
-  display: grid;
-  grid-template-columns: 18px 1fr;
-  gap: 8px;
+  display: flex;
   align-items: center;
-  justify-items: start;
+  gap: 8px;
   text-align: left;
   padding: 6px 8px;
   border-radius: 10px;
   width: 100%;
   box-sizing: border-box;
+  line-height: 1.3;
 }
 
 .hdd-filter-item:hover {
@@ -281,9 +280,9 @@ body.dark .hdd-toggle-group button.is-active {
 }
 
 .hdd-filter-item input {
-  margin-top: 2px;
+  margin-top: 0;
   accent-color: var(--accent);
-  justify-self: start;
+  flex: 0 0 auto;
 }
 
 .hdd-filter-item.is-disabled {
