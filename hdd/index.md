@@ -74,6 +74,7 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
 
         <div class="hdd-actions">
           <button type="button" id="hdd-select-all">Select All</button>
+          <button type="button" id="hdd-deselect-all">Deselect All</button>
           <button type="button" id="hdd-plot-btn">Plot Selected</button>
           <button type="button" id="hdd-clear-filters">Clear Filters</button>
         </div>
@@ -89,6 +90,10 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
       </form>
 
       <div class="hdd-panel-footer">
+        <label class="hdd-inline-checkbox hdd-footer-toggle">
+          <input type="checkbox" id="hdd-include-unconfirmed" />
+          <span>Include Outliers / Unconfirmed</span>
+        </label>
         <span id="hdd-data-status" class="hdd-data-status">Waiting for dataset...</span>
       </div>
     </aside>

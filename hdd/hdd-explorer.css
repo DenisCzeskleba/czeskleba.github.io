@@ -552,5 +552,12 @@ body.dark .hdd-downloads button {
   padding-top: 12px;
   border-top: 1px solid var(--line);
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.hdd-footer-toggle {
+  font-size: 0.85rem;
+  color: var(--muted);
 }

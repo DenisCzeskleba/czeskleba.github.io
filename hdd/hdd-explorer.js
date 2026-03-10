@@ -39,6 +39,7 @@
     downloadButtons: document.querySelectorAll(".hdd-downloads button"),
     clearFilters: document.getElementById("hdd-clear-filters"),
     selectAll: document.getElementById("hdd-select-all"),
+    deselectAll: document.getElementById("hdd-deselect-all"),
     filterSource: document.getElementById("hdd-filter-source"),
     filterClass: document.getElementById("hdd-filter-class"),
     filterGrade: document.getElementById("hdd-filter-grade"),
@@ -47,6 +48,7 @@
     filterEffect: document.getElementById("hdd-filter-effect"),
     filterMethod: document.getElementById("hdd-filter-method"),
     filterModel: document.getElementById("hdd-filter-model"),
+    includeUnconfirmed: document.getElementById("hdd-include-unconfirmed"),
   };
 
   const state = {
@@ -63,6 +65,7 @@
     gridY: true,
     tempMin: null,
     tempMax: null,
+    includeUnconfirmed: false,
     summaryExpanded: false,
   };
 
@@ -100,6 +103,7 @@
     state.monochrome = dom.monochrome?.checked ?? false;
     state.gridX = dom.gridX?.checked ?? true;
     state.gridY = dom.gridY?.checked ?? true;
+    state.includeUnconfirmed = dom.includeUnconfirmed?.checked ?? false;
     populateFilters(payload);
     applyFilters();
     selectAllVisible();
@@ -254,6 +258,7 @@
       studied_effects: new Set(),
       measurement_method: new Set(),
       model_type: new Set(),
+      plotting_status: new Set(),
     };
 
     segments.forEach((segment) => {
@@ -267,7 +272,8 @@
       addIfPresent(meta.chemical_composition, formatChemicalComposition(material.chemical_composition));
 
       addIfPresent(meta.reported_as, segment.reported_as);
-      addIfPresent(meta.model_type, segment.model?.type);
+      deriveModelTypeLabels(segment).forEach((label) => addIfPresent(meta.model_type, label));
+      addIfPresent(meta.plotting_status, segment.plotting?.status);
 
       const conditions = segment.conditions || {};
       addIfPresent(meta.measurement_method, conditions.measurement_method);
@@ -277,6 +283,30 @@
     });
 
     return meta;
+  }
+
+  function deriveModelTypeLabels(segment) {
+    const labels = new Set();
+    const modelType = segment.model?.type;
+    const style = segment.plotting?.style;
+    const isLineStyle = typeof style === "string" && style.toLowerCase() === "line";
+    if (modelType === "arrhenius") {
+      labels.add("Arrhenius");
+    } else if (modelType === "single_point") {
+      if (!isLineStyle) {
+        labels.add("Single Points");
+      }
+    } else if (modelType === "power") {
+      labels.add("Digitized/Series");
+    } else if (modelType) {
+      labels.add(String(modelType));
+    }
+
+    if (isLineStyle) {
+      labels.add("Digitized/Series");
+    }
+
+    return Array.from(labels);
   }
 
   function deriveMaterialLabel(meta) {
@@ -329,6 +359,12 @@
     );
     dom.clearFilters?.addEventListener("click", clearFilters);
     dom.selectAll?.addEventListener("click", selectAllVisible);
+    dom.deselectAll?.addEventListener("click", deselectAllVisible);
+    dom.includeUnconfirmed?.addEventListener("change", () => {
+      state.includeUnconfirmed = dom.includeUnconfirmed.checked;
+      applyFilters();
+      plotSelectedSeries(true);
+    });
 
     [
       dom.filterSource,
@@ -361,7 +397,7 @@
     setSelectOptions(dom.filterReported, toOptions(payload.filters?.reported_as));
     setSelectOptions(dom.filterEffect, toOptions(payload.filters?.studied_effects));
     setSelectOptions(dom.filterMethod, toOptions(payload.filters?.measurement_method));
-    setSelectOptions(dom.filterModel, toOptions(payload.filters?.model_type));
+    setSelectOptions(dom.filterModel, toOptions(collectMetaValues(state.seriesList, "model_type")));
   }
 
   function setSelectOptions(listbox, options) {
@@ -444,6 +480,7 @@
       modelType: selectedValues(dom.filterModel),
       tempMin: state.tempMin,
       tempMax: state.tempMax,
+      includeUnconfirmed: state.includeUnconfirmed,
     };
 
     const filtered = state.seriesList.filter((entry) =>
@@ -514,6 +551,7 @@
   }
 
   function entryMatchesFilters(entry, filters, query, ignoreKey = null) {
+    if (ignoreKey !== "plottingStatus" && !isPlottingAllowed(entry, filters.includeUnconfirmed)) return false;
     if (ignoreKey !== "source" && filters.source.length && !filters.source.includes(entry.sourceId)) return false;
     if (ignoreKey !== "materialClass" && !matchesSet(filters.materialClass, entry.meta.material_class)) return false;
     if (ignoreKey !== "materialGrade" && !matchesSet(filters.materialGrade, entry.meta.material_grade)) return false;
@@ -539,6 +577,16 @@
       if (!haystack.includes(query)) return false;
     }
 
+    return true;
+  }
+
+  function isPlottingAllowed(entry, includeUnconfirmed) {
+    if (includeUnconfirmed) return true;
+    const statuses = entry.meta?.plotting_status;
+    if (!statuses || !statuses.size) return true;
+    for (const status of statuses) {
+      if (String(status).toLowerCase() !== "plot") return false;
+    }
     return true;
   }
 
@@ -682,6 +730,17 @@
       state.selected.add(checkbox.value);
     });
     updateSummary();
+  }
+
+  function deselectAllVisible() {
+    const checkboxes = dom.list?.querySelectorAll("input[type='checkbox']");
+    if (checkboxes && checkboxes.length) {
+      checkboxes.forEach((checkbox) => {
+        checkbox.checked = false;
+      });
+    }
+    state.selected.clear();
+    plotSelectedSeries(true);
   }
 
   function handleSelectionChange(event) {
@@ -830,11 +889,13 @@
 
     entry.segments.forEach((segment, idx) => {
       const model = segment.model || {};
+      const plottingStyle = segment.plotting?.style?.toLowerCase?.() || "";
       if (model.type === "single_point") {
         const temperature = resolveSinglePointTemperature(segment);
         if (temperature == null) return;
         if (!isWithinClamp(temperature, clampMin, clampMax)) return;
-        points.push({ temperature_K: temperature, diffusivity: model.diffusivity_mm2_per_s });
+        const target = plottingStyle === "line" ? line : points;
+        target.push({ temperature_K: temperature, diffusivity: model.diffusivity_mm2_per_s });
         return;
       }
 
@@ -852,6 +913,10 @@
         }
       }
     });
+
+    if (line.length > 1) {
+      line.sort((a, b) => a.temperature_K - b.temperature_K);
+    }
 
     return { line, points };
   }
