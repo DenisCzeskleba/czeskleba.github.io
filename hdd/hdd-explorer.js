@@ -856,7 +856,7 @@
       const entry = state.seriesById.get(seriesId);
       if (!entry) return;
       const samples = sampleSeries(entry, clampMin, clampMax);
-      if (!samples.line.length && !samples.points.length) return;
+      if (!samples.lineSegments.length && !samples.points.length) return;
 
       const axisLineSegments = samples.lineSegments.map((segment) =>
         segment.map((sample) => ({
