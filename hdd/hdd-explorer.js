@@ -856,9 +856,11 @@
       const entry = state.seriesById.get(seriesId);
       if (!entry) return;
       const samples = sampleSeries(entry, clampMin, clampMax);
-      if (!samples.lineSegments.length && !samples.points.length) return;
+      const lineSegments = Array.isArray(samples.lineSegments) ? samples.lineSegments : [];
+      const pointSamples = Array.isArray(samples.points) ? samples.points : [];
+      if (!lineSegments.length && !pointSamples.length) return;
 
-      const axisLineSegments = samples.lineSegments.map((segment) =>
+      const axisLineSegments = lineSegments.map((segment) =>
         segment.map((sample) => ({
           temperature_K: sample.temperature_K,
           temperature_axis: state.units === "C" ? sample.temperature_K - 273.15 : sample.temperature_K,
@@ -868,7 +870,7 @@
 
       const axisLine = axisLineSegments.flat();
 
-      const axisPoints = samples.points.map((sample) => ({
+      const axisPoints = pointSamples.map((sample) => ({
         temperature_K: sample.temperature_K,
         temperature_axis: state.units === "C" ? sample.temperature_K - 273.15 : sample.temperature_K,
         diffusivity: sample.diffusivity,
