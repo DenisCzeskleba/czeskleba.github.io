@@ -1,10 +1,10 @@
 ---
 layout: default
-title: Hydrogen Diffusion Database
+title: Hydrogen Diffusion Database 1
 permalink: /hydrogen-diffusion-database/
 ---
 
-# Hydrogen Diffusion Database
+# Hydrogen Diffusion Database 1
 
 Browse curated diffusivity datasets, filter by material or source, and plot series directly in the browser. Export images and data, and contribute your peer-reviewed open-access results back to the database.
 
