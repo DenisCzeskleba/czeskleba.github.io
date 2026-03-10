@@ -1098,6 +1098,11 @@
     drawXTicks(ctx, axisMinX, axisMaxX, margin, plotWidth, plotHeight, xToPx, theme, state.gridX);
     drawYTicks(ctx, axisMinY, axisMaxY, logMin, logMax, margin, plotWidth, plotHeight, yToPx, theme, state.gridY);
 
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(margin.left, margin.top, plotWidth, plotHeight);
+    ctx.clip();
+
     fillEnvelopes(series, xToPx, yToPx);
 
     ctx.lineWidth = 2;
@@ -1139,6 +1144,8 @@
         }
       }
     });
+
+    ctx.restore();
 
     drawLegend(ctx, series, margin, plotWidth, theme);
 
