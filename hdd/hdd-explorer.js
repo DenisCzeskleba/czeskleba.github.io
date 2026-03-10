@@ -888,6 +888,7 @@
   function sampleSeries(entry, clampMin, clampMax) {
     const line = [];
     const points = [];
+    let usedSinglePointAsLine = false;
 
     entry.segments.forEach((segment, idx) => {
       const model = segment.model || {};
@@ -896,6 +897,9 @@
         const temperature = resolveSinglePointTemperature(segment);
         if (temperature == null) return;
         if (!isWithinClamp(temperature, clampMin, clampMax)) return;
+        if (plottingStyle === "line") {
+          usedSinglePointAsLine = true;
+        }
         const target = plottingStyle === "line" ? line : points;
         target.push({ temperature_K: temperature, diffusivity: model.diffusivity_mm2_per_s });
         return;
@@ -916,7 +920,7 @@
       }
     });
 
-    if (line.length > 1) {
+    if (usedSinglePointAsLine && line.length > 1) {
       line.sort((a, b) => a.temperature_K - b.temperature_K);
     }
 
