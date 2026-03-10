@@ -137,7 +137,8 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
                   <span>Y grid</span>
                 </label>
               </div>
-              <div class="hdd-plot-option-note">More options (grid, styling) coming soon.</div>
+              <button type="button" id="hdd-reset-zoom">Reset zoom</button>
+              <div class="hdd-plot-option-note">Drag a rectangle on the plot to zoom. Use Reset zoom to return.</div>
             </div>
           </details>
         </div>

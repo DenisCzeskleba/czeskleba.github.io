@@ -463,6 +463,21 @@ body.dark .hdd-toggle-group button.is-active {
   color: var(--muted);
 }
 
+#hdd-reset-zoom {
+  justify-self: start;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.85rem;
+}
+
+#hdd-reset-zoom:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .hdd-stage-note {
   color: var(--muted);
   font-size: 0.85rem;

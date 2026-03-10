@@ -49,6 +49,7 @@
     filterMethod: document.getElementById("hdd-filter-method"),
     filterModel: document.getElementById("hdd-filter-model"),
     includeUnconfirmed: document.getElementById("hdd-include-unconfirmed"),
+    resetZoom: document.getElementById("hdd-reset-zoom"),
   };
 
   const state = {
@@ -67,6 +68,7 @@
     tempMax: null,
     includeUnconfirmed: false,
     summaryExpanded: false,
+    zoom: null,
   };
 
   let currentSeries = [];
@@ -326,6 +328,7 @@
     dom.scaleButtons?.forEach((btn) =>
       btn.addEventListener("click", () => toggleScale(btn))
     );
+    dom.resetZoom?.addEventListener("click", resetZoom);
     dom.envelope?.addEventListener("change", () => {
       state.envelope = dom.envelope.checked;
       plotSelectedSeries();
@@ -462,6 +465,10 @@
         });
       });
     if (dom.search) dom.search.value = "";
+    if (dom.tempMin) dom.tempMin.value = "";
+    if (dom.tempMax) dom.tempMax.value = "";
+    state.tempMin = null;
+    state.tempMax = null;
     applyFilters();
   }
 
@@ -823,6 +830,16 @@
     dom.scaleButtons.forEach((btn) =>
       btn.classList.toggle("is-active", btn === button)
     );
+    state.zoom = null;
+    plotSelectedSeries();
+  }
+
+  function toggleUnits(button) {
+    state.units = button.dataset.unit === "C" ? "C" : "K";
+    dom.unitButtons.forEach((btn) =>
+      btn.classList.toggle("is-active", btn === button)
+    );
+    state.zoom = null;
     plotSelectedSeries();
   }
 
@@ -1003,11 +1020,30 @@
     currentCanvas = canvas;
     const theme = getThemeColors();
 
-    const axisMinX = Math.min(...temps);
-    const axisMaxX = Math.max(...temps);
+    const dataMinX = Math.min(...temps);
+    const dataMaxX = Math.max(...temps);
     const positiveValues = values.filter((v) => v > 0);
-    const axisMinY = Math.min(...positiveValues);
-    const axisMaxY = Math.max(...positiveValues);
+    const dataMinY = Math.min(...positiveValues);
+    const dataMaxY = Math.max(...positiveValues);
+
+    let axisMinX = dataMinX;
+    let axisMaxX = dataMaxX;
+    let axisMinY = dataMinY;
+    let axisMaxY = dataMaxY;
+
+    if (state.zoom) {
+      axisMinX = clampValue(state.zoom.xMin, dataMinX, dataMaxX);
+      axisMaxX = clampValue(state.zoom.xMax, dataMinX, dataMaxX);
+      axisMinY = clampValue(state.zoom.yMin, dataMinY, dataMaxY);
+      axisMaxY = clampValue(state.zoom.yMax, dataMinY, dataMaxY);
+      if (!(axisMaxX > axisMinX) || !(axisMaxY > axisMinY)) {
+        state.zoom = null;
+        axisMinX = dataMinX;
+        axisMaxX = dataMaxX;
+        axisMinY = dataMinY;
+        axisMaxY = dataMaxY;
+      }
+    }
     const logMin = Math.log10(axisMinY);
     const logMax = Math.log10(axisMaxY);
 
@@ -1105,6 +1141,141 @@
     });
 
     drawLegend(ctx, series, margin, plotWidth, theme);
+
+    if (dom.resetZoom) {
+      dom.resetZoom.disabled = !state.zoom;
+    }
+
+    setupZoomSelection(canvas, ctx, {
+      axisMinX,
+      axisMaxX,
+      axisMinY,
+      axisMaxY,
+      logMin,
+      logMax,
+      margin,
+      plotWidth,
+      plotHeight,
+    });
+  }
+
+  function setupZoomSelection(canvas, ctx, config) {
+    if (!canvas) return;
+    const baseImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let dragStart = null;
+    let dragCurrent = null;
+
+    const plotLeft = config.margin.left;
+    const plotTop = config.margin.top;
+    const plotRight = plotLeft + config.plotWidth;
+    const plotBottom = plotTop + config.plotHeight;
+
+    function getOffset(event) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      };
+    }
+
+    function isInsidePlot(x, y) {
+      return x >= plotLeft && x <= plotRight && y >= plotTop && y <= plotBottom;
+    }
+
+    function clampPoint(x, y) {
+      return {
+        x: clampValue(x, plotLeft, plotRight),
+        y: clampValue(y, plotTop, plotBottom),
+      };
+    }
+
+    function pxToAxisX(x) {
+      const ratio = (x - plotLeft) / (config.plotWidth || 1);
+      return config.axisMinX + ratio * (config.axisMaxX - config.axisMinX);
+    }
+
+    function pxToAxisY(y) {
+      const ratio = (y - plotTop) / (config.plotHeight || 1);
+      if (state.scale === "linear") {
+        return config.axisMaxY - ratio * (config.axisMaxY - config.axisMinY);
+      }
+      const logValue = config.logMax - ratio * (config.logMax - config.logMin);
+      return Math.pow(10, logValue);
+    }
+
+    function drawSelection() {
+      if (!dragStart || !dragCurrent) return;
+      const start = clampPoint(dragStart.x, dragStart.y);
+      const end = clampPoint(dragCurrent.x, dragCurrent.y);
+      const x = Math.min(start.x, end.x);
+      const y = Math.min(start.y, end.y);
+      const width = Math.abs(end.x - start.x);
+      const height = Math.abs(end.y - start.y);
+
+      ctx.putImageData(baseImage, 0, 0);
+      ctx.save();
+      ctx.strokeStyle = "#0f766e";
+      ctx.fillStyle = "rgba(15,118,110,0.15)";
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([6, 4]);
+      ctx.strokeRect(x, y, width, height);
+      ctx.setLineDash([]);
+      ctx.fillRect(x, y, width, height);
+      ctx.restore();
+    }
+
+    function clearSelection() {
+      ctx.putImageData(baseImage, 0, 0);
+    }
+
+    canvas.addEventListener("mousedown", (event) => {
+      if (event.button !== 0) return;
+      const start = getOffset(event);
+      if (!isInsidePlot(start.x, start.y)) return;
+      dragStart = { x: start.x, y: start.y };
+      dragCurrent = { x: start.x, y: start.y };
+      drawSelection();
+
+      const onMouseUp = (eventUp) => {
+        const endPoint = getOffset(eventUp);
+        const end = clampPoint(endPoint.x, endPoint.y);
+        const startPoint = clampPoint(dragStart.x, dragStart.y);
+        const width = Math.abs(end.x - startPoint.x);
+        const height = Math.abs(end.y - startPoint.y);
+        dragStart = null;
+        dragCurrent = null;
+
+        if (width < 6 || height < 6) {
+          clearSelection();
+          window.removeEventListener("mouseup", onMouseUp);
+          return;
+        }
+
+        const xMin = pxToAxisX(Math.min(startPoint.x, end.x));
+        const xMax = pxToAxisX(Math.max(startPoint.x, end.x));
+        const yMin = pxToAxisY(Math.max(startPoint.y, end.y));
+        const yMax = pxToAxisY(Math.min(startPoint.y, end.y));
+        state.zoom = { xMin, xMax, yMin, yMax };
+        window.removeEventListener("mouseup", onMouseUp);
+        plotSelectedSeries();
+      };
+
+      window.addEventListener("mouseup", onMouseUp);
+    });
+
+    canvas.addEventListener("mousemove", (event) => {
+      const pos = getOffset(event);
+      canvas.style.cursor = isInsidePlot(pos.x, pos.y) ? "crosshair" : "default";
+      if (!dragStart) return;
+      dragCurrent = { x: pos.x, y: pos.y };
+      drawSelection();
+    });
+  }
+
+  function resetZoom() {
+    if (!state.zoom) return;
+    state.zoom = null;
+    plotSelectedSeries();
   }
 
   function fillEnvelopes(series, xToPx, yToPx) {
@@ -1384,7 +1555,10 @@
   }
 
   function parseNumber(value) {
-    const parsed = Number(value);
+    if (value == null) return null;
+    const trimmed = String(value).trim();
+    if (!trimmed) return null;
+    const parsed = Number(trimmed);
     return Number.isFinite(parsed) ? parsed : null;
   }
 
@@ -1453,6 +1627,11 @@
     if (min != null && value < min) return false;
     if (max != null && value > max) return false;
     return true;
+  }
+
+  function clampValue(value, min, max) {
+    if (!Number.isFinite(value)) return min;
+    return Math.min(Math.max(value, min), max);
   }
 
   function getThemeColors() {
