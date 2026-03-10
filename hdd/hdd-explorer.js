@@ -754,9 +754,18 @@
     updateSummary();
   }
 
+  function handleSummaryToggle(event) {
+    const button = event.target?.closest?.(".hdd-summary-toggle");
+    if (!button) return;
+    event.preventDefault();
+    state.summaryExpanded = !state.summaryExpanded;
+    updateSummary();
+  }
+
   function updateSummary(seriesList = null) {
     if (!dom.summary) return;
     if (!state.selected.size) {
+      state.summaryExpanded = false;
       dom.summary.innerHTML =
         "<strong>No series selected.</strong><p>Use the checklist to the left to choose datasets for plotting.</p>";
       return;
@@ -764,17 +773,49 @@
     const allItems = Array.from(state.selected)
       .map((id) => state.seriesById.get(id))
       .filter(Boolean);
-    const seriesOrder = currentSeries.length
-      ? currentSeries.map((series, index) => ({ id: series.id, index }))
+    const plottedSeries = seriesList && seriesList.length ? seriesList : currentSeries;
+    const seriesOrder = plottedSeries.length
+      ? plottedSeries.map((series, index) => ({ id: series.id, index }))
       : allItems.map((series, index) => ({ id: series.id, index }));
     const orderMap = new Map(seriesOrder.map((item) => [item.id, item.index]));
 
-    const allItemLines = allItems.map((series, fallbackIndex) => {
+    const orderedItems = allItems
+      .map((series, fallbackIndex) => ({
+        series,
+        index: orderMap.has(series.id) ? orderMap.get(series.id) : fallbackIndex,
+        fallbackIndex,
+      }))
+      .sort((a, b) => a.index - b.index);
+
+    const previewLimit = 6;
+    const maxPreview = state.summaryExpanded ? orderedItems.length : previewLimit;
+    const previewItems = orderedItems.slice(0, maxPreview);
+    const allItemLines = previewItems.map((item) => {
+        const series = item.series;
         const range = formatRangeValue(series.temperatureRange) || "range unknown";
-        const ordinal = orderMap.has(series.id) ? orderMap.get(series.id) + 1 : fallbackIndex + 1;
-        return `<li><span class="hdd-ordinal">${ordinal}.</span> <strong>${seriesDisplayLabel(series)}</strong> ?? ${series.seriesLabel} ?? ${range}</li>`;
+        const ordinal = orderMap.has(series.id) ? orderMap.get(series.id) + 1 : item.fallbackIndex + 1;
+        return `<li><span class="hdd-ordinal">${ordinal}.</span> <strong>${seriesDisplayLabel(series)}</strong> - ${series.seriesLabel} - ${range}</li>`;
       });
-    plotSelectedSeries();
+    const selectedCount = allItems.length;
+    const plottedCount = plottedSeries.length;
+    const needsToggle = selectedCount > previewLimit;
+    const toggleLabel = state.summaryExpanded ? "Show less" : `Show all (${selectedCount})`;
+    const toggleButton = needsToggle
+      ? `<button type="button" class="hdd-summary-toggle">${toggleLabel}</button>`
+      : "";
+    const statusLine =
+      plottedCount && plottedCount !== selectedCount
+        ? `<p>${plottedCount} plotted from current selection. Click "Plot Selected" to refresh.</p>`
+        : `<p>${selectedCount} series selected.</p>`;
+
+    dom.summary.innerHTML = `
+      <div class="hdd-summary-header">
+        <strong>Selected Series</strong>
+        ${toggleButton}
+      </div>
+      ${statusLine}
+      <ul>${allItemLines.join("")}</ul>
+    `;
   }
 
   function toggleScale(button) {
