@@ -366,6 +366,7 @@ body.dark .hdd-toggle-group button.is-active {
 
 .hdd-controls button#hdd-plot-btn,
 .hdd-controls button#hdd-select-all,
+.hdd-controls button#hdd-deselect-all,
 .hdd-controls button#hdd-clear-filters,
 .hdd-downloads button {
   padding: 12px 14px;
@@ -381,6 +382,12 @@ body.dark .hdd-toggle-group button.is-active {
 }
 
 #hdd-select-all {
+  background: var(--panel-strong);
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+#hdd-deselect-all {
   background: var(--panel-strong);
   color: var(--ink);
   border: 1px solid var(--line);
@@ -562,6 +569,13 @@ body.dark .hdd-downloads button {
   }
   .hdd-plot-options {
     position: static;
+  }
+  .hdd-action-row {
+    grid-template-columns: 1fr;
+  }
+  .hdd-action-row button {
+    padding: 12px 16px;
+    font-size: 0.95rem;
   }
 }
 .hdd-panel-footer {

@@ -23,33 +23,33 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
         <div class="hdd-control hdd-filter-grid">
           <details class="hdd-filter-block">
             <summary>Source</summary>
-            <label for="hdd-filter-source" class="hdd-sr-only">Source</label>
-            <div id="hdd-filter-source" class="hdd-filter-list" role="listbox" aria-multiselectable="true"></div>
+            <span id="hdd-filter-source-label" class="hdd-sr-only">Source</span>
+            <div id="hdd-filter-source" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-source-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Material class</summary>
-            <label for="hdd-filter-class" class="hdd-sr-only">Material class</label>
-            <div id="hdd-filter-class" class="hdd-filter-list" role="listbox" aria-multiselectable="true"></div>
+            <span id="hdd-filter-class-label" class="hdd-sr-only">Material class</span>
+            <div id="hdd-filter-class" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-class-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Material grade</summary>
-            <label for="hdd-filter-grade" class="hdd-sr-only">Material grade</label>
-            <div id="hdd-filter-grade" class="hdd-filter-list" role="listbox" aria-multiselectable="true"></div>
+            <span id="hdd-filter-grade-label" class="hdd-sr-only">Material grade</span>
+            <div id="hdd-filter-grade" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-grade-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Chemical composition</summary>
-            <label for="hdd-filter-composition" class="hdd-sr-only">Chemical composition</label>
-            <div id="hdd-filter-composition" class="hdd-filter-list" role="listbox" aria-multiselectable="true"></div>
+            <span id="hdd-filter-composition-label" class="hdd-sr-only">Chemical composition</span>
+            <div id="hdd-filter-composition" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-composition-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Measurement method</summary>
-            <label for="hdd-filter-method" class="hdd-sr-only">Measurement method</label>
-            <div id="hdd-filter-method" class="hdd-filter-list" role="listbox" aria-multiselectable="true"></div>
+            <span id="hdd-filter-method-label" class="hdd-sr-only">Measurement method</span>
+            <div id="hdd-filter-method" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-method-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Model type</summary>
-            <label for="hdd-filter-model" class="hdd-sr-only">Model type</label>
-            <div id="hdd-filter-model" class="hdd-filter-list" role="listbox" aria-multiselectable="true"></div>
+            <span id="hdd-filter-model-label" class="hdd-sr-only">Model type</span>
+            <div id="hdd-filter-model" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-model-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Temperature window</summary>
@@ -62,13 +62,13 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
           </details>
           <details class="hdd-filter-block">
             <summary>Reported as</summary>
-            <label for="hdd-filter-reported" class="hdd-sr-only">Reported as</label>
-            <div id="hdd-filter-reported" class="hdd-filter-list" role="listbox" aria-multiselectable="true"></div>
+            <span id="hdd-filter-reported-label" class="hdd-sr-only">Reported as</span>
+            <div id="hdd-filter-reported" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-reported-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Studied effect</summary>
-            <label for="hdd-filter-effect" class="hdd-sr-only">Studied effect</label>
-            <div id="hdd-filter-effect" class="hdd-filter-list" role="listbox" aria-multiselectable="true"></div>
+            <span id="hdd-filter-effect-label" class="hdd-sr-only">Studied effect</span>
+            <div id="hdd-filter-effect" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-effect-label" aria-multiselectable="true"></div>
           </details>
         </div>
 
