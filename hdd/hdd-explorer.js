@@ -858,16 +858,11 @@
       const samples = sampleSeries(entry, clampMin, clampMax);
       if (!samples.line.length && !samples.points.length) return;
 
-      const axisLine = samples.line.map((sample) => {
-        if (sample.break) {
-          return { break: true };
-        }
-        return {
-          temperature_K: sample.temperature_K,
-          temperature_axis: state.units === "C" ? sample.temperature_K - 273.15 : sample.temperature_K,
-          diffusivity: sample.diffusivity,
-        };
-      });
+      const axisLine = samples.line.map((sample) => ({
+        temperature_K: sample.temperature_K,
+        temperature_axis: state.units === "C" ? sample.temperature_K - 273.15 : sample.temperature_K,
+        diffusivity: sample.diffusivity,
+      }));
 
       const axisPoints = samples.points.map((sample) => ({
         temperature_K: sample.temperature_K,
@@ -914,17 +909,12 @@
       const segMax = clampTemperature(segment.temperature_validity_K?.[1], clampMax, true);
       if (!(segMax > segMin)) return;
       const steps = Math.max(2, SAMPLES_PER_SEGMENT);
-      let wroteLine = false;
       for (let i = 0; i < steps; i++) {
         if (idx > 0 && i === 0) continue;
         const ratio = i / (steps - 1);
         const temperature = segMin + (segMax - segMin) * ratio;
         const diffusivity = evaluateModel(model, temperature);
         if (diffusivity && diffusivity > 0) {
-          if (!wroteLine && line.length) {
-            line.push({ break: true });
-          }
-          wroteLine = true;
           line.push({ temperature_K: temperature, diffusivity });
         }
       }
@@ -1064,17 +1054,11 @@
       if (item.axisLine.length) {
         ctx.strokeStyle = item.color;
         ctx.beginPath();
-        let penDown = false;
-        item.axisLine.forEach((point) => {
-          if (point.break) {
-            penDown = false;
-            return;
-          }
+        item.axisLine.forEach((point, pointIndex) => {
           const x = xToPx(point.temperature_axis);
           const y = yToPx(point.diffusivity);
-          if (!penDown) {
+          if (pointIndex === 0) {
             ctx.moveTo(x, y);
-            penDown = true;
           } else {
             ctx.lineTo(x, y);
           }
