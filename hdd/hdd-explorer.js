@@ -775,7 +775,7 @@
       .filter(Boolean);
     const plottedSeries = seriesList && seriesList.length ? seriesList : currentSeries;
     const seriesOrder = plottedSeries.length
-      - plottedSeries.map((series, index) => ({ id: series.id, index }))
+      ? plottedSeries.map((series, index) => ({ id: series.id, index }))
       : allItems.map((series, index) => ({ id: series.id, index }));
     const orderMap = new Map(seriesOrder.map((item) => [item.id, item.index]));
 
@@ -801,11 +801,11 @@
     const needsToggle = selectedCount > previewLimit;
     const toggleLabel = state.summaryExpanded ? "Show less" : `Show all (${selectedCount})`;
     const toggleButton = needsToggle
-      - `<button type="button" class="hdd-summary-toggle">${toggleLabel}</button>`
+      ? `<button type="button" class="hdd-summary-toggle">${toggleLabel}</button>`
       : "";
     const statusLine =
       plottedCount && plottedCount !== selectedCount
-        - `<p>${plottedCount} plotted from current selection. Click "Plot Selected" to refresh.</p>`
+        ? `<p>${plottedCount} plotted from current selection. Click "Plot Selected" to refresh.</p>`
         : `<p>${selectedCount} series selected.</p>`;
 
     dom.summary.innerHTML = `
@@ -1396,7 +1396,7 @@
   function formatRange(range) {
     const value = formatRangeValue(range);
     if (!value) return "";
-    return ` - ${value}`;
+    return ` ? ${value}`;
   }
 
   function formatRangeValue(range) {
@@ -1408,9 +1408,9 @@
     const minLabel = min.toFixed(0);
     const maxLabel = max.toFixed(0);
     if (minLabel === maxLabel) {
-      return `${minLabel}-K`;
+      return `${minLabel}?K`;
     }
-    return `${minLabel}-${maxLabel} K`;
+    return `${minLabel}?${maxLabel} K`;
   }
 
   function seriesDisplayLabel(entry) {
