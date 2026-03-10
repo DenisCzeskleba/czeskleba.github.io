@@ -858,11 +858,15 @@
       const samples = sampleSeries(entry, clampMin, clampMax);
       if (!samples.line.length && !samples.points.length) return;
 
-      const axisLine = samples.line.map((sample) => ({
-        temperature_K: sample.temperature_K,
-        temperature_axis: state.units === "C" ? sample.temperature_K - 273.15 : sample.temperature_K,
-        diffusivity: sample.diffusivity,
-      }));
+      const axisLineSegments = samples.lineSegments.map((segment) =>
+        segment.map((sample) => ({
+          temperature_K: sample.temperature_K,
+          temperature_axis: state.units === "C" ? sample.temperature_K - 273.15 : sample.temperature_K,
+          diffusivity: sample.diffusivity,
+        }))
+      );
+
+      const axisLine = axisLineSegments.flat();
 
       const axisPoints = samples.points.map((sample) => ({
         temperature_K: sample.temperature_K,
@@ -877,6 +881,7 @@
         seriesLabel: entry.seriesLabel,
         color,
         axisLine,
+        axisLineSegments,
         axisPoints,
         descriptor: entry,
       });
@@ -886,7 +891,8 @@
   }
 
   function sampleSeries(entry, clampMin, clampMax) {
-    const line = [];
+    const lineSegments = [];
+    const linePoints = [];
     const points = [];
     let usedSinglePointAsLine = false;
 
@@ -900,7 +906,7 @@
         if (plottingStyle === "line") {
           usedSinglePointAsLine = true;
         }
-        const target = plottingStyle === "line" ? line : points;
+        const target = plottingStyle === "line" ? linePoints : points;
         target.push({ temperature_K: temperature, diffusivity: model.diffusivity_mm2_per_s });
         return;
       }
@@ -909,22 +915,29 @@
       const segMax = clampTemperature(segment.temperature_validity_K?.[1], clampMax, true);
       if (!(segMax > segMin)) return;
       const steps = Math.max(2, SAMPLES_PER_SEGMENT);
+      const segmentLine = [];
       for (let i = 0; i < steps; i++) {
-        if (idx > 0 && i === 0) continue;
         const ratio = i / (steps - 1);
         const temperature = segMin + (segMax - segMin) * ratio;
         const diffusivity = evaluateModel(model, temperature);
         if (diffusivity && diffusivity > 0) {
-          line.push({ temperature_K: temperature, diffusivity });
+          segmentLine.push({ temperature_K: temperature, diffusivity });
         }
+      }
+      if (segmentLine.length) {
+        lineSegments.push(segmentLine);
       }
     });
 
-    if (usedSinglePointAsLine && line.length > 1) {
-      line.sort((a, b) => a.temperature_K - b.temperature_K);
+    if (usedSinglePointAsLine && linePoints.length > 1) {
+      linePoints.sort((a, b) => a.temperature_K - b.temperature_K);
     }
 
-    return { line, points };
+    if (linePoints.length) {
+      lineSegments.push(linePoints);
+    }
+
+    return { lineSegments, points };
   }
 
   function resolveSinglePointTemperature(segment) {
@@ -1051,19 +1064,22 @@
 
     ctx.lineWidth = 2;
     series.forEach((item, index) => {
-      if (item.axisLine.length) {
+      if (item.axisLineSegments?.length) {
         ctx.strokeStyle = item.color;
-        ctx.beginPath();
-        item.axisLine.forEach((point, pointIndex) => {
-          const x = xToPx(point.temperature_axis);
-          const y = yToPx(point.diffusivity);
-          if (pointIndex === 0) {
-            ctx.moveTo(x, y);
-          } else {
-            ctx.lineTo(x, y);
-          }
+        item.axisLineSegments.forEach((segment) => {
+          if (segment.length < 2) return;
+          ctx.beginPath();
+          segment.forEach((point, pointIndex) => {
+            const x = xToPx(point.temperature_axis);
+            const y = yToPx(point.diffusivity);
+            if (pointIndex === 0) {
+              ctx.moveTo(x, y);
+            } else {
+              ctx.lineTo(x, y);
+            }
+          });
+          ctx.stroke();
         });
-        ctx.stroke();
       }
 
       if (item.axisPoints.length) {
