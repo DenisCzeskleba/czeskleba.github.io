@@ -770,49 +770,10 @@
     const orderMap = new Map(seriesOrder.map((item) => [item.id, item.index]));
 
     const allItemLines = allItems.map((series, fallbackIndex) => {
-        const range = series.temperatureRange?.length === 2
-          ? `${series.temperatureRange[0]?.toFixed?.(0) ?? "?"}–${series.temperatureRange[1]?.toFixed?.(0) ?? "?"} K`
-          : "range unknown";
+        const range = formatRangeValue(series.temperatureRange) || "range unknown";
         const ordinal = orderMap.has(series.id) ? orderMap.get(series.id) + 1 : fallbackIndex + 1;
-        return `<li><span class="hdd-ordinal">${ordinal}.</span> <strong>${series.label}</strong> · ${series.seriesLabel} · ${range}</li>`;
+        return `<li><span class="hdd-ordinal">${ordinal}.</span> <strong>${seriesDisplayLabel(series)}</strong> ?? ${series.seriesLabel} ?? ${range}</li>`;
       });
-    const previewCount = 4;
-    const previewItems = allItemLines.slice(0, previewCount).join("\n");
-    const remainingItems = allItemLines.slice(previewCount).join("\n");
-
-    const plottedText = seriesList && seriesList.length
-      ? `Currently plotting ${seriesList.length} series.`
-      : "Hit Plot selected series to render.";
-
-    const canExpand = allItems.length > previewCount;
-    const expanded = state.summaryExpanded && canExpand;
-    dom.summary.innerHTML = `
-      <div class="hdd-summary-header">
-        <strong>${state.selected.size} series selected.</strong>
-        ${canExpand ? `
-          <button type="button" class="hdd-summary-toggle" data-summary-toggle="true">
-            ${expanded ? "Show fewer" : `Show all ${allItems.length} series`}
-          </button>
-        ` : ""}
-      </div>
-      <p>${plottedText}</p>
-      <ul>${previewItems}</ul>
-      ${canExpand && expanded ? `<ul>${remainingItems}</ul>` : ""}
-    `;
-  }
-
-  function handleSummaryToggle(event) {
-    const button = event.target?.closest?.("[data-summary-toggle]");
-    if (!button) return;
-    state.summaryExpanded = !state.summaryExpanded;
-    updateSummary(currentSeries);
-  }
-
-  function toggleUnits(button) {
-    state.units = button.dataset.unit === "C" ? "C" : "K";
-    dom.unitButtons.forEach((btn) =>
-      btn.classList.toggle("is-active", btn === button)
-    );
     plotSelectedSeries();
   }
 
@@ -1262,7 +1223,8 @@
       ctx.fillStyle = item.color;
       ctx.fillRect(legendX, legendY - 8, 10, 10);
       ctx.fillStyle = theme.ink;
-      ctx.fillText(`${index + 1}. ${item.label} · ${item.seriesLabel}`, legendX + 14, legendY);
+      const label = seriesDisplayLabel(item.descriptor);
+      ctx.fillText(`${index + 1}. ${label} - ${item.seriesLabel}`, legendX + 14, legendY);
       legendY += 16;
     });
   }
@@ -1391,9 +1353,27 @@
   }
 
   function formatRange(range) {
+    const value = formatRangeValue(range);
+    if (!value) return "";
+    return ` ? ${value}`;
+  }
+
+  function formatRangeValue(range) {
     if (!range || range.length !== 2) return "";
     if (range[0] == null || range[1] == null) return "";
-    return ` · ${range[0].toFixed(0)}–${range[1].toFixed(0)} K`;
+    const min = Number(range[0]);
+    const max = Number(range[1]);
+    if (!Number.isFinite(min) || !Number.isFinite(max)) return "";
+    const minLabel = min.toFixed(0);
+    const maxLabel = max.toFixed(0);
+    if (minLabel === maxLabel) {
+      return `${minLabel}?K`;
+    }
+    return `${minLabel}?${maxLabel} K`;
+  }
+
+  function seriesDisplayLabel(entry) {
+    return entry?.sourceTitle || entry?.label || entry?.groupId || "Series";
   }
 
   function isFiniteNumber(value) {

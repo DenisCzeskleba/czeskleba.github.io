@@ -73,10 +73,12 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
         </div>
 
         <div class="hdd-actions">
-          <button type="button" id="hdd-select-all">Select All</button>
-          <button type="button" id="hdd-deselect-all">Deselect All</button>
-          <button type="button" id="hdd-plot-btn">Plot Selected</button>
-          <button type="button" id="hdd-clear-filters">Clear Filters</button>
+          <button type="button" id="hdd-plot-btn" class="hdd-action-primary">Plot Selected</button>
+          <div class="hdd-action-row">
+            <button type="button" id="hdd-select-all">Select All</button>
+            <button type="button" id="hdd-clear-filters">Clear Filters</button>
+            <button type="button" id="hdd-deselect-all">Deselect All</button>
+          </div>
         </div>
 
         <div class="hdd-control">
