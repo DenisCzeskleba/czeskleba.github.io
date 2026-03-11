@@ -85,6 +85,7 @@
   let currentSeries = [];
   let currentCanvas = null;
   let lastPlotContext = null;
+  let hoverCache = null;
 
   initialize();
 
@@ -979,11 +980,23 @@
     const maxPreview = state.summaryExpanded ? orderedItems.length : previewLimit;
     const previewItems = orderedItems.slice(0, maxPreview);
     const allItemLines = previewItems.map((item) => {
-        const series = item.series;
-        const range = formatRangeValue(series.temperatureRange) || "range unknown";
-        const ordinal = orderMap.has(series.id) ? orderMap.get(series.id) + 1 : item.fallbackIndex + 1;
-        return `<li><span class="hdd-ordinal">${ordinal}.</span> <strong>${seriesDisplayLabel(series)}</strong> - ${series.seriesLabel} - ${range}</li>`;
-      });
+      const series = item.series;
+      const range = formatRangeValue(series.temperatureRange) || "range unknown";
+      const ordinal = orderMap.has(series.id) ? orderMap.get(series.id) + 1 : item.fallbackIndex + 1;
+      const sourceMeta = state.dataset?.sources?.[series.sourceId] || null;
+      const citation = buildCitation(sourceMeta, series);
+      const groupLabel = series.groupId || series.label || "Series";
+      return `
+        <li class="hdd-summary-item">
+          <div class="hdd-summary-title">
+            <span class="hdd-ordinal">${ordinal}.</span>
+            <strong>${escapeHtml(groupLabel)}</strong>
+          </div>
+          <div class="hdd-summary-meta">${escapeHtml(series.seriesLabel)} - ${escapeHtml(range)}</div>
+          <div class="hdd-summary-cite">${escapeHtml(cleanCsvField(citation))}</div>
+        </li>
+      `;
+    });
     const selectedCount = allItems.length;
     const plottedCount = plottedSeries.length;
     const needsToggle = selectedCount > previewLimit;
@@ -1350,6 +1363,23 @@
 
     drawLegend(ctx, series, margin, plotWidth, theme);
 
+    hoverCache = {
+      axisMinX,
+      axisMaxX,
+      axisMinY,
+      axisMaxY,
+      logMin,
+      logMax,
+      margin,
+      plotWidth,
+      plotHeight,
+      scale: state.scale,
+      units: state.units,
+      series,
+      xToPx,
+      yToPx,
+    };
+
     lastPlotContext = {
       width,
       height,
@@ -1388,6 +1418,8 @@
       plotWidth,
       plotHeight,
     });
+
+    setupHoverTooltip(canvas);
   }
 
   function setupZoomSelection(canvas, ctx, config) {
@@ -1695,6 +1727,109 @@
       });
     });
     return legendItems.sort((a, b) => a.index - b.index);
+  }
+
+  function setupHoverTooltip(canvas) {
+    if (!canvas) return;
+    const tooltip = ensureTooltip();
+    const radius = 6;
+    const lineRadius = 5;
+
+    function handleMove(event) {
+      if (!hoverCache) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      const plotLeft = hoverCache.margin.left;
+      const plotTop = hoverCache.margin.top;
+      const plotRight = plotLeft + hoverCache.plotWidth;
+      const plotBottom = plotTop + hoverCache.plotHeight;
+      if (x < plotLeft || x > plotRight || y < plotTop || y > plotBottom) {
+        tooltip.style.opacity = "0";
+        return;
+      }
+
+      let best = null;
+      let bestDist = radius * radius;
+      hoverCache.series.forEach((series) => {
+        series.axisPoints.forEach((point) => {
+          const px = hoverCache.xToPx(point.temperature_axis);
+          const py = hoverCache.yToPx(point.diffusivity);
+          const dx = px - x;
+          const dy = py - y;
+          const dist = dx * dx + dy * dy;
+          if (dist <= bestDist) {
+            bestDist = dist;
+            best = { series, point, px, py };
+          }
+        });
+        series.axisLineSegments?.forEach((segment) => {
+          for (let i = 0; i < segment.length - 1; i++) {
+            const a = segment[i];
+            const b = segment[i + 1];
+            const ax = hoverCache.xToPx(a.temperature_axis);
+            const ay = hoverCache.yToPx(a.diffusivity);
+            const bx = hoverCache.xToPx(b.temperature_axis);
+            const by = hoverCache.yToPx(b.diffusivity);
+            const dist = pointToSegmentDistanceSq(x, y, ax, ay, bx, by);
+            if (dist <= lineRadius * lineRadius && dist <= bestDist) {
+              bestDist = dist;
+              best = { series, point: a, px: ax, py: ay };
+            }
+          }
+        });
+      });
+
+      if (!best) {
+        tooltip.style.opacity = "0";
+        return;
+      }
+
+      const label = seriesDisplayLabel(best.series.descriptor);
+      const seriesLabel = best.series.seriesLabel || "";
+      const ordinal = Number.isFinite(best.series.legendIndex) ? best.series.legendIndex + 1 : "";
+      const prefix = ordinal ? `${ordinal}. ` : "";
+      tooltip.innerHTML = `<strong>${escapeHtml(prefix + label)}</strong><br/>${escapeHtml(seriesLabel)}`;
+      tooltip.style.opacity = "1";
+      tooltip.style.left = `${rect.left + window.scrollX + best.px + 12}px`;
+      tooltip.style.top = `${rect.top + window.scrollY + best.py - 10}px`;
+    }
+
+    function handleLeave() {
+      tooltip.style.opacity = "0";
+    }
+
+    canvas.removeEventListener("mousemove", handleMove);
+    canvas.removeEventListener("mouseleave", handleLeave);
+    canvas.addEventListener("mousemove", handleMove);
+    canvas.addEventListener("mouseleave", handleLeave);
+  }
+
+  function ensureTooltip() {
+    let tooltip = document.getElementById("hdd-chart-tooltip");
+    if (!tooltip) {
+      tooltip = document.createElement("div");
+      tooltip.id = "hdd-chart-tooltip";
+      document.body.appendChild(tooltip);
+    }
+    return tooltip;
+  }
+
+  function pointToSegmentDistanceSq(px, py, ax, ay, bx, by) {
+    const dx = bx - ax;
+    const dy = by - ay;
+    if (dx === 0 && dy === 0) {
+      const rx = px - ax;
+      const ry = py - ay;
+      return rx * rx + ry * ry;
+    }
+    const t = ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy);
+    const clamped = Math.max(0, Math.min(1, t));
+    const cx = ax + clamped * dx;
+    const cy = ay + clamped * dy;
+    const rx = px - cx;
+    const ry = py - cy;
+    return rx * rx + ry * ry;
   }
 
   function drawLegend(ctx, series, margin, width, theme) {

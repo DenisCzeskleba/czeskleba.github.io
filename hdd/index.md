@@ -63,7 +63,7 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
               <span class="hdd-toggle-label">Include unknown</span>
             </label>
             <span id="hdd-filter-composition-label" class="hdd-sr-only">Chemical composition</span>
-            <div class="hdd-filter-note">Filters use wt% values when available.</div>
+            <div class="hdd-filter-note">Experimental feature [wt%]</div>
             <div id="hdd-filter-composition" class="hdd-filter-composition" aria-labelledby="hdd-filter-composition-label"></div>
           </details>
           <details class="hdd-filter-block">
