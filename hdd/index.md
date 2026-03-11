@@ -58,12 +58,13 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
           <details class="hdd-filter-block">
             <summary>Chemical composition</summary>
             <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
-              <input type="checkbox" data-filter-mode="chemicalComposition" />
+              <input type="checkbox" data-filter-unknown="chemicalComposition" />
               <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
-              <span class="hdd-toggle-label">Exclude selected</span>
+              <span class="hdd-toggle-label">Include unknown</span>
             </label>
             <span id="hdd-filter-composition-label" class="hdd-sr-only">Chemical composition</span>
-            <div id="hdd-filter-composition" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-composition-label" aria-multiselectable="true"></div>
+            <div class="hdd-filter-note">Filters use wt% values when available.</div>
+            <div id="hdd-filter-composition" class="hdd-filter-composition" aria-labelledby="hdd-filter-composition-label"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Measurement method</summary>
@@ -148,58 +149,69 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
       <div class="hdd-stage-card">
         <div class="hdd-stage-header">
           <h3>Plot Preview</h3>
-          <details class="hdd-plot-options">
-            <summary>Plot options</summary>
-            <div class="hdd-plot-options-body">
-              <div class="hdd-toggle-group" role="group" aria-label="Temperature units">
-                <button type="button" data-unit="K">Kelvin</button>
-                <button type="button" data-unit="C" class="is-active">&deg;C</button>
-              </div>
-              <div class="hdd-toggle-group" role="group" aria-label="Y-axis scale">
-                <button type="button" data-scale="log" class="is-active">Log scale</button>
-                <button type="button" data-scale="linear">Linear</button>
-              </div>
-              <label class="hdd-inline-checkbox">
-                <input type="checkbox" id="hdd-envelope" checked />
-                <span>Envelope fill</span>
-              </label>
-              <label class="hdd-inline-checkbox">
-                <input type="checkbox" id="hdd-numbering" checked />
-                <span>Numbered plots</span>
-              </label>
-              <label class="hdd-inline-checkbox">
-                <input type="checkbox" id="hdd-legend-group" checked />
-                <span>Group legend by source</span>
-              </label>
-              <label class="hdd-inline-checkbox">
-                <input type="checkbox" id="hdd-monochrome" />
-                <span>Black &amp; white</span>
-              </label>
-              <div class="hdd-inline-row">
+          <div class="hdd-stage-controls">
+            <details class="hdd-plot-options">
+              <summary>Plot options</summary>
+              <div class="hdd-plot-options-body">
+                <div class="hdd-toggle-group" role="group" aria-label="Temperature units">
+                  <button type="button" data-unit="K">Kelvin</button>
+                  <button type="button" data-unit="C" class="is-active">&deg;C</button>
+                </div>
+                <div class="hdd-toggle-group" role="group" aria-label="Y-axis scale">
+                  <button type="button" data-scale="log" class="is-active">Log scale</button>
+                  <button type="button" data-scale="linear">Linear</button>
+                </div>
                 <label class="hdd-inline-checkbox">
-                  <input type="checkbox" id="hdd-grid-x" checked />
-                  <span>X grid</span>
+                  <input type="checkbox" id="hdd-envelope" checked />
+                  <span>Envelope fill</span>
                 </label>
                 <label class="hdd-inline-checkbox">
-                  <input type="checkbox" id="hdd-grid-y" checked />
-                  <span>Y grid</span>
+                  <input type="checkbox" id="hdd-numbering" checked />
+                  <span>Numbered plots</span>
                 </label>
+                <label class="hdd-inline-checkbox">
+                  <input type="checkbox" id="hdd-legend-group" checked />
+                  <span>Group legend by source</span>
+                </label>
+                <label class="hdd-inline-checkbox">
+                  <input type="checkbox" id="hdd-monochrome" />
+                  <span>Black &amp; white</span>
+                </label>
+                <div class="hdd-inline-row">
+                  <label class="hdd-inline-checkbox">
+                    <input type="checkbox" id="hdd-grid-x" checked />
+                    <span>X grid</span>
+                  </label>
+                  <label class="hdd-inline-checkbox">
+                    <input type="checkbox" id="hdd-grid-y" checked />
+                    <span>Y grid</span>
+                  </label>
+                </div>
+                <button type="button" id="hdd-reset-zoom">Reset zoom</button>
+                <div class="hdd-plot-option-note">Drag a rectangle on the plot to zoom. Use Reset zoom to return.</div>
               </div>
-              <button type="button" id="hdd-reset-zoom">Reset zoom</button>
-              <div class="hdd-plot-option-note">Drag a rectangle on the plot to zoom. Use Reset zoom to return.</div>
-            </div>
-          </details>
+            </details>
+            <details class="hdd-plot-options hdd-export-panel">
+              <summary>Export</summary>
+              <div class="hdd-plot-options-body">
+                <div class="hdd-export-note">Choose a format</div>
+                <div class="hdd-export-row">
+                  <button type="button" data-download="png">PNG</button>
+                  <button type="button" data-download="svg">SVG</button>
+                </div>
+                <div class="hdd-export-row">
+                  <button type="button" data-download="csv">CSV</button>
+                  <button type="button" data-download="json">JSON</button>
+                </div>
+              </div>
+            </details>
+          </div>
         </div>
         <div id="hdd-chart" class="hdd-chart" role="img" aria-live="polite">
           <div>
             <p>Select one or more series to preview logarithmic diffusivity curves.</p>
             <p class="hdd-muted">Arrhenius, power, and single-point data render in the same canvas.</p>
           </div>
-        </div>
-        <div class="hdd-downloads">
-          <button type="button" data-download="png">Download PNG</button>
-          <button type="button" data-download="csv">Download CSV</button>
-          <button type="button" data-download="json">Download JSON</button>
         </div>
       </div>
 

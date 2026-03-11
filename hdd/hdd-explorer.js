@@ -39,7 +39,7 @@
     gridY: document.getElementById("hdd-grid-y"),
     tempMin: document.getElementById("hdd-temp-min"),
     tempMax: document.getElementById("hdd-temp-max"),
-    downloadButtons: document.querySelectorAll(".hdd-downloads button"),
+    downloadButtons: document.querySelectorAll("[data-download]"),
     clearFilters: document.getElementById("hdd-clear-filters"),
     selectAll: document.getElementById("hdd-select-all"),
     deselectAll: document.getElementById("hdd-deselect-all"),
@@ -54,6 +54,7 @@
     includeUnconfirmed: document.getElementById("hdd-include-unconfirmed"),
     includeLiterature: document.getElementById("hdd-include-literature"),
     filterModeToggles: document.querySelectorAll("[data-filter-mode]"),
+    filterUnknownComposition: document.querySelector("[data-filter-unknown='chemicalComposition']"),
     resetZoom: document.getElementById("hdd-reset-zoom"),
   };
 
@@ -74,6 +75,8 @@
     tempMax: null,
     includeUnconfirmed: false,
     includeLiteratureCompilations: true,
+    includeUnknownComposition: false,
+    compositionFilters: {},
     filterMode: {},
     summaryExpanded: false,
     zoom: null,
@@ -81,6 +84,7 @@
 
   let currentSeries = [];
   let currentCanvas = null;
+  let lastPlotContext = null;
 
   initialize();
 
@@ -116,6 +120,7 @@
     state.legendBySource = dom.legendGroup?.checked ?? true;
     state.includeUnconfirmed = dom.includeUnconfirmed?.checked ?? false;
     state.includeLiteratureCompilations = dom.includeLiterature?.checked ?? false;
+    state.includeUnknownComposition = dom.filterUnknownComposition?.checked ?? false;
     initializeFilterModes();
     populateFilters(payload);
     applyFilters();
@@ -154,6 +159,7 @@
         const seriesId = `${group.group_id}::${seriesKeyPart}::${index}`;
         const segments = series.segments || [];
         const meta = collectSeriesMeta(segments);
+        const compositionRanges = computeCompositionRanges(segments);
         const materialLabel = deriveMaterialLabel(meta);
         const seriesLabel = series.series_value ? String(series.series_value) : "Series";
 
@@ -171,6 +177,7 @@
           temperatureRange: group.temperature_range_K,
           segments,
           meta,
+          compositionRanges,
           materialLabel,
         };
 
@@ -298,6 +305,29 @@
     return meta;
   }
 
+  function computeCompositionRanges(segments) {
+    const ranges = {};
+    segments.forEach((segment) => {
+      const composition = segment.material?.chemical_composition;
+      if (!composition || composition.basis !== "wt_pct") return;
+      const values = composition.values || {};
+      Object.keys(values).forEach((key) => {
+        const element = normalizeElementSymbol(key);
+        if (!element) return;
+        const raw = values[key];
+        const num = Number(raw);
+        if (!Number.isFinite(num)) return;
+        if (!ranges[element]) {
+          ranges[element] = { min: num, max: num };
+        } else {
+          ranges[element].min = Math.min(ranges[element].min, num);
+          ranges[element].max = Math.max(ranges[element].max, num);
+        }
+      });
+    });
+    return Object.keys(ranges).length ? ranges : null;
+  }
+
   function deriveModelTypeLabels(segment) {
     const labels = new Set();
     const modelType = segment.model?.type;
@@ -364,6 +394,10 @@
       state.gridY = dom.gridY.checked;
       plotSelectedSeries();
     });
+    dom.filterUnknownComposition?.addEventListener("change", () => {
+      state.includeUnknownComposition = dom.filterUnknownComposition.checked;
+      applyFilters();
+    });
     dom.includeLiterature?.addEventListener("change", () => {
       state.includeLiteratureCompilations = dom.includeLiterature.checked;
       applyFilters();
@@ -388,6 +422,7 @@
     dom.downloadButtons?.forEach((button) =>
       button.addEventListener("click", () => handleDownload(button))
     );
+    dom.filterComposition?.addEventListener("input", handleCompositionInput);
     dom.clearFilters?.addEventListener("click", clearFilters);
     dom.selectAll?.addEventListener("click", selectAllVisible);
     dom.deselectAll?.addEventListener("click", deselectAllVisible);
@@ -424,7 +459,7 @@
     setSelectOptions(dom.filterSource, sourceOptions);
     setSelectOptions(dom.filterClass, toOptions(payload.filters?.material_class));
     setSelectOptions(dom.filterGrade, toOptions(payload.filters?.material_grade));
-    setSelectOptions(dom.filterComposition, toOptions(collectMetaValues(state.seriesList, "chemical_composition")));
+    populateCompositionFilters(state.seriesList);
     setSelectOptions(dom.filterReported, toOptions(payload.filters?.reported_as));
     setSelectOptions(dom.filterEffect, toOptions(payload.filters?.studied_effects));
     setSelectOptions(dom.filterMethod, toOptions(payload.filters?.measurement_method));
@@ -446,6 +481,54 @@
     });
     bindFilterListResize(listbox);
     requestAnimationFrame(() => adjustFilterListHeight(listbox));
+  }
+
+  function populateCompositionFilters(seriesList) {
+    if (!dom.filterComposition) return;
+    const elements = new Set();
+    seriesList.forEach((entry) => {
+      const ranges = entry.compositionRanges;
+      if (!ranges) return;
+      Object.keys(ranges).forEach((element) => elements.add(normalizeElementSymbol(element)));
+    });
+    const priorityOrder = [
+      "C",
+      "Si",
+      "Mn",
+      "P",
+      "S",
+      "Cr",
+      "Ni",
+      "Mo",
+      "V",
+      "Nb",
+      "Ti",
+      "Al",
+      "B",
+      "N",
+      "Cu",
+    ];
+    const priorityIndex = new Map(priorityOrder.map((symbol, idx) => [symbol, idx]));
+    const sorted = Array.from(elements)
+      .filter(Boolean)
+      .sort((a, b) => {
+        const aIdx = priorityIndex.has(a) ? priorityIndex.get(a) : Number.POSITIVE_INFINITY;
+        const bIdx = priorityIndex.has(b) ? priorityIndex.get(b) : Number.POSITIVE_INFINITY;
+        if (aIdx !== bIdx) return aIdx - bIdx;
+        return a.localeCompare(b);
+      });
+    dom.filterComposition.innerHTML = "";
+    sorted.forEach((element) => {
+      const row = document.createElement("div");
+      row.className = "hdd-comp-row";
+      row.innerHTML = `
+        <label>${escapeHtml(element)}</label>
+        <input type="number" data-comp-element="${escapeHtml(element)}" data-comp-bound="min" placeholder="min" step="any" />
+        <input type="number" data-comp-element="${escapeHtml(element)}" data-comp-bound="max" placeholder="max" step="any" />
+      `;
+      dom.filterComposition.appendChild(row);
+    });
+    state.compositionFilters = {};
   }
 
   function initializeFilterModes() {
@@ -503,6 +586,12 @@
           checkbox.checked = false;
         });
       });
+    if (dom.filterComposition) {
+      dom.filterComposition.querySelectorAll("input[type='number']").forEach((input) => {
+        input.value = "";
+      });
+    }
+    state.compositionFilters = {};
     if (dom.search) dom.search.value = "";
     if (dom.tempMin) dom.tempMin.value = "";
     if (dom.tempMax) dom.tempMax.value = "";
@@ -519,7 +608,7 @@
       source: selectedValues(dom.filterSource),
       materialClass: selectedValues(dom.filterClass),
       materialGrade: selectedValues(dom.filterGrade),
-      chemicalComposition: selectedValues(dom.filterComposition),
+      chemicalComposition: state.compositionFilters,
       reportedAs: selectedValues(dom.filterReported),
       studiedEffects: selectedValues(dom.filterEffect),
       measurementMethod: selectedValues(dom.filterMethod),
@@ -528,6 +617,7 @@
       tempMax: state.tempMax,
       includeUnconfirmed: state.includeUnconfirmed,
       includeLiteratureCompilations: state.includeLiteratureCompilations,
+      includeUnknownComposition: state.includeUnknownComposition,
       mode: state.filterMode,
     };
 
@@ -605,7 +695,7 @@
     if (ignoreKey !== "source" && !matchesValue(filters.source, entry.sourceId, mode.source)) return false;
     if (ignoreKey !== "materialClass" && !matchesSet(filters.materialClass, entry.meta.material_class, mode.materialClass)) return false;
     if (ignoreKey !== "materialGrade" && !matchesSet(filters.materialGrade, entry.meta.material_grade, mode.materialGrade)) return false;
-    if (ignoreKey !== "chemicalComposition" && !matchesSet(filters.chemicalComposition, entry.meta.chemical_composition, mode.chemicalComposition)) return false;
+    if (ignoreKey !== "chemicalComposition" && !matchesComposition(filters.chemicalComposition, entry.compositionRanges, filters.includeUnknownComposition)) return false;
     if (ignoreKey !== "reportedAs" && !matchesSet(filters.reportedAs, entry.meta.reported_as, mode.reportedAs)) return false;
     if (ignoreKey !== "studiedEffects" && !matchesSet(filters.studiedEffects, entry.meta.studied_effects, mode.studiedEffects)) return false;
     if (ignoreKey !== "measurementMethod" && !matchesSet(filters.measurementMethod, entry.meta.measurement_method, mode.measurementMethod)) return false;
@@ -715,7 +805,6 @@
     updateSelectAvailability(dom.filterSource, availability.source);
     updateSelectAvailability(dom.filterClass, availability.materialClass);
     updateSelectAvailability(dom.filterGrade, availability.materialGrade);
-    updateSelectAvailability(dom.filterComposition, availability.chemicalComposition);
     updateSelectAvailability(dom.filterReported, availability.reportedAs);
     updateSelectAvailability(dom.filterEffect, availability.studiedEffects);
     updateSelectAvailability(dom.filterMethod, availability.measurementMethod);
@@ -739,6 +828,28 @@
       item.classList.toggle("is-hidden", !isAvailable);
     });
     adjustFilterListHeight(listbox);
+  }
+
+  function handleCompositionInput(event) {
+    const input = event.target;
+    if (!(input instanceof HTMLInputElement)) return;
+    const element = input.dataset.compElement;
+    if (!element) return;
+    const esc = typeof CSS !== "undefined" && CSS.escape ? CSS.escape(element) : element.replace(/["\\]/g, "\\$&");
+    const minInput = dom.filterComposition?.querySelector(
+      `input[data-comp-element="${esc}"][data-comp-bound="min"]`
+    );
+    const maxInput = dom.filterComposition?.querySelector(
+      `input[data-comp-element="${esc}"][data-comp-bound="max"]`
+    );
+    const minVal = parseNumber(minInput?.value);
+    const maxVal = parseNumber(maxInput?.value);
+    if (minVal == null && maxVal == null) {
+      delete state.compositionFilters[element];
+    } else {
+      state.compositionFilters[element] = { min: minVal, max: maxVal };
+    }
+    applyFilters();
   }
 
   function bindFilterListResize(listbox) {
@@ -1092,8 +1203,10 @@
     }
 
     const canvas = document.createElement("canvas");
-    const width = 960;
-    const height = 540;
+    const chartBox = dom.chart.getBoundingClientRect();
+    const containerWidth = chartBox.width || 960;
+    const width = Math.max(640, Math.round(containerWidth - 40));
+    const height = Math.round(width * 0.56);
     const ratio = window.devicePixelRatio || 1;
     canvas.width = width * ratio;
     canvas.height = height * ratio;
@@ -1133,7 +1246,8 @@
     const logMin = Math.log10(axisMinY);
     const logMax = Math.log10(axisMaxY);
 
-    const margin = { top: 30, right: 340, bottom: 70, left: 80 };
+    const legendWidth = Math.max(220, Math.round(width * 0.28));
+    const margin = { top: 30, right: legendWidth, bottom: 70, left: 80 };
     const plotWidth = width - margin.left - margin.right;
     const plotHeight = height - margin.top - margin.bottom;
 
@@ -1235,6 +1349,29 @@
     ctx.restore();
 
     drawLegend(ctx, series, margin, plotWidth, theme);
+
+    lastPlotContext = {
+      width,
+      height,
+      margin,
+      plotWidth,
+      plotHeight,
+      axisMinX,
+      axisMaxX,
+      axisMinY,
+      axisMaxY,
+      logMin,
+      logMax,
+      theme,
+      units: state.units,
+      scale: state.scale,
+      gridX: state.gridX,
+      gridY: state.gridY,
+      numbering: state.numbering,
+      legendBySource: state.legendBySource,
+      envelope: state.envelope,
+      series,
+    };
 
     if (dom.resetZoom) {
       dom.resetZoom.disabled = !state.zoom;
@@ -1542,11 +1679,7 @@
     }
   }
 
-  function drawLegend(ctx, series, margin, width, theme) {
-    const legendX = margin.left + width + 10;
-    let legendY = margin.top + 10;
-    ctx.font = "11px IBM Plex Sans, Arial, sans-serif";
-    ctx.textAlign = "left";
+  function buildLegendItems(series) {
     const legendItems = [];
     const seen = new Set();
     series.forEach((item, index) => {
@@ -1561,16 +1694,21 @@
         index: Number.isFinite(item.legendIndex) ? item.legendIndex : legendItems.length,
       });
     });
+    return legendItems.sort((a, b) => a.index - b.index);
+  }
 
-    legendItems
-      .sort((a, b) => a.index - b.index)
-      .forEach((item) => {
-        ctx.fillStyle = item.color;
-        ctx.fillRect(legendX, legendY - 8, 10, 10);
-        ctx.fillStyle = theme.ink;
-        ctx.fillText(`${item.index + 1}. ${item.label}`, legendX + 14, legendY);
-        legendY += 16;
-      });
+  function drawLegend(ctx, series, margin, width, theme) {
+    const legendX = margin.left + width + 10;
+    let legendY = margin.top + 10;
+    ctx.font = "11px IBM Plex Sans, Arial, sans-serif";
+    ctx.textAlign = "left";
+    buildLegendItems(series).forEach((item) => {
+      ctx.fillStyle = item.color;
+      ctx.fillRect(legendX, legendY - 8, 10, 10);
+      ctx.fillStyle = theme.ink;
+      ctx.fillText(`${item.index + 1}. ${item.label}`, legendX + 14, legendY);
+      legendY += 16;
+    });
   }
 
   function handleDownload(button) {
@@ -1580,51 +1718,104 @@
     }
     const type = (button.dataset.download || "").toLowerCase();
     if (type === "json") {
-      const payload = currentSeries.map((series) => ({
-        group_id: series.descriptor.groupId,
-        series_id: series.descriptor.seriesId,
-        series_label: series.seriesLabel,
-        samples_line: series.axisLine,
-        samples_points: series.axisPoints,
-      }));
-      downloadBlob(
-        new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }),
-        "hdd-selected.json"
-      );
+      if (!state.dataset) {
+        alert("Dataset not loaded yet.");
+        return;
+      }
+      const version = state.dataset.database_version || "unknown";
+      const filename = `hdd_public_database_${version}.json`;
+      try {
+        fetch(endpoint, { cache: "no-store" })
+          .then((response) => {
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return response.blob();
+          })
+          .then((blob) => downloadBlob(blob, filename))
+          .catch(() => {
+            downloadBlob(
+              new Blob([JSON.stringify(state.dataset, null, 2)], { type: "application/json" }),
+              filename
+            );
+          });
+      } catch {
+        downloadBlob(
+          new Blob([JSON.stringify(state.dataset, null, 2)], { type: "application/json" }),
+          filename
+        );
+      }
     } else if (type === "csv") {
-      const rows = ["group_id,series_id,series_label,temperature_axis,diffusivity_mm2_per_s,temperature_K,kind"];
+      const meta = getExportMetadata();
+      const exportedAt = new Date().toISOString();
+      const header = [
+        "source",
+        "source_id",
+        "source_title",
+        "group_id",
+        "series_id",
+        "series_label",
+        "temperature_axis",
+        "temperature_K",
+        "diffusivity_mm2_per_s",
+        "kind",
+      ];
+      const zoom = meta.zoom;
+      const rows = [
+        `# database_version: ${meta.database_version || ""}`,
+        `# schema_version: ${meta.schema_version || ""}`,
+        `# exported_at: ${exportedAt}`,
+        `# filters: ${formatFiltersSummary(meta.filters)}`,
+        `# zoom_x_min: ${zoom ? zoom.xMin.toFixed(2) : ""}`,
+        `# zoom_x_max: ${zoom ? zoom.xMax.toFixed(2) : ""}`,
+        `# zoom_y_min: ${zoom ? zoom.yMin.toExponential(6) : ""}`,
+        `# zoom_y_max: ${zoom ? zoom.yMax.toExponential(6) : ""}`,
+        "",
+        header.join(","),
+      ];
+      const withinZoom = (sample) => {
+        if (!zoom) return true;
+        const x = sample.temperature_axis;
+        const y = sample.diffusivity;
+        return x >= zoom.xMin && x <= zoom.xMax && y >= zoom.yMin && y <= zoom.yMax;
+      };
       currentSeries.forEach((series) => {
+        const sourceMeta = state.dataset?.sources?.[series.descriptor.sourceId] || null;
+        const citation = quote(cleanCsvField(buildCitation(sourceMeta, series.descriptor)));
+        const seriesBase = [
+          citation,
+          quote(series.descriptor.sourceId || ""),
+          quote(series.descriptor.sourceTitle || ""),
+          quote(series.descriptor.groupId),
+          quote(series.descriptor.seriesId || ""),
+          quote(series.seriesLabel || ""),
+        ];
         series.axisLine.forEach((sample) => {
+          if (!withinZoom(sample)) return;
           rows.push(
-            [
-              quote(series.descriptor.groupId),
-              quote(series.descriptor.seriesId || ""),
-              quote(series.seriesLabel),
-              sample.temperature_axis.toFixed(2),
-              sample.diffusivity.toExponential(6),
-              sample.temperature_K.toFixed(2),
-              "line",
-            ].join(",")
+            seriesBase
+              .concat([
+                sample.temperature_axis.toFixed(2),
+                sample.temperature_K.toFixed(2),
+                sample.diffusivity.toExponential(6),
+                "line",
+              ])
+              .join(",")
           );
         });
         series.axisPoints.forEach((sample) => {
+          if (!withinZoom(sample)) return;
           rows.push(
-            [
-              quote(series.descriptor.groupId),
-              quote(series.descriptor.seriesId || ""),
-              quote(series.seriesLabel),
-              sample.temperature_axis.toFixed(2),
-              sample.diffusivity.toExponential(6),
-              sample.temperature_K.toFixed(2),
-              "point",
-            ].join(",")
+            seriesBase
+              .concat([
+                sample.temperature_axis.toFixed(2),
+                sample.temperature_K.toFixed(2),
+                sample.diffusivity.toExponential(6),
+                "point",
+              ])
+              .join(",")
           );
         });
       });
-      downloadBlob(
-        new Blob([rows.join("\n")], { type: "text/csv" }),
-        "hdd-selected.csv"
-      );
+      downloadBlob(new Blob([rows.join("\n")], { type: "text/csv" }), "hdd-selected.csv");
     } else if (type === "png") {
       if (!currentCanvas) {
         alert("Plot the dataset first to export a PNG.");
@@ -1633,6 +1824,16 @@
       currentCanvas.toBlob((blob) => {
         if (blob) downloadBlob(blob, "hdd-selected.png");
       });
+    } else if (type === "svg") {
+      if (!lastPlotContext) {
+        alert("Plot the dataset first to export an SVG.");
+        return;
+      }
+      const svg = buildSvgExport(lastPlotContext);
+      downloadBlob(
+        new Blob([svg], { type: "image/svg+xml" }),
+        "hdd-selected.svg"
+      );
     }
   }
 
@@ -1689,6 +1890,432 @@
       }
     }
     return mode === "exclude";
+  }
+
+  function matchesComposition(filters, ranges, includeUnknown) {
+    if (!filters || !Object.keys(filters).length) return true;
+    if (!ranges) return !!includeUnknown;
+    for (const element of Object.keys(filters)) {
+      const filter = filters[element] || {};
+      const min = filter.min;
+      const max = filter.max;
+      if (min == null && max == null) continue;
+      const range = ranges[element];
+      if (!range) {
+        if (includeUnknown) continue;
+        return false;
+      }
+      if (min != null && range.max < min) return false;
+      if (max != null && range.min > max) return false;
+    }
+    return true;
+  }
+
+  function getExportMetadata() {
+    const zoom = lastPlotContext
+      ? {
+          xMin: lastPlotContext.axisMinX,
+          xMax: lastPlotContext.axisMaxX,
+          yMin: lastPlotContext.axisMinY,
+          yMax: lastPlotContext.axisMaxY,
+        }
+      : null;
+    return {
+      schema_version: state.dataset?.schema_version || "",
+      database_version: state.dataset?.database_version || "",
+      zoom,
+      filters: getActiveFiltersSummary(),
+    };
+  }
+
+  function getActiveFiltersSummary() {
+    const summary = {};
+    const addList = (key, list) => {
+      if (list && list.length) summary[key] = list;
+    };
+    addList("source", selectedValues(dom.filterSource));
+    addList("material_class", selectedValues(dom.filterClass));
+    addList("material_grade", selectedValues(dom.filterGrade));
+    const compositionFilters = formatCompositionFilters(state.compositionFilters);
+    if (compositionFilters.length) summary.chemical_composition = compositionFilters;
+    if (state.includeUnknownComposition) summary.chemical_composition_unknown = true;
+    addList("reported_as", selectedValues(dom.filterReported));
+    addList("studied_effects", selectedValues(dom.filterEffect));
+    addList("measurement_method", selectedValues(dom.filterMethod));
+    addList("model_type", selectedValues(dom.filterModel));
+    const search = dom.search?.value || "";
+    if (search.trim()) summary.search = search.trim();
+    if (state.tempMin != null) summary.temp_min = state.tempMin;
+    if (state.tempMax != null) summary.temp_max = state.tempMax;
+    if (state.includeUnconfirmed) summary.include_unconfirmed = true;
+    if (!state.includeLiteratureCompilations) summary.include_literature_compilations = false;
+    const excludeModes = {};
+    Object.keys(state.filterMode || {}).forEach((key) => {
+      if (state.filterMode[key] === "exclude") excludeModes[key] = "exclude";
+    });
+    if (Object.keys(excludeModes).length) summary.filter_mode = excludeModes;
+    return summary;
+  }
+
+  function formatFiltersSummary(filters) {
+    if (!filters || !Object.keys(filters).length) return "none";
+    const parts = [];
+    const listToText = (value) => (Array.isArray(value) ? value.join(" | ") : String(value));
+    Object.keys(filters).forEach((key) => {
+      const value = filters[key];
+      if (value == null) return;
+      if (typeof value === "object" && !Array.isArray(value)) {
+        const inner = Object.keys(value)
+          .map((innerKey) => `${innerKey}=${value[innerKey]}`)
+          .join(" | ");
+        if (inner) parts.push(`${key}: ${inner}`);
+        return;
+      }
+      parts.push(`${key}: ${listToText(value)}`);
+    });
+    return parts.join("; ");
+  }
+
+  function normalizeElementSymbol(value) {
+    if (value == null) return "";
+    const raw = String(value).trim();
+    if (!raw) return "";
+    const lettersOnly = raw.replace(/[^a-zA-Z]/g, "");
+    if (!lettersOnly) return raw;
+    if (lettersOnly.length <= 2) {
+      return lettersOnly.charAt(0).toUpperCase() + lettersOnly.slice(1).toLowerCase();
+    }
+    return lettersOnly.toUpperCase();
+  }
+
+  function formatCompositionFilters(filters) {
+    if (!filters) return [];
+    const parts = [];
+    Object.keys(filters).forEach((element) => {
+      const normalized = normalizeElementSymbol(element);
+      if (!normalized) return;
+      const range = filters[element] || {};
+      const min = range.min;
+      const max = range.max;
+      if (min == null && max == null) return;
+      if (min != null && max != null) {
+        parts.push(`${normalized} ${min}-${max}`);
+      } else if (min != null) {
+        parts.push(`${normalized} >= ${min}`);
+      } else if (max != null) {
+        parts.push(`${normalized} <= ${max}`);
+      }
+    });
+    return parts;
+  }
+
+  function buildCitation(sourceMeta, descriptor) {
+    if (!sourceMeta) {
+      return descriptor?.sourceTitle || descriptor?.sourceId || "";
+    }
+    const authors = Array.isArray(sourceMeta.authors) ? sourceMeta.authors : [];
+    let authorText = "";
+    if (authors.length > 1) {
+      authorText = `${authors[0]} et al.`;
+    } else if (authors.length === 1) {
+      authorText = authors[0];
+    }
+    const title = sourceMeta.title || "";
+    const year = sourceMeta.year != null ? String(sourceMeta.year) : "";
+    const journal = sourceMeta.journal || "";
+    const availability = sourceMeta.availability || "";
+    const parts = [];
+    if (authorText) parts.push(authorText);
+    if (title) parts.push(title);
+    if (year) parts.push(year);
+    if (journal) parts.push(journal);
+    if (availability) parts.push(availability);
+    if (!parts.length) return descriptor?.sourceTitle || descriptor?.sourceId || "";
+    return parts.join(" | ");
+  }
+
+  function cleanCsvField(value) {
+    if (value == null) return "";
+    let text = String(value);
+    text = text.replace(/\r?\n|\r/g, " ");
+    text = text.replace(/&ndash;|&mdash;/gi, "-");
+    text = text.replace(/&alpha;/gi, "alpha");
+    text = text.replace(/&beta;/gi, "beta");
+    text = text.replace(/&gamma;/gi, "gamma");
+    text = text.replace(/&delta;/gi, "delta");
+    text = text.replace(/&amp;/gi, "&");
+    text = text.replace(/&lt;/gi, "<");
+    text = text.replace(/&gt;/gi, ">");
+    text = text.replace(/&quot;/gi, "\"");
+    text = text.replace(/&apos;/gi, "'");
+    text = text.replace(/\u2013|\u2014|\u2212/g, "-");
+    text = text.replace(/[;,]+/g, " | ");
+    text = text.replace(/&[a-z]+;/gi, " ");
+    return text.replace(/\s+/g, " ").trim();
+  }
+
+  function buildSvgExport(context) {
+    const {
+      width,
+      height,
+      margin,
+      plotWidth,
+      plotHeight,
+      axisMinX,
+      axisMaxX,
+      axisMinY,
+      axisMaxY,
+      logMin,
+      logMax,
+      theme,
+      units,
+      scale,
+      gridX,
+      gridY,
+      numbering,
+      envelope,
+      series,
+    } = context;
+
+    const xToPx = (value) =>
+      margin.left + ((value - axisMinX) / (axisMaxX - axisMinX || 1)) * plotWidth;
+    const yToPx = (value) => {
+      if (scale === "linear") {
+        const ratio = (value - axisMinY) / (axisMaxY - axisMinY || 1);
+        return margin.top + (1 - ratio) * plotHeight;
+      }
+      const logValue = Math.log10(value);
+      const ratio = (logValue - logMin) / (logMax - logMin || 1);
+      return margin.top + (1 - ratio) * plotHeight;
+    };
+
+    const parts = [];
+    parts.push(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`
+    );
+    parts.push(`<rect width="100%" height="100%" fill="${theme.canvas}"/>`);
+    parts.push(
+      `<clipPath id="plot-clip"><rect x="${margin.left}" y="${margin.top}" width="${plotWidth}" height="${plotHeight}"/></clipPath>`
+    );
+
+    if (gridX) {
+      const steps = 6;
+      for (let i = 0; i <= steps; i++) {
+        const value = axisMinX + ((axisMaxX - axisMinX) / steps) * i;
+        const x = xToPx(value);
+        parts.push(
+          `<line x1="${x}" y1="${margin.top}" x2="${x}" y2="${
+            margin.top + plotHeight
+          }" stroke="${theme.line}" stroke-width="1" opacity="0.35"/>`
+        );
+      }
+    }
+
+    if (gridY) {
+      if (scale === "linear") {
+        const steps = 6;
+        for (let i = 0; i <= steps; i++) {
+          const value = axisMinY + ((axisMaxY - axisMinY) / steps) * i;
+          const y = yToPx(value);
+          parts.push(
+            `<line x1="${margin.left}" y1="${y}" x2="${
+              margin.left + plotWidth
+            }" y2="${y}" stroke="${theme.line}" stroke-width="1" opacity="0.35"/>`
+          );
+        }
+      } else {
+        const decadeMin = Math.floor(logMin);
+        const decadeMax = Math.ceil(logMax);
+        const factors = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        for (let decade = decadeMin; decade <= decadeMax; decade++) {
+          for (const factor of factors) {
+            const value = factor * Math.pow(10, decade);
+            if (value < axisMinY || value > axisMaxY) continue;
+            const y = yToPx(value);
+            const major = factor === 1;
+            parts.push(
+              `<line x1="${margin.left}" y1="${y}" x2="${
+                margin.left + plotWidth
+              }" y2="${y}" stroke="${theme.line}" stroke-width="${
+                major ? 1.2 : 1
+              }" opacity="${major ? 0.7 : 0.25}"/>`
+            );
+          }
+        }
+      }
+    }
+
+    parts.push(
+      `<line x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${
+        margin.top + plotHeight
+      }" stroke="${theme.line}" stroke-width="1"/>`
+    );
+    parts.push(
+      `<line x1="${margin.left}" y1="${margin.top + plotHeight}" x2="${
+        margin.left + plotWidth
+      }" y2="${margin.top + plotHeight}" stroke="${theme.line}" stroke-width="1"/>`
+    );
+
+    parts.push(
+      `<text x="${margin.left + plotWidth / 2}" y="${
+        margin.top + plotHeight + 36
+      }" fill="${theme.ink}" font-size="12" text-anchor="middle">Temperature [${
+        units === "C" ? "C" : "K"
+      }]</text>`
+    );
+    parts.push(
+      `<text x="15" y="${margin.top + plotHeight / 2}" fill="${theme.ink}" font-size="12" text-anchor="middle" transform="rotate(-90 15 ${
+        margin.top + plotHeight / 2
+      })">Apparent Diffusivity [mm2/s]</text>`
+    );
+
+    const xticks = 6;
+    for (let i = 0; i <= xticks; i++) {
+      const value = axisMinX + ((axisMaxX - axisMinX) / xticks) * i;
+      const x = xToPx(value);
+      parts.push(
+        `<line x1="${x}" y1="${margin.top + plotHeight}" x2="${x}" y2="${
+          margin.top + plotHeight + 6
+        }" stroke="${theme.line}" stroke-width="1"/>`
+      );
+      parts.push(
+        `<text x="${x}" y="${margin.top + plotHeight + 22}" fill="${theme.muted}" font-size="10" text-anchor="middle">${Math.round(
+          value
+        )}</text>`
+      );
+    }
+
+    if (scale === "linear") {
+      const steps = 6;
+      for (let i = 0; i <= steps; i++) {
+        const value = axisMinY + ((axisMaxY - axisMinY) / steps) * i;
+        const y = yToPx(value);
+        parts.push(
+          `<line x1="${margin.left - 6}" y1="${y}" x2="${margin.left}" y2="${y}" stroke="${theme.line}" stroke-width="1"/>`
+        );
+        parts.push(
+          `<text x="${margin.left - 10}" y="${y + 3}" fill="${theme.muted}" font-size="10" text-anchor="end">${value.toExponential(
+            1
+          )}</text>`
+        );
+      }
+    } else {
+      const decadeMin = Math.floor(logMin);
+      const decadeMax = Math.ceil(logMax);
+      const factors = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+      for (let decade = decadeMin; decade <= decadeMax; decade++) {
+        for (const factor of factors) {
+          const value = factor * Math.pow(10, decade);
+          if (value < axisMinY || value > axisMaxY) continue;
+          const y = yToPx(value);
+          const tickLen = factor === 1 ? 6 : 3;
+          parts.push(
+            `<line x1="${margin.left - tickLen}" y1="${y}" x2="${margin.left}" y2="${y}" stroke="${theme.line}" stroke-width="1"/>`
+          );
+          if (factor === 1 || factor === 2 || factor === 5) {
+            parts.push(
+              `<text x="${margin.left - 10}" y="${y + 3}" fill="${theme.muted}" font-size="10" text-anchor="end">${value.toExponential(
+                1
+              )}</text>`
+            );
+          }
+        }
+      }
+    }
+
+    parts.push(`<g clip-path="url(#plot-clip)">`);
+    if (envelope) {
+      const buckets = {};
+      series.forEach((item) => {
+        const band = inferBand(item.descriptor);
+        if (!band) return;
+        const baseId = stripBand(item.descriptor.groupId);
+        const key = `${baseId}::${item.seriesLabel}`;
+        buckets[key] = buckets[key] || {};
+        buckets[key][band] = item;
+      });
+      Object.values(buckets).forEach((bucket) => {
+        if (!bucket.min || !bucket.max) return;
+        const overlap = computeOverlap(bucket.min, bucket.max);
+        if (!overlap.temps.length) return;
+        const path = [];
+        overlap.temps.forEach((temperature, idx) => {
+          const x = xToPx(units === "C" ? temperature - 273.15 : temperature);
+          const y = yToPx(overlap.maxVals[idx]);
+          path.push(`${idx === 0 ? "M" : "L"}${x} ${y}`);
+        });
+        for (let i = overlap.temps.length - 1; i >= 0; i--) {
+          const temperature = overlap.temps[i];
+          const x = xToPx(units === "C" ? temperature - 273.15 : temperature);
+          const y = yToPx(overlap.minVals[i]);
+          path.push(`L${x} ${y}`);
+        }
+        path.push("Z");
+        parts.push(
+          `<path d="${path.join(" ")}" fill="rgba(15,118,110,0.18)"/>`
+        );
+      });
+    }
+
+    series.forEach((item, index) => {
+      if (item.axisLineSegments?.length) {
+        item.axisLineSegments.forEach((segment) => {
+          if (segment.length < 2) return;
+          const d = segment
+            .map((point, idx) => {
+              const x = xToPx(point.temperature_axis);
+              const y = yToPx(point.diffusivity);
+              return `${idx === 0 ? "M" : "L"}${x} ${y}`;
+            })
+            .join(" ");
+          parts.push(
+            `<path d="${d}" fill="none" stroke="${item.color}" stroke-width="2"/>`
+          );
+        });
+      }
+      if (item.axisPoints.length) {
+        item.axisPoints.forEach((point) => {
+          const x = xToPx(point.temperature_axis);
+          const y = yToPx(point.diffusivity);
+          parts.push(
+            `<circle cx="${x}" cy="${y}" r="3" fill="${item.color}"/>`
+          );
+        });
+      }
+      if (numbering) {
+        const lastPoint =
+          item.axisLine[item.axisLine.length - 1] ||
+          item.axisPoints[item.axisPoints.length - 1];
+        if (lastPoint) {
+          const labelIndex = Number.isFinite(item.legendIndex)
+            ? item.legendIndex + 1
+            : index + 1;
+          parts.push(
+            `<text x="${xToPx(lastPoint.temperature_axis) + 4}" y="${yToPx(
+              lastPoint.diffusivity
+            )}" fill="${item.color}" font-size="11" text-anchor="start">${labelIndex}</text>`
+          );
+        }
+      }
+    });
+    parts.push(`</g>`);
+
+    const legendX = margin.left + plotWidth + 10;
+    let legendY = margin.top + 10;
+    buildLegendItems(series).forEach((item) => {
+      parts.push(
+        `<rect x="${legendX}" y="${legendY - 8}" width="10" height="10" fill="${item.color}"/>`
+      );
+      parts.push(
+        `<text x="${legendX + 14}" y="${legendY}" fill="${theme.ink}" font-size="11" text-anchor="start">${item.index + 1}. ${
+          item.label
+        }</text>`
+      );
+      legendY += 16;
+    });
+
+    parts.push(`</svg>`);
+    return parts.join("");
   }
 
   function matchesValue(selected, value, mode = "include") {
