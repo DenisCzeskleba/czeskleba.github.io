@@ -29,7 +29,7 @@ body.dark {
   --muted: #9ca3af;
   --panel: #15181d;
   --panel-strong: #1a1f26;
-  --canvas: #111418;
+  --canvas: #ffffff;
   --line: #2b313a;
   --accent: #7dd3c7;
   --accent-soft: rgba(125, 211, 199, 0.18);
@@ -613,13 +613,13 @@ body.dark .hdd-toggle-group button.is-active {
 }
 
 .hdd-downloads button {
-  background: var(--ink);
+  background: var(--accent);
   color: #fff;
 }
 
 body.dark .hdd-downloads button {
-  background: #e5e7eb;
-  color: #0b0f14;
+  background: var(--accent);
+  color: #fff;
 }
 
 .hdd-summary {
