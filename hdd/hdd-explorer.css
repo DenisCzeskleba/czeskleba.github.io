@@ -527,6 +527,38 @@ body.dark .hdd-toggle-group button.is-active {
   cursor: pointer;
 }
 
+.hdd-link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--panel-strong);
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.hdd-link-button:hover {
+  background: var(--panel);
+  border-color: color-mix(in srgb, var(--line) 75%, var(--ink));
+}
+
+.hdd-inline-link {
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, var(--ink));
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.hdd-inline-link:hover {
+  color: color-mix(in srgb, var(--ink) 85%, #000);
+  border-bottom-color: color-mix(in srgb, var(--line) 40%, var(--ink));
+}
+
 #hdd-plot-btn {
   background: var(--accent);
   color: #fff;

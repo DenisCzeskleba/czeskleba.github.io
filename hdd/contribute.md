@@ -21,26 +21,11 @@ Help expand the hydrogen diffusivity dataset by submitting peer-reviewed, open-a
 - **Queue:** submissions are emailed/webhooked to maintainers for manual verification; no automatic publishing to `hydrogen-diffusion-database`.
 - **Status updates:** contributors receive confirmation plus a link to track review progress.
 
-## UI Placeholder
+## How to Submit Today
 
-```html
-<form id="hydrogen-contribution-form" novalidate>
-  <fieldset>
-    <legend>Publication</legend>
-    <label>Title <input name="title" required /></label>
-    <label>DOI / URL <input name="doi" type="url" required /></label>
-    <label>Contact Email <input name="email" type="email" required /></label>
-  </fieldset>
+Submissions are collected through GitHub Issues to keep the workflow transparent and fully manual.
+Use the contribution template and fill in as many structured fields as possible:
 
-  <fieldset>
-    <legend>Model Parameters</legend>
-    <textarea name="models" placeholder="Paste Arrhenius/Power definitions or upload JSON"></textarea>
-    <label>Attach Files <input name="attachments" type="file" multiple /></label>
-  </fieldset>
+- Submit here: https://github.com/DenisCzeskleba/hydrogen-diffusion-database/issues/new?template=contribution.yml
 
-  <button type="submit">Submit for Review</button>
-</form>
-<script src="/hdd/hdd-contribution.js" defer></script>
-```
-
-We will wire this form to the real email/webhook endpoint once stakeholders confirm the preferred review pipeline.
+If you need to attach large tables or figures, include a public link in the issue body.

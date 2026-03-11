@@ -1216,9 +1216,13 @@
     }
 
     const canvas = document.createElement("canvas");
-    const chartBox = dom.chart.getBoundingClientRect();
-    const containerWidth = chartBox.width || 960;
-    const width = Math.max(640, Math.round(containerWidth - 40));
+    const chartStyles = getComputedStyle(dom.chart);
+    const paddingX =
+      (parseFloat(chartStyles.paddingLeft) || 0) +
+      (parseFloat(chartStyles.paddingRight) || 0);
+    // Use clientWidth to avoid border inflation causing incremental growth.
+    const containerWidth = dom.chart.clientWidth || 960;
+    const width = Math.max(640, Math.round(containerWidth - paddingX));
     const height = Math.round(width * 0.56);
     const ratio = window.devicePixelRatio || 1;
     canvas.width = width * ratio;
