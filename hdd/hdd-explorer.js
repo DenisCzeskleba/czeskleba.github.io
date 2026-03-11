@@ -2532,10 +2532,10 @@
   function getThemeColors() {
     const styles = getComputedStyle(document.body);
     return {
-      ink: styles.getPropertyValue("--ink").trim() || "#111827",
-      muted: styles.getPropertyValue("--muted").trim() || "#6b7280",
-      line: styles.getPropertyValue("--line").trim() || "#d1d5db",
-      canvas: styles.getPropertyValue("--canvas").trim() || "#f9fafb",
+      ink: styles.getPropertyValue("--plot-ink").trim() || "#111827",
+      muted: styles.getPropertyValue("--plot-muted").trim() || "#6b7280",
+      line: styles.getPropertyValue("--plot-line").trim() || "#d1d5db",
+      canvas: styles.getPropertyValue("--plot-canvas").trim() || "#f9fafb",
     };
   }
 

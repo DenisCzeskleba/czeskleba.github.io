@@ -8,6 +8,10 @@
   --panel-strong: #f8fafc;
   --canvas: #ffffff;
   --line: #e2e8f0;
+  --plot-canvas: #ffffff;
+  --plot-ink: #0f172a;
+  --plot-muted: #64748b;
+  --plot-line: #cbd5f5;
   --accent: #0f766e;
   --accent-soft: rgba(15, 118, 110, 0.15);
   --accent-warm: #f97316;
@@ -699,7 +703,7 @@ body.dark .hdd-toggle-group button.is-active {
   min-height: 520px;
   border-radius: 16px;
   border: 1px solid var(--line);
-  background: var(--canvas);
+  background: var(--plot-canvas);
   display: grid;
   place-items: center;
   text-align: center;
