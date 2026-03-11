@@ -2,6 +2,8 @@
 (function () {
   const R_DEFAULT = 8.314462618;
   const SAMPLES_PER_SEGMENT = 70;
+  const FILTER_LIST_DEFAULT_HEIGHT = 280;
+  const FILTER_LIST_MIN_HEIGHT = 150;
   const COLORS = [
     "#111827",
     "#0f766e",
@@ -31,6 +33,7 @@
     scaleButtons: document.querySelectorAll("[data-scale]"),
     envelope: document.getElementById("hdd-envelope"),
     numbering: document.getElementById("hdd-numbering"),
+    legendGroup: document.getElementById("hdd-legend-group"),
     monochrome: document.getElementById("hdd-monochrome"),
     gridX: document.getElementById("hdd-grid-x"),
     gridY: document.getElementById("hdd-grid-y"),
@@ -49,6 +52,8 @@
     filterMethod: document.getElementById("hdd-filter-method"),
     filterModel: document.getElementById("hdd-filter-model"),
     includeUnconfirmed: document.getElementById("hdd-include-unconfirmed"),
+    includeLiterature: document.getElementById("hdd-include-literature"),
+    filterModeToggles: document.querySelectorAll("[data-filter-mode]"),
     resetZoom: document.getElementById("hdd-reset-zoom"),
   };
 
@@ -57,16 +62,19 @@
     seriesList: [],
     seriesById: new Map(),
     selected: new Set(),
-    units: "K",
+    units: "C",
     scale: "log",
     envelope: true,
     numbering: true,
+    legendBySource: true,
     monochrome: false,
     gridX: true,
     gridY: true,
     tempMin: null,
     tempMax: null,
     includeUnconfirmed: false,
+    includeLiteratureCompilations: true,
+    filterMode: {},
     summaryExpanded: false,
     zoom: null,
   };
@@ -105,7 +113,10 @@
     state.monochrome = dom.monochrome?.checked ?? false;
     state.gridX = dom.gridX?.checked ?? true;
     state.gridY = dom.gridY?.checked ?? true;
+    state.legendBySource = dom.legendGroup?.checked ?? true;
     state.includeUnconfirmed = dom.includeUnconfirmed?.checked ?? false;
+    state.includeLiteratureCompilations = dom.includeLiterature?.checked ?? false;
+    initializeFilterModes();
     populateFilters(payload);
     applyFilters();
     selectAllVisible();
@@ -337,6 +348,10 @@
       state.numbering = dom.numbering.checked;
       plotSelectedSeries();
     });
+    dom.legendGroup?.addEventListener("change", () => {
+      state.legendBySource = dom.legendGroup.checked;
+      plotSelectedSeries();
+    });
     dom.monochrome?.addEventListener("change", () => {
       state.monochrome = dom.monochrome.checked;
       plotSelectedSeries();
@@ -348,6 +363,19 @@
     dom.gridY?.addEventListener("change", () => {
       state.gridY = dom.gridY.checked;
       plotSelectedSeries();
+    });
+    dom.includeLiterature?.addEventListener("change", () => {
+      state.includeLiteratureCompilations = dom.includeLiterature.checked;
+      applyFilters();
+    });
+    dom.filterModeToggles?.forEach((toggle) => {
+      toggle.addEventListener("click", (event) => event.stopPropagation());
+      toggle.addEventListener("change", () => {
+        const key = toggle.dataset.filterMode;
+        if (!key) return;
+        state.filterMode[key] = toggle.checked ? "exclude" : "include";
+        applyFilters();
+      });
     });
     [dom.tempMin, dom.tempMax].forEach((input) =>
       input?.addEventListener("input", () => {
@@ -415,6 +443,17 @@
         <span>${escapeHtml(option.label)}</span>
       `;
       listbox.appendChild(item);
+    });
+    bindFilterListResize(listbox);
+    requestAnimationFrame(() => adjustFilterListHeight(listbox));
+  }
+
+  function initializeFilterModes() {
+    state.filterMode = {};
+    dom.filterModeToggles?.forEach((toggle) => {
+      const key = toggle.dataset.filterMode;
+      if (!key) return;
+      state.filterMode[key] = toggle.checked ? "exclude" : "include";
     });
   }
 
@@ -488,6 +527,8 @@
       tempMin: state.tempMin,
       tempMax: state.tempMax,
       includeUnconfirmed: state.includeUnconfirmed,
+      includeLiteratureCompilations: state.includeLiteratureCompilations,
+      mode: state.filterMode,
     };
 
     const filtered = state.seriesList.filter((entry) =>
@@ -558,15 +599,17 @@
   }
 
   function entryMatchesFilters(entry, filters, query, ignoreKey = null) {
+    const mode = filters.mode || {};
     if (ignoreKey !== "plottingStatus" && !isPlottingAllowed(entry, filters.includeUnconfirmed)) return false;
-    if (ignoreKey !== "source" && filters.source.length && !filters.source.includes(entry.sourceId)) return false;
-    if (ignoreKey !== "materialClass" && !matchesSet(filters.materialClass, entry.meta.material_class)) return false;
-    if (ignoreKey !== "materialGrade" && !matchesSet(filters.materialGrade, entry.meta.material_grade)) return false;
-    if (ignoreKey !== "chemicalComposition" && !matchesSet(filters.chemicalComposition, entry.meta.chemical_composition)) return false;
-    if (ignoreKey !== "reportedAs" && !matchesSet(filters.reportedAs, entry.meta.reported_as)) return false;
-    if (ignoreKey !== "studiedEffects" && !matchesSet(filters.studiedEffects, entry.meta.studied_effects)) return false;
-    if (ignoreKey !== "measurementMethod" && !matchesSet(filters.measurementMethod, entry.meta.measurement_method)) return false;
-    if (ignoreKey !== "modelType" && !matchesSet(filters.modelType, entry.meta.model_type)) return false;
+    if (!filters.includeLiteratureCompilations && hasLiteratureCompilation(entry)) return false;
+    if (ignoreKey !== "source" && !matchesValue(filters.source, entry.sourceId, mode.source)) return false;
+    if (ignoreKey !== "materialClass" && !matchesSet(filters.materialClass, entry.meta.material_class, mode.materialClass)) return false;
+    if (ignoreKey !== "materialGrade" && !matchesSet(filters.materialGrade, entry.meta.material_grade, mode.materialGrade)) return false;
+    if (ignoreKey !== "chemicalComposition" && !matchesSet(filters.chemicalComposition, entry.meta.chemical_composition, mode.chemicalComposition)) return false;
+    if (ignoreKey !== "reportedAs" && !matchesSet(filters.reportedAs, entry.meta.reported_as, mode.reportedAs)) return false;
+    if (ignoreKey !== "studiedEffects" && !matchesSet(filters.studiedEffects, entry.meta.studied_effects, mode.studiedEffects)) return false;
+    if (ignoreKey !== "measurementMethod" && !matchesSet(filters.measurementMethod, entry.meta.measurement_method, mode.measurementMethod)) return false;
+    if (ignoreKey !== "modelType" && !matchesSet(filters.modelType, entry.meta.model_type, mode.modelType)) return false;
     if (ignoreKey !== "tempRange" && !matchesTemperatureRange(entry, filters.tempMin, filters.tempMax)) return false;
 
     if (query) {
@@ -695,6 +738,33 @@
       item.classList.toggle("is-disabled", !isAvailable);
       item.classList.toggle("is-hidden", !isAvailable);
     });
+    adjustFilterListHeight(listbox);
+  }
+
+  function bindFilterListResize(listbox) {
+    if (!listbox || listbox.dataset.resizeBound) return;
+    listbox.dataset.resizeBound = "true";
+    listbox.addEventListener("pointerup", () => {
+      listbox.dataset.userResized = "true";
+    });
+  }
+
+  function adjustFilterListHeight(listbox) {
+    if (!listbox || listbox.dataset.userResized === "true") return;
+    const items = Array.from(listbox.querySelectorAll(".hdd-filter-item:not(.is-hidden)"));
+    const style = getComputedStyle(listbox);
+    const paddingTop = parseFloat(style.paddingTop) || 0;
+    const paddingBottom = parseFloat(style.paddingBottom) || 0;
+    const gap = parseFloat(style.rowGap || style.gap) || 0;
+    if (!items.length) {
+      listbox.style.height = `${FILTER_LIST_MIN_HEIGHT}px`;
+      return;
+    }
+    const itemHeight = items[0].getBoundingClientRect().height || 0;
+    const total =
+      items.length * itemHeight + Math.max(0, items.length - 1) * gap + paddingTop + paddingBottom;
+    const clamped = Math.min(FILTER_LIST_DEFAULT_HEIGHT, Math.max(FILTER_LIST_MIN_HEIGHT, total));
+    listbox.style.height = `${Math.round(clamped)}px`;
   }
 
   function renderSeriesList(list) {
@@ -868,10 +938,20 @@
     const clampMin = state.tempMin;
     const clampMax = state.tempMax;
     const result = [];
+    const legendOrder = new Map();
+    let legendCount = 0;
 
     seriesIds.forEach((seriesId, index) => {
       const entry = state.seriesById.get(seriesId);
       if (!entry) return;
+      const sourceKey = entry.sourceId || entry.sourceTitle || entry.groupId || entry.id;
+      const legendKey = state.legendBySource ? sourceKey : entry.id;
+      let legendIndex = legendOrder.get(legendKey);
+      if (legendIndex == null) {
+        legendIndex = legendCount;
+        legendOrder.set(legendKey, legendCount);
+        legendCount += 1;
+      }
       const samples = sampleSeries(entry, clampMin, clampMax);
       const lineSegments = Array.isArray(samples.lineSegments) ? samples.lineSegments : [];
       const pointSamples = Array.isArray(samples.points) ? samples.points : [];
@@ -893,12 +973,18 @@
         diffusivity: sample.diffusivity,
       }));
 
-      const color = state.monochrome ? "#111111" : COLORS[index % COLORS.length];
+      const color = state.monochrome ? "#111111" : COLORS[legendIndex % COLORS.length];
+      const legendLabel = state.legendBySource
+        ? entry.sourceTitle || entry.label || entry.groupId || "Source"
+        : `${seriesDisplayLabel(entry)} - ${entry.seriesLabel}`;
       result.push({
         id: entry.id,
         label: entry.label,
         seriesLabel: entry.seriesLabel,
         color,
+        legendKey,
+        legendLabel,
+        legendIndex,
         axisLine,
         axisLineSegments,
         axisPoints,
@@ -1140,7 +1226,8 @@
           ctx.fillStyle = item.color;
           ctx.font = "11px IBM Plex Sans, Arial, sans-serif";
           ctx.textAlign = "left";
-          ctx.fillText(`${index + 1}`, xToPx(lastPoint.temperature_axis) + 4, yToPx(lastPoint.diffusivity));
+          const labelIndex = Number.isFinite(item.legendIndex) ? item.legendIndex + 1 : index + 1;
+          ctx.fillText(`${labelIndex}`, xToPx(lastPoint.temperature_axis) + 4, yToPx(lastPoint.diffusivity));
         }
       }
     });
@@ -1460,14 +1547,30 @@
     let legendY = margin.top + 10;
     ctx.font = "11px IBM Plex Sans, Arial, sans-serif";
     ctx.textAlign = "left";
+    const legendItems = [];
+    const seen = new Set();
     series.forEach((item, index) => {
-      ctx.fillStyle = item.color;
-      ctx.fillRect(legendX, legendY - 8, 10, 10);
-      ctx.fillStyle = theme.ink;
-      const label = seriesDisplayLabel(item.descriptor);
-      ctx.fillText(`${index + 1}. ${label} - ${item.seriesLabel}`, legendX + 14, legendY);
-      legendY += 16;
+      const key = item.legendKey || item.id || String(index);
+      if (state.legendBySource) {
+        if (seen.has(key)) return;
+        seen.add(key);
+      }
+      legendItems.push({
+        color: item.color,
+        label: item.legendLabel || seriesDisplayLabel(item.descriptor),
+        index: Number.isFinite(item.legendIndex) ? item.legendIndex : legendItems.length,
+      });
     });
+
+    legendItems
+      .sort((a, b) => a.index - b.index)
+      .forEach((item) => {
+        ctx.fillStyle = item.color;
+        ctx.fillRect(legendX, legendY - 8, 10, 10);
+        ctx.fillStyle = theme.ink;
+        ctx.fillText(`${item.index + 1}. ${item.label}`, legendX + 14, legendY);
+        legendY += 16;
+      });
   }
 
   function handleDownload(button) {
@@ -1578,8 +1681,27 @@
 
   function matchesSet(selected, set) {
     if (!selected.length) return true;
+    const mode = arguments.length > 2 ? arguments[2] : "include";
+    if (!set || !set.size) return mode === "exclude";
     for (const value of selected) {
-      if (set.has(value)) return true;
+      if (set.has(value)) {
+        return mode === "exclude" ? false : true;
+      }
+    }
+    return mode === "exclude";
+  }
+
+  function matchesValue(selected, value, mode = "include") {
+    if (!selected.length) return true;
+    const hasValue = selected.includes(value);
+    return mode === "exclude" ? !hasValue : hasValue;
+  }
+
+  function hasLiteratureCompilation(entry) {
+    const methods = entry.meta?.measurement_method;
+    if (!methods || !methods.size) return false;
+    for (const method of methods) {
+      if (String(method).toLowerCase() === "literature compilation") return true;
     }
     return false;
   }
@@ -1599,7 +1721,7 @@
   function formatRange(range) {
     const value = formatRangeValue(range);
     if (!value) return "";
-    return ` ? ${value}`;
+    return ` - ${value}`;
   }
 
   function formatRangeValue(range) {
@@ -1611,9 +1733,9 @@
     const minLabel = min.toFixed(0);
     const maxLabel = max.toFixed(0);
     if (minLabel === maxLabel) {
-      return `${minLabel}?K`;
+      return `${minLabel} K`;
     }
-    return `${minLabel}?${maxLabel} K`;
+    return `${minLabel}-${maxLabel} K`;
   }
 
   function seriesDisplayLabel(entry) {

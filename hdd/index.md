@@ -17,37 +17,71 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
         <div>
           <h3>Explorer Controls</h3>
         </div>
+        <label class="hdd-inline-checkbox">
+          <input type="checkbox" id="hdd-include-literature" checked />
+          <span>Include Literature Compilations</span>
+        </label>
       </div>
 
       <form class="hdd-controls" id="hdd-controls" autocomplete="off">
         <div class="hdd-control hdd-filter-grid">
           <details class="hdd-filter-block">
             <summary>Source</summary>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="source" />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
+            </label>
             <span id="hdd-filter-source-label" class="hdd-sr-only">Source</span>
             <div id="hdd-filter-source" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-source-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Material class</summary>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="materialClass" />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
+            </label>
             <span id="hdd-filter-class-label" class="hdd-sr-only">Material class</span>
             <div id="hdd-filter-class" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-class-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Material grade</summary>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="materialGrade" />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
+            </label>
             <span id="hdd-filter-grade-label" class="hdd-sr-only">Material grade</span>
             <div id="hdd-filter-grade" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-grade-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Chemical composition</summary>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="chemicalComposition" />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
+            </label>
             <span id="hdd-filter-composition-label" class="hdd-sr-only">Chemical composition</span>
             <div id="hdd-filter-composition" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-composition-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Measurement method</summary>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="measurementMethod" />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
+            </label>
             <span id="hdd-filter-method-label" class="hdd-sr-only">Measurement method</span>
             <div id="hdd-filter-method" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-method-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Model type</summary>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="modelType" />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
+            </label>
             <span id="hdd-filter-model-label" class="hdd-sr-only">Model type</span>
             <div id="hdd-filter-model" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-model-label" aria-multiselectable="true"></div>
           </details>
@@ -62,11 +96,21 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
           </details>
           <details class="hdd-filter-block">
             <summary>Reported as</summary>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="reportedAs" />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
+            </label>
             <span id="hdd-filter-reported-label" class="hdd-sr-only">Reported as</span>
             <div id="hdd-filter-reported" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-reported-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Studied effect</summary>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="studiedEffects" />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
+            </label>
             <span id="hdd-filter-effect-label" class="hdd-sr-only">Studied effect</span>
             <div id="hdd-filter-effect" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-effect-label" aria-multiselectable="true"></div>
           </details>
@@ -108,8 +152,8 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
             <summary>Plot options</summary>
             <div class="hdd-plot-options-body">
               <div class="hdd-toggle-group" role="group" aria-label="Temperature units">
-                <button type="button" data-unit="K" class="is-active">Kelvin</button>
-                <button type="button" data-unit="C">&deg;C</button>
+                <button type="button" data-unit="K">Kelvin</button>
+                <button type="button" data-unit="C" class="is-active">&deg;C</button>
               </div>
               <div class="hdd-toggle-group" role="group" aria-label="Y-axis scale">
                 <button type="button" data-scale="log" class="is-active">Log scale</button>
@@ -122,6 +166,10 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
               <label class="hdd-inline-checkbox">
                 <input type="checkbox" id="hdd-numbering" checked />
                 <span>Numbered plots</span>
+              </label>
+              <label class="hdd-inline-checkbox">
+                <input type="checkbox" id="hdd-legend-group" checked />
+                <span>Group legend by source</span>
               </label>
               <label class="hdd-inline-checkbox">
                 <input type="checkbox" id="hdd-monochrome" />

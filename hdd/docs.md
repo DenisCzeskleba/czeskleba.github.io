@@ -15,6 +15,14 @@ This section explains how the website mirrors the upstream tooling, what validat
 3. **Rendering:** The Explorer UI loads that bundle, reconstructs Arrhenius/power labels, and applies envelope fills + numbering consistent with the Python config (`plotting.config.json`).
 4. **Submissions:** Contributions are collected via the form, linted, and queued for human review before upstream inclusion.
 
+## Local Development
+
+If you do not want to run Jekyll locally, use the lightweight dev entry point:
+
+- `hdd/dev.html` loads `hdd-explorer.css`, `hdd-explorer.js`, and `hdd-groups-public.json` with relative paths.
+- Open `hdd/dev.html` with a static server (VS Code Live Server works) to iterate on styles and plotting quickly.
+- This page reuses the same JS/CSS as production, so changes carry over without a porting step.
+
 ## Validation Rules
 
 - Accept only peer-reviewed, open-access sources.
