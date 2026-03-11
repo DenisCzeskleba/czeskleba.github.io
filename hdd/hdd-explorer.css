@@ -617,6 +617,22 @@ body.dark .hdd-toggle-group button.is-active {
   align-items: flex-start;
 }
 
+.hdd-stage-button {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: var(--panel-strong);
+  color: var(--ink);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.hdd-stage-button:hover {
+  background: var(--panel);
+  border-color: color-mix(in srgb, var(--line) 75%, var(--ink));
+}
+
 .hdd-plot-options {
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -661,6 +677,21 @@ body.dark .hdd-toggle-group button.is-active {
   color: var(--muted);
 }
 
+.hdd-inline-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.hdd-inline-button:hover {
+  color: color-mix(in srgb, var(--ink) 85%, #000);
+}
+
 .hdd-export-row button {
   background: var(--accent);
   color: #fff;
@@ -673,6 +704,24 @@ body.dark .hdd-toggle-group button.is-active {
 
 .hdd-export-panel[open] {
   width: 120px;
+}
+
+.hdd-citation-panel {
+  width: 280px;
+}
+
+.hdd-citation-panel[open] {
+  width: 280px;
+}
+
+.hdd-citation-block {
+  display: grid;
+  gap: 6px;
+}
+
+.hdd-citation-block p {
+  margin: 0;
+  color: var(--muted);
 }
 
 .hdd-export-panel {

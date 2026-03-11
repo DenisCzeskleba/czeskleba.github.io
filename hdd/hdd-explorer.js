@@ -29,6 +29,9 @@
     chart: document.getElementById("hdd-chart"),
     summary: document.getElementById("hdd-selected-summary"),
     panelLeft: mount.querySelector(".hdd-panel-left"),
+    refreshPlot: document.getElementById("hdd-refresh-plot"),
+    citationPanel: document.getElementById("hdd-citation"),
+    citationLinks: document.querySelectorAll("[data-action='open-citation']"),
     unitButtons: document.querySelectorAll("[data-unit]"),
     scaleButtons: document.querySelectorAll("[data-scale]"),
     envelope: document.getElementById("hdd-envelope"),
@@ -420,8 +423,16 @@
       })
     );
     dom.plotButton?.addEventListener("click", () => plotSelectedSeries(true));
+    dom.refreshPlot?.addEventListener("click", () => plotSelectedSeries(true));
     dom.downloadButtons?.forEach((button) =>
       button.addEventListener("click", () => handleDownload(button))
+    );
+    dom.citationLinks?.forEach((button) =>
+      button.addEventListener("click", () => {
+        if (!dom.citationPanel) return;
+        dom.citationPanel.open = true;
+        dom.citationPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      })
     );
     dom.filterComposition?.addEventListener("input", handleCompositionInput);
     dom.clearFilters?.addEventListener("click", clearFilters);

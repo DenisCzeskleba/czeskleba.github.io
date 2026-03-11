@@ -150,6 +150,7 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
         <div class="hdd-stage-header">
           <h3>Plot Preview</h3>
           <div class="hdd-stage-controls">
+            <button type="button" class="hdd-stage-button" id="hdd-refresh-plot">Refresh</button>
             <details class="hdd-plot-options">
               <summary>Plot options</summary>
               <div class="hdd-plot-options-body">
@@ -194,7 +195,10 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
             <details class="hdd-plot-options hdd-export-panel">
               <summary>Export</summary>
               <div class="hdd-plot-options-body">
-                <div class="hdd-export-note">Choose a format</div>
+                <div class="hdd-export-note">
+                  Choose a format. Please consider a citation if you found this useful
+                  (<button type="button" class="hdd-inline-button" data-action="open-citation">citation</button>).
+                </div>
                 <div class="hdd-export-row">
                   <button type="button" data-download="png">PNG</button>
                   <button type="button" data-download="svg">SVG</button>
@@ -202,6 +206,19 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
                 <div class="hdd-export-row">
                   <button type="button" data-download="csv">CSV</button>
                   <button type="button" data-download="json">JSON</button>
+                </div>
+              </div>
+            </details>
+            <details class="hdd-plot-options hdd-citation-panel" id="hdd-citation">
+              <summary>Citation</summary>
+              <div class="hdd-plot-options-body">
+                <div class="hdd-citation-block">
+                  <strong>If you use the diffusion coefficient scatter band or analysis results</strong>
+                  <p>Placeholder - Add when Thesis or companion papers DOI exists.</p>
+                </div>
+                <div class="hdd-citation-block">
+                  <strong>If you use the database itself</strong>
+                  <p>Placeholder - Add Zenodo / DOI when available.</p>
                 </div>
               </div>
             </details>
