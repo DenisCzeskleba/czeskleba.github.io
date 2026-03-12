@@ -85,7 +85,7 @@ main > h1 {
   position: sticky;
   top: 16px;
   align-self: start;
-  height: calc(100vh - 32px);
+  height: calc(100vh - 128px);
   max-height: none;
   overflow: hidden;
   min-width: 0;

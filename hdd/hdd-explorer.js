@@ -1487,7 +1487,7 @@
     // Use clientWidth to avoid border inflation causing incremental growth.
     const containerWidth = dom.chart.clientWidth || 960;
     const width = Math.max(360, Math.round(containerWidth - paddingX));
-    const height = Math.round(width * 0.56);
+    const height = Math.round(width * 0.50);
     const ratio = window.devicePixelRatio || 1;
     canvas.width = width * ratio;
     canvas.height = height * ratio;
