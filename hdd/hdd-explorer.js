@@ -1542,11 +1542,19 @@
     const logMin = Math.log10(axisMinY);
     const logMax = Math.log10(axisMaxY);
 
-    const legendWidth = estimateLegendWidth(ctx, series, width, layoutScale);
+    const fontAxis = Math.round(14 * layoutScale);
+    const fontTick = Math.round(12 * layoutScale);
+    const fontLegend = Math.round(11 * layoutScale);
+    const fontLabel = Math.round(11 * layoutScale);
+    const legendMaxLines = isNarrow ? 3 : null;
+    const legendLineHeight = Math.round(16 * layoutScale);
+    const legendHeight =
+      legendMaxLines != null ? legendLineHeight * legendMaxLines + Math.round(12 * layoutScale) : 0;
+    const legendWidth = isNarrow ? 0 : estimateLegendWidth(ctx, series, width, layoutScale);
     const margin = {
       top: Math.round(26 * layoutScale),
-      right: legendWidth,
-      bottom: Math.round(64 * layoutScale),
+      right: isNarrow ? Math.round(14 * layoutScale) : legendWidth,
+      bottom: Math.round(64 * layoutScale) + legendHeight,
       left: Math.round(70 * layoutScale),
     };
     const plotWidth = width - margin.left - margin.right;
@@ -1582,10 +1590,6 @@
     ctx.stroke();
 
     ctx.fillStyle = theme.ink;
-    const fontAxis = Math.round(14 * layoutScale);
-    const fontTick = Math.round(12 * layoutScale);
-    const fontLegend = Math.round(11 * layoutScale);
-    const fontLabel = Math.round(11 * layoutScale);
     ctx.font = `${fontAxis}px IBM Plex Sans, Arial, sans-serif`;
     ctx.textAlign = "center";
     const tempUnitLabel = state.units === "C" ? "°C" : "°K";
@@ -1700,7 +1704,10 @@
       theme,
       plotHeight,
       fontLegend,
-      layoutScale
+      layoutScale,
+      isNarrow ? "bottom" : "side",
+      legendMaxLines,
+      axisLabelOffset
     );
 
     hoverCache = {
@@ -2340,19 +2347,41 @@
     return rx * rx + ry * ry;
   }
 
-  function drawLegend(ctx, series, margin, width, theme, plotHeight, fontSize, scale = 1) {
-    const legendX = margin.left + width + Math.round(10 * scale);
-    let legendY = margin.top + 10;
+  function drawLegend(
+    ctx,
+    series,
+    margin,
+    width,
+    theme,
+    plotHeight,
+    fontSize,
+    scale = 1,
+    position = "side",
+    maxLines = null,
+    axisLabelOffset = 0
+  ) {
+    const isBottom = position === "bottom";
+    const legendX = isBottom
+      ? margin.left
+      : margin.left + width + Math.round(10 * scale);
+    let legendY = isBottom
+      ? margin.top + plotHeight + axisLabelOffset + Math.round(16 * scale)
+      : margin.top + 10;
     ctx.font = `${fontSize}px IBM Plex Sans, Arial, sans-serif`;
     ctx.textAlign = "left";
-    const maxY = margin.top + plotHeight - 12;
+    const maxY = isBottom
+      ? legendY + Math.max(0, (maxLines || 0) * Math.round(16 * scale))
+      : margin.top + plotHeight - 12;
     const items = buildLegendItems(series);
     const showSwatch = !state.monochrome;
     const swatchOffset = showSwatch ? Math.round(14 * scale) : 0;
     const swatchSize = Math.max(8, Math.round(10 * scale));
     const textX = legendX + swatchOffset;
     const lineHeight = Math.round(16 * scale);
-    const availableLines = Math.max(0, Math.floor((maxY - legendY) / lineHeight));
+    const availableLines = Math.max(
+      0,
+      maxLines != null ? maxLines : Math.floor((maxY - legendY) / lineHeight)
+    );
     const needsMore = items.length > availableLines;
     const displayCount = needsMore ? Math.max(0, availableLines - 1) : items.length;
     let moreRect = null;
