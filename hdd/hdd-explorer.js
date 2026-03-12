@@ -29,8 +29,10 @@
     openSeries: document.getElementById("hdd-open-series"),
     seriesDrawer: document.getElementById("hdd-series-drawer"),
     chart: document.getElementById("hdd-chart"),
-    summary: document.getElementById("hdd-selected-summary"),
-    panelLeft: mount.querySelector(".hdd-panel-left"),
+      summary: document.getElementById("hdd-selected-summary"),
+      summaryModal: document.getElementById("hdd-summary-modal"),
+      summaryCloseButtons: document.querySelectorAll("[data-action='close-summary']"),
+      panelLeft: mount.querySelector(".hdd-panel-left"),
     refreshPlot: document.getElementById("hdd-refresh-plot"),
     citationPanel: document.getElementById("hdd-citation"),
     citationLinks: document.querySelectorAll("[data-action='open-citation']"),
@@ -70,6 +72,7 @@
     filterModeToggles: document.querySelectorAll("[data-filter-mode]"),
     filterUnknownComposition: document.querySelector("[data-filter-unknown='chemicalComposition']"),
     resetZoom: document.getElementById("hdd-reset-zoom"),
+    plotOptionPanels: mount.querySelectorAll(".hdd-plot-options"),
   };
 
   const state = {
@@ -469,6 +472,14 @@
     dom.downloadButtons?.forEach((button) =>
       button.addEventListener("click", () => handleDownload(button))
     );
+    dom.plotOptionPanels?.forEach((panel) => {
+      panel.addEventListener("toggle", () => {
+        if (!panel.open) return;
+        dom.plotOptionPanels.forEach((other) => {
+          if (other !== panel) other.open = false;
+        });
+      });
+    });
     dom.citationLinks?.forEach((button) =>
       button.addEventListener("click", () => {
         if (!dom.citationPanel) return;
@@ -480,14 +491,32 @@
     dom.clearFilters?.addEventListener("click", clearFilters);
     dom.selectAll?.addEventListener("click", selectAllVisible);
     dom.deselectAll?.addEventListener("click", deselectAllVisible);
-    dom.includeUnconfirmed?.addEventListener("change", () => {
-      state.includeUnconfirmed = dom.includeUnconfirmed.checked;
-      applyFilters();
-    });
+      dom.includeUnconfirmed?.addEventListener("change", () => {
+        state.includeUnconfirmed = dom.includeUnconfirmed.checked;
+        applyFilters();
+      });
 
-    [
-      dom.filterSource,
-      dom.filterClass,
+      dom.summaryModal?.addEventListener("click", (event) => {
+        const target = event.target;
+        if (!target || !target.closest) return;
+        if (target.closest("[data-action='close-summary']") || target.classList.contains("hdd-summary-backdrop")) {
+          closeSummaryModal();
+        }
+      });
+
+      let resizeFrame = null;
+      window.addEventListener("resize", () => {
+        if (!currentSeries.length) return;
+        if (resizeFrame) return;
+        resizeFrame = window.requestAnimationFrame(() => {
+          resizeFrame = null;
+          renderChart(currentSeries);
+        });
+      });
+
+      [
+        dom.filterSource,
+        dom.filterClass,
       dom.filterGrade,
       dom.filterComposition,
       dom.filterReported,
@@ -655,9 +684,9 @@
     ctx.save();
     ctx.font = "11px IBM Plex Sans, Arial, sans-serif";
     ctx.fillStyle = lastPlotContext?.theme?.muted || "#64748b";
-    ctx.textAlign = "right";
+    ctx.textAlign = "left";
     ctx.textBaseline = "bottom";
-    ctx.fillText(footerLine, width - 12, height - 10);
+    ctx.fillText(footerLine, 12, height - 10);
     ctx.restore();
   }
 
@@ -1457,7 +1486,7 @@
       (parseFloat(chartStyles.paddingRight) || 0);
     // Use clientWidth to avoid border inflation causing incremental growth.
     const containerWidth = dom.chart.clientWidth || 960;
-    const width = Math.max(640, Math.round(containerWidth - paddingX));
+    const width = Math.max(360, Math.round(containerWidth - paddingX));
     const height = Math.round(width * 0.56);
     const ratio = window.devicePixelRatio || 1;
     canvas.width = width * ratio;
@@ -1498,8 +1527,8 @@
     const logMin = Math.log10(axisMinY);
     const logMax = Math.log10(axisMaxY);
 
-    const legendWidth = Math.max(220, Math.round(width * 0.28));
-    const margin = { top: 30, right: legendWidth, bottom: 70, left: 80 };
+    const legendWidth = estimateLegendWidth(ctx, series, width);
+    const margin = { top: 26, right: legendWidth, bottom: 64, left: 70 };
     const plotWidth = width - margin.left - margin.right;
     const plotHeight = height - margin.top - margin.bottom;
 
@@ -1533,7 +1562,7 @@
     ctx.stroke();
 
     ctx.fillStyle = theme.ink;
-    ctx.font = "16px IBM Plex Sans, Arial, sans-serif";
+    ctx.font = "14px IBM Plex Sans, Arial, sans-serif";
     ctx.textAlign = "center";
     const tempUnitLabel = state.units === "C" ? "°C" : "°K";
     ctx.fillText(
@@ -1600,7 +1629,7 @@
 
     ctx.restore();
 
-    drawLegend(ctx, series, margin, plotWidth, theme, plotHeight);
+    const legendInfo = drawLegend(ctx, series, margin, plotWidth, theme, plotHeight);
 
     hoverCache = {
       axisMinX,
@@ -1617,6 +1646,7 @@
       series,
       xToPx,
       yToPx,
+      legendMoreRect: legendInfo?.moreRect || null,
     };
 
     lastPlotContext = {
@@ -1941,7 +1971,7 @@
     const steps = 5;
     ctx.fillStyle = theme.ink;
     ctx.textAlign = "center";
-    ctx.font = "14px IBM Plex Sans, Arial, sans-serif";
+    ctx.font = "12px IBM Plex Sans, Arial, sans-serif";
     for (let i = 0; i <= steps; i++) {
       const value = min + ((max - min) / steps) * i;
       const x = xToPx(value);
@@ -1968,7 +1998,7 @@
   function drawYTicks(ctx, axisMinY, axisMaxY, logMin, logMax, margin, width, height, yToPx, theme, drawGrid) {
     ctx.textAlign = "right";
     ctx.fillStyle = theme.ink;
-    ctx.font = "14px IBM Plex Sans, Arial, sans-serif";
+    ctx.font = "12px IBM Plex Sans, Arial, sans-serif";
     if (state.scale === "linear") {
       const steps = 5;
       for (let i = 0; i <= steps; i++) {
@@ -2027,6 +2057,26 @@
     }
   }
 
+  function estimateLegendWidth(ctx, series, chartWidth) {
+    if (!ctx || !Array.isArray(series) || !series.length) return 140;
+    const items = buildLegendItems(series);
+    if (!items.length) return 140;
+    ctx.save();
+    ctx.font = "11px IBM Plex Sans, Arial, sans-serif";
+    let maxLabel = 0;
+    items.forEach((item) => {
+      const label = `${item.index + 1}. ${item.label}`;
+      const width = ctx.measureText(label).width;
+      if (width > maxLabel) maxLabel = width;
+    });
+    ctx.restore();
+    const swatch = state.monochrome ? 0 : 14;
+    const padding = 28;
+    const target = maxLabel + swatch + padding;
+    const maxWidth = Math.min(240, Math.round(chartWidth * 0.3));
+    return Math.min(maxWidth, Math.max(120, Math.round(target)));
+  }
+
   function buildLegendItems(series) {
     const legendItems = [];
     const seen = new Set();
@@ -2056,11 +2106,25 @@
       const rect = canvas.getBoundingClientRect();
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
+      const legendRect = hoverCache.legendMoreRect;
+      if (legendRect) {
+        const insideLegend =
+          x >= legendRect.x &&
+          x <= legendRect.x + legendRect.width &&
+          y >= legendRect.y &&
+          y <= legendRect.y + legendRect.height;
+        if (insideLegend) {
+          canvas.style.cursor = "pointer";
+          tooltip.style.opacity = "0";
+          return;
+        }
+      }
       const plotLeft = hoverCache.margin.left;
       const plotTop = hoverCache.margin.top;
       const plotRight = plotLeft + hoverCache.plotWidth;
       const plotBottom = plotTop + hoverCache.plotHeight;
       if (x < plotLeft || x > plotRight || y < plotTop || y > plotBottom) {
+        canvas.style.cursor = "default";
         tooltip.style.opacity = "0";
         return;
       }
@@ -2109,16 +2173,35 @@
       tooltip.style.opacity = "1";
       tooltip.style.left = `${rect.left + window.scrollX + best.px + 12}px`;
       tooltip.style.top = `${rect.top + window.scrollY + best.py - 10}px`;
+      canvas.style.cursor = "crosshair";
     }
 
     function handleLeave() {
       tooltip.style.opacity = "0";
     }
 
+    function handleClick(event) {
+      if (!hoverCache?.legendMoreRect) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      const legendRect = hoverCache.legendMoreRect;
+      const insideLegend =
+        x >= legendRect.x &&
+        x <= legendRect.x + legendRect.width &&
+        y >= legendRect.y &&
+        y <= legendRect.y + legendRect.height;
+      if (insideLegend) {
+        openSummaryModal();
+      }
+    }
+
     canvas.removeEventListener("mousemove", handleMove);
     canvas.removeEventListener("mouseleave", handleLeave);
+    canvas.removeEventListener("click", handleClick);
     canvas.addEventListener("mousemove", handleMove);
     canvas.addEventListener("mouseleave", handleLeave);
+    canvas.addEventListener("click", handleClick);
   }
 
   function ensureTooltip() {
@@ -2161,6 +2244,7 @@
     const availableLines = Math.max(0, Math.floor((maxY - legendY) / lineHeight));
     const needsMore = items.length > availableLines;
     const displayCount = needsMore ? Math.max(0, availableLines - 1) : items.length;
+    let moreRect = null;
     let i = 0;
     for (; i < items.length && i < displayCount; i++) {
       const item = items[i];
@@ -2173,9 +2257,18 @@
       legendY += lineHeight;
     }
     if (needsMore) {
-      ctx.fillStyle = theme.muted;
-      ctx.fillText(`... +${items.length - i} more`, textX, legendY);
+      const label = `... +${items.length - i} more`;
+      ctx.fillStyle = theme.accent || theme.muted;
+      ctx.fillText(label, textX, legendY);
+      const metrics = ctx.measureText(label);
+      moreRect = {
+        x: textX,
+        y: legendY - lineHeight + 2,
+        width: metrics.width,
+        height: lineHeight,
+      };
     }
+    return { moreRect };
   }
 
   function handleDownload(button) {
@@ -2330,6 +2423,18 @@
     dom.status.classList.remove("is-error", "is-ok");
     if (tone === "error") dom.status.classList.add("is-error");
     if (tone === "ok") dom.status.classList.add("is-ok");
+  }
+
+  function openSummaryModal() {
+    if (!dom.summaryModal) return;
+    dom.summaryModal.classList.add("is-open");
+    dom.summaryModal.setAttribute("aria-hidden", "false");
+  }
+
+  function closeSummaryModal() {
+    if (!dom.summaryModal) return;
+    dom.summaryModal.classList.remove("is-open");
+    dom.summaryModal.setAttribute("aria-hidden", "true");
   }
 
   function setShellState(stateValue) {
@@ -2635,12 +2740,12 @@
     parts.push(
       `<text x="${margin.left + plotWidth / 2}" y="${
         margin.top + plotHeight + 36
-      }" fill="${theme.ink}" font-size="16" text-anchor="middle">Temperature [${
+        }" fill="${theme.ink}" font-size="14" text-anchor="middle">Temperature [${
         units === "C" ? "C" : "K"
       }]</text>`
     );
     parts.push(
-      `<text x="15" y="${margin.top + plotHeight / 2}" fill="${theme.ink}" font-size="16" text-anchor="middle" transform="rotate(-90 15 ${
+      `<text x="15" y="${margin.top + plotHeight / 2}" fill="${theme.ink}" font-size="14" text-anchor="middle" transform="rotate(-90 15 ${
         margin.top + plotHeight / 2
       })">Apparent Diffusivity [mm2/s]</text>`
     );
@@ -2655,7 +2760,7 @@
         }" stroke="${theme.line}" stroke-width="1"/>`
       );
       parts.push(
-        `<text x="${x}" y="${margin.top + plotHeight + 22}" fill="${theme.ink}" font-size="14" text-anchor="middle">${Math.round(
+        `<text x="${x}" y="${margin.top + plotHeight + 22}" fill="${theme.ink}" font-size="12" text-anchor="middle">${Math.round(
           value
         )}</text>`
       );
@@ -2670,7 +2775,7 @@
           `<line x1="${margin.left - 6}" y1="${y}" x2="${margin.left}" y2="${y}" stroke="${theme.line}" stroke-width="1"/>`
         );
         parts.push(
-          `<text x="${margin.left - 10}" y="${y + 3}" fill="${theme.ink}" font-size="14" text-anchor="end">${value.toExponential(
+          `<text x="${margin.left - 10}" y="${y + 3}" fill="${theme.ink}" font-size="12" text-anchor="end">${value.toExponential(
             1
           )}</text>`
         );
@@ -2690,7 +2795,7 @@
           );
           if (factor === 1) {
             parts.push(
-              `<text x="${margin.left - 10}" y="${y + 3}" fill="${theme.ink}" font-size="14" text-anchor="end">${value.toExponential(
+              `<text x="${margin.left - 10}" y="${y + 3}" fill="${theme.ink}" font-size="12" text-anchor="end">${value.toExponential(
                 1
               )}</text>`
             );
@@ -2804,7 +2909,7 @@
     }
       if (needsMore) {
         parts.push(
-          `<text x="${textX}" y="${legendY}" fill="${theme.muted}" font-size="11" text-anchor="start">... +${
+          `<text x="${textX}" y="${legendY}" fill="${theme.accent || theme.muted}" font-size="11" text-anchor="start">... +${
             items.length - i
           } more</text>`
         );
@@ -2813,7 +2918,7 @@
       const footerLine = getDatabaseFooterLine();
       if (footerLine) {
         parts.push(
-          `<text x="${width - 12}" y="${height - 12}" fill="${theme.muted}" font-size="11" text-anchor="end">${escapeHtml(
+          `<text x="12" y="${height - 12}" fill="${theme.muted}" font-size="11" text-anchor="start">${escapeHtml(
             footerLine
           )}</text>`
         );
@@ -2902,6 +3007,7 @@
       muted: styles.getPropertyValue("--plot-muted").trim() || "#6b7280",
       line: styles.getPropertyValue("--plot-line").trim() || "#d1d5db",
       canvas: styles.getPropertyValue("--plot-canvas").trim() || "#f9fafb",
+      accent: styles.getPropertyValue("--accent").trim() || "#0f766e",
     };
   }
 

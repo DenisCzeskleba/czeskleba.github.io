@@ -32,7 +32,7 @@
           </div>
 
             <form class="hdd-controls" id="hdd-controls" autocomplete="off">
-              <div class="hdd-section">
+              <div class="hdd-section hdd-section-filters">
                 <div class="hdd-actions">
                   <button type="button" id="hdd-plot-btn" class="hdd-action-primary">Plot Filtered</button>
                   <div class="hdd-action-row">
@@ -210,7 +210,6 @@
                     </label>
                   </div>
                   <button type="button" id="hdd-reset-zoom">Reset zoom</button>
-                  <div class="hdd-plot-option-note">Drag a rectangle on the plot to zoom. Use Reset zoom to return.</div>
                 </div>
               </details>
                 <details class="hdd-plot-options hdd-export-panel">
@@ -260,13 +259,23 @@
               </div>
         </div>
 
-            <div class="hdd-stage-card hdd-summary" id="hdd-selected-summary">
-              <strong>No series selected.</strong>
-              <p>Use the checklist to the left to choose datasets for plotting.</p>
-            </div>
-          </section>
+        </section>
+      </div>
+    </div>
+
+    <div class="hdd-summary-modal" id="hdd-summary-modal" aria-hidden="true">
+      <div class="hdd-summary-backdrop" data-action="close-summary"></div>
+      <div class="hdd-summary-panel" role="dialog" aria-label="Filtered Series">
+        <div class="hdd-summary-panel-header">
+          <span>Filtered Series</span>
+          <button type="button" class="hdd-summary-close" data-action="close-summary">Close</button>
+        </div>
+        <div class="hdd-summary hdd-summary-panel-body" id="hdd-selected-summary">
+          <strong>No series selected.</strong>
+          <p>Use the checklist to the left to choose datasets for plotting.</p>
         </div>
       </div>
+    </div>
     </main>
 
 

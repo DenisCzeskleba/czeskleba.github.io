@@ -1,5 +1,11 @@
 @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap");
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 :root {
   color-scheme: light;
   --ink: #0f172a;
@@ -46,18 +52,23 @@ main {
   max-width: none;
   width: 100%;
   margin: 0;
-  padding: 1rem 1rem 3rem;
+  padding: 0.5rem 1rem 2.5rem;
   text-align: left;
   align-self: stretch;
   box-sizing: border-box;
 }
 
+main > h1 {
+  margin-top: 0.25rem;
+}
+
 .hdd-explorer-shell {
   display: grid;
-  grid-template-columns: clamp(420px, 38vw, 640px) minmax(0, 1fr);
-  gap: 28px;
+  grid-template-columns: minmax(340px, 420px) minmax(0, 1fr);
+  gap: 22px;
   margin-top: 24px;
   width: 100%;
+  align-items: start;
 }
 
 .hdd-panel,
@@ -66,16 +77,21 @@ main {
   border-radius: var(--radius);
   border: 1px solid var(--line);
   box-shadow: var(--shadow);
+  min-width: 0;
 }
 
 .hdd-panel {
-  padding: 24px;
+  padding: 20px;
   position: sticky;
-  top: 20px;
+  top: 16px;
   align-self: start;
-  max-height: calc(100vh - 60px);
+  height: calc(100vh - 32px);
+  max-height: none;
   overflow: auto;
   min-width: 0;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 12px;
 }
 
 .hdd-panel-left {
@@ -86,9 +102,11 @@ main {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
+  flex-wrap: nowrap;
   margin-bottom: 18px;
 }
+
 
 .hdd-eyebrow {
   font-size: 0.75rem;
@@ -101,18 +119,29 @@ main {
 .hdd-panel h3,
 .hdd-stage h3 {
   font-family: var(--font-display);
-  font-size: 1.35rem;
+  font-size: 1.15rem;
+  line-height: 1.1;
   margin: 0;
 }
 
 .hdd-controls {
   display: grid;
+  grid-template-rows: auto 1fr;
   gap: 16px;
+  flex: 1;
+  min-height: 0;
 }
 
 .hdd-section {
   display: grid;
   gap: 10px;
+}
+
+.hdd-section-filters {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto 1fr;
 }
 
 .hdd-section-title {
@@ -143,7 +172,7 @@ main {
   border: 1px solid var(--line);
   border-radius: 12px;
   font-weight: 600;
-  padding: 10px 12px;
+  padding: 8px 10px;
   cursor: pointer;
   transition: background 0.2s ease, border-color 0.2s ease;
 }
@@ -154,7 +183,8 @@ main {
 }
 
 .hdd-filter-scroll {
-  max-height: 360px;
+  min-height: 0;
+  max-height: none;
   overflow: auto;
   padding-right: 6px;
 }
@@ -182,8 +212,8 @@ main {
 
 .hdd-action-primary {
   font-weight: 700;
-  font-size: 1rem;
-  padding: 12px 16px;
+  font-size: 0.95rem;
+  padding: 10px 14px;
 }
 
 .hdd-control label {
@@ -278,6 +308,9 @@ body.dark .hdd-toggle-group button.is-active {
   align-items: center;
   gap: 10px;
   font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-size: 0.9rem;
 }
 
 .hdd-inline-select select {
@@ -289,6 +322,7 @@ body.dark .hdd-toggle-group button.is-active {
   color: var(--ink);
   font: inherit;
   font-size: 0.9rem;
+  min-width: 140px;
   background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
     linear-gradient(135deg, var(--muted) 50%, transparent 50%);
   background-position: calc(100% - 16px) 52%, calc(100% - 10px) 52%;
@@ -375,17 +409,21 @@ body.dark .hdd-toggle-group button.is-active {
 .hdd-filter-block {
   border: 1px solid var(--line);
   border-radius: 12px;
-  padding: 10px 12px;
+  padding: 8px 10px;
   background: var(--panel-strong);
   position: relative;
   overflow: visible;
+  display: block;
 }
 
 .hdd-filter-block summary {
   cursor: pointer;
   font-weight: 600;
   list-style: none;
-  padding-right: 230px;
+  margin: 0;
+  line-height: 1.2;
+  padding-right: clamp(140px, 30%, 200px);
+  font-size: 0.95rem;
 }
 
 .hdd-filter-block summary::-webkit-details-marker {
@@ -408,18 +446,17 @@ body.dark .hdd-toggle-group button.is-active {
 }
 
 .hdd-filter-toggle.is-inline.hdd-toggle-switch {
-  margin-left: auto;
-  justify-self: end;
+  margin-left: 0;
 }
 
 .hdd-filter-block > .hdd-filter-toggle-header {
   position: absolute;
-  top: 8px;
+  top: 10px;
   right: 12px;
   z-index: 2;
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  max-width: 200px;
+  justify-content: flex-end;
 }
 
 .hdd-filter-note {
@@ -502,8 +539,8 @@ body.dark .hdd-toggle-group button.is-active {
   border-radius: 12px;
   border: 1px solid var(--line);
   background: var(--panel);
-  height: 280px;
-  max-height: 840px;
+  height: min(280px, 42vh);
+  max-height: min(840px, 60vh);
   min-height: 150px;
   overflow: auto;
   padding: 6px;
@@ -741,11 +778,66 @@ body.dark .hdd-toggle-group button.is-active {
   overflow: auto;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 720px) {
   .hdd-series-panel {
     width: 100%;
     min-width: 0;
     resize: none;
+  }
+
+  .hdd-panel-header {
+    flex-wrap: wrap;
+  }
+
+  .hdd-panel,
+  .hdd-stage-card {
+    padding: 18px;
+  }
+
+  .hdd-panel {
+    display: block;
+    overflow: visible;
+  }
+
+  .hdd-controls {
+    display: block;
+  }
+
+  .hdd-chart {
+    min-height: 360px;
+    padding: 14px;
+  }
+
+  .hdd-action-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hdd-filter-block > .hdd-filter-toggle-header {
+    position: static;
+    margin-top: 6px;
+    justify-content: flex-start;
+  }
+
+  .hdd-filter-block {
+    display: block;
+  }
+
+  .hdd-filter-block > .hdd-filter-toggle-header {
+    justify-self: start;
+  }
+
+  .hdd-filter-block summary {
+    padding-right: 0;
+  }
+
+  .hdd-section-filters {
+    flex: 0 0 auto;
+    min-height: auto;
+  }
+
+  .hdd-filter-scroll {
+    overflow: visible;
+    height: auto;
   }
 }
 
@@ -784,8 +876,8 @@ body.dark .hdd-toggle-group button.is-active {
 .hdd-controls button#hdd-deselect-all,
 .hdd-controls button#hdd-clear-filters,
 .hdd-downloads button {
-  padding: 12px 14px;
-  border-radius: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
@@ -804,15 +896,15 @@ body.dark .hdd-toggle-group button.is-active {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 12px;
+  padding: 5px 10px;
   border-radius: 999px;
   border: 1px solid var(--line);
   background: var(--panel-strong);
   color: var(--ink);
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   line-height: 1.1;
-  min-height: 36px;
+  min-height: 32px;
   text-decoration: none;
   white-space: nowrap;
   transition: background 0.2s ease, border-color 0.2s ease;
@@ -884,44 +976,41 @@ body.dark .hdd-toggle-group button.is-active {
   display: grid;
   gap: 20px;
   min-width: 0;
+  width: 100%;
 }
 
 .hdd-stage-card {
   padding: 22px;
+  width: 100%;
 }
 
 .hdd-stage-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: flex-start;
-  gap: 10px;
+  gap: 16px;
   margin-bottom: 16px;
-  position: relative;
   min-height: 40px;
 }
 
 .hdd-stage-controls {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   flex-wrap: wrap;
-  position: absolute;
-  right: 0;
-  top: 0;
-  z-index: 2;
-  align-items: flex-end;
+  justify-self: end;
 }
 
 .hdd-stage-button {
   border: 1px solid var(--line);
   border-radius: 999px;
-  padding: 6px 12px;
+  padding: 5px 10px;
   background: var(--panel-strong);
   color: var(--ink);
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   line-height: 1.1;
-  min-height: 36px;
+  min-height: 32px;
   cursor: pointer;
   transition: background 0.2s ease, border-color 0.2s ease;
 }
@@ -949,9 +1038,10 @@ body.dark .hdd-toggle-group button.is-active {
 .hdd-plot-options {
   border: 1px solid var(--line);
   border-radius: 999px;
-  padding: 6px 12px;
+  padding: 0;
   background: var(--panel-strong);
-  width: 260px;
+  width: auto;
+  min-width: 140px;
   position: relative;
 }
 
@@ -959,11 +1049,12 @@ body.dark .hdd-toggle-group button.is-active {
   list-style: none;
   cursor: pointer;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   line-height: 1.1;
-  min-height: 36px;
+  min-height: 32px;
   display: flex;
   align-items: center;
+  padding: 5px 10px;
 }
 
 .hdd-plot-options summary::-webkit-details-marker {
@@ -972,14 +1063,15 @@ body.dark .hdd-toggle-group button.is-active {
 
 .hdd-plot-options[open] {
   border-radius: 999px;
-  padding: 6px 12px;
+  padding: 0;
 }
 
 .hdd-plot-options-body {
   position: absolute;
   left: 0;
   top: calc(100% + 8px);
-  min-width: 260px;
+  min-width: min(260px, 90vw);
+  max-width: 90vw;
   margin-top: 0;
   display: grid;
   gap: 8px;
@@ -1003,6 +1095,7 @@ body.dark .hdd-toggle-group button.is-active {
 .hdd-export-row {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .hdd-export-note {
@@ -1045,19 +1138,22 @@ body.dark .hdd-toggle-group button.is-active {
 }
 
 .hdd-export-panel .hdd-plot-options-body {
-  min-width: 120px;
+  min-width: 140px;
 }
 
 .hdd-citation-panel {
-  width: 150px;
+  width: auto;
+  min-width: 140px;
+  max-width: 100%;
 }
 
 .hdd-citation-panel[open] {
-  width: 150px;
+  width: auto;
 }
 
 .hdd-citation-panel .hdd-plot-options-body {
-  min-width: 300px;
+  min-width: min(300px, 90vw);
+  max-width: 90vw;
 }
 
 .hdd-citation-block {
@@ -1131,14 +1227,14 @@ body.dark .hdd-toggle-group button.is-active {
 }
 
 .hdd-chart {
-  min-height: 520px;
+  min-height: 480px;
   border-radius: 16px;
   border: 1px solid var(--line);
   background: var(--plot-canvas);
   display: grid;
   place-items: center;
   text-align: center;
-  padding: 20px;
+  padding: 16px;
 }
 
 .hdd-muted {
@@ -1221,6 +1317,63 @@ body.dark .hdd-toggle-group button.is-active {
   gap: 6px;
 }
 
+.hdd-summary-modal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  z-index: 60;
+}
+
+.hdd-summary-modal.is-open {
+  display: block;
+}
+
+.hdd-summary-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.4);
+}
+
+.hdd-summary-panel {
+  position: absolute;
+  right: 24px;
+  bottom: 24px;
+  width: min(560px, 92vw);
+  max-height: calc(100vh - 80px);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.hdd-summary-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  font-weight: 600;
+}
+
+.hdd-summary-close {
+  border: none;
+  background: var(--panel-strong);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.hdd-summary-panel-body {
+  padding: 14px 16px 18px;
+  overflow: auto;
+}
+
 .hdd-ordinal {
   display: inline-block;
   min-width: 2.4ch;
@@ -1246,26 +1399,49 @@ body.dark .hdd-toggle-group button.is-active {
   color: #b91c1c;
 }
 
-@media (max-width: 980px) {
+@media (max-width: 720px) {
   .hdd-explorer-shell {
     grid-template-columns: 1fr;
   }
   .hdd-panel {
     position: static;
+    height: auto;
     max-height: none;
   }
   .hdd-plot-options {
     position: static;
+    width: 100%;
+  }
+  .hdd-plot-options-body {
+    position: static;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .hdd-citation-panel .hdd-plot-options-body {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 960px) {
+  .hdd-stage-header {
+    grid-template-columns: 1fr;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .hdd-stage-controls {
+    justify-self: start;
+    width: 100%;
   }
 }
 .hdd-panel-footer {
-  margin-top: 18px;
   padding-top: 12px;
   border-top: 1px solid var(--line);
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .hdd-footer-toggle {
