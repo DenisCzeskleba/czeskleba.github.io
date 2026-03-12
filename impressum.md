@@ -7,22 +7,82 @@ permalink: /impressum.html
 ## Impressum
 
 **Angaben gemäß § 5 TMG**  
-Bundesanstalt für Materialforschung und -prüfung (BAM)
-Denis Czeskleba (Fachbereich 9.4)
-Unter den Eichen 87
-12205 Berlin
+Bundesanstalt für Materialforschung und -prüfung (BAM)  
+Denis Czeskleba (Fachbereich 9.4)  
+Unter den Eichen 87  
+12205 Berlin  
 
 **Kontakt:**  
 E-Mail: Denis@Czeskleba.com  
 
 ## Contact
 
-<form class="hdd-contrib-form" id="impressum-contact-form" action="https://formspree.io/f/mbdzovzk" method="POST" novalidate>
+
+<style>
+  .impressum-form {
+    margin: 1.5rem auto 0;
+    max-width: 720px;
+    text-align: left;
+    display: grid;
+    gap: 16px;
+  }
+  .impressum-form fieldset {
+    border: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 12px;
+  }
+  .impressum-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+  .impressum-form label {
+    font-weight: 600;
+    display: block;
+    margin-bottom: 6px;
+  }
+  .impressum-form input,
+  .impressum-form textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    font: inherit;
+    box-sizing: border-box;
+    background: var(--bg);
+    color: var(--text);
+  }
+  .impressum-form textarea {
+    min-height: 160px;
+    resize: vertical;
+  }
+  .impressum-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .impressum-actions button {
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: none;
+    background: #1f2937;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .impressum-status {
+    font-size: 0.95rem;
+  }
+</style>
+
+<form class="impressum-form" id="impressum-contact-form" action="https://formspree.io/f/mbdzovzk" method="POST" novalidate>
   <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off" />
   <input type="hidden" name="_subject" value="Website Contact (Impressum)" />
 
   <fieldset>
-    <div class="hdd-contrib-grid">
+    <div class="impressum-grid">
       <div>
         <label for="contact-name">Name</label>
         <input id="contact-name" name="name" required />
@@ -38,9 +98,9 @@ E-Mail: Denis@Czeskleba.com
     </div>
   </fieldset>
 
-  <div class="hdd-contrib-actions">
+  <div class="impressum-actions">
     <button type="submit">Send message</button>
-    <span class="hdd-contrib-status" id="impressum-contact-status"></span>
+    <span class="impressum-status" id="impressum-contact-status"></span>
   </div>
 </form>
 
