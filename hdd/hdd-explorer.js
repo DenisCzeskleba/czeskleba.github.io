@@ -32,6 +32,8 @@
     refreshPlot: document.getElementById("hdd-refresh-plot"),
     citationPanel: document.getElementById("hdd-citation"),
     citationLinks: document.querySelectorAll("[data-action='open-citation']"),
+    citationAnalysis: document.getElementById("hdd-citation-analysis"),
+    citationDatabase: document.getElementById("hdd-citation-database"),
     unitButtons: document.querySelectorAll("[data-unit]"),
     scaleButtons: document.querySelectorAll("[data-scale]"),
     envelope: document.getElementById("hdd-envelope"),
@@ -87,6 +89,7 @@
     filterMode: {},
     summaryExpanded: false,
     zoom: null,
+    axisInputActive: false,
   };
 
   let currentSeries = [];
@@ -115,6 +118,7 @@
     const { seriesList, seriesById } = normalizeDataset(payload);
     state.seriesList = seriesList;
     state.seriesById = seriesById;
+    updateCitationPanel(payload);
 
     setStatus(
       `Loaded ${payload.group_count || payload.groups.length} groups · ${payload.series_count || seriesList.length} series`,
@@ -402,11 +406,22 @@
       state.gridY = dom.gridY.checked;
       plotSelectedSeries();
     });
-    [dom.axisXMin, dom.axisXMax, dom.axisYMin, dom.axisYMax].forEach((input) =>
-      input?.addEventListener("input", () => {
+    [dom.axisXMin, dom.axisXMax, dom.axisYMin, dom.axisYMax].forEach((input) => {
+      input?.addEventListener("focus", () => {
+        state.axisInputActive = true;
+      });
+      input?.addEventListener("blur", () => {
+        state.axisInputActive = false;
         setZoomFromInputs();
-      })
-    );
+        plotSelectedSeries(true);
+      });
+      input?.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          setZoomFromInputs();
+          plotSelectedSeries(true);
+        }
+      });
+    });
     dom.filterUnknownComposition?.addEventListener("change", () => {
       state.includeUnknownComposition = dom.filterUnknownComposition.checked;
       applyFilters();
@@ -426,13 +441,21 @@
     });
     [dom.tempMin, dom.tempMax].forEach((input) =>
       input?.addEventListener("input", () => {
-        state.tempMin = parseNumber(dom.tempMin?.value);
-        state.tempMax = parseNumber(dom.tempMax?.value);
+        const minC = parseNumber(dom.tempMin?.value);
+        const maxC = parseNumber(dom.tempMax?.value);
+        state.tempMin = Number.isFinite(minC) ? minC + 273.15 : null;
+        state.tempMax = Number.isFinite(maxC) ? maxC + 273.15 : null;
         applyFilters();
       })
     );
-    dom.plotButton?.addEventListener("click", () => plotSelectedSeries(true));
-    dom.refreshPlot?.addEventListener("click", () => plotSelectedSeries(true));
+    dom.plotButton?.addEventListener("click", () => {
+      setZoomFromInputs();
+      plotSelectedSeries(true);
+    });
+    dom.refreshPlot?.addEventListener("click", () => {
+      setZoomFromInputs();
+      plotSelectedSeries(true);
+    });
     dom.downloadButtons?.forEach((button) =>
       button.addEventListener("click", () => handleDownload(button))
     );
@@ -502,6 +525,32 @@
     });
     bindFilterListResize(listbox);
     requestAnimationFrame(() => adjustFilterListHeight(listbox));
+  }
+
+  function updateCitationPanel(payload) {
+    if (!payload || !payload.citations) return;
+    const analysis = payload.citations.analysis || {};
+    const database = payload.citations.database || {};
+
+    if (dom.citationAnalysis) {
+      dom.citationAnalysis.textContent = formatCitation(analysis);
+    }
+    if (dom.citationDatabase) {
+      dom.citationDatabase.textContent = formatCitation(database);
+    }
+  }
+
+  function formatCitation(item) {
+    if (!item || typeof item !== "object") return "Citation unavailable.";
+    const lines = [];
+    if (item.authors && item.authors.length) lines.push(item.authors.join(", "));
+    if (item.title) lines.push(item.title);
+    if (item.institution || item.year) {
+      const tail = [item.institution, item.year].filter(Boolean).join(", ");
+      if (tail) lines.push(tail);
+    }
+    if (item.url) lines.push(item.url);
+    return lines.filter(Boolean).join("\n");
   }
 
   function populateCompositionFilters(seriesList) {
@@ -1268,10 +1317,10 @@
     let axisMaxY = dataMaxY;
 
     if (state.zoom) {
-      axisMinX = clampValue(state.zoom.xMin, dataMinX, dataMaxX);
-      axisMaxX = clampValue(state.zoom.xMax, dataMinX, dataMaxX);
-      axisMinY = clampValue(state.zoom.yMin, dataMinY, dataMaxY);
-      axisMaxY = clampValue(state.zoom.yMax, dataMinY, dataMaxY);
+      axisMinX = Number.isFinite(state.zoom.xMin) ? state.zoom.xMin : dataMinX;
+      axisMaxX = Number.isFinite(state.zoom.xMax) ? state.zoom.xMax : dataMaxX;
+      axisMinY = Number.isFinite(state.zoom.yMin) ? state.zoom.yMin : dataMinY;
+      axisMaxY = Number.isFinite(state.zoom.yMax) ? state.zoom.yMax : dataMaxY;
       if (!(axisMaxX > axisMinX) || !(axisMaxY > axisMinY)) {
         state.zoom = null;
         axisMinX = dataMinX;
@@ -1432,6 +1481,7 @@
       dom.resetZoom.disabled = !state.zoom;
     }
     syncZoomInputs();
+    populateAxisDefaults(axisMinX, axisMaxX, axisMinY, axisMaxY);
 
     setupZoomSelection(canvas, ctx, {
       axisMinX,
@@ -1577,11 +1627,19 @@
       Number.isFinite(xMax) ||
       Number.isFinite(yMin) ||
       Number.isFinite(yMax);
-    state.zoom = anyValue ? { xMin, xMax, yMin, yMax } : null;
-    plotSelectedSeries();
+    if (!anyValue) {
+      state.zoom = null;
+      return;
+    }
+    const invalid =
+      (Number.isFinite(xMin) && Number.isFinite(xMax) && !(xMax > xMin)) ||
+      (Number.isFinite(yMin) && Number.isFinite(yMax) && !(yMax > yMin));
+    if (invalid) return;
+    state.zoom = { xMin, xMax, yMin, yMax };
   }
 
   function syncZoomInputs() {
+    if (state.axisInputActive) return;
     if (!dom.axisXMin || !dom.axisXMax || !dom.axisYMin || !dom.axisYMax) return;
     if (!state.zoom) {
       dom.axisXMin.value = "";
@@ -1602,6 +1660,24 @@
     dom.axisYMax.value = Number.isFinite(state.zoom.yMax)
       ? state.zoom.yMax.toExponential(3)
       : "";
+  }
+
+  function populateAxisDefaults(axisMinX, axisMaxX, axisMinY, axisMaxY) {
+    if (state.axisInputActive) return;
+    if (!dom.axisXMin || !dom.axisXMax || !dom.axisYMin || !dom.axisYMax) return;
+    if (state.zoom) return;
+    if (
+      dom.axisXMin.value ||
+      dom.axisXMax.value ||
+      dom.axisYMin.value ||
+      dom.axisYMax.value
+    ) {
+      return;
+    }
+    dom.axisXMin.value = Number.isFinite(axisMinX) ? axisMinX.toFixed(2) : "";
+    dom.axisXMax.value = Number.isFinite(axisMaxX) ? axisMaxX.toFixed(2) : "";
+    dom.axisYMin.value = Number.isFinite(axisMinY) ? axisMinY.toExponential(3) : "";
+    dom.axisYMax.value = Number.isFinite(axisMaxY) ? axisMaxY.toExponential(3) : "";
   }
 
   function fillEnvelopes(series, xToPx, yToPx) {

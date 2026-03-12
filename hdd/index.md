@@ -1,10 +1,10 @@
 ---
 layout: default
-title: Hydrogen Diffusion Database 1
+title: Hydrogen Diffusion Database
 permalink: /hydrogen-diffusion-database/
 ---
 
-# Hydrogen Diffusion Database 2
+# Hydrogen Diffusion Database
 
 Browse curated diffusivity datasets, filter by material or source, and plot series directly in the browser. Export images and data, and <a class="hdd-inline-link" href="/hydrogen-diffusion-database/contribute/">contribute</a> your peer-reviewed open-access results back to the database.
 
@@ -87,12 +87,12 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
             <div id="hdd-filter-model" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-model-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
-            <summary>Temperature window</summary>
-            <label class="hdd-sr-only" for="hdd-temp-min">Temperature min</label>
-            <label class="hdd-sr-only" for="hdd-temp-max">Temperature max</label>
+            <summary>Temperature window [°C]</summary>
+            <label class="hdd-sr-only" for="hdd-temp-min">Temperature min (°C)</label>
+            <label class="hdd-sr-only" for="hdd-temp-max">Temperature max (°C)</label>
             <div class="hdd-toggle-group">
-              <input type="number" id="hdd-temp-min" placeholder="min" min="0" />
-              <input type="number" id="hdd-temp-max" placeholder="max" min="0" />
+              <input type="number" id="hdd-temp-min" placeholder="min" />
+              <input type="number" id="hdd-temp-max" placeholder="max" />
             </div>
           </details>
           <details class="hdd-filter-block">
@@ -163,23 +163,22 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
                   <button type="button" data-scale="linear">Linear</button>
                 </div>
                 <div class="hdd-plot-axis">
-                  <div>
-                    <label for="hdd-axis-x-min">X min</label>
-                    <input id="hdd-axis-x-min" type="number" step="any" placeholder="Auto" />
+                  <div class="hdd-axis-group">
+                    <div class="hdd-axis-label">X-Axis Limits</div>
+                    <div class="hdd-axis-fields">
+                      <input id="hdd-axis-x-min" type="text" inputmode="decimal" placeholder="Min" aria-label="X min" />
+                      <input id="hdd-axis-x-max" type="text" inputmode="decimal" placeholder="Max" aria-label="X max" />
+                    </div>
                   </div>
-                  <div>
-                    <label for="hdd-axis-x-max">X max</label>
-                    <input id="hdd-axis-x-max" type="number" step="any" placeholder="Auto" />
-                  </div>
-                  <div>
-                    <label for="hdd-axis-y-min">Y min</label>
-                    <input id="hdd-axis-y-min" type="number" step="any" placeholder="Auto" />
-                  </div>
-                  <div>
-                    <label for="hdd-axis-y-max">Y max</label>
-                    <input id="hdd-axis-y-max" type="number" step="any" placeholder="Auto" />
+                  <div class="hdd-axis-group">
+                    <div class="hdd-axis-label">Y-Axis Limits</div>
+                    <div class="hdd-axis-fields">
+                      <input id="hdd-axis-y-min" type="text" inputmode="decimal" placeholder="Min" aria-label="Y min" />
+                      <input id="hdd-axis-y-max" type="text" inputmode="decimal" placeholder="Max" aria-label="Y max" />
+                    </div>
                   </div>
                 </div>
+                <div class="hdd-axis-help">Leave blank for auto.</div>
                 <label class="hdd-inline-checkbox">
                   <input type="checkbox" id="hdd-envelope" checked />
                   <span>Envelope fill</span>
@@ -233,11 +232,11 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
               <div class="hdd-plot-options-body">
                 <div class="hdd-citation-block">
                   <strong>If you use the diffusion coefficient scatter band or analysis results</strong>
-                  <p>Placeholder - Add when Thesis or companion papers DOI exists.</p>
+                  <p id="hdd-citation-analysis">Citation information will appear once the dataset loads.</p>
                 </div>
                 <div class="hdd-citation-block">
                   <strong>If you use the database itself</strong>
-                  <p>Placeholder - Add Zenodo / DOI when available.</p>
+                  <p id="hdd-citation-database">Citation information will appear once the dataset loads.</p>
                 </div>
               </div>
             </details>
