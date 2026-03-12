@@ -26,6 +26,8 @@
     search: document.getElementById("hdd-search"),
     list: document.getElementById("hdd-series-list"),
     plotButton: document.getElementById("hdd-plot-btn"),
+    openSeries: document.getElementById("hdd-open-series"),
+    seriesDrawer: document.getElementById("hdd-series-drawer"),
     chart: document.getElementById("hdd-chart"),
     summary: document.getElementById("hdd-selected-summary"),
     panelLeft: mount.querySelector(".hdd-panel-left"),
@@ -90,6 +92,8 @@
     summaryExpanded: false,
     zoom: null,
     axisInputActive: false,
+    selectionMode: "filtered",
+    filteredList: [],
   };
 
   let currentSeries = [];
@@ -118,6 +122,7 @@
     const { seriesList, seriesById } = normalizeDataset(payload);
     state.seriesList = seriesList;
     state.seriesById = seriesById;
+    setSelectionMode("filtered");
     updateCitationPanel(payload);
 
     setStatus(
@@ -452,6 +457,7 @@
       setZoomFromInputs();
       plotSelectedSeries(true);
     });
+    dom.openSeries?.addEventListener("click", () => toggleSeriesDrawer(true));
     dom.refreshPlot?.addEventListener("click", () => {
       setZoomFromInputs();
       plotSelectedSeries(true);
@@ -489,6 +495,16 @@
       if (!listbox) return;
       listbox.addEventListener("change", applyFilters);
     });
+
+    if (dom.seriesDrawer) {
+      dom.seriesDrawer.addEventListener("click", (event) => {
+        const target = event.target;
+        if (!target || !target.closest) return;
+        if (target.closest("[data-action='close-series']")) {
+          toggleSeriesDrawer(false);
+        }
+      });
+    }
   }
 
   function populateFilters(payload) {
@@ -692,12 +708,19 @@
     };
 
     const filtered = state.seriesList.filter((entry) =>
-      entryMatchesFilters(entry, filters, query)
+      entryMatchesFilters(entry, filters, "")
     );
+    const visible = query
+      ? filtered.filter((entry) => entryMatchesFilters(entry, filters, query))
+      : filtered;
+    state.filteredList = filtered;
+    if (state.selectionMode === "filtered") {
+      state.selected = new Set(filtered.map((entry) => entry.id));
+    }
 
     syncSelectionToVisible(filtered);
-    renderSeriesList(filtered);
-    updateFilterAvailability(filters, query);
+    renderSeriesList(visible);
+    updateFilterAvailability(filters, "");
     updateSummary(currentSeries);
     restoreSelectScroll(selectScroll);
     if (dom.panelLeft && previousScrollTop != null) {
@@ -987,7 +1010,9 @@
       checkbox.checked = true;
       state.selected.add(checkbox.value);
     });
+    setSelectionMode("manual");
     updateSummary();
+    plotSelectedSeries(true);
   }
 
   function deselectAllVisible() {
@@ -995,9 +1020,10 @@
     if (checkboxes && checkboxes.length) {
       checkboxes.forEach((checkbox) => {
         checkbox.checked = false;
+        state.selected.delete(checkbox.value);
       });
     }
-    state.selected.clear();
+    setSelectionMode("manual");
     plotSelectedSeries(true);
   }
 
@@ -1009,7 +1035,11 @@
     } else {
       state.selected.delete(id);
     }
+    if (state.selectionMode !== "manual") {
+      setSelectionMode("manual");
+    }
     updateSummary();
+    plotSelectedSeries(true);
   }
 
   function handleSummaryToggle(event) {
@@ -1022,15 +1052,26 @@
 
   function updateSummary(seriesList = null) {
     if (!dom.summary) return;
-    if (!state.selected.size) {
+    if (state.selectionMode === "manual") {
+      if (!state.selected.size) {
+        state.summaryExpanded = false;
+        dom.summary.innerHTML =
+          "<strong>No series selected.</strong><p>Use Select Series to choose datasets for plotting.</p>";
+        return;
+      }
+    }
+    const allItems =
+      state.selectionMode === "manual"
+        ? Array.from(state.selected)
+            .map((id) => state.seriesById.get(id))
+            .filter(Boolean)
+        : (state.filteredList || []);
+    if (!allItems.length) {
       state.summaryExpanded = false;
       dom.summary.innerHTML =
-        "<strong>No series selected.</strong><p>Use the checklist to the left to choose datasets for plotting.</p>";
+        "<strong>No series match the filters.</strong><p>Adjust filters or use Select Series to override.</p>";
       return;
     }
-    const allItems = Array.from(state.selected)
-      .map((id) => state.seriesById.get(id))
-      .filter(Boolean);
     const plottedSeries = seriesList && seriesList.length ? seriesList : currentSeries;
     const seriesOrder = plottedSeries.length
       ? plottedSeries.map((series, index) => ({ id: series.id, index }))
@@ -1073,14 +1114,18 @@
     const toggleButton = needsToggle
       ? `<button type="button" class="hdd-summary-toggle">${toggleLabel}</button>`
       : "";
+    const modeLabel = state.selectionMode === "manual" ? "selection" : "filters";
+    const actionLabel = state.selectionMode === "manual" ? "Plot Selected" : "Plot Filtered";
     const statusLine =
       plottedCount && plottedCount !== selectedCount
-        ? `<p>${plottedCount} plotted from current selection. Click "Plot Selected" to refresh.</p>`
-        : `<p>${selectedCount} series selected.</p>`;
+        ? `<p>${plottedCount} plotted from current ${modeLabel}. Click "${actionLabel}" to refresh.</p>`
+        : `<p>${selectedCount} series ${
+            state.selectionMode === "manual" ? "selected" : "match filters"
+          }.</p>`;
 
     dom.summary.innerHTML = `
       <div class="hdd-summary-header">
-        <strong>Selected Series</strong>
+        <strong>${state.selectionMode === "manual" ? "Selected Series" : "Filtered Series"}</strong>
         ${toggleButton}
       </div>
       ${statusLine}
@@ -1106,14 +1151,35 @@
     plotSelectedSeries();
   }
 
+  function setSelectionMode(mode) {
+    state.selectionMode = mode === "manual" ? "manual" : "filtered";
+    if (dom.plotButton) {
+      dom.plotButton.textContent =
+        state.selectionMode === "manual" ? "Plot Selected" : "Plot Filtered";
+    }
+  }
+
+  function toggleSeriesDrawer(open) {
+    if (!dom.seriesDrawer) return;
+    dom.seriesDrawer.classList.toggle("is-open", open);
+    dom.seriesDrawer.setAttribute("aria-hidden", open ? "false" : "true");
+  }
+
   function plotSelectedSeries(force = false) {
-    if (!state.selected.size) {
-      renderEmptyChart("Select at least one series.");
+    const useManual = state.selectionMode === "manual";
+    const ids = useManual
+      ? Array.from(state.selected)
+      : (state.filteredList || []).map((entry) => entry.id);
+    if (!ids.length) {
+      renderEmptyChart(
+        useManual
+          ? "Select at least one series."
+          : "No series match the current filters."
+      );
       currentSeries = [];
       updateSummary();
       return;
     }
-    const ids = Array.from(state.selected);
     const series = prepareSeries(ids);
     if (!series.length) {
       renderEmptyChart("No valid samples within the requested range.");

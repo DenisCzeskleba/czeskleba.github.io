@@ -110,15 +110,64 @@ main {
   gap: 16px;
 }
 
-.hdd-actions {
-  position: sticky;
-  bottom: 0;
-  z-index: 4;
+.hdd-section {
   display: grid;
   gap: 10px;
-  padding: 12px 0 6px;
-  background: linear-gradient(0deg, var(--panel) 0%, rgba(255, 255, 255, 0) 100%);
-  box-shadow: 0 -12px 24px rgba(15, 23, 42, 0.08);
+}
+
+.hdd-section-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+}
+
+.hdd-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.hdd-action-secondary {
+  background: var(--panel-strong);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font-weight: 600;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.hdd-action-secondary:hover {
+  background: var(--panel);
+  border-color: color-mix(in srgb, var(--line) 75%, var(--ink));
+}
+
+.hdd-filter-scroll {
+  max-height: 360px;
+  overflow: auto;
+  padding-right: 6px;
+}
+
+.hdd-filter-actions {
+  margin-top: 10px;
+}
+
+.hdd-filter-actions button {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: var(--panel-strong);
+  color: var(--ink);
+  border-radius: 12px;
+  font-weight: 600;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.hdd-filter-actions button:hover {
+  background: var(--panel);
+  border-color: color-mix(in srgb, var(--line) 75%, var(--ink));
 }
 
 .hdd-action-primary {
@@ -138,10 +187,6 @@ main {
   padding: 8px 10px;
 }
 
-body.dark .hdd-actions {
-  background: linear-gradient(0deg, var(--panel) 0%, rgba(21, 24, 29, 0) 100%);
-  box-shadow: 0 -12px 24px rgba(0, 0, 0, 0.35);
-}
 
 .hdd-control label {
   font-weight: 600;
@@ -544,6 +589,138 @@ body.dark .hdd-toggle-group button.is-active {
   max-height: 320px;
   overflow: auto;
   background: var(--panel-strong);
+  align-content: start;
+  grid-auto-rows: max-content;
+}
+
+.hdd-series-drawer {
+  position: fixed;
+  inset: 0;
+  display: none;
+  z-index: 50;
+}
+
+.hdd-series-drawer.is-open {
+  display: block;
+}
+
+.hdd-series-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+}
+
+.hdd-series-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: min(460px, 92vw);
+  height: 100%;
+  background: var(--panel);
+  border-left: 1px solid var(--line);
+  box-shadow: -16px 0 32px rgba(15, 23, 42, 0.2);
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: 12px;
+  padding: 16px;
+  resize: horizontal;
+  overflow: hidden;
+  min-width: 320px;
+}
+
+.hdd-series-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.hdd-series-subtitle {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.hdd-series-close {
+  border: 1px solid var(--line);
+  background: var(--panel-strong);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.hdd-series-controls {
+  display: grid;
+  gap: 10px;
+}
+
+.hdd-series-controls input[type="search"] {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  padding: 10px 12px;
+  font: inherit;
+  background: var(--panel);
+  color: var(--ink);
+  box-sizing: border-box;
+}
+
+.hdd-series-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.hdd-series-actions button {
+  border: 1px solid var(--line);
+  background: var(--panel-strong);
+  color: var(--ink);
+  border-radius: 12px;
+  font-weight: 600;
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.hdd-series-actions button:hover {
+  background: var(--panel);
+  border-color: color-mix(in srgb, var(--line) 75%, var(--ink));
+}
+
+.hdd-series-actions button.is-accent {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+}
+
+.hdd-series-actions button.is-accent:hover {
+  background: color-mix(in srgb, var(--accent) 85%, #000);
+  border-color: transparent;
+}
+
+.hdd-series-actions #hdd-select-all {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+}
+
+.hdd-series-actions #hdd-select-all:hover {
+  background: color-mix(in srgb, var(--accent) 85%, #000);
+  border-color: transparent;
+}
+
+.hdd-series-panel .hdd-group-list {
+  max-height: none;
+  height: auto;
+  overflow: auto;
+}
+
+@media (max-width: 900px) {
+  .hdd-series-panel {
+    width: 100%;
+    min-width: 0;
+    resize: none;
+  }
 }
 
 .hdd-group-option {

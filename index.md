@@ -19,7 +19,7 @@ Have a look at the following:
   </a>
 
   <a href="/hydrogen-diffusion-database/" style="text-decoration: none; display: inline-block; text-align: center;">
-    <img src="/assets/hdd.png" alt="Hydrogen Diffusion Database" style="width:250px;" /><br />
+    <img src="/assets/HDD.B%20Logo.png" alt="Hydrogen Diffusion Database" style="width:250px;" /><br />
     <strong>Hydrogen Diffusion Database</strong>
   </a>
 </div>

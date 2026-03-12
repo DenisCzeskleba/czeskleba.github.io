@@ -24,7 +24,16 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
       </div>
 
       <form class="hdd-controls" id="hdd-controls" autocomplete="off">
-        <div class="hdd-control hdd-filter-grid">
+        <div class="hdd-section">
+          <div class="hdd-actions">
+            <button type="button" id="hdd-plot-btn" class="hdd-action-primary">Plot Filtered</button>
+            <button type="button" id="hdd-open-series" class="hdd-action-secondary">Select Series</button>
+          </div>
+        </div>
+
+        <div class="hdd-section">
+          <div class="hdd-section-title">Filters</div>
+          <div class="hdd-control hdd-filter-grid hdd-filter-scroll">
           <details class="hdd-filter-block">
             <summary>Source</summary>
             <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
@@ -115,22 +124,9 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
             <span id="hdd-filter-effect-label" class="hdd-sr-only">Studied effect</span>
             <div id="hdd-filter-effect" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-effect-label" aria-multiselectable="true"></div>
           </details>
-        </div>
-
-        <div class="hdd-actions">
-          <button type="button" id="hdd-plot-btn" class="hdd-action-primary">Plot Selected</button>
-          <div class="hdd-action-row">
-            <button type="button" id="hdd-select-all">Select All</button>
-            <button type="button" id="hdd-clear-filters">Clear Filters</button>
-            <button type="button" id="hdd-deselect-all">Deselect All</button>
           </div>
-        </div>
-
-        <div class="hdd-control">
-          <label>Series</label>
-          <input type="search" id="hdd-search" placeholder="Search series, sources, groups..." />
-          <div id="hdd-series-list" class="hdd-group-list" aria-live="polite">
-            <p class="hdd-empty">Loading series...</p>
+          <div class="hdd-filter-actions">
+            <button type="button" id="hdd-clear-filters">Clear Filters</button>
           </div>
         </div>
 
@@ -257,6 +253,28 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
       </div>
     </section>
   </div>
+</div>
+
+<div class="hdd-series-drawer" id="hdd-series-drawer" aria-hidden="true">
+  <div class="hdd-series-backdrop" data-action="close-series"></div>
+      <aside class="hdd-series-panel" role="dialog" aria-label="Select Series">
+        <div class="hdd-series-header">
+          <div>
+            <strong>Select Series</strong>
+          </div>
+          <button type="button" class="hdd-series-close" data-action="close-series">Close</button>
+        </div>
+        <div class="hdd-series-controls">
+          <input type="search" id="hdd-search" placeholder="Search series, sources, groups..." />
+          <div class="hdd-series-actions">
+            <button type="button" id="hdd-select-all" class="is-accent">Select All</button>
+            <button type="button" id="hdd-deselect-all">Deselect All</button>
+          </div>
+        </div>
+    <div id="hdd-series-list" class="hdd-group-list" aria-live="polite">
+      <p class="hdd-empty">Loading series...</p>
+    </div>
+  </aside>
 </div>
 
 <script src="/hdd/hdd-explorer.js" defer></script>

@@ -5,3 +5,5 @@ AGENTS.md
 # Local validation helpers
 scripts/validate_hdd_public_bundle.py
 /hdd/TODO.md
+# Local-only assets
+/assets/HDD.B Logo selection.png
