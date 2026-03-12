@@ -1489,12 +1489,17 @@
       (parseFloat(chartStyles.paddingBottom) || 0);
     // Use clientWidth to avoid border inflation causing incremental growth.
     const containerWidth = dom.chart.clientWidth || 960;
-    const width = Math.max(360, Math.round(containerWidth - paddingX));
-    let height = Math.round(width * 0.50);
-    if (window.matchMedia && window.matchMedia("(max-width: 720px)").matches) {
+    const width = Math.max(320, Math.round(containerWidth - paddingX));
+    const isNarrow = window.matchMedia && window.matchMedia("(max-width: 720px)").matches;
+    const layoutScale = Math.max(0.85, Math.min(1, width / 860));
+    const baseRatio = isNarrow ? 0.75 : 0.5;
+    let height = Math.round(width * baseRatio);
+    const minHeight = isNarrow ? 300 : 240;
+    height = Math.max(minHeight, height);
+    if (isNarrow) {
       const containerHeight = dom.chart.clientHeight || 0;
       const available = Math.max(0, Math.round(containerHeight - paddingY));
-      if (available > 0) {
+      if (available > height) {
         height = available;
       }
     }
@@ -1537,8 +1542,13 @@
     const logMin = Math.log10(axisMinY);
     const logMax = Math.log10(axisMaxY);
 
-    const legendWidth = estimateLegendWidth(ctx, series, width);
-    const margin = { top: 26, right: legendWidth, bottom: 64, left: 70 };
+    const legendWidth = estimateLegendWidth(ctx, series, width, layoutScale);
+    const margin = {
+      top: Math.round(26 * layoutScale),
+      right: legendWidth,
+      bottom: Math.round(64 * layoutScale),
+      left: Math.round(70 * layoutScale),
+    };
     const plotWidth = width - margin.left - margin.right;
     const plotHeight = height - margin.top - margin.bottom;
 
@@ -1572,22 +1582,54 @@
     ctx.stroke();
 
     ctx.fillStyle = theme.ink;
-    ctx.font = "14px IBM Plex Sans, Arial, sans-serif";
+    const fontAxis = Math.round(14 * layoutScale);
+    const fontTick = Math.round(12 * layoutScale);
+    const fontLegend = Math.round(11 * layoutScale);
+    const fontLabel = Math.round(11 * layoutScale);
+    ctx.font = `${fontAxis}px IBM Plex Sans, Arial, sans-serif`;
     ctx.textAlign = "center";
     const tempUnitLabel = state.units === "C" ? "°C" : "°K";
+    const axisLabelOffset = Math.round(36 * layoutScale);
+    const axisLabelXOffset = Math.round(15 * layoutScale);
     ctx.fillText(
       `Temperature [${tempUnitLabel}]`,
       margin.left + plotWidth / 2,
-      margin.top + plotHeight + 36
+      margin.top + plotHeight + axisLabelOffset
     );
     ctx.save();
-    ctx.translate(15, margin.top + plotHeight / 2);
+    ctx.translate(axisLabelXOffset, margin.top + plotHeight / 2);
     ctx.rotate(-Math.PI / 2);
     ctx.fillText("Apparent Diffusivity [mm²/s]", 0, 0);
     ctx.restore();
 
-    drawXTicks(ctx, axisMinX, axisMaxX, margin, plotWidth, plotHeight, xToPx, theme, state.gridX);
-    drawYTicks(ctx, axisMinY, axisMaxY, logMin, logMax, margin, plotWidth, plotHeight, yToPx, theme, state.gridY);
+    drawXTicks(
+      ctx,
+      axisMinX,
+      axisMaxX,
+      margin,
+      plotWidth,
+      plotHeight,
+      xToPx,
+      theme,
+      state.gridX,
+      fontTick,
+      layoutScale
+    );
+    drawYTicks(
+      ctx,
+      axisMinY,
+      axisMaxY,
+      logMin,
+      logMax,
+      margin,
+      plotWidth,
+      plotHeight,
+      yToPx,
+      theme,
+      state.gridY,
+      fontTick,
+      layoutScale
+    );
 
     ctx.save();
     ctx.beginPath();
@@ -1596,7 +1638,7 @@
 
     fillEnvelopes(series, xToPx, yToPx);
 
-    ctx.lineWidth = 2;
+    ctx.lineWidth = Math.max(1.5, 2 * layoutScale);
     series.forEach((item, index) => {
       if (item.axisLineSegments?.length) {
         ctx.strokeStyle = item.color;
@@ -1618,9 +1660,16 @@
 
       if (item.axisPoints.length) {
         ctx.fillStyle = item.color;
+        const pointRadius = Math.max(2, Math.round(3 * layoutScale));
         item.axisPoints.forEach((point) => {
           ctx.beginPath();
-          ctx.arc(xToPx(point.temperature_axis), yToPx(point.diffusivity), 3, 0, Math.PI * 2);
+          ctx.arc(
+            xToPx(point.temperature_axis),
+            yToPx(point.diffusivity),
+            pointRadius,
+            0,
+            Math.PI * 2
+          );
           ctx.fill();
         });
       }
@@ -1629,17 +1678,30 @@
         const lastPoint = item.axisLine[item.axisLine.length - 1] || item.axisPoints[item.axisPoints.length - 1];
         if (lastPoint) {
           ctx.fillStyle = item.color;
-          ctx.font = "11px IBM Plex Sans, Arial, sans-serif";
+          ctx.font = `${fontLabel}px IBM Plex Sans, Arial, sans-serif`;
           ctx.textAlign = "left";
           const labelIndex = Number.isFinite(item.legendIndex) ? item.legendIndex + 1 : index + 1;
-          ctx.fillText(`${labelIndex}`, xToPx(lastPoint.temperature_axis) + 4, yToPx(lastPoint.diffusivity));
+          ctx.fillText(
+            `${labelIndex}`,
+            xToPx(lastPoint.temperature_axis) + Math.round(4 * layoutScale),
+            yToPx(lastPoint.diffusivity)
+          );
         }
       }
     });
 
     ctx.restore();
 
-    const legendInfo = drawLegend(ctx, series, margin, plotWidth, theme, plotHeight);
+    const legendInfo = drawLegend(
+      ctx,
+      series,
+      margin,
+      plotWidth,
+      theme,
+      plotHeight,
+      fontLegend,
+      layoutScale
+    );
 
     hoverCache = {
       axisMinX,
@@ -1977,11 +2039,25 @@
     return groupId.replace(/_(mean|min|max)$/, "");
   }
 
-  function drawXTicks(ctx, min, max, margin, width, height, xToPx, theme, drawGrid) {
+  function drawXTicks(
+    ctx,
+    min,
+    max,
+    margin,
+    width,
+    height,
+    xToPx,
+    theme,
+    drawGrid,
+    fontSize,
+    scale = 1
+  ) {
     const steps = 5;
     ctx.fillStyle = theme.ink;
     ctx.textAlign = "center";
-    ctx.font = "12px IBM Plex Sans, Arial, sans-serif";
+    ctx.font = `${fontSize}px IBM Plex Sans, Arial, sans-serif`;
+    const tickLen = Math.max(4, Math.round(5 * scale));
+    const labelOffset = Math.max(12, Math.round(16 * scale));
     for (let i = 0; i <= steps; i++) {
       const value = min + ((max - min) / steps) * i;
       const x = xToPx(value);
@@ -1999,16 +2075,34 @@
       ctx.strokeStyle = theme.ink;
       ctx.beginPath();
       ctx.moveTo(x, margin.top + height);
-      ctx.lineTo(x, margin.top + height + 5);
+      ctx.lineTo(x, margin.top + height + tickLen);
       ctx.stroke();
-      ctx.fillText(value.toFixed(0), x, margin.top + height + 16);
+      ctx.fillText(value.toFixed(0), x, margin.top + height + labelOffset);
     }
   }
 
-  function drawYTicks(ctx, axisMinY, axisMaxY, logMin, logMax, margin, width, height, yToPx, theme, drawGrid) {
+  function drawYTicks(
+    ctx,
+    axisMinY,
+    axisMaxY,
+    logMin,
+    logMax,
+    margin,
+    width,
+    height,
+    yToPx,
+    theme,
+    drawGrid,
+    fontSize,
+    scale = 1
+  ) {
     ctx.textAlign = "right";
     ctx.fillStyle = theme.ink;
-    ctx.font = "12px IBM Plex Sans, Arial, sans-serif";
+    ctx.font = `${fontSize}px IBM Plex Sans, Arial, sans-serif`;
+    const tickLenMajor = Math.max(4, Math.round(6 * scale));
+    const tickLenMinor = Math.max(3, Math.round(3 * scale));
+    const labelOffsetX = Math.max(6, Math.round(8 * scale));
+    const labelOffsetY = Math.max(2, Math.round(3 * scale));
     if (state.scale === "linear") {
       const steps = 5;
       for (let i = 0; i <= steps; i++) {
@@ -2027,10 +2121,10 @@
         }
         ctx.strokeStyle = theme.ink;
         ctx.beginPath();
-        ctx.moveTo(margin.left - 5, y);
+        ctx.moveTo(margin.left - tickLenMajor, y);
         ctx.lineTo(margin.left, y);
         ctx.stroke();
-        ctx.fillText(value.toExponential(1), margin.left - 8, y + 3);
+        ctx.fillText(value.toExponential(1), margin.left - labelOffsetX, y + labelOffsetY);
       }
       return;
     }
@@ -2054,25 +2148,26 @@
           ctx.stroke();
           ctx.restore();
         }
-        const tickLen = factor === 1 ? 6 : 3;
+        const tickLen = factor === 1 ? tickLenMajor : tickLenMinor;
         ctx.strokeStyle = factor === 1 ? theme.ink : theme.line;
         ctx.beginPath();
         ctx.moveTo(margin.left - tickLen, y);
         ctx.lineTo(margin.left, y);
         ctx.stroke();
         if (factor === 1) {
-          ctx.fillText(value.toExponential(1), margin.left - 8, y + 3);
+          ctx.fillText(value.toExponential(1), margin.left - labelOffsetX, y + labelOffsetY);
         }
       }
     }
   }
 
-  function estimateLegendWidth(ctx, series, chartWidth) {
+  function estimateLegendWidth(ctx, series, chartWidth, scale = 1) {
     if (!ctx || !Array.isArray(series) || !series.length) return 140;
     const items = buildLegendItems(series);
     if (!items.length) return 140;
     ctx.save();
-    ctx.font = "11px IBM Plex Sans, Arial, sans-serif";
+    const fontSize = Math.round(11 * scale);
+    ctx.font = `${fontSize}px IBM Plex Sans, Arial, sans-serif`;
     let maxLabel = 0;
     items.forEach((item) => {
       const label = `${item.index + 1}. ${item.label}`;
@@ -2080,11 +2175,15 @@
       if (width > maxLabel) maxLabel = width;
     });
     ctx.restore();
-    const swatch = state.monochrome ? 0 : 14;
-    const padding = 28;
+    const swatch = state.monochrome ? 0 : Math.round(14 * scale);
+    const padding = Math.round(28 * scale);
     const target = maxLabel + swatch + padding;
-    const maxWidth = Math.min(240, Math.round(chartWidth * 0.3));
-    return Math.min(maxWidth, Math.max(120, Math.round(target)));
+    const maxWidth = Math.min(
+      Math.round(240 * scale),
+      Math.round(chartWidth * (scale < 1 ? 0.35 : 0.3))
+    );
+    const minWidth = Math.max(90, Math.round(120 * scale));
+    return Math.min(maxWidth, Math.max(minWidth, Math.round(target)));
   }
 
   function buildLegendItems(series) {
@@ -2241,16 +2340,18 @@
     return rx * rx + ry * ry;
   }
 
-  function drawLegend(ctx, series, margin, width, theme, plotHeight) {
-    const legendX = margin.left + width + 10;
+  function drawLegend(ctx, series, margin, width, theme, plotHeight, fontSize, scale = 1) {
+    const legendX = margin.left + width + Math.round(10 * scale);
     let legendY = margin.top + 10;
-    ctx.font = "11px IBM Plex Sans, Arial, sans-serif";
+    ctx.font = `${fontSize}px IBM Plex Sans, Arial, sans-serif`;
     ctx.textAlign = "left";
     const maxY = margin.top + plotHeight - 12;
     const items = buildLegendItems(series);
     const showSwatch = !state.monochrome;
-    const textX = legendX + (showSwatch ? 14 : 0);
-    const lineHeight = 16;
+    const swatchOffset = showSwatch ? Math.round(14 * scale) : 0;
+    const swatchSize = Math.max(8, Math.round(10 * scale));
+    const textX = legendX + swatchOffset;
+    const lineHeight = Math.round(16 * scale);
     const availableLines = Math.max(0, Math.floor((maxY - legendY) / lineHeight));
     const needsMore = items.length > availableLines;
     const displayCount = needsMore ? Math.max(0, availableLines - 1) : items.length;
@@ -2260,7 +2361,7 @@
       const item = items[i];
       if (showSwatch) {
         ctx.fillStyle = item.color;
-        ctx.fillRect(legendX, legendY - 8, 10, 10);
+        ctx.fillRect(legendX, legendY - Math.round(8 * scale), swatchSize, swatchSize);
       }
       ctx.fillStyle = theme.ink;
       ctx.fillText(`${item.index + 1}. ${item.label}`, textX, legendY);
