@@ -1071,6 +1071,41 @@ body.dark .hdd-toggle-group button.is-active {
   white-space: pre-line;
 }
 
+.hdd-citation-note {
+  display: block;
+  color: var(--ink);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.hdd-citation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.hdd-citation-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  letter-spacing: 0.01em;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.hdd-citation-button:hover {
+  background: color-mix(in srgb, var(--accent) 85%, #000);
+  transform: translateY(-1px);
+}
+
 .hdd-export-panel {
   width: 120px;
 }

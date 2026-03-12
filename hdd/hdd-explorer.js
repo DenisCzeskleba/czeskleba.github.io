@@ -36,6 +36,9 @@
     citationLinks: document.querySelectorAll("[data-action='open-citation']"),
     citationAnalysis: document.getElementById("hdd-citation-analysis"),
     citationDatabase: document.getElementById("hdd-citation-database"),
+    citationBibtex: document.getElementById("hdd-citation-bibtex"),
+    citationRis: document.getElementById("hdd-citation-ris"),
+    citationPlain: document.getElementById("hdd-citation-plain"),
     unitButtons: document.querySelectorAll("[data-unit]"),
     scaleButtons: document.querySelectorAll("[data-scale]"),
     envelope: document.getElementById("hdd-envelope"),
@@ -549,24 +552,113 @@
     const database = payload.citations.database || {};
 
     if (dom.citationAnalysis) {
-      dom.citationAnalysis.textContent = formatCitation(analysis);
+      dom.citationAnalysis.innerHTML = formatCitation(analysis);
     }
     if (dom.citationDatabase) {
-      dom.citationDatabase.textContent = formatCitation(database);
+      dom.citationDatabase.innerHTML = "";
+      dom.citationDatabase.style.display = "none";
     }
+    updateCitationDownloads(database);
   }
 
   function formatCitation(item) {
     if (!item || typeof item !== "object") return "Citation unavailable.";
     const lines = [];
-    if (item.authors && item.authors.length) lines.push(item.authors.join(", "));
-    if (item.title) lines.push(item.title);
+    if (item.authors && item.authors.length) lines.push(escapeHtml(item.authors.join(", ")));
+    if (item.title) lines.push(escapeHtml(item.title));
+    if (item.doi) lines.push(`DOI: ${escapeHtml(item.doi)}`);
     if (item.institution || item.year) {
       const tail = [item.institution, item.year].filter(Boolean).join(", ");
-      if (tail) lines.push(tail);
+      if (tail) lines.push(escapeHtml(tail));
     }
-    if (item.url) lines.push(item.url);
-    return lines.filter(Boolean).join("\n");
+    if (item.url) {
+      const url = String(item.url).trim();
+      const safeUrl = escapeHtml(url);
+      lines.push(
+        `<a class="hdd-inline-link" href="${safeUrl}" target="_blank" rel="noopener">${safeUrl}</a>`
+      );
+    }
+    return lines.filter(Boolean).join("<br/>");
+  }
+
+  function updateCitationDownloads(database) {
+    if (!database || typeof database !== "object") return;
+    const doi = typeof database.doi === "string" ? database.doi.trim() : "";
+    const url = typeof database.url === "string" ? database.url.trim() : "";
+    const authors =
+      Array.isArray(database.authors) && database.authors.length ? database.authors.join(" and ") : "";
+    const title = typeof database.title === "string" ? database.title.trim() : "";
+
+    const plainText = `D. Czeskleba, Hydrogen Diffusion Database (HDD.B), ${
+      doi || "[DOI]"
+    }, ${url || "https://czeskleba.com/hydrogen-diffusion-database/"}`;
+
+    const bibtexLines = [
+      "@misc{hdd_b,",
+      authors ? `  author = {${authors}},` : null,
+      title ? `  title = {${title}},` : null,
+      doi ? `  doi = {${doi}},` : null,
+      url ? `  url = {${url}},` : null,
+      "}",
+    ].filter(Boolean);
+    const bibtex = bibtexLines.join("\n");
+
+    const risLines = [
+      "TY  - DATA",
+      authors
+        ? authors.split(" and ").map((author) => `AU  - ${author}`).join("\n")
+        : null,
+      title ? `TI  - ${title}` : null,
+      doi ? `DO  - ${doi}` : null,
+      url ? `UR  - ${url}` : null,
+      "ER  -",
+    ].filter(Boolean);
+    const ris = risLines.join("\n");
+
+    setCitationDownload(dom.citationPlain, "hdd-citation.txt", "text/plain", plainText);
+    setCitationDownload(dom.citationBibtex, "hdd-citation.bib", "text/x-bibtex", bibtex);
+    setCitationDownload(dom.citationRis, "hdd-citation.ris", "application/x-research-info-systems", ris);
+  }
+
+  function setCitationDownload(element, filename, mimeType, content) {
+    if (!element) return;
+    if (element.dataset?.objectUrl) {
+      URL.revokeObjectURL(element.dataset.objectUrl);
+    }
+    const blob = new Blob([content], { type: `${mimeType};charset=utf-8` });
+    const objectUrl = URL.createObjectURL(blob);
+    element.href = objectUrl;
+    element.download = filename;
+    element.dataset.objectUrl = objectUrl;
+  }
+
+  function getDatabaseFooterLine() {
+    const database = state.dataset?.citations?.database || {};
+    const doi = typeof database.doi === "string" ? database.doi.trim() : "";
+    const url = typeof database.url === "string" ? database.url.trim() : "";
+    let host = "";
+    if (url) {
+      try {
+        host = new URL(url).hostname.replace(/^www\./, "");
+      } catch (error) {
+        host = url.replace(/^https?:\/\//, "").split("/")[0];
+      }
+    }
+    if (!host) host = "czeskleba.com";
+    if (doi) return `HDD.B — ${host} — ${doi}`;
+    return `HDD.B — ${host}`;
+  }
+
+  function renderExportFooter(ctx, width, height) {
+    const footerLine = getDatabaseFooterLine();
+    if (!footerLine) return;
+    ctx.save();
+    ctx.font = "11px IBM Plex Sans, Arial, sans-serif";
+    ctx.fillStyle = lastPlotContext?.theme?.muted || "#64748b";
+    ctx.textAlign = "right";
+    ctx.textBaseline = "bottom";
+    ctx.fillText(footerLine, width - 12, height - 10);
+    ctx.restore();
   }
 
   function populateCompositionFilters(seriesList) {
@@ -2196,7 +2288,13 @@
         alert("Plot the dataset first to export a PNG.");
         return;
       }
-      currentCanvas.toBlob((blob) => {
+      const exportCanvas = document.createElement("canvas");
+      exportCanvas.width = currentCanvas.width;
+      exportCanvas.height = currentCanvas.height;
+      const exportCtx = exportCanvas.getContext("2d");
+      exportCtx.drawImage(currentCanvas, 0, 0);
+      renderExportFooter(exportCtx, exportCanvas.width, exportCanvas.height);
+      exportCanvas.toBlob((blob) => {
         if (blob) downloadBlob(blob, "hdd-selected.png");
       });
     } else if (type === "svg") {
@@ -2704,17 +2802,26 @@
       );
       legendY += lineHeight;
     }
-    if (needsMore) {
-      parts.push(
-        `<text x="${textX}" y="${legendY}" fill="${theme.muted}" font-size="11" text-anchor="start">... +${
-          items.length - i
-        } more</text>`
-      );
-    }
+      if (needsMore) {
+        parts.push(
+          `<text x="${textX}" y="${legendY}" fill="${theme.muted}" font-size="11" text-anchor="start">... +${
+            items.length - i
+          } more</text>`
+        );
+      }
 
-    parts.push(`</svg>`);
-    return parts.join("");
-  }
+      const footerLine = getDatabaseFooterLine();
+      if (footerLine) {
+        parts.push(
+          `<text x="${width - 12}" y="${height - 12}" fill="${theme.muted}" font-size="11" text-anchor="end">${escapeHtml(
+            footerLine
+          )}</text>`
+        );
+      }
+
+      parts.push(`</svg>`);
+      return parts.join("");
+    }
 
   function matchesValue(selected, value, mode = "include") {
     if (!selected.length) return true;

@@ -235,8 +235,13 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
                   <p id="hdd-citation-analysis">Citation information will appear once the dataset loads.</p>
                 </div>
                 <div class="hdd-citation-block">
-                  <strong>If you use the database itself</strong>
+                  <strong>Database / Website use:</strong>
                   <p id="hdd-citation-database">Citation information will appear once the dataset loads.</p>
+                  <div class="hdd-citation-actions">
+                    <a class="hdd-citation-button" id="hdd-citation-bibtex" download> BibTeX </a>
+                    <a class="hdd-citation-button" id="hdd-citation-ris" download> RIS </a>
+                    <a class="hdd-citation-button" id="hdd-citation-plain" download> Plain Text </a>
+                  </div>
                 </div>
               </div>
             </details>
