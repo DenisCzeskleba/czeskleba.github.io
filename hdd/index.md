@@ -4,9 +4,13 @@ title: Hydrogen Diffusion Database
 permalink: /hydrogen-diffusion-database/
 ---
 
-# Hydrogen Diffusion Database
-
-Browse curated diffusivity datasets, filter by material or source, and plot series directly in the browser. Export images and data, and <a class="hdd-inline-link" href="/hydrogen-diffusion-database/contribute/">contribute</a> your peer-reviewed open-access results back to the database.
+<div class="hdd-page-hero">
+  <img class="hdd-hero-logo" src="/assets/HDD.B%20Logo.png" alt="HDD.B logo" decoding="async" loading="lazy" />
+  <div class="hdd-hero-text">
+    <h1>Hydrogen Diffusion Database</h1>
+    <p>Browse curated diffusivity datasets, filter by material or source, and plot series directly in the browser. Export images and data, and <a class="hdd-inline-link" href="/hydrogen-diffusion-database/contribute/">contribute</a> your peer-reviewed open-access results back to the database.</p>
+  </div>
+</div>
 
 <link rel="stylesheet" href="/hdd/hdd-explorer.css">
 
