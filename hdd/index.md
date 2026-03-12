@@ -152,7 +152,7 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
           <div class="hdd-stage-controls">
             <button type="button" class="hdd-stage-button" id="hdd-refresh-plot">Refresh</button>
             <details class="hdd-plot-options">
-              <summary>Plot options</summary>
+              <summary>Plot Options</summary>
               <div class="hdd-plot-options-body">
                 <div class="hdd-toggle-group" role="group" aria-label="Temperature units">
                   <button type="button" data-unit="K">Kelvin</button>
@@ -161,6 +161,24 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
                 <div class="hdd-toggle-group" role="group" aria-label="Y-axis scale">
                   <button type="button" data-scale="log" class="is-active">Log scale</button>
                   <button type="button" data-scale="linear">Linear</button>
+                </div>
+                <div class="hdd-plot-axis">
+                  <div>
+                    <label for="hdd-axis-x-min">X min</label>
+                    <input id="hdd-axis-x-min" type="number" step="any" placeholder="Auto" />
+                  </div>
+                  <div>
+                    <label for="hdd-axis-x-max">X max</label>
+                    <input id="hdd-axis-x-max" type="number" step="any" placeholder="Auto" />
+                  </div>
+                  <div>
+                    <label for="hdd-axis-y-min">Y min</label>
+                    <input id="hdd-axis-y-min" type="number" step="any" placeholder="Auto" />
+                  </div>
+                  <div>
+                    <label for="hdd-axis-y-max">Y max</label>
+                    <input id="hdd-axis-y-max" type="number" step="any" placeholder="Auto" />
+                  </div>
                 </div>
                 <label class="hdd-inline-checkbox">
                   <input type="checkbox" id="hdd-envelope" checked />

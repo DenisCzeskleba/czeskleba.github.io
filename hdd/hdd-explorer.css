@@ -193,6 +193,7 @@ body.dark .hdd-actions {
   background: var(--panel-strong);
   font-weight: 600;
   cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .hdd-toggle-group button.is-active {
@@ -205,6 +206,16 @@ body.dark .hdd-toggle-group button.is-active {
   background: var(--accent);
   color: #fff;
   border-color: var(--accent);
+}
+
+.hdd-toggle-group button:not(.is-active):hover {
+  background: var(--panel);
+  border-color: color-mix(in srgb, var(--line) 75%, var(--ink));
+}
+
+.hdd-toggle-group button.is-active:hover {
+  background: color-mix(in srgb, var(--accent) 85%, #000);
+  border-color: color-mix(in srgb, var(--accent) 85%, #000);
 }
 
 .hdd-toggle-row {
@@ -223,6 +234,30 @@ body.dark .hdd-toggle-group button.is-active {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+}
+
+.hdd-plot-axis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.hdd-plot-axis label {
+  font-size: 0.85rem;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.hdd-plot-axis input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+  font: inherit;
+  box-sizing: border-box;
 }
 
 .hdd-inline-checkbox input {
@@ -526,12 +561,18 @@ body.dark .hdd-toggle-group button.is-active {
 .hdd-downloads button {
   padding: 12px 14px;
   border-radius: 12px;
-  border: 1px solid var(--line);
-  background: var(--panel-strong);
-  color: var(--ink);
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.hdd-controls button#hdd-select-all,
+.hdd-controls button#hdd-deselect-all,
+.hdd-controls button#hdd-clear-filters,
+.hdd-downloads button {
+  border: 1px solid var(--line);
+  background: var(--panel-strong);
+  color: var(--ink);
 }
 
 .hdd-link-button {
@@ -686,6 +727,7 @@ body.dark .hdd-toggle-group button.is-active {
   padding: 6px 12px;
   background: var(--panel-strong);
   width: 240px;
+  position: relative;
 }
 
 .hdd-plot-options summary {
@@ -704,14 +746,28 @@ body.dark .hdd-toggle-group button.is-active {
 }
 
 .hdd-plot-options[open] {
-  border-radius: 16px;
-  padding: 10px 12px;
+  border-radius: 999px;
+  padding: 6px 12px;
 }
 
 .hdd-plot-options-body {
-  margin-top: 10px;
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  min-width: 260px;
+  margin-top: 0;
   display: grid;
   gap: 8px;
+  background: var(--panel-strong);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 10px 12px;
+  box-shadow: var(--shadow);
+  z-index: 5;
+}
+
+.hdd-plot-options:not([open]) .hdd-plot-options-body {
+  display: none;
 }
 
 .hdd-plot-option-note {
@@ -763,12 +819,20 @@ body.dark .hdd-toggle-group button.is-active {
   width: 120px;
 }
 
+.hdd-export-panel .hdd-plot-options-body {
+  min-width: 180px;
+}
+
 .hdd-citation-panel {
   width: 280px;
 }
 
 .hdd-citation-panel[open] {
   width: 280px;
+}
+
+.hdd-citation-panel .hdd-plot-options-body {
+  min-width: 320px;
 }
 
 .hdd-citation-block {

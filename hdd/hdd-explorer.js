@@ -40,6 +40,10 @@
     monochrome: document.getElementById("hdd-monochrome"),
     gridX: document.getElementById("hdd-grid-x"),
     gridY: document.getElementById("hdd-grid-y"),
+    axisXMin: document.getElementById("hdd-axis-x-min"),
+    axisXMax: document.getElementById("hdd-axis-x-max"),
+    axisYMin: document.getElementById("hdd-axis-y-min"),
+    axisYMax: document.getElementById("hdd-axis-y-max"),
     tempMin: document.getElementById("hdd-temp-min"),
     tempMax: document.getElementById("hdd-temp-max"),
     downloadButtons: document.querySelectorAll("[data-download]"),
@@ -398,6 +402,11 @@
       state.gridY = dom.gridY.checked;
       plotSelectedSeries();
     });
+    [dom.axisXMin, dom.axisXMax, dom.axisYMin, dom.axisYMax].forEach((input) =>
+      input?.addEventListener("input", () => {
+        setZoomFromInputs();
+      })
+    );
     dom.filterUnknownComposition?.addEventListener("change", () => {
       state.includeUnknownComposition = dom.filterUnknownComposition.checked;
       applyFilters();
@@ -1376,7 +1385,7 @@
 
     ctx.restore();
 
-    drawLegend(ctx, series, margin, plotWidth, theme);
+    drawLegend(ctx, series, margin, plotWidth, theme, plotHeight);
 
     hoverCache = {
       axisMinX,
@@ -1415,12 +1424,14 @@
       numbering: state.numbering,
       legendBySource: state.legendBySource,
       envelope: state.envelope,
+      monochrome: state.monochrome,
       series,
     };
 
     if (dom.resetZoom) {
       dom.resetZoom.disabled = !state.zoom;
     }
+    syncZoomInputs();
 
     setupZoomSelection(canvas, ctx, {
       axisMinX,
@@ -1556,6 +1567,43 @@
     plotSelectedSeries();
   }
 
+  function setZoomFromInputs() {
+    const xMin = parseNumber(dom.axisXMin?.value);
+    const xMax = parseNumber(dom.axisXMax?.value);
+    const yMin = parseNumber(dom.axisYMin?.value);
+    const yMax = parseNumber(dom.axisYMax?.value);
+    const anyValue =
+      Number.isFinite(xMin) ||
+      Number.isFinite(xMax) ||
+      Number.isFinite(yMin) ||
+      Number.isFinite(yMax);
+    state.zoom = anyValue ? { xMin, xMax, yMin, yMax } : null;
+    plotSelectedSeries();
+  }
+
+  function syncZoomInputs() {
+    if (!dom.axisXMin || !dom.axisXMax || !dom.axisYMin || !dom.axisYMax) return;
+    if (!state.zoom) {
+      dom.axisXMin.value = "";
+      dom.axisXMax.value = "";
+      dom.axisYMin.value = "";
+      dom.axisYMax.value = "";
+      return;
+    }
+    dom.axisXMin.value = Number.isFinite(state.zoom.xMin)
+      ? state.zoom.xMin.toFixed(2)
+      : "";
+    dom.axisXMax.value = Number.isFinite(state.zoom.xMax)
+      ? state.zoom.xMax.toFixed(2)
+      : "";
+    dom.axisYMin.value = Number.isFinite(state.zoom.yMin)
+      ? state.zoom.yMin.toExponential(3)
+      : "";
+    dom.axisYMax.value = Number.isFinite(state.zoom.yMax)
+      ? state.zoom.yMax.toExponential(3)
+      : "";
+  }
+
   function fillEnvelopes(series, xToPx, yToPx) {
     if (!state.envelope) return;
     const buckets = {};
@@ -1573,7 +1621,9 @@
       const overlap = computeOverlap(bucket.min, bucket.max);
       if (!overlap.temps.length) return;
       const ctx = currentCanvas.getContext("2d");
-      ctx.fillStyle = "rgba(15,118,110,0.18)";
+      ctx.fillStyle = state.monochrome
+        ? "rgba(60, 60, 60, 0.18)"
+        : "rgba(15,118,110,0.18)";
       ctx.beginPath();
       overlap.temps.forEach((temperature, idx) => {
         const x = xToPx(state.units === "C" ? temperature - 273.15 : temperature);
@@ -1647,20 +1697,24 @@
 
   function drawXTicks(ctx, min, max, margin, width, height, xToPx, theme, drawGrid) {
     const steps = 5;
-    ctx.fillStyle = theme.muted;
+    ctx.fillStyle = theme.ink;
     ctx.textAlign = "center";
-    ctx.font = "11px IBM Plex Sans, Arial, sans-serif";
+    ctx.font = "14px IBM Plex Sans, Arial, sans-serif";
     for (let i = 0; i <= steps; i++) {
       const value = min + ((max - min) / steps) * i;
       const x = xToPx(value);
       if (drawGrid) {
-        ctx.strokeStyle = theme.line;
+        ctx.save();
+        ctx.strokeStyle = theme.ink;
+        ctx.globalAlpha = 0.35;
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(x, margin.top);
         ctx.lineTo(x, margin.top + height);
         ctx.stroke();
+        ctx.restore();
       }
+      ctx.strokeStyle = theme.ink;
       ctx.beginPath();
       ctx.moveTo(x, margin.top + height);
       ctx.lineTo(x, margin.top + height + 5);
@@ -1671,21 +1725,25 @@
 
   function drawYTicks(ctx, axisMinY, axisMaxY, logMin, logMax, margin, width, height, yToPx, theme, drawGrid) {
     ctx.textAlign = "right";
-    ctx.fillStyle = theme.muted;
-    ctx.font = "11px IBM Plex Sans, Arial, sans-serif";
+    ctx.fillStyle = theme.ink;
+    ctx.font = "14px IBM Plex Sans, Arial, sans-serif";
     if (state.scale === "linear") {
       const steps = 5;
       for (let i = 0; i <= steps; i++) {
         const value = axisMinY + ((axisMaxY - axisMinY) / steps) * i;
         const y = yToPx(value);
         if (drawGrid) {
-          ctx.strokeStyle = theme.line;
+          ctx.save();
+          ctx.strokeStyle = theme.ink;
+          ctx.globalAlpha = 0.35;
           ctx.lineWidth = 1;
           ctx.beginPath();
           ctx.moveTo(margin.left, y);
           ctx.lineTo(margin.left + width, y);
           ctx.stroke();
+          ctx.restore();
         }
+        ctx.strokeStyle = theme.ink;
         ctx.beginPath();
         ctx.moveTo(margin.left - 5, y);
         ctx.lineTo(margin.left, y);
@@ -1705,9 +1763,9 @@
         const y = yToPx(value);
         if (drawGrid) {
           ctx.save();
-          ctx.strokeStyle = theme.line;
+          ctx.strokeStyle = theme.ink;
           ctx.lineWidth = factor === 1 ? 1.2 : 1;
-          ctx.globalAlpha = factor === 1 ? 0.7 : 0.25;
+          ctx.globalAlpha = factor === 1 ? 0.7 : 0.35;
           ctx.beginPath();
           ctx.moveTo(margin.left, y);
           ctx.lineTo(margin.left + width, y);
@@ -1715,11 +1773,12 @@
           ctx.restore();
         }
         const tickLen = factor === 1 ? 6 : 3;
+        ctx.strokeStyle = factor === 1 ? theme.ink : theme.line;
         ctx.beginPath();
         ctx.moveTo(margin.left - tickLen, y);
         ctx.lineTo(margin.left, y);
         ctx.stroke();
-        if (factor === 1 || factor === 2 || factor === 5) {
+        if (factor === 1) {
           ctx.fillText(value.toExponential(1), margin.left - 8, y + 3);
         }
       }
@@ -1847,18 +1906,34 @@
     return rx * rx + ry * ry;
   }
 
-  function drawLegend(ctx, series, margin, width, theme) {
+  function drawLegend(ctx, series, margin, width, theme, plotHeight) {
     const legendX = margin.left + width + 10;
     let legendY = margin.top + 10;
     ctx.font = "11px IBM Plex Sans, Arial, sans-serif";
     ctx.textAlign = "left";
-    buildLegendItems(series).forEach((item) => {
-      ctx.fillStyle = item.color;
-      ctx.fillRect(legendX, legendY - 8, 10, 10);
+    const maxY = margin.top + plotHeight - 12;
+    const items = buildLegendItems(series);
+    const showSwatch = !state.monochrome;
+    const textX = legendX + (showSwatch ? 14 : 0);
+    const lineHeight = 16;
+    const availableLines = Math.max(0, Math.floor((maxY - legendY) / lineHeight));
+    const needsMore = items.length > availableLines;
+    const displayCount = needsMore ? Math.max(0, availableLines - 1) : items.length;
+    let i = 0;
+    for (; i < items.length && i < displayCount; i++) {
+      const item = items[i];
+      if (showSwatch) {
+        ctx.fillStyle = item.color;
+        ctx.fillRect(legendX, legendY - 8, 10, 10);
+      }
       ctx.fillStyle = theme.ink;
-      ctx.fillText(`${item.index + 1}. ${item.label}`, legendX + 14, legendY);
-      legendY += 16;
-    });
+      ctx.fillText(`${item.index + 1}. ${item.label}`, textX, legendY);
+      legendY += lineHeight;
+    }
+    if (needsMore) {
+      ctx.fillStyle = theme.muted;
+      ctx.fillText(`... +${items.length - i} more`, textX, legendY);
+    }
   }
 
   function handleDownload(button) {
@@ -2224,6 +2299,7 @@
       gridY,
       numbering,
       envelope,
+      monochrome,
       series,
     } = context;
 
@@ -2329,7 +2405,7 @@
         }" stroke="${theme.line}" stroke-width="1"/>`
       );
       parts.push(
-        `<text x="${x}" y="${margin.top + plotHeight + 22}" fill="${theme.muted}" font-size="10" text-anchor="middle">${Math.round(
+        `<text x="${x}" y="${margin.top + plotHeight + 22}" fill="${theme.ink}" font-size="14" text-anchor="middle">${Math.round(
           value
         )}</text>`
       );
@@ -2344,7 +2420,7 @@
           `<line x1="${margin.left - 6}" y1="${y}" x2="${margin.left}" y2="${y}" stroke="${theme.line}" stroke-width="1"/>`
         );
         parts.push(
-          `<text x="${margin.left - 10}" y="${y + 3}" fill="${theme.muted}" font-size="10" text-anchor="end">${value.toExponential(
+          `<text x="${margin.left - 10}" y="${y + 3}" fill="${theme.ink}" font-size="14" text-anchor="end">${value.toExponential(
             1
           )}</text>`
         );
@@ -2362,9 +2438,9 @@
           parts.push(
             `<line x1="${margin.left - tickLen}" y1="${y}" x2="${margin.left}" y2="${y}" stroke="${theme.line}" stroke-width="1"/>`
           );
-          if (factor === 1 || factor === 2 || factor === 5) {
+          if (factor === 1) {
             parts.push(
-              `<text x="${margin.left - 10}" y="${y + 3}" fill="${theme.muted}" font-size="10" text-anchor="end">${value.toExponential(
+              `<text x="${margin.left - 10}" y="${y + 3}" fill="${theme.ink}" font-size="14" text-anchor="end">${value.toExponential(
                 1
               )}</text>`
             );
@@ -2401,9 +2477,10 @@
           path.push(`L${x} ${y}`);
         }
         path.push("Z");
-        parts.push(
-          `<path d="${path.join(" ")}" fill="rgba(15,118,110,0.18)"/>`
-        );
+        const envelopeFill = monochrome
+          ? "rgba(60, 60, 60, 0.18)"
+          : "rgba(15,118,110,0.18)";
+        parts.push(`<path d="${path.join(" ")}" fill="${envelopeFill}"/>`);
       });
     }
 
@@ -2452,17 +2529,36 @@
 
     const legendX = margin.left + plotWidth + 10;
     let legendY = margin.top + 10;
-    buildLegendItems(series).forEach((item) => {
+    const maxY = margin.top + plotHeight - 12;
+    const showSwatch = !monochrome;
+    const textX = legendX + (showSwatch ? 14 : 0);
+    const items = buildLegendItems(series);
+    const lineHeight = 16;
+    const availableLines = Math.max(0, Math.floor((maxY - legendY) / lineHeight));
+    const needsMore = items.length > availableLines;
+    const displayCount = needsMore ? Math.max(0, availableLines - 1) : items.length;
+    let i = 0;
+    for (; i < items.length && i < displayCount; i++) {
+      const item = items[i];
+      if (showSwatch) {
+        parts.push(
+          `<rect x="${legendX}" y="${legendY - 8}" width="10" height="10" fill="${item.color}"/>`
+        );
+      }
       parts.push(
-        `<rect x="${legendX}" y="${legendY - 8}" width="10" height="10" fill="${item.color}"/>`
-      );
-      parts.push(
-        `<text x="${legendX + 14}" y="${legendY}" fill="${theme.ink}" font-size="11" text-anchor="start">${item.index + 1}. ${
+        `<text x="${textX}" y="${legendY}" fill="${theme.ink}" font-size="11" text-anchor="start">${item.index + 1}. ${
           item.label
         }</text>`
       );
-      legendY += 16;
-    });
+      legendY += lineHeight;
+    }
+    if (needsMore) {
+      parts.push(
+        `<text x="${textX}" y="${legendY}" fill="${theme.muted}" font-size="11" text-anchor="start">... +${
+          items.length - i
+        } more</text>`
+      );
+    }
 
     parts.push(`</svg>`);
     return parts.join("");
