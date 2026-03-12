@@ -71,9 +71,8 @@ main > h1 {
 
 .hdd-hero-logo {
   flex: 0 0 auto;
-  height: clamp(40px, 5.5vw, 56px);
-  width: auto;
-  max-width: 96px;
+  width: 115px;
+  height: 115px;
   object-fit: contain;
 }
 
@@ -96,8 +95,8 @@ main > h1 {
   }
 
   .hdd-hero-logo {
-    height: clamp(32px, 10vw, 44px);
-    max-width: 72px;
+    width: 72px;
+    height: 72px;
   }
 }
 
