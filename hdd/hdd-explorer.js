@@ -1309,7 +1309,7 @@
     ctx.stroke();
 
     ctx.fillStyle = theme.ink;
-    ctx.font = "12px IBM Plex Sans, Arial, sans-serif";
+    ctx.font = "16px IBM Plex Sans, Arial, sans-serif";
     ctx.textAlign = "center";
     const tempUnitLabel = state.units === "C" ? "°C" : "°K";
     ctx.fillText(
@@ -2309,12 +2309,12 @@
     parts.push(
       `<text x="${margin.left + plotWidth / 2}" y="${
         margin.top + plotHeight + 36
-      }" fill="${theme.ink}" font-size="12" text-anchor="middle">Temperature [${
+      }" fill="${theme.ink}" font-size="16" text-anchor="middle">Temperature [${
         units === "C" ? "C" : "K"
       }]</text>`
     );
     parts.push(
-      `<text x="15" y="${margin.top + plotHeight / 2}" fill="${theme.ink}" font-size="12" text-anchor="middle" transform="rotate(-90 15 ${
+      `<text x="15" y="${margin.top + plotHeight / 2}" fill="${theme.ink}" font-size="16" text-anchor="middle" transform="rotate(-90 15 ${
         margin.top + plotHeight / 2
       })">Apparent Diffusivity [mm2/s]</text>`
     );

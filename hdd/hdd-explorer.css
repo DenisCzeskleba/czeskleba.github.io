@@ -526,9 +526,12 @@ body.dark .hdd-toggle-group button.is-active {
 .hdd-downloads button {
   padding: 12px 14px;
   border-radius: 12px;
-  border: none;
+  border: 1px solid var(--line);
+  background: var(--panel-strong);
+  color: var(--ink);
   font-weight: 600;
   cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 
 .hdd-link-button {
@@ -541,6 +544,9 @@ body.dark .hdd-toggle-group button.is-active {
   background: var(--panel-strong);
   color: var(--ink);
   font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.1;
+  min-height: 36px;
   text-decoration: none;
   white-space: nowrap;
   transition: background 0.2s ease, border-color 0.2s ease;
@@ -566,23 +572,46 @@ body.dark .hdd-toggle-group button.is-active {
 #hdd-plot-btn {
   background: var(--accent);
   color: #fff;
+  border: none;
+}
+
+#hdd-plot-btn:hover {
+  background: color-mix(in srgb, var(--accent) 85%, #000);
 }
 
 #hdd-select-all {
   background: var(--panel-strong);
-  color: var(--ink);
-  border: 1px solid var(--line);
+}
+
+#hdd-select-all:hover {
+  background: var(--panel);
+  border-color: color-mix(in srgb, var(--line) 75%, var(--ink));
 }
 
 #hdd-deselect-all {
   background: var(--panel-strong);
-  color: var(--ink);
-  border: 1px solid var(--line);
+}
+
+#hdd-deselect-all:hover {
+  background: var(--panel);
+  border-color: color-mix(in srgb, var(--line) 75%, var(--ink));
 }
 
 #hdd-clear-filters {
   background: var(--panel-strong);
-  color: var(--ink);
+}
+
+.hdd-controls button#hdd-select-all:hover,
+.hdd-controls button#hdd-deselect-all:hover,
+.hdd-controls button#hdd-clear-filters:hover,
+.hdd-downloads button:hover {
+  background: var(--panel);
+  border-color: color-mix(in srgb, var(--line) 75%, var(--ink));
+}
+
+#hdd-clear-filters:hover {
+  background: var(--panel);
+  border-color: color-mix(in srgb, var(--line) 75%, var(--ink));
 }
 
 .hdd-stage {
@@ -614,7 +643,7 @@ body.dark .hdd-toggle-group button.is-active {
   right: 0;
   top: 0;
   z-index: 2;
-  align-items: flex-start;
+  align-items: flex-end;
 }
 
 .hdd-stage-button {
@@ -624,11 +653,29 @@ body.dark .hdd-toggle-group button.is-active {
   background: var(--panel-strong);
   color: var(--ink);
   font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.1;
+  min-height: 36px;
   cursor: pointer;
   transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .hdd-stage-button:hover {
+  background: var(--panel);
+  border-color: color-mix(in srgb, var(--line) 75%, var(--ink));
+}
+
+#hdd-refresh-plot {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+}
+
+#hdd-refresh-plot:hover {
+  background: color-mix(in srgb, var(--accent) 85%, #000);
+}
+
+.hdd-plot-options:hover {
   background: var(--panel);
   border-color: color-mix(in srgb, var(--line) 75%, var(--ink));
 }
@@ -645,6 +692,11 @@ body.dark .hdd-toggle-group button.is-active {
   list-style: none;
   cursor: pointer;
   font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.1;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
 }
 
 .hdd-plot-options summary::-webkit-details-marker {
@@ -700,6 +752,11 @@ body.dark .hdd-toggle-group button.is-active {
   padding: 6px 12px;
   font-weight: 600;
   cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.hdd-export-row button:hover {
+  background: color-mix(in srgb, var(--accent) 85%, #000);
 }
 
 .hdd-export-panel[open] {

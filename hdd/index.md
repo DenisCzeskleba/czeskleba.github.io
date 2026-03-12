@@ -195,16 +195,17 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
             <details class="hdd-plot-options hdd-export-panel">
               <summary>Export</summary>
               <div class="hdd-plot-options-body">
-                <div class="hdd-export-note">
-                  Choose a format. Please consider a citation if you found this useful
-                  (<button type="button" class="hdd-inline-button" data-action="open-citation">citation</button>).
-                </div>
+                <div class="hdd-export-note">Export Image</div>
                 <div class="hdd-export-row">
                   <button type="button" data-download="png">PNG</button>
                   <button type="button" data-download="svg">SVG</button>
                 </div>
+                <div class="hdd-export-note">Visible Data</div>
                 <div class="hdd-export-row">
                   <button type="button" data-download="csv">CSV</button>
+                </div>
+                <div class="hdd-export-note">Export Database</div>
+                <div class="hdd-export-row">
                   <button type="button" data-download="json">JSON</button>
                 </div>
               </div>
