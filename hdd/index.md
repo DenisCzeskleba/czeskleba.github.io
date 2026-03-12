@@ -17,9 +17,13 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
         <div>
           <h3>Explorer Controls</h3>
         </div>
-        <label class="hdd-inline-checkbox">
-          <input type="checkbox" id="hdd-include-literature" checked />
-          <span>Include Literature Compilations</span>
+        <label class="hdd-inline-select" for="hdd-literature-mode">
+          <span>Literature compilations</span>
+          <select id="hdd-literature-mode">
+            <option value="include" selected>Include</option>
+            <option value="only">Only</option>
+            <option value="exclude">Exclude</option>
+          </select>
         </label>
       </div>
 
@@ -27,7 +31,10 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
         <div class="hdd-section">
           <div class="hdd-actions">
             <button type="button" id="hdd-plot-btn" class="hdd-action-primary">Plot Filtered</button>
-            <button type="button" id="hdd-open-series" class="hdd-action-secondary">Select Series</button>
+            <div class="hdd-action-row">
+              <button type="button" id="hdd-clear-filters" class="hdd-action-secondary">Clear Filters</button>
+              <button type="button" id="hdd-open-series" class="hdd-action-secondary">Select Series</button>
+            </div>
           </div>
         </div>
 
@@ -37,7 +44,7 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
           <details class="hdd-filter-block">
             <summary>Source</summary>
             <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
-              <input type="checkbox" data-filter-mode="source" />
+              <input type="checkbox" data-filter-mode="source" checked />
               <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
               <span class="hdd-toggle-label">Exclude selected</span>
             </label>
@@ -47,7 +54,7 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
           <details class="hdd-filter-block">
             <summary>Material class</summary>
             <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
-              <input type="checkbox" data-filter-mode="materialClass" />
+              <input type="checkbox" data-filter-mode="materialClass" checked />
               <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
               <span class="hdd-toggle-label">Exclude selected</span>
             </label>
@@ -57,7 +64,7 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
           <details class="hdd-filter-block">
             <summary>Material grade</summary>
             <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
-              <input type="checkbox" data-filter-mode="materialGrade" />
+              <input type="checkbox" data-filter-mode="materialGrade" checked />
               <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
               <span class="hdd-toggle-label">Exclude selected</span>
             </label>
@@ -78,7 +85,7 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
           <details class="hdd-filter-block">
             <summary>Measurement method</summary>
             <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
-              <input type="checkbox" data-filter-mode="measurementMethod" />
+              <input type="checkbox" data-filter-mode="measurementMethod" checked />
               <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
               <span class="hdd-toggle-label">Exclude selected</span>
             </label>
@@ -88,7 +95,7 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
           <details class="hdd-filter-block">
             <summary>Model type</summary>
             <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
-              <input type="checkbox" data-filter-mode="modelType" />
+              <input type="checkbox" data-filter-mode="modelType" checked />
               <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
               <span class="hdd-toggle-label">Exclude selected</span>
             </label>
@@ -107,7 +114,7 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
           <details class="hdd-filter-block">
             <summary>Reported as</summary>
             <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
-              <input type="checkbox" data-filter-mode="reportedAs" />
+              <input type="checkbox" data-filter-mode="reportedAs" checked />
               <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
               <span class="hdd-toggle-label">Exclude selected</span>
             </label>
@@ -117,16 +124,13 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
           <details class="hdd-filter-block">
             <summary>Studied effect</summary>
             <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
-              <input type="checkbox" data-filter-mode="studiedEffects" />
+              <input type="checkbox" data-filter-mode="studiedEffects" checked />
               <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
               <span class="hdd-toggle-label">Exclude selected</span>
             </label>
             <span id="hdd-filter-effect-label" class="hdd-sr-only">Studied effect</span>
             <div id="hdd-filter-effect" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-effect-label" aria-multiselectable="true"></div>
           </details>
-          </div>
-          <div class="hdd-filter-actions">
-            <button type="button" id="hdd-clear-filters">Clear Filters</button>
           </div>
         </div>
 

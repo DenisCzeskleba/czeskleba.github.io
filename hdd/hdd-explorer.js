@@ -63,7 +63,7 @@
     filterMethod: document.getElementById("hdd-filter-method"),
     filterModel: document.getElementById("hdd-filter-model"),
     includeUnconfirmed: document.getElementById("hdd-include-unconfirmed"),
-    includeLiterature: document.getElementById("hdd-include-literature"),
+    literatureMode: document.getElementById("hdd-literature-mode"),
     filterModeToggles: document.querySelectorAll("[data-filter-mode]"),
     filterUnknownComposition: document.querySelector("[data-filter-unknown='chemicalComposition']"),
     resetZoom: document.getElementById("hdd-reset-zoom"),
@@ -85,7 +85,7 @@
     tempMin: null,
     tempMax: null,
     includeUnconfirmed: false,
-    includeLiteratureCompilations: true,
+    literatureMode: "include",
     includeUnknownComposition: false,
     compositionFilters: {},
     filterMode: {},
@@ -136,12 +136,11 @@
     state.gridY = dom.gridY?.checked ?? true;
     state.legendBySource = dom.legendGroup?.checked ?? true;
     state.includeUnconfirmed = dom.includeUnconfirmed?.checked ?? false;
-    state.includeLiteratureCompilations = dom.includeLiterature?.checked ?? false;
+    state.literatureMode = dom.literatureMode?.value || "include";
     state.includeUnknownComposition = dom.filterUnknownComposition?.checked ?? false;
     initializeFilterModes();
     populateFilters(payload);
-    applyFilters();
-    selectAllVisible();
+    applyFilters({ replot: false });
     plotSelectedSeries(true);
     updateSummary();
     if (!validationIssues.length && !state.selected.size) {
@@ -377,7 +376,9 @@
   }
 
   function bindEvents() {
-    dom.search?.addEventListener("input", applyFilters);
+    dom.search?.addEventListener("input", () =>
+      applyFilters({ preserveManual: true, replot: false })
+    );
     dom.list?.addEventListener("change", handleSelectionChange);
     dom.summary?.addEventListener("click", handleSummaryToggle);
     dom.unitButtons?.forEach((btn) =>
@@ -431,8 +432,8 @@
       state.includeUnknownComposition = dom.filterUnknownComposition.checked;
       applyFilters();
     });
-    dom.includeLiterature?.addEventListener("change", () => {
-      state.includeLiteratureCompilations = dom.includeLiterature.checked;
+    dom.literatureMode?.addEventListener("change", () => {
+      state.literatureMode = dom.literatureMode.value || "include";
       applyFilters();
     });
     dom.filterModeToggles?.forEach((toggle) => {
@@ -479,7 +480,6 @@
     dom.includeUnconfirmed?.addEventListener("change", () => {
       state.includeUnconfirmed = dom.includeUnconfirmed.checked;
       applyFilters();
-      plotSelectedSeries(true);
     });
 
     [
@@ -493,7 +493,7 @@
       dom.filterModel,
     ].forEach((listbox) => {
       if (!listbox) return;
-      listbox.addEventListener("change", applyFilters);
+      listbox.addEventListener("change", () => applyFilters());
     });
 
     if (dom.seriesDrawer) {
@@ -686,7 +686,8 @@
     applyFilters();
   }
 
-  function applyFilters() {
+  function applyFilters(options = {}) {
+    const { preserveManual = false, replot = true } = options;
     const previousScrollTop = dom.panelLeft ? dom.panelLeft.scrollTop : null;
     const selectScroll = captureSelectScroll();
     const query = dom.search?.value.trim().toLowerCase() || "";
@@ -702,7 +703,7 @@
       tempMin: state.tempMin,
       tempMax: state.tempMax,
       includeUnconfirmed: state.includeUnconfirmed,
-      includeLiteratureCompilations: state.includeLiteratureCompilations,
+      literatureMode: state.literatureMode,
       includeUnknownComposition: state.includeUnknownComposition,
       mode: state.filterMode,
     };
@@ -714,6 +715,9 @@
       ? filtered.filter((entry) => entryMatchesFilters(entry, filters, query))
       : filtered;
     state.filteredList = filtered;
+    if (!preserveManual) {
+      setSelectionMode("filtered");
+    }
     if (state.selectionMode === "filtered") {
       state.selected = new Set(filtered.map((entry) => entry.id));
     }
@@ -722,6 +726,9 @@
     renderSeriesList(visible);
     updateFilterAvailability(filters, "");
     updateSummary(currentSeries);
+    if (replot) {
+      plotSelectedSeries(true);
+    }
     restoreSelectScroll(selectScroll);
     if (dom.panelLeft && previousScrollTop != null) {
       requestAnimationFrame(() => {
@@ -784,7 +791,8 @@
   function entryMatchesFilters(entry, filters, query, ignoreKey = null) {
     const mode = filters.mode || {};
     if (ignoreKey !== "plottingStatus" && !isPlottingAllowed(entry, filters.includeUnconfirmed)) return false;
-    if (!filters.includeLiteratureCompilations && hasLiteratureCompilation(entry)) return false;
+    if (filters.literatureMode === "exclude" && hasLiteratureCompilation(entry)) return false;
+    if (filters.literatureMode === "only" && !hasLiteratureCompilation(entry)) return false;
     if (ignoreKey !== "source" && !matchesValue(filters.source, entry.sourceId, mode.source)) return false;
     if (ignoreKey !== "materialClass" && !matchesSet(filters.materialClass, entry.meta.material_class, mode.materialClass)) return false;
     if (ignoreKey !== "materialGrade" && !matchesSet(filters.materialGrade, entry.meta.material_grade, mode.materialGrade)) return false;
@@ -2315,7 +2323,9 @@
     if (state.tempMin != null) summary.temp_min = state.tempMin;
     if (state.tempMax != null) summary.temp_max = state.tempMax;
     if (state.includeUnconfirmed) summary.include_unconfirmed = true;
-    if (!state.includeLiteratureCompilations) summary.include_literature_compilations = false;
+    if (state.literatureMode && state.literatureMode !== "include") {
+      summary.literature_compilations = state.literatureMode;
+    }
     const excludeModes = {};
     Object.keys(state.filterMode || {}).forEach((key) => {
       if (state.filterMode[key] === "exclude") excludeModes[key] = "exclude";
