@@ -816,6 +816,7 @@ body.dark .hdd-toggle-group button.is-active {
   .hdd-chart {
     min-height: 360px;
     padding: 14px;
+    height: min(60vh, 520px);
   }
 
   .hdd-action-row {

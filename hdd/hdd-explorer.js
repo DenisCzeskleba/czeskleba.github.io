@@ -1484,10 +1484,20 @@
     const paddingX =
       (parseFloat(chartStyles.paddingLeft) || 0) +
       (parseFloat(chartStyles.paddingRight) || 0);
+    const paddingY =
+      (parseFloat(chartStyles.paddingTop) || 0) +
+      (parseFloat(chartStyles.paddingBottom) || 0);
     // Use clientWidth to avoid border inflation causing incremental growth.
     const containerWidth = dom.chart.clientWidth || 960;
     const width = Math.max(360, Math.round(containerWidth - paddingX));
-    const height = Math.round(width * 0.50);
+    let height = Math.round(width * 0.50);
+    if (window.matchMedia && window.matchMedia("(max-width: 720px)").matches) {
+      const containerHeight = dom.chart.clientHeight || 0;
+      const available = Math.max(0, Math.round(containerHeight - paddingY));
+      if (available > 0) {
+        height = available;
+      }
+    }
     const ratio = window.devicePixelRatio || 1;
     canvas.width = width * ratio;
     canvas.height = height * ratio;
