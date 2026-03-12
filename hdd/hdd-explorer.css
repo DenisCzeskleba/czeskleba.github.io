@@ -87,10 +87,10 @@ main > h1 {
   align-self: start;
   height: calc(100vh - 32px);
   max-height: none;
-  overflow: auto;
+  overflow: hidden;
   min-width: 0;
-  display: grid;
-  grid-template-rows: auto 1fr auto;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
 }
 
@@ -104,7 +104,7 @@ main > h1 {
   justify-content: space-between;
   gap: 12px;
   flex-wrap: nowrap;
-  margin-bottom: 18px;
+  margin-bottom: 0;
 }
 
 
@@ -125,11 +125,12 @@ main > h1 {
 }
 
 .hdd-controls {
-  display: grid;
-  grid-template-rows: auto 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
 }
 
 .hdd-section {
@@ -137,11 +138,16 @@ main > h1 {
   gap: 10px;
 }
 
-.hdd-section-filters {
+.hdd-controls-top {
+  flex: 0 0 auto;
+}
+
+.hdd-controls-middle {
   flex: 1 1 auto;
   min-height: 0;
-  display: grid;
-  grid-template-rows: auto 1fr;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .hdd-section-title {
@@ -183,6 +189,7 @@ main > h1 {
 }
 
 .hdd-filter-scroll {
+  flex: 1 1 auto;
   min-height: 0;
   max-height: none;
   overflow: auto;
@@ -801,6 +808,7 @@ body.dark .hdd-toggle-group button.is-active {
 
   .hdd-controls {
     display: block;
+    overflow: visible;
   }
 
   .hdd-chart {
@@ -830,8 +838,7 @@ body.dark .hdd-toggle-group button.is-active {
     padding-right: 0;
   }
 
-  .hdd-section-filters {
-    flex: 0 0 auto;
+  .hdd-controls-middle {
     min-height: auto;
   }
 

@@ -28,7 +28,7 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
       </div>
 
       <form class="hdd-controls" id="hdd-controls" autocomplete="off">
-        <div class="hdd-section hdd-section-filters">
+        <div class="hdd-controls-top">
           <div class="hdd-actions">
             <button type="button" id="hdd-plot-btn" class="hdd-action-primary">Plot Filtered</button>
             <div class="hdd-action-row">
@@ -38,7 +38,7 @@ Browse curated diffusivity datasets, filter by material or source, and plot seri
           </div>
         </div>
 
-        <div class="hdd-section">
+        <div class="hdd-controls-middle">
           <div class="hdd-section-title">Filters</div>
           <div class="hdd-control hdd-filter-grid hdd-filter-scroll">
           <details class="hdd-filter-block">
