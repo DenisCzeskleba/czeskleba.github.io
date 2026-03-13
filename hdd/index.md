@@ -222,7 +222,24 @@ permalink: /hydrogen-diffusion-database/
                 <button type="button" id="hdd-reset-zoom">Reset zoom</button>
               </div>
             </details>
-            <details class="hdd-plot-options hdd-export-panel">
+            <details class="hdd-plot-options hdd-citation-panel" id="hdd-citation" data-order="citation">
+              <summary>Citation</summary>
+              <div class="hdd-plot-options-body">
+                <div class="hdd-citation-block">
+                  <strong>If you use the diffusion coefficient scatter band or analysis results</strong>
+                  <p id="hdd-citation-analysis">Citation information will appear once the dataset loads.</p>
+                </div>
+                <div class="hdd-citation-block">
+                  <strong>Database / Website use:</strong>
+                  <p id="hdd-citation-database">Citation information will appear once the dataset loads.</p>
+                  <div class="hdd-citation-actions">
+                    <a class="hdd-citation-button" id="hdd-citation-bibtex" download> BibTeX </a>
+                    <a class="hdd-citation-button" id="hdd-citation-ris" download> RIS </a>
+                    <a class="hdd-citation-button" id="hdd-citation-plain" download> Plain Text </a>
+                  </div>
+                </div>
+              </div>
+            </details>\n<details class="hdd-plot-options hdd-export-panel" data-order="export">
               <summary>Export</summary>
               <div class="hdd-plot-options-body">
                 <div class="hdd-export-note">Export Image</div>
@@ -240,26 +257,7 @@ permalink: /hydrogen-diffusion-database/
                 </div>
               </div>
             </details>
-            <details class="hdd-plot-options hdd-citation-panel" id="hdd-citation">
-              <summary>Citation</summary>
-              <div class="hdd-plot-options-body">
-                <div class="hdd-citation-block">
-                  <strong>If you use the diffusion coefficient scatter band or analysis results</strong>
-                  <p id="hdd-citation-analysis">Citation information will appear once the dataset loads.</p>
-                </div>
-                <div class="hdd-citation-block">
-                  <strong>Database / Website use:</strong>
-                  <p id="hdd-citation-database">Citation information will appear once the dataset loads.</p>
-                  <div class="hdd-citation-actions">
-                    <a class="hdd-citation-button" id="hdd-citation-bibtex" download> BibTeX </a>
-                    <a class="hdd-citation-button" id="hdd-citation-ris" download> RIS </a>
-                    <a class="hdd-citation-button" id="hdd-citation-plain" download> Plain Text </a>
-                  </div>
-                </div>
-              </div>
-            </details>
-            <a class="hdd-link-button" href="/hydrogen-diffusion-database/contribute/">Contribute data</a>
-          </div>
+            </div>
         </div>
         <div id="hdd-chart" class="hdd-chart" role="img" aria-live="polite">
           <div>
@@ -310,6 +308,7 @@ permalink: /hydrogen-diffusion-database/
 </div>
 
 <script src="/hdd/hdd-explorer.js" defer></script>
+
 
 
 

@@ -16,6 +16,9 @@
         font-size: 0.95rem;
       }
       .hdd-dev-nav a {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
         color: inherit;
         text-decoration: none;
         padding: 0.35rem 0.6rem;
@@ -25,11 +28,21 @@
       .hdd-dev-nav a:hover {
         border-color: rgba(255, 255, 255, 0.3);
       }
+      .hdd-dev-sep {
+        opacity: 0.6;
+      }
+      .hdd-dev-nav img {
+        width: 30px;
+        height: 30px;
+      }
     </style>
   </head>
   <body>
     <nav class="hdd-dev-nav" aria-label="HDD links">
-      <a href="/hydrogen-diffusion-database/">Explorer</a>
+      <a href="/hydrogen-diffusion-database/">
+        <img src="/assets/HDD.B%20Logo.png" alt="HDD.B" />
+        <span>HDD.B</span>
+      </a>
       <a href="/hydrogen-diffusion-database/docs/">Guide</a>
       <a href="/hydrogen-diffusion-database/contribute/">Contribute Data</a>
     </nav>
@@ -248,7 +261,24 @@
                   <button type="button" id="hdd-reset-zoom">Reset zoom</button>
                 </div>
               </details>
-                <details class="hdd-plot-options hdd-export-panel">
+                <details class="hdd-plot-options hdd-citation-panel" id="hdd-citation" data-order="citation">
+                  <summary>Citation</summary>
+                  <div class="hdd-plot-options-body">
+                    <div class="hdd-citation-block">
+                      <strong>If you use the diffusion coefficient scatter band or analysis results</strong>
+                      <p id="hdd-citation-analysis">Citation information will appear once the dataset loads.</p>
+                    </div>
+                    <div class="hdd-citation-block">
+                      <strong>Database / Website use:</strong>
+                      <p id="hdd-citation-database">Citation information will appear once the dataset loads.</p>
+                      <div class="hdd-citation-actions">
+                        <a class="hdd-citation-button" id="hdd-citation-bibtex" download> BibTeX </a>
+                        <a class="hdd-citation-button" id="hdd-citation-ris" download> RIS </a>
+                        <a class="hdd-citation-button" id="hdd-citation-plain" download> Plain Text </a>
+                      </div>
+                    </div>
+                  </div>
+                </details>\n<details class="hdd-plot-options hdd-export-panel" data-order="export">
                   <summary>Export</summary>
                   <div class="hdd-plot-options-body">
                     <div class="hdd-export-note">Export Image</div>
@@ -266,26 +296,7 @@
                     </div>
                   </div>
                 </details>
-                <details class="hdd-plot-options hdd-citation-panel" id="hdd-citation">
-                  <summary>Citation</summary>
-                  <div class="hdd-plot-options-body">
-                    <div class="hdd-citation-block">
-                      <strong>If you use the diffusion coefficient scatter band or analysis results</strong>
-                      <p id="hdd-citation-analysis">Citation information will appear once the dataset loads.</p>
-                    </div>
-                    <div class="hdd-citation-block">
-                      <strong>Database / Website use:</strong>
-                      <p id="hdd-citation-database">Citation information will appear once the dataset loads.</p>
-                      <div class="hdd-citation-actions">
-                        <a class="hdd-citation-button" id="hdd-citation-bibtex" download> BibTeX </a>
-                        <a class="hdd-citation-button" id="hdd-citation-ris" download> RIS </a>
-                        <a class="hdd-citation-button" id="hdd-citation-plain" download> Plain Text </a>
-                      </div>
-                    </div>
-                  </div>
-                </details>
-                <a class="hdd-link-button" href="/hydrogen-diffusion-database/contribute/">Contribute data</a>
-              </div>
+                </div>
           </div>
               <div id="hdd-chart" class="hdd-chart" role="img" aria-live="polite">
                 <div>
@@ -340,6 +351,7 @@
     <script src="./hdd-explorer.js" defer></script>
   </body>
 </html>
+
 
 
 

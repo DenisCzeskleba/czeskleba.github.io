@@ -226,6 +226,7 @@ permalink: /hydrogen-diffusion-database/docs/
     </p>
   </section>
 
+  <!-- TODO: Add a dedicated citation section here. -->
   <section class="hdd-docs-section" id="license">
     <h2>License and citation</h2>
     <p>
