@@ -6,28 +6,28 @@ permalink: /hydrogen-diffusion-database/contribute/
 
 # Contribution Form
 
-Help expand the hydrogen diffusivity dataset by submitting peer-reviewed, open-access sources. We manually review every entry before merging into the upstream repo.
+Help expand the hydrogen diffusivity dataset by submitting peer-reviewed, open-access sources. We review every entry before adding it to the public database.
 
 ## Submission Checklist
 
-1. Publication metadata: title, authors, journal, year, DOI/URL.
-2. Model definitions: specify `single_point`, `arrhenius`, or `power` parameters, including valid temperature ranges.
-3. Supporting material: provide links to figures, tables, or supplementary spreadsheets if available.
-4. Contact info: email + affiliation for follow-up questions.
+1. Publication metadata: title, authors, journal, year, DOI, and open-access URL.
+2. Model definitions: single-point, Arrhenius, or power-law parameters (with valid temperature ranges).
+3. Contact info: name + email for follow-up.
 
 ## Submission Flow
 
 - **Validation:** the form checks ranges and required parameters before sending.
-- **Queue:** submissions are emailed to maintainers for manual verification; no automatic publishing.
-- **Status updates:** contributors receive confirmation after review.
+- **Queue:** submissions are emailed for manual verification; no automatic publishing.
+- **Additions:** verified submissions are added to the public database.
 
 ## Submit a Contribution
 
-Please fill in the form below. We manually review every submission before updating the database.
+Please fill in the form below. Optional fields can be left empty if not needed. Hover each field for a quick tip.
 
 <style>
   main {
     max-width: 1100px;
+    text-align: left;
   }
 
   .hdd-contrib-form {
@@ -49,7 +49,7 @@ Please fill in the form below. We manually review every submission before updati
   .hdd-contrib-grid {
     display: grid;
     gap: 12px;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   }
   .hdd-contrib-form label {
     font-weight: 600;
@@ -76,33 +76,39 @@ Please fill in the form below. We manually review every submission before updati
     font-size: 0.9rem;
     color: color-mix(in srgb, var(--text) 60%, var(--bg));
   }
-  .hdd-contrib-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.92rem;
+  .hdd-contrib-rows {
+    display: grid;
+    gap: 16px;
   }
-  .hdd-contrib-table th,
-  .hdd-contrib-table td {
-    border-bottom: 1px solid var(--border);
-    padding: 8px;
-    vertical-align: top;
+  .hdd-contrib-row {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    background: color-mix(in srgb, var(--bg) 95%, var(--text));
   }
-  .hdd-contrib-table th {
-    text-align: left;
-    font-weight: 600;
-    background: color-mix(in srgb, var(--bg) 92%, var(--text));
-    position: sticky;
-    top: 0;
-    z-index: 1;
+  .hdd-contrib-row-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
   }
-  .hdd-contrib-table input,
-  .hdd-contrib-table select,
-  .hdd-contrib-table textarea {
-    width: 100%;
-    min-width: 120px;
+  .hdd-contrib-row-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   }
-  .hdd-contrib-table textarea {
-    min-height: 60px;
+  .hdd-contrib-row button {
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+  }
+  .hdd-contrib-row button.primary {
+    background: #1f2937;
+    color: #fff;
+    border-color: transparent;
   }
   .hdd-contrib-row-actions {
     display: flex;
@@ -175,19 +181,11 @@ Please fill in the form below. We manually review every submission before updati
     <div class="hdd-contrib-grid">
       <div>
         <label for="contrib-name">Name</label>
-        <input id="contrib-name" name="name" required />
+        <input id="contrib-name" name="name" required title="Required for submission. Leave empty if not needed and explain in notes." />
       </div>
       <div>
         <label for="contrib-email">Email</label>
-        <input id="contrib-email" name="email" type="email" required />
-      </div>
-      <div>
-        <label for="contrib-affiliation">Affiliation</label>
-        <input id="contrib-affiliation" name="affiliation" required />
-      </div>
-      <div>
-        <label for="contrib-orcid">ORCID (optional)</label>
-        <input id="contrib-orcid" name="orcid" placeholder="0000-0000-0000-0000" />
+        <input id="contrib-email" name="email" type="email" required title="Required for submission. Leave empty if not needed and explain in notes." />
       </div>
     </div>
   </fieldset>
@@ -197,32 +195,32 @@ Please fill in the form below. We manually review every submission before updati
     <div class="hdd-contrib-grid">
       <div>
         <label for="contrib-title">Title</label>
-        <input id="contrib-title" name="paper_title" required />
+        <input id="contrib-title" name="paper_title" required title="Paper title. Leave empty if not needed and explain in notes." />
       </div>
       <div>
         <label for="contrib-authors">Authors</label>
-        <input id="contrib-authors" name="authors" required />
+        <input id="contrib-authors" name="authors" required title="Comma-separated author list. Leave empty if not needed and explain in notes." />
       </div>
       <div>
         <label for="contrib-journal">Journal / Venue</label>
-        <input id="contrib-journal" name="journal" required />
+        <input id="contrib-journal" name="journal" required title="Journal or venue name. Leave empty if not needed and explain in notes." />
       </div>
       <div>
         <label for="contrib-year">Year</label>
-        <input id="contrib-year" name="year" placeholder="YYYY" required />
+        <input id="contrib-year" name="year" placeholder="YYYY" required title="Publication year. Leave empty if not needed and explain in notes." />
       </div>
       <div>
         <label for="contrib-doi">DOI</label>
-        <input id="contrib-doi" name="doi" required />
+        <input id="contrib-doi" name="doi" title="DOI string if available. Leave empty if not needed." />
       </div>
       <div>
         <label for="contrib-oa">Open-access URL</label>
-        <input id="contrib-oa" name="oa_url" type="url" required />
+        <input id="contrib-oa" name="oa_url" type="url" required title="Open-access link to the paper. Leave empty if not needed and explain in notes." />
       </div>
     </div>
     <div>
       <label for="contrib-notes">Paper notes (optional)</label>
-      <textarea id="contrib-notes" name="paper_notes" placeholder="Context, special handling, or clarifications."></textarea>
+      <textarea id="contrib-notes" name="paper_notes" placeholder="Context, special handling, or clarifications. Leave empty if not needed." title="Optional notes about the paper. Leave empty if not needed."></textarea>
     </div>
   </fieldset>
 
@@ -231,128 +229,160 @@ Please fill in the form below. We manually review every submission before updati
     <div class="hdd-contrib-grid">
       <div>
         <label for="default-material-class">Material class</label>
-        <input id="default-material-class" name="default_material_class" placeholder="e.g., Low Alloy Steel" />
+        <select id="default-material-class" name="default_material_class" title="Pick the closest material class. Leave empty if not needed.">
+          <option value="">Select a class</option>
+          <option value="Carbon Steel">Carbon Steel</option>
+          <option value="Creep Resistant Steel">Creep Resistant Steel</option>
+          <option value="HSLA">HSLA</option>
+          <option value="Iron-Nickel Alloy">Iron-Nickel Alloy</option>
+          <option value="Low Alloy Steel">Low Alloy Steel</option>
+          <option value="Martensitic or AHSS">Martensitic or AHSS</option>
+          <option value="Nickel-Based Alloy">Nickel-Based Alloy</option>
+          <option value="Pearlitic Steel">Pearlitic Steel</option>
+          <option value="Pipeline Steel">Pipeline Steel</option>
+          <option value="Pure Iron">Pure Iron</option>
+          <option value="Stainless Steel">Stainless Steel</option>
+          <option value="Structural Steel">Structural Steel</option>
+          <option value="Unspecified Steel">Unspecified Steel</option>
+          <option value="Other">Other (specify below)</option>
+        </select>
+      </div>
+      <div>
+        <label for="default-material-class-other">Material class (other)</label>
+        <input id="default-material-class-other" name="default_material_class_other" placeholder="Specify if Other" title="Only needed if you chose Other. Leave empty if not needed." />
       </div>
       <div>
         <label for="default-material-grade">Material grade</label>
-        <input id="default-material-grade" name="default_material_grade" placeholder="e.g., 2.25Cr-1Mo steel" />
+        <input id="default-material-grade" name="default_material_grade" placeholder="e.g., 2.25Cr-1Mo steel" title="Specific grade or alloy name. Leave empty if not needed." />
       </div>
       <div>
         <label for="default-material-microstructure">Microstructure</label>
-        <input id="default-material-microstructure" name="default_material_microstructure" placeholder="Base material, weld metal" />
+        <input id="default-material-microstructure" name="default_material_microstructure" placeholder="Base material, weld metal" title="Use Base Material for non-welding cases, or leave empty if not needed." />
       </div>
       <div>
         <label for="default-material-phase">Phase</label>
-        <input id="default-material-phase" name="default_material_phase" placeholder="Ferritic, Austenitic, etc." />
+        <input id="default-material-phase" name="default_material_phase" placeholder="Ferritic, Austenitic, etc." title="Phase if reported. Leave empty if not needed." />
       </div>
       <div>
         <label for="default-material-processing">Processing (comma-separated)</label>
-        <input id="default-material-processing" name="default_material_processing" placeholder="Tempered, quenched, welded" />
+        <input id="default-material-processing" name="default_material_processing" placeholder="Tempered, quenched, welded" title="Comma-separated processing steps. Leave empty if not needed." />
       </div>
       <div>
         <label for="default-material-tags">Tags (comma-separated)</label>
-        <input id="default-material-tags" name="default_material_tags" placeholder="Structural steel, microalloyed" />
+        <input id="default-material-tags" name="default_material_tags" placeholder="Structural steel, microalloyed" title="Comma-separated tags. Leave empty if not needed." />
       </div>
     </div>
     <div>
       <label for="default-material-notes">Material notes (optional)</label>
-      <textarea id="default-material-notes" name="default_material_notes" placeholder="Specimen geometry, preparation, or other notes."></textarea>
+      <textarea id="default-material-notes" name="default_material_notes" placeholder="Specimen geometry, preparation, or other notes. Leave empty if not needed." title="Optional material notes. Leave empty if not needed."></textarea>
     </div>
     <div>
-      <label for="default-material-composition">Composition (optional)</label>
-      <textarea id="default-material-composition" name="default_material_composition" placeholder="Chemical composition, wt% or at%"></textarea>
+      <label for="default-material-composition-notes">Composition notes (optional)</label>
+      <textarea id="default-material-composition-notes" name="default_material_composition_notes" placeholder="Any extra composition context. Leave empty if not needed." title="Optional composition notes. Leave empty if not needed."></textarea>
+    </div>
+    <div class="hdd-contrib-grid">
+      <div>
+        <label for="comp-c">C (wt%)</label>
+        <input id="comp-c" name="comp_c" type="number" step="any" title="Carbon in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
+      </div>
+      <div>
+        <label for="comp-mn">Mn (wt%)</label>
+        <input id="comp-mn" name="comp_mn" type="number" step="any" title="Manganese in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
+      </div>
+      <div>
+        <label for="comp-si">Si (wt%)</label>
+        <input id="comp-si" name="comp_si" type="number" step="any" title="Silicon in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
+      </div>
+      <div>
+        <label for="comp-cr">Cr (wt%)</label>
+        <input id="comp-cr" name="comp_cr" type="number" step="any" title="Chromium in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
+      </div>
+      <div>
+        <label for="comp-ni">Ni (wt%)</label>
+        <input id="comp-ni" name="comp_ni" type="number" step="any" title="Nickel in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
+      </div>
+      <div>
+        <label for="comp-mo">Mo (wt%)</label>
+        <input id="comp-mo" name="comp_mo" type="number" step="any" title="Molybdenum in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
+      </div>
+      <div>
+        <label for="comp-v">V (wt%)</label>
+        <input id="comp-v" name="comp_v" type="number" step="any" title="Vanadium in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
+      </div>
+      <div>
+        <label for="comp-nb">Nb (wt%)</label>
+        <input id="comp-nb" name="comp_nb" type="number" step="any" title="Niobium in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
+      </div>
+      <div>
+        <label for="comp-ti">Ti (wt%)</label>
+        <input id="comp-ti" name="comp_ti" type="number" step="any" title="Titanium in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
+      </div>
+      <div>
+        <label for="comp-al">Al (wt%)</label>
+        <input id="comp-al" name="comp_al" type="number" step="any" title="Aluminum in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
+      </div>
+      <div>
+        <label for="comp-cu">Cu (wt%)</label>
+        <input id="comp-cu" name="comp_cu" type="number" step="any" title="Copper in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
+      </div>
+      <div>
+        <label for="comp-p">P (wt%)</label>
+        <input id="comp-p" name="comp_p" type="number" step="any" title="Phosphorus in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
+      </div>
+      <div>
+        <label for="comp-s">S (wt%)</label>
+        <input id="comp-s" name="comp_s" type="number" step="any" title="Sulfur in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
+      </div>
+      <div>
+        <label for="comp-n">N (wt%)</label>
+        <input id="comp-n" name="comp_n" type="number" step="any" title="Nitrogen in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
+      </div>
     </div>
   </fieldset>
 
   <fieldset>
-    <legend>Defaults (conditions & metadata)</legend>
+    <legend>Conditions</legend>
     <div class="hdd-contrib-grid">
       <div>
         <label for="default-method">Measurement method</label>
-        <input id="default-method" name="default_measurement_method" placeholder="Electrochemical permeation, CGHE, etc." />
+        <input id="default-method" name="default_measurement_method" placeholder="Electrochemical permeation, CGHE, etc." title="Measurement method. Leave empty if not needed." />
       </div>
       <div>
         <label for="default-charging">Charging method</label>
-        <input id="default-charging" name="default_charging_method" placeholder="electrochemical, gas, not_reported" />
-      </div>
-      <div>
-        <label for="default-thickness">Specimen thickness (mm)</label>
-        <input id="default-thickness" name="default_specimen_thickness_mm" type="number" step="any" />
-      </div>
-      <div>
-        <label for="default-reported-as">Reported as</label>
-        <input id="default-reported-as" name="default_reported_as" placeholder="effective, lattice, apparent" />
-      </div>
-      <div>
-        <label for="default-studied-effects">Studied effects (comma-separated)</label>
-        <input id="default-studied-effects" name="default_studied_effects" placeholder="Alloying elements, trapping, etc." />
-      </div>
-      <div>
-        <label for="default-units-diff">Diffusivity unit</label>
-        <input id="default-units-diff" name="default_diffusivity_unit" value="mm^2/s" />
-      </div>
-      <div>
-        <label for="default-units-temp">Temperature unit</label>
-        <select id="default-units-temp" name="default_temperature_unit">
-          <option value="K">K</option>
-          <option value="C">C</option>
-        </select>
+        <input id="default-charging" name="default_charging_method" placeholder="electrochemical, gas, not_reported" title="Charging method. Leave empty if not needed." />
       </div>
     </div>
     <div>
       <label for="default-conditions-notes">Conditions notes (optional)</label>
-      <textarea id="default-conditions-notes" name="default_conditions_notes" placeholder="Electrolyte, current density, or other test details."></textarea>
+      <textarea id="default-conditions-notes" name="default_conditions_notes" placeholder="Electrolyte, current density, or other test details. Leave empty if not needed." title="Optional conditions notes. Leave empty if not needed."></textarea>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Metadata</legend>
+    <div class="hdd-contrib-grid">
+      <div>
+        <label for="default-studied-effects">Studied effects (comma-separated)</label>
+        <input id="default-studied-effects" name="default_studied_effects" placeholder="Alloying elements, trapping, etc." title="Comma-separated effects. Leave empty if not needed." />
+      </div>
     </div>
   </fieldset>
 
   <fieldset>
     <legend>Data rows (one row per model or single point)</legend>
     <p class="hdd-contrib-note">
-      Required columns: group + series name, model type, Tmin, Tmax. Use the Overrides (JSON) column to override
-      any default field for a specific row.
+      Required columns: group + series name, model type, Tmin, Tmax.
     </p>
-    <div style="overflow:auto;">
-      <table class="hdd-contrib-table" aria-label="Contribution rows">
-        <thead>
-          <tr>
-            <th>Group name</th>
-            <th>Series name</th>
-            <th>Model type</th>
-            <th>Tmin</th>
-            <th>Tmax</th>
-            <th>Single point T</th>
-            <th>Single point D</th>
-            <th>Arrhenius D0</th>
-            <th>Arrhenius Q</th>
-            <th>Arrhenius R</th>
-            <th>Power A</th>
-            <th>Power n</th>
-            <th>Power input</th>
-            <th>Overrides (JSON)</th>
-            <th>Remove</th>
-          </tr>
-        </thead>
-        <tbody id="hdd-contrib-rows"></tbody>
-      </table>
-    </div>
+    <div id="hdd-contrib-rows" class="hdd-contrib-rows"></div>
     <div class="hdd-contrib-row-actions">
       <button type="button" id="hdd-add-row" class="primary">Add row</button>
-      <button type="button" id="hdd-clear-rows">Clear rows</button>
-      <span class="hdd-contrib-note">Example override: {"material": {"grade": "AISI 4340"}, "conditions": {"measurement_method": "Permeation"}}</span>
     </div>
-  </fieldset>
-
-  <fieldset>
-    <legend>Supporting Links</legend>
-    <label for="contrib-links">Figures / tables / supplemental data (optional)</label>
-    <textarea id="contrib-links" name="supporting_links" placeholder="Paste URLs to figures, tables, or spreadsheets"></textarea>
   </fieldset>
 
   <fieldset>
     <legend>Confirmations</legend>
-    <label><input type="checkbox" name="confirm_peer_reviewed" required /> This source is peer-reviewed and open-access.</label>
-    <label><input type="checkbox" name="confirm_bounds" required /> The parameters are within the stated temperature bounds (no extrapolation).</label>
-    <label><input type="checkbox" name="confirm_rights" required /> I have the right to share these parameters and links for review.</label>
+    <label><input type="checkbox" name="confirm_peer_reviewed" required title="Required. Leave empty if not needed." /> This source is peer-reviewed and open-access.</label>
+    <label><input type="checkbox" name="confirm_rights" required title="Required. Leave empty if not needed." /> I have the right to share these parameters and links for review.</label>
   </fieldset>
 
   <div class="hdd-contrib-actions">
@@ -360,11 +390,11 @@ Please fill in the form below. We manually review every submission before updati
     <span class="hdd-contrib-status" id="hdd-contrib-status"></span>
   </div>
   <div class="hdd-contrib-local">
-    <label><input type="checkbox" id="hdd-local-mode" /> Local test mode (do not submit)</label>
+    <label><input type="checkbox" id="hdd-local-mode" title="Generate JSON locally without sending a submission. Leave empty if not needed." /> Local test mode (do not submit)</label>
     <button type="button" id="hdd-show-json">Preview JSON</button>
     <button type="button" id="hdd-copy-json">Copy JSON</button>
     <button type="button" id="hdd-download-json">Download JSON</button>
   </div>
-  <textarea id="hdd-json-preview" class="hdd-contrib-preview" readonly placeholder="JSON preview will appear here."></textarea>
+  <textarea id="hdd-json-preview" class="hdd-contrib-preview" readonly placeholder="JSON preview will appear here." title="Local JSON preview. Leave empty if not needed."></textarea>
 </form>
 <script src="/hdd/hdd-contribution.js" defer></script>

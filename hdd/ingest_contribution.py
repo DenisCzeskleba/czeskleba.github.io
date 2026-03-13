@@ -69,8 +69,8 @@ def build_source(payload):
 def build_entries(payload, source_id):
     defaults = payload.get("defaults", {})
     rows = payload.get("rows", [])
-    temp_unit = defaults.get("temperature_unit", "K")
-    diffusivity_unit = defaults.get("diffusivity_unit", "mm^2/s")
+    temp_unit = defaults.get("temperature_unit", None)
+    diffusivity_unit = defaults.get("diffusivity_unit", None)
 
     entries = []
     warnings = []
@@ -81,6 +81,8 @@ def build_entries(payload, source_id):
         model_type = row.get("model_type")
         tmin = row.get("temperature_validity", {}).get("min")
         tmax = row.get("temperature_validity", {}).get("max")
+        row_temp_unit = row.get("temperature_unit") or temp_unit or "K"
+        row_diff_unit = row.get("diffusivity_unit") or diffusivity_unit or "mm^2/s"
 
         group_id = f"{source_id}_{group_slug}"
 
@@ -109,7 +111,6 @@ def build_entries(payload, source_id):
             {
                 "measurement_method": defaults.get("conditions", {}).get("measurement_method") or "not_reported",
                 "charging_method": defaults.get("conditions", {}).get("charging_method") or "not_reported",
-                "specimen_thickness_mm": defaults.get("conditions", {}).get("specimen_thickness_mm"),
                 "notes": defaults.get("conditions", {}).get("notes") or "not_reported",
             },
             row.get("overrides", {}).get("conditions") if row.get("overrides") else {},
@@ -122,7 +123,7 @@ def build_entries(payload, source_id):
             row.get("overrides", {}).get("metadata") if row.get("overrides") else {},
         )
 
-        reported_as = defaults.get("reported_as") or "not_reported"
+        reported_as = row.get("reported_as") or defaults.get("reported_as") or "apparent"
         if row.get("overrides") and row.get("overrides", {}).get("reported_as"):
             reported_as = row["overrides"]["reported_as"]
 
@@ -132,7 +133,7 @@ def build_entries(payload, source_id):
             diff = row.get("model", {}).get("single_point", {}).get("diffusivity")
             model = {
                 "type": "single_point",
-                "temperature_K": to_kelvin(temp, temp_unit),
+                "temperature_K": to_kelvin(temp, row_temp_unit),
                 "diffusivity_mm2_per_s": diff,
             }
         elif model_type == "arrhenius":
@@ -168,8 +169,8 @@ def build_entries(payload, source_id):
             "reported_as": reported_as,
             "model": model,
             "temperature_validity_K": [
-                to_kelvin(tmin, temp_unit),
-                to_kelvin(tmax, temp_unit),
+                to_kelvin(tmin, row_temp_unit),
+                to_kelvin(tmax, row_temp_unit),
             ],
             "extraction": {
                 "method": "contribution_form",
@@ -180,13 +181,16 @@ def build_entries(payload, source_id):
         }
 
         if model_type == "single_point":
-            entry["variant_value"] = to_kelvin(row.get("model", {}).get("single_point", {}).get("temperature"), temp_unit)
+            entry["variant_value"] = to_kelvin(row.get("model", {}).get("single_point", {}).get("temperature"), row_temp_unit)
 
         entries.append(entry)
+        if diffusivity_unit and row_diff_unit != diffusivity_unit:
+            warnings.append(f"Mixed diffusivity units detected: {diffusivity_unit} vs {row_diff_unit}.")
+        diffusivity_unit = row_diff_unit
 
     return {
         "schema_version": "1.0.2",
-        "diffusivity_unit": diffusivity_unit,
+        "diffusivity_unit": diffusivity_unit or "mm^2/s",
         "entries": entries,
     }, warnings
 

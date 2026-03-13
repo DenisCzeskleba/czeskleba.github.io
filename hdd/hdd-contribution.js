@@ -7,7 +7,6 @@
   const submitButton = form.querySelector("button[type='submit']");
   const rowsBody = document.getElementById("hdd-contrib-rows");
   const addRowButton = document.getElementById("hdd-add-row");
-  const clearRowsButton = document.getElementById("hdd-clear-rows");
   const jsonField = document.getElementById("hdd-submission-json");
   const localModeToggle = document.getElementById("hdd-local-mode");
   const showJsonButton = document.getElementById("hdd-show-json");
@@ -21,40 +20,114 @@
     status.style.color = tone === "error" ? "#b91c1c" : "var(--text)";
   }
 
+  function bindModelToggle(row) {
+    const modelSelect = row.querySelector("[data-field='model_type']");
+    if (!modelSelect) return;
+    const toggleFields = () => {
+      const value = modelSelect.value;
+      row.querySelectorAll("[data-model]").forEach((field) => {
+        field.style.display = field.dataset.model === value ? "block" : "none";
+      });
+    };
+    modelSelect.addEventListener("change", toggleFields);
+    toggleFields();
+  }
+
   function createRow() {
-    const row = document.createElement("tr");
+    const row = document.createElement("div");
+    row.className = "hdd-contrib-row";
     row.innerHTML = `
-      <td><input type="text" data-field="group_name" required></td>
-      <td><input type="text" data-field="series_name" required></td>
-      <td>
-        <select data-field="model_type" required>
-          <option value="single_point">single_point</option>
-          <option value="arrhenius">arrhenius</option>
-          <option value="power">power</option>
-        </select>
-      </td>
-      <td><input type="number" step="any" data-field="tmin" required></td>
-      <td><input type="number" step="any" data-field="tmax" required></td>
-      <td><input type="number" step="any" data-field="single_point_temperature"></td>
-      <td><input type="number" step="any" data-field="single_point_diffusivity"></td>
-      <td><input type="number" step="any" data-field="arrhenius_d0"></td>
-      <td><input type="number" step="any" data-field="arrhenius_q"></td>
-      <td><input type="number" step="any" data-field="arrhenius_r" placeholder="8.314"></td>
-      <td><input type="number" step="any" data-field="power_a"></td>
-      <td><input type="number" step="any" data-field="power_n"></td>
-      <td>
-        <select data-field="power_input">
-          <option value="theta_C">theta_C</option>
-          <option value="temperature_K">temperature_K</option>
-        </select>
-      </td>
-      <td><textarea data-field="overrides_json" placeholder="{\"material\": {\"grade\": \"AISI 4340\"}}"></textarea></td>
-      <td><button type="button" class="hdd-remove-row">Remove</button></td>
+      <div class="hdd-contrib-row-header">
+        <strong>Data row</strong>
+        <button type="button" class="hdd-remove-row primary">Remove row</button>
+      </div>
+      <div class="hdd-contrib-row-grid">
+        <div>
+          <label>Group name</label>
+          <input type="text" data-field="group_name" required title="Group label for this paper. Leave empty if not needed." />
+        </div>
+        <div>
+          <label>Series name</label>
+          <input type="text" data-field="series_name" required title="Series label within the group. Leave empty if not needed." />
+        </div>
+        <div>
+          <label>Model type</label>
+          <select data-field="model_type" required title="Model type for this row. Leave empty if not needed.">
+            <option value="single_point">single_point</option>
+            <option value="arrhenius">arrhenius</option>
+            <option value="power">power</option>
+          </select>
+        </div>
+        <div>
+          <label>Reported as</label>
+          <select data-field="reported_as" title="Reported-as label. Leave empty if not needed.">
+            <option value="apparent" selected>apparent</option>
+            <option value="effective">effective</option>
+            <option value="lattice">lattice</option>
+            <option value="not_reported">not_reported</option>
+          </select>
+        </div>
+        <div>
+          <label>Diffusivity unit</label>
+          <select data-field="diffusivity_unit" title="Diffusivity units. Leave empty if not needed.">
+            <option value="mm^2/s" selected>mm^2/s</option>
+            <option value="m^2/s">m^2/s</option>
+          </select>
+        </div>
+        <div>
+          <label>Temperature unit</label>
+          <select data-field="temperature_unit" title="Temperature units for this row. Leave empty if not needed.">
+            <option value="K" selected>K</option>
+            <option value="C">C</option>
+          </select>
+        </div>
+        <div>
+          <label>Tmin</label>
+          <input type="number" step="any" data-field="tmin" required title="Minimum valid temperature. Leave empty if not needed." />
+        </div>
+        <div>
+          <label>Tmax</label>
+          <input type="number" step="any" data-field="tmax" required title="Maximum valid temperature. Leave empty if not needed." />
+        </div>
+        <div data-model="single_point">
+          <label>Single point T</label>
+          <input type="number" step="any" data-field="single_point_temperature" title="Single-point temperature. Leave empty if not needed." />
+        </div>
+        <div data-model="single_point">
+          <label>Single point D</label>
+          <input type="number" step="any" data-field="single_point_diffusivity" title="Single-point diffusivity. Leave empty if not needed." />
+        </div>
+        <div data-model="arrhenius">
+          <label>Arrhenius D0</label>
+          <input type="number" step="any" data-field="arrhenius_d0" title="Arrhenius D0. Leave empty if not needed." />
+        </div>
+        <div data-model="arrhenius">
+          <label>Arrhenius Q</label>
+          <input type="number" step="any" data-field="arrhenius_q" title="Arrhenius activation energy Q. Leave empty if not needed." />
+        </div>
+        <div data-model="power">
+          <label>Power A</label>
+          <input type="number" step="any" data-field="power_a" title="Power-law A. Leave empty if not needed." />
+        </div>
+        <div data-model="power">
+          <label>Power n</label>
+          <input type="number" step="any" data-field="power_n" title="Power-law exponent n. Leave empty if not needed." />
+        </div>
+        <div data-model="power">
+          <label>Power input</label>
+          <select data-field="power_input" title="Power-law input variable. Leave empty if not needed.">
+            <option value="theta_C">theta_C</option>
+            <option value="temperature_K">temperature_K</option>
+          </select>
+        </div>
+      </div>
     `;
 
     row.querySelector(".hdd-remove-row").addEventListener("click", () => {
       row.remove();
     });
+
+    bindModelToggle(row);
 
     return row;
   }
@@ -78,41 +151,78 @@
     return Number.isFinite(num) ? num : null;
   }
 
-  function parseOverrides(raw) {
-    if (!raw) return null;
-    try {
-      return JSON.parse(raw);
-    } catch (error) {
-      return { __error: "Invalid JSON in overrides." };
+  function parseWtPercent(value) {
+    return parseNumber(value);
+  }
+
+  function resolveMaterialClass() {
+    const selected = getValue("default-material-class");
+    const other = getValue("default-material-class-other") || null;
+    if (!selected || selected === "Other") {
+      return other;
     }
+    return selected;
+  }
+
+  function collectComposition() {
+    const values = {};
+    const map = {
+      C: "comp-c",
+      Mn: "comp-mn",
+      Si: "comp-si",
+      Cr: "comp-cr",
+      Ni: "comp-ni",
+      Mo: "comp-mo",
+      V: "comp-v",
+      Nb: "comp-nb",
+      Ti: "comp-ti",
+      Al: "comp-al",
+      Cu: "comp-cu",
+      P: "comp-p",
+      S: "comp-s",
+      N: "comp-n",
+    };
+
+    Object.keys(map).forEach((element) => {
+      const value = parseWtPercent(getValue(map[element]));
+      if (value !== null) {
+        values[element] = value;
+      }
+    });
+
+    const notes = getValue("default-material-composition-notes") || null;
+    if (!Object.keys(values).length && !notes) {
+      return null;
+    }
+
+    return {
+      basis: "wt_pct",
+      values,
+      notes: notes || "not_reported",
+    };
   }
 
   function buildPayload() {
+    const composition = collectComposition();
     const defaults = {
       material: {
-        class: getValue("default-material-class") || null,
+        class: resolveMaterialClass(),
         grade: getValue("default-material-grade") || null,
         microstructure: getValue("default-material-microstructure") || null,
         phase: getValue("default-material-phase") || null,
         processing: parseCsvList(getValue("default-material-processing")),
         tags: parseCsvList(getValue("default-material-tags")),
         notes: getValue("default-material-notes") || null,
-        chemical_composition: {
-          notes: getValue("default-material-composition") || null,
-        },
+        chemical_composition: composition,
       },
       conditions: {
         measurement_method: getValue("default-method") || null,
         charging_method: getValue("default-charging") || null,
-        specimen_thickness_mm: parseNumber(getValue("default-thickness")),
         notes: getValue("default-conditions-notes") || null,
       },
       metadata: {
         studied_effects: parseCsvList(getValue("default-studied-effects")),
       },
-      reported_as: getValue("default-reported-as") || null,
-      diffusivity_unit: getValue("default-units-diff") || "mm^2/s",
-      temperature_unit: getValue("default-units-temp") || "K",
     };
 
     const source = {
@@ -126,14 +236,11 @@
       contact: {
         name: getValue("contrib-name"),
         email: getValue("contrib-email"),
-        affiliation: getValue("contrib-affiliation"),
-        orcid: getValue("contrib-orcid") || null,
       },
-      supporting_links: getValue("contrib-links") || null,
     };
 
     const rows = [];
-    rowsBody.querySelectorAll("tr").forEach((row) => {
+    rowsBody.querySelectorAll(".hdd-contrib-row").forEach((row) => {
       const getRowValue = (field) => {
         const input = row.querySelector(`[data-field='${field}']`);
         return input ? input.value.trim() : "";
@@ -143,6 +250,9 @@
         group_name: getRowValue("group_name"),
         series_name: getRowValue("series_name"),
         model_type: getRowValue("model_type"),
+        reported_as: getRowValue("reported_as") || "apparent",
+        diffusivity_unit: getRowValue("diffusivity_unit") || "mm^2/s",
+        temperature_unit: getRowValue("temperature_unit") || "K",
         temperature_validity: {
           min: parseNumber(getRowValue("tmin")),
           max: parseNumber(getRowValue("tmax")),
@@ -155,7 +265,6 @@
           arrhenius: {
             D0: parseNumber(getRowValue("arrhenius_d0")),
             Q: parseNumber(getRowValue("arrhenius_q")),
-            R: parseNumber(getRowValue("arrhenius_r")),
           },
           power: {
             A: parseNumber(getRowValue("power_a")),
@@ -163,7 +272,6 @@
             input: getRowValue("power_input") || "theta_C",
           },
         },
-        overrides: parseOverrides(getRowValue("overrides_json")),
       };
 
       rows.push(rowData);
@@ -195,10 +303,6 @@
 
       if (row.temperature_validity.min > row.temperature_validity.max) {
         return `${rowLabel}: Tmin must be <= Tmax.`;
-      }
-
-      if (row.overrides && row.overrides.__error) {
-        return `${rowLabel}: Overrides JSON is invalid.`;
       }
 
       if (row.model_type === "single_point") {
@@ -250,13 +354,6 @@
   if (addRowButton) {
     addRowButton.addEventListener("click", () => {
       rowsBody.appendChild(createRow());
-    });
-  }
-
-  if (clearRowsButton) {
-    clearRowsButton.addEventListener("click", () => {
-      rowsBody.innerHTML = "";
-      ensureInitialRow();
     });
   }
 
