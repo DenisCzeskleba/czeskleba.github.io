@@ -108,7 +108,7 @@
     .header-sep {
       color: var(--muted);
       font-size: 1rem;
-      margin: 0 0.4rem;
+      margin: 0 0.2rem;
       display: inline-flex;
       align-items: center;
       line-height: 1;
@@ -198,15 +198,14 @@
       <img src="/assets/logo.svg" alt="Home" />
     </a>
     {% if page.url contains '/hydrogen-diffusion-database/' %}
-      <span class="header-sep">·</span>
-    {% endif %}
-    {% if page.url contains '/hydrogen-diffusion-database/' %}
       <nav class="header-links" aria-label="HDD links">
         <a href="/hydrogen-diffusion-database/">
           <img src="/assets/HDD.B%20Logo.png" alt="HDD.B" />
           <span>HDD.B</span>
         </a>
+        <span class="header-sep">·</span>
         <a href="/hydrogen-diffusion-database/docs/">How it works</a>
+        <span class="header-sep">·</span>
         <a href="/hydrogen-diffusion-database/contribute/">Contribute Data</a>
       </nav>
     {% endif %}
