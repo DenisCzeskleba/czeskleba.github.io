@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{{ page.title }} - czeskleba.com</title>
+  <title>{{ page.title }} | czeskleba.com</title>
   <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" />
   <link rel="icon" href="/assets/favicon.ico" type="image/x-icon" />
   <style>
@@ -187,12 +187,13 @@
     </a>
     {% if page.url contains '/hydrogen-diffusion-database/' %}
       <nav class="header-links" aria-label="HDD links">
-        <a href="/hydrogen-diffusion-database/docs/">Docs</a>
-        <a href="/hydrogen-diffusion-database/contribute/">Contribute</a>
+        <a href="/hydrogen-diffusion-database/">Explorer</a>
+        <a href="/hydrogen-diffusion-database/docs/">Guide</a>
+        <a href="/hydrogen-diffusion-database/contribute/">Contribute Data</a>
       </nav>
     {% endif %}
     <div class="header-actions">
-      <button class="theme-toggle" onclick="toggleTheme()">Mode</button>
+      <button class="theme-toggle" onclick="toggleTheme()">🌗 Mode</button>
     </div>
   </header>
 
@@ -201,7 +202,7 @@
   </main>
 
 <footer>
-<p>&copy; 2025 czeskleba.com - <a href="/impressum.html">Impressum</a></p>
+<p>&copy; 2025 czeskleba.com · <a href="/impressum.html">Impressum</a></p>
 </footer>
   
   <script>

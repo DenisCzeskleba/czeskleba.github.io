@@ -55,6 +55,12 @@
     axisYMax: document.getElementById("hdd-axis-y-max"),
     tempMin: document.getElementById("hdd-temp-min"),
     tempMax: document.getElementById("hdd-temp-max"),
+    yearMin: document.getElementById("hdd-year-min"),
+    yearMax: document.getElementById("hdd-year-max"),
+    yearRange: document.querySelector("[data-range='year']"),
+    yearRangeFill: document.getElementById("hdd-year-range-fill"),
+    yearHandleMin: document.getElementById("hdd-year-handle-min"),
+    yearHandleMax: document.getElementById("hdd-year-handle-max"),
     downloadButtons: document.querySelectorAll("[data-download]"),
     clearFilters: document.getElementById("hdd-clear-filters"),
     selectAll: document.getElementById("hdd-select-all"),
@@ -90,6 +96,9 @@
     gridY: true,
     tempMin: null,
     tempMax: null,
+    yearMin: null,
+    yearMax: null,
+    yearDomain: null,
     includeUnconfirmed: false,
     literatureMode: "include",
     includeUnknownComposition: false,
@@ -146,6 +155,7 @@
     state.includeUnknownComposition = dom.filterUnknownComposition?.checked ?? false;
     initializeFilterModes();
     populateFilters(payload);
+    initializeYearFilter(payload);
     applyFilters({ replot: false });
     plotSelectedSeries(true);
     updateSummary();
@@ -175,6 +185,7 @@
       const source = sources[group.source_id] || {};
       const sourceTitle =
         source.clear_name || source.title || group.source_id || "Unknown source";
+      const sourceYear = Number.isFinite(Number(source.year)) ? Number(source.year) : null;
 
       (group.series || []).forEach((series, index) => {
         const seriesKeyPart = series.series_id ?? index;
@@ -193,6 +204,7 @@
           seriesLabel,
           sourceId: group.source_id,
           sourceTitle,
+          sourceYear,
           seriesKey: group.series_key,
           variantKey: group.variant_key,
           variantUnit: group.variant_unit,
@@ -460,6 +472,12 @@
         applyFilters();
       })
     );
+    [dom.yearMin, dom.yearMax].forEach((input) =>
+      input?.addEventListener("input", () => {
+        updateYearFromInputs();
+      })
+    );
+    bindYearRange();
     dom.plotButton?.addEventListener("click", () => {
       setZoomFromInputs();
       plotSelectedSeries(true);
@@ -557,6 +575,131 @@
     setSelectOptions(dom.filterMethod, toOptions(payload.filters?.measurement_method));
     setSelectOptions(dom.filterModel, toOptions(collectMetaValues(state.seriesList, "model_type")));
   }
+
+  function initializeYearFilter(payload) {
+    if (!dom.yearMin || !dom.yearMax || !dom.yearRange || !dom.yearHandleMin || !dom.yearHandleMax) return;
+    const years = Object.values(payload.sources || {})
+      .map((source) => Number(source.year))
+      .filter((value) => Number.isFinite(value));
+    if (!years.length) {
+      [dom.yearMin, dom.yearMax, dom.yearHandleMin, dom.yearHandleMax].forEach((el) => {
+        if (el) el.disabled = true;
+      });
+      return;
+    }
+    const minYear = Math.min(...years);
+    const maxYear = Math.max(...years);
+    state.yearDomain = { min: minYear, max: maxYear };
+    dom.yearMin.placeholder = String(minYear);
+    dom.yearMax.placeholder = String(maxYear);
+    dom.yearMin.value = "";
+    dom.yearMax.value = "";
+    setYearFilter(null, null, true);
+  }
+
+  function clampYear(value) {
+    if (!state.yearDomain || !Number.isFinite(value)) return value;
+    return Math.min(state.yearDomain.max, Math.max(state.yearDomain.min, value));
+  }
+
+  function setYearFilter(minValue, maxValue, syncInputs = true) {
+    state.yearMin = minValue;
+    state.yearMax = maxValue;
+    if (!state.yearDomain) return;
+    const rangeMin = minValue != null ? minValue : state.yearDomain.min;
+    const rangeMax = maxValue != null ? maxValue : state.yearDomain.max;
+    updateYearHandles(rangeMin, rangeMax);
+    if (syncInputs) {
+      dom.yearMin.value = minValue != null ? String(minValue) : "";
+      dom.yearMax.value = maxValue != null ? String(maxValue) : "";
+    }
+  }
+
+  function updateYearFromInputs() {
+    const rawMin = dom.yearMin?.value;
+    const rawMax = dom.yearMax?.value;
+    let min = rawMin === "" ? null : clampYear(Number(rawMin));
+    let max = rawMax === "" ? null : clampYear(Number(rawMax));
+    if (Number.isNaN(min)) min = null;
+    if (Number.isNaN(max)) max = null;
+    if (min != null && max != null && min > max) {
+      const swap = min;
+      min = max;
+      max = swap;
+    }
+    setYearFilter(min, max, false);
+    applyFilters();
+  }
+
+  function updateYearRangeFill(minValue, maxValue) {
+    if (!state.yearDomain || !dom.yearRangeFill) return;
+    const span = state.yearDomain.max - state.yearDomain.min || 1;
+    const left = ((minValue - state.yearDomain.min) / span) * 100;
+    const right = ((maxValue - state.yearDomain.min) / span) * 100;
+    dom.yearRangeFill.style.left = `${Math.min(left, right)}%`;
+    dom.yearRangeFill.style.right = `${100 - Math.max(left, right)}%`;
+  }
+
+  function updateYearHandles(minValue, maxValue) {
+    if (!state.yearDomain || !dom.yearHandleMin || !dom.yearHandleMax || !dom.yearRangeFill) return;
+    updateYearRangeFill(minValue, maxValue);
+    const span = state.yearDomain.max - state.yearDomain.min || 1;
+    const minPct = ((minValue - state.yearDomain.min) / span) * 100;
+    const maxPct = ((maxValue - state.yearDomain.min) / span) * 100;
+    dom.yearHandleMin.style.left = `${minPct}%`;
+    dom.yearHandleMax.style.left = `${maxPct}%`;
+  }
+
+  function bindYearRange() {
+    if (!dom.yearRange || !dom.yearHandleMin || !dom.yearHandleMax) return;
+    const onPointer = (event, handle) => {
+      if (!state.yearDomain) return;
+      const rect = dom.yearRange.getBoundingClientRect();
+      const percent = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+      const value = Math.round(state.yearDomain.min + percent * (state.yearDomain.max - state.yearDomain.min));
+      let minValue = state.yearMin ?? state.yearDomain.min;
+      let maxValue = state.yearMax ?? state.yearDomain.max;
+      if (handle === "min") {
+        minValue = Math.min(value, maxValue);
+      } else {
+        maxValue = Math.max(value, minValue);
+      }
+      setYearFilter(minValue, maxValue, true);
+      applyFilters();
+    };
+
+    const startDrag = (handle) => (event) => {
+      event.preventDefault();
+      dom.yearHandleMin.classList.toggle("is-active", handle === "min");
+      dom.yearHandleMax.classList.toggle("is-active", handle === "max");
+      const move = (moveEvent) => onPointer(moveEvent, handle);
+      const up = () => {
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerup", up);
+      };
+      window.addEventListener("pointermove", move);
+      window.addEventListener("pointerup", up);
+      onPointer(event, handle);
+    };
+
+    dom.yearHandleMin.addEventListener("pointerdown", startDrag("min"));
+    dom.yearHandleMax.addEventListener("pointerdown", startDrag("max"));
+    dom.yearRange.addEventListener("pointerdown", (event) => {
+      const minValue = state.yearMin ?? state.yearDomain.min;
+      const maxValue = state.yearMax ?? state.yearDomain.max;
+      const rect = dom.yearRange.getBoundingClientRect();
+      const percent = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+      const value = Math.round(state.yearDomain.min + percent * (state.yearDomain.max - state.yearDomain.min));
+      const distToMin = Math.abs(value - minValue);
+      const distToMax = Math.abs(value - maxValue);
+      if (distToMin <= distToMax) {
+        startDrag("min")(event);
+      } else {
+        startDrag("max")(event);
+      }
+    });
+  }
+
 
   function setSelectOptions(listbox, options) {
     if (!listbox) return;
@@ -804,6 +947,13 @@
     if (dom.tempMax) dom.tempMax.value = "";
     state.tempMin = null;
     state.tempMax = null;
+    if (dom.yearMin) dom.yearMin.value = "";
+    if (dom.yearMax) dom.yearMax.value = "";
+    state.yearMin = null;
+    state.yearMax = null;
+    if (state.yearDomain) {
+      updateYearHandles(state.yearDomain.min, state.yearDomain.max);
+    }
     applyFilters();
   }
 
@@ -823,6 +973,8 @@
       modelType: selectedValues(dom.filterModel),
       tempMin: state.tempMin,
       tempMax: state.tempMax,
+      yearMin: state.yearMin,
+      yearMax: state.yearMax,
       includeUnconfirmed: state.includeUnconfirmed,
       literatureMode: state.literatureMode,
       includeUnknownComposition: state.includeUnknownComposition,
@@ -923,6 +1075,7 @@
     if (ignoreKey !== "measurementMethod" && !matchesSet(filters.measurementMethod, entry.meta.measurement_method, mode.measurementMethod)) return false;
     if (ignoreKey !== "modelType" && !matchesSet(filters.modelType, entry.meta.model_type, mode.modelType)) return false;
     if (ignoreKey !== "tempRange" && !matchesTemperatureRange(entry, filters.tempMin, filters.tempMax)) return false;
+    if (ignoreKey !== "yearRange" && !matchesYearRange(entry, filters.yearMin, filters.yearMax)) return false;
 
     if (query) {
       const haystack = [
@@ -966,6 +1119,15 @@
       return true;
     }
     return false;
+  }
+
+  function matchesYearRange(entry, min, max) {
+    if (min == null && max == null) return true;
+    const year = entry.sourceYear;
+    if (!Number.isFinite(year)) return false;
+    if (min != null && year < min) return false;
+    if (max != null && year > max) return false;
+    return true;
   }
 
   function updateFilterAvailability(filters, query) {
@@ -2665,6 +2827,8 @@
     if (search.trim()) summary.search = search.trim();
     if (state.tempMin != null) summary.temp_min = state.tempMin;
     if (state.tempMax != null) summary.temp_max = state.tempMax;
+    if (state.yearMin != null) summary.year_min = state.yearMin;
+    if (state.yearMax != null) summary.year_max = state.yearMax;
     if (state.includeUnconfirmed) summary.include_unconfirmed = true;
     if (state.literatureMode && state.literatureMode !== "include") {
       summary.literature_compilations = state.literatureMode;

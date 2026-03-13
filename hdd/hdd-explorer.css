@@ -300,6 +300,64 @@ main > h1 {
   gap: 8px;
 }
 
+.hdd-filter-block .hdd-inline-select {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+}
+
+.hdd-filter-block .hdd-inline-select select {
+  width: 100%;
+  max-width: 100%;
+}
+
+.hdd-range-dual {
+  position: relative;
+  height: 32px;
+  margin-top: 8px;
+}
+
+.hdd-range-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 6px;
+  background: var(--line);
+  border-radius: 999px;
+  transform: translateY(-50%);
+}
+
+.hdd-range-fill {
+  position: absolute;
+  top: 50%;
+  height: 6px;
+  background: #0f766e;
+  border-radius: 999px;
+  transform: translateY(-50%);
+  left: 0;
+  right: 0;
+}
+
+.hdd-range-handle {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #0f766e;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2);
+  cursor: pointer;
+  padding: 0;
+  z-index: 3;
+}
+
+.hdd-range-handle.is-active {
+  z-index: 4;
+}
+
 .hdd-toggle-group input[type="number"] {
   text-align: center;
 }
