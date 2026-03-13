@@ -14,6 +14,7 @@ Unter den Eichen 87
 
 **Kontakt:**  
 E-Mail: Denis@Czeskleba.com  
+Bitte bevorzugen Sie eine direkte E-Mail. Das Kontaktformular hat ein monatliches Limit und kann schnell voll sein.  
 
 ## Contact
 
