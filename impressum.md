@@ -1,4 +1,4 @@
----
+﻿---
 layout: default
 title: Impressum![1773305241066](image/impressum/1773305241066.png)![1773305244149](image/impressum/1773305244149.png)
 permalink: /impressum.html
@@ -14,6 +14,7 @@ Unter den Eichen 87
 
 **Kontakt:**  
 E-Mail: Denis@Czeskleba.com  
+Please consider sending a direct e-mail as the contact form has a monthly limit.  
 Bitte bevorzugen Sie eine direkte E-Mail. Das Kontaktformular hat ein monatliches Limit und kann schnell voll sein.  
 
 ## Contact
