@@ -5,6 +5,10 @@ permalink: /hydrogen-diffusion-database/docs/
 ---
 
 <style>
+  main {
+    max-width: 1100px;
+  }
+
   .hdd-docs {
     text-align: left;
     max-width: 1100px;

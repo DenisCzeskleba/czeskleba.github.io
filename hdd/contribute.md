@@ -26,6 +26,10 @@ Help expand the hydrogen diffusivity dataset by submitting peer-reviewed, open-a
 Please fill in the form below. We manually review every submission before updating the database.
 
 <style>
+  main {
+    max-width: 1100px;
+  }
+
   .hdd-contrib-form {
     margin: 1.5rem auto 0;
     max-width: 820px;
