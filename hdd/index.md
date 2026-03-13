@@ -239,7 +239,8 @@ permalink: /hydrogen-diffusion-database/
                   </div>
                 </div>
               </div>
-            </details>\n<details class="hdd-plot-options hdd-export-panel" data-order="export">
+            </details>
+            <details class="hdd-plot-options hdd-export-panel" data-order="export">
               <summary>Export</summary>
               <div class="hdd-plot-options-body">
                 <div class="hdd-export-note">Export Image</div>
@@ -308,6 +309,8 @@ permalink: /hydrogen-diffusion-database/
 </div>
 
 <script src="/hdd/hdd-explorer.js" defer></script>
+
+
 
 
 
