@@ -98,6 +98,18 @@ Please fill in the form below. Optional fields can be left empty if not needed. 
     gap: 12px;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   }
+  .hdd-contrib-override {
+    margin-top: 12px;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: color-mix(in srgb, var(--bg) 97%, var(--text));
+  }
+  .hdd-contrib-override summary {
+    cursor: pointer;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
   .hdd-contrib-row button {
     padding: 6px 10px;
     border-radius: 8px;
@@ -229,7 +241,7 @@ Please fill in the form below. Optional fields can be left empty if not needed. 
     <div class="hdd-contrib-grid">
       <div>
         <label for="default-material-class">Material class</label>
-        <select id="default-material-class" name="default_material_class" title="Pick the closest material class. Leave empty if not needed.">
+        <select id="default-material-class" name="default_material_class" title="Pick the closest material class. If not listed, choose Other and specify in Material notes.">
           <option value="">Select a class</option>
           <option value="Carbon Steel">Carbon Steel</option>
           <option value="Creep Resistant Steel">Creep Resistant Steel</option>
@@ -243,100 +255,223 @@ Please fill in the form below. Optional fields can be left empty if not needed. 
           <option value="Pure Iron">Pure Iron</option>
           <option value="Stainless Steel">Stainless Steel</option>
           <option value="Structural Steel">Structural Steel</option>
-          <option value="Unspecified Steel">Unspecified Steel</option>
-          <option value="Other">Other (specify below)</option>
+          <option value="Other">Other (specify in notes)</option>
         </select>
       </div>
       <div>
-        <label for="default-material-class-other">Material class (other)</label>
-        <input id="default-material-class-other" name="default_material_class_other" placeholder="Specify if Other" title="Only needed if you chose Other. Leave empty if not needed." />
-      </div>
-      <div>
         <label for="default-material-grade">Material grade</label>
-        <input id="default-material-grade" name="default_material_grade" placeholder="e.g., 2.25Cr-1Mo steel" title="Specific grade or alloy name. Leave empty if not needed." />
+        <select id="default-material-grade" name="default_material_grade" title="Pick the closest grade. If not listed, choose Other and specify in Material notes.">
+          <option value="">Select a grade</option>
+          <option value="10G2 steel">10G2 steel</option>
+          <option value="15G2ANb">15G2ANb</option>
+          <option value="17-4 PH">17-4 PH</option>
+          <option value="17HMBVA">17HMBVA</option>
+          <option value="1Cr21Ni5Ti">1Cr21Ni5Ti</option>
+          <option value="2.25Cr-1Mo steel">2.25Cr-1Mo steel</option>
+          <option value="25Kh2NMFA steel">25Kh2NMFA steel</option>
+          <option value="304 stainless steel">304 stainless steel</option>
+          <option value="32MnB5">32MnB5</option>
+          <option value="3Cr-1Mo steel">3Cr-1Mo steel</option>
+          <option value="40Kh steel">40Kh steel</option>
+          <option value="42CrMo4">42CrMo4</option>
+          <option value="9Cr-1Mo steel">9Cr-1Mo steel</option>
+          <option value="A508 Class 3">A508 Class 3</option>
+          <option value="AISI 1090">AISI 1090</option>
+          <option value="AISI 4120">AISI 4120</option>
+          <option value="AISI 4130">AISI 4130</option>
+          <option value="AISI 4140">AISI 4140</option>
+          <option value="AISI 4340">AISI 4340</option>
+          <option value="Alloy 625">Alloy 625</option>
+          <option value="API 2W Grade 60">API 2W Grade 60</option>
+          <option value="API X100">API X100</option>
+          <option value="API X120">API X120</option>
+          <option value="API X42">API X42</option>
+          <option value="API X52">API X52</option>
+          <option value="API X65">API X65</option>
+          <option value="API X70">API X70</option>
+          <option value="API X80">API X80</option>
+          <option value="ASTM A106 Grade B">ASTM A106 Grade B</option>
+          <option value="ASTM A516 Grade 60">ASTM A516 Grade 60</option>
+          <option value="En 8">En 8</option>
+          <option value="EN42">EN42</option>
+          <option value="HSLA-100">HSLA-100</option>
+          <option value="HSLA-80">HSLA-80</option>
+          <option value="JIS SCM435">JIS SCM435</option>
+          <option value="P91">P91</option>
+          <option value="P92">P92</option>
+          <option value="Pure iron">Pure iron</option>
+          <option value="Q235">Q235</option>
+          <option value="REX 539">REX 539</option>
+          <option value="S15C">S15C</option>
+          <option value="S355">S355</option>
+          <option value="S420">S420</option>
+          <option value="S45C">S45C</option>
+          <option value="S690">S690</option>
+          <option value="S890">S890</option>
+          <option value="SAE 1010">SAE 1010</option>
+          <option value="SAE 1020">SAE 1020</option>
+          <option value="SAE 1035">SAE 1035</option>
+          <option value="SAE 1050">SAE 1050</option>
+          <option value="SAE 1065">SAE 1065</option>
+          <option value="SAE 1095">SAE 1095</option>
+          <option value="SCM3">SCM3</option>
+          <option value="SCM4">SCM4</option>
+          <option value="SCr2">SCr2</option>
+          <option value="SCr3">SCr3</option>
+          <option value="SCr4">SCr4</option>
+          <option value="SK3">SK3</option>
+          <option value="SK5">SK5</option>
+          <option value="SK7">SK7</option>
+          <option value="SNC2">SNC2</option>
+          <option value="SNC3">SNC3</option>
+          <option value="SNCM2">SNCM2</option>
+          <option value="SNCM5">SNCM5</option>
+          <option value="SNCM6">SNCM6</option>
+          <option value="SNCM7">SNCM7</option>
+          <option value="SNCM8">SNCM8</option>
+          <option value="St 1303">St 1303</option>
+          <option value="St41">St41</option>
+          <option value="T10">T10</option>
+          <option value="T24">T24</option>
+          <option value="Other">Other (specify in notes)</option>
+        </select>
       </div>
       <div>
         <label for="default-material-microstructure">Microstructure</label>
-        <input id="default-material-microstructure" name="default_material_microstructure" placeholder="Base material, weld metal" title="Use Base Material for non-welding cases, or leave empty if not needed." />
+        <select id="default-material-microstructure" name="default_material_microstructure" title="Use Base Material for non-welding cases. If not listed, choose Other and specify in Material notes.">
+          <option value="">Select microstructure</option>
+          <option value="Base Material">Base Material</option>
+          <option value="CGHAZ">CGHAZ</option>
+          <option value="FGHAZ">FGHAZ</option>
+          <option value="HAZ">HAZ</option>
+          <option value="ICHAZ">ICHAZ</option>
+          <option value="Weld Metal">Weld Metal</option>
+          <option value="Other">Other (specify in notes)</option>
+        </select>
       </div>
       <div>
         <label for="default-material-phase">Phase</label>
-        <input id="default-material-phase" name="default_material_phase" placeholder="Ferritic, Austenitic, etc." title="Phase if reported. Leave empty if not needed." />
+        <select id="default-material-phase" name="default_material_phase" title="Phase if reported. If not listed, choose Other and specify in Material notes.">
+          <option value="">Select phase</option>
+          <option value="Austenitic">Austenitic</option>
+          <option value="Bainitic/Pearlitic">Bainitic/Pearlitic</option>
+          <option value="Ferritic">Ferritic</option>
+          <option value="Martensitic">Martensitic</option>
+          <option value="Multiphase">Multiphase</option>
+          <option value="Other">Other (specify in notes)</option>
+        </select>
       </div>
       <div>
-        <label for="default-material-processing">Processing (comma-separated)</label>
-        <input id="default-material-processing" name="default_material_processing" placeholder="Tempered, quenched, welded" title="Comma-separated processing steps. Leave empty if not needed." />
+        <label for="default-material-processing">Processing</label>
+        <select id="default-material-processing" name="default_material_processing" title="Primary processing step. If not listed, choose Other and specify in Material notes.">
+          <option value="">Select processing</option>
+          <option value="Aged">Aged</option>
+          <option value="Annealed">Annealed</option>
+          <option value="As received">As received</option>
+          <option value="As welded">As welded</option>
+          <option value="Cold worked">Cold worked</option>
+          <option value="Normalized">Normalized</option>
+          <option value="PWHT">PWHT</option>
+          <option value="Q&T">Q&amp;T</option>
+          <option value="Quenched">Quenched</option>
+          <option value="Stress relief">Stress relief</option>
+          <option value="Subzero Treated">Subzero Treated</option>
+          <option value="Surface treated">Surface treated</option>
+          <option value="TMCP">TMCP</option>
+          <option value="Other">Other (specify in notes)</option>
+        </select>
       </div>
       <div>
-        <label for="default-material-tags">Tags (comma-separated)</label>
-        <input id="default-material-tags" name="default_material_tags" placeholder="Structural steel, microalloyed" title="Comma-separated tags. Leave empty if not needed." />
+        <label for="default-material-tags">Tag</label>
+        <select id="default-material-tags" name="default_material_tags" title="Pick the closest tag. If not listed, choose Other and specify in Material notes.">
+          <option value="">Select a tag</option>
+          <option value="AHSS">AHSS</option>
+          <option value="Austenitic">Austenitic</option>
+          <option value="Creep resistant">Creep resistant</option>
+          <option value="Cr-Mo">Cr-Mo</option>
+          <option value="Dual phase">Dual phase</option>
+          <option value="Ferritic-martensitic">Ferritic-martensitic</option>
+          <option value="High strength">High strength</option>
+          <option value="Low carbon">Low carbon</option>
+          <option value="Martensitic">Martensitic</option>
+          <option value="Microalloyed">Microalloyed</option>
+          <option value="Nickel alloyed">Nickel alloyed</option>
+          <option value="Pearlitic">Pearlitic</option>
+          <option value="Pipeline">Pipeline</option>
+          <option value="speculative">speculative</option>
+          <option value="Structural Steel">Structural Steel</option>
+          <option value="Tempered martensite">Tempered martensite</option>
+          <option value="Welded">Welded</option>
+          <option value="Other">Other (specify in notes)</option>
+        </select>
       </div>
     </div>
     <div>
       <label for="default-material-notes">Material notes (optional)</label>
       <textarea id="default-material-notes" name="default_material_notes" placeholder="Specimen geometry, preparation, or other notes. Leave empty if not needed." title="Optional material notes. Leave empty if not needed."></textarea>
     </div>
-    <div>
-      <label for="default-material-composition-notes">Composition notes (optional)</label>
-      <textarea id="default-material-composition-notes" name="default_material_composition_notes" placeholder="Any extra composition context. Leave empty if not needed." title="Optional composition notes. Leave empty if not needed."></textarea>
-    </div>
+    <p class="hdd-contrib-note">All composition inputs below are wt%.</p>
     <div class="hdd-contrib-grid">
       <div>
         <label for="comp-c">C (wt%)</label>
-        <input id="comp-c" name="comp_c" type="number" step="any" title="Carbon in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
+        <input id="comp-c" name="comp_c" type="number" step="0.01" title="Carbon in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
       </div>
       <div>
         <label for="comp-mn">Mn (wt%)</label>
-        <input id="comp-mn" name="comp_mn" type="number" step="any" title="Manganese in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
+        <input id="comp-mn" name="comp_mn" type="number" step="0.01" title="Manganese in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
       </div>
       <div>
         <label for="comp-si">Si (wt%)</label>
-        <input id="comp-si" name="comp_si" type="number" step="any" title="Silicon in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
+        <input id="comp-si" name="comp_si" type="number" step="0.01" title="Silicon in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
       </div>
       <div>
         <label for="comp-cr">Cr (wt%)</label>
-        <input id="comp-cr" name="comp_cr" type="number" step="any" title="Chromium in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
+        <input id="comp-cr" name="comp_cr" type="number" step="0.01" title="Chromium in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
       </div>
       <div>
         <label for="comp-ni">Ni (wt%)</label>
-        <input id="comp-ni" name="comp_ni" type="number" step="any" title="Nickel in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
+        <input id="comp-ni" name="comp_ni" type="number" step="0.01" title="Nickel in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
       </div>
       <div>
         <label for="comp-mo">Mo (wt%)</label>
-        <input id="comp-mo" name="comp_mo" type="number" step="any" title="Molybdenum in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
+        <input id="comp-mo" name="comp_mo" type="number" step="0.01" title="Molybdenum in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
       </div>
       <div>
         <label for="comp-v">V (wt%)</label>
-        <input id="comp-v" name="comp_v" type="number" step="any" title="Vanadium in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
+        <input id="comp-v" name="comp_v" type="number" step="0.01" title="Vanadium in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
       </div>
       <div>
         <label for="comp-nb">Nb (wt%)</label>
-        <input id="comp-nb" name="comp_nb" type="number" step="any" title="Niobium in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
+        <input id="comp-nb" name="comp_nb" type="number" step="0.01" title="Niobium in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
       </div>
       <div>
         <label for="comp-ti">Ti (wt%)</label>
-        <input id="comp-ti" name="comp_ti" type="number" step="any" title="Titanium in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
+        <input id="comp-ti" name="comp_ti" type="number" step="0.01" title="Titanium in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
       </div>
       <div>
         <label for="comp-al">Al (wt%)</label>
-        <input id="comp-al" name="comp_al" type="number" step="any" title="Aluminum in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
+        <input id="comp-al" name="comp_al" type="number" step="0.01" title="Aluminum in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
       </div>
       <div>
         <label for="comp-cu">Cu (wt%)</label>
-        <input id="comp-cu" name="comp_cu" type="number" step="any" title="Copper in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
+        <input id="comp-cu" name="comp_cu" type="number" step="0.01" title="Copper in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
       </div>
       <div>
         <label for="comp-p">P (wt%)</label>
-        <input id="comp-p" name="comp_p" type="number" step="any" title="Phosphorus in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
+        <input id="comp-p" name="comp_p" type="number" step="0.01" title="Phosphorus in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
       </div>
       <div>
         <label for="comp-s">S (wt%)</label>
-        <input id="comp-s" name="comp_s" type="number" step="any" title="Sulfur in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
+        <input id="comp-s" name="comp_s" type="number" step="0.01" title="Sulfur in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
       </div>
       <div>
         <label for="comp-n">N (wt%)</label>
-        <input id="comp-n" name="comp_n" type="number" step="any" title="Nitrogen in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
+        <input id="comp-n" name="comp_n" type="number" step="0.01" title="Nitrogen in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." />
       </div>
+    </div>
+    <div>
+      <label for="default-material-composition-notes">Composition notes (optional)</label>
+      <textarea id="default-material-composition-notes" name="default_material_composition_notes" placeholder="Any extra composition context. Leave empty if not needed." title="Optional composition notes. Leave empty if not needed."></textarea>
     </div>
   </fieldset>
 
@@ -372,6 +507,10 @@ Please fill in the form below. Optional fields can be left empty if not needed. 
     <legend>Data rows (one row per model or single point)</legend>
     <p class="hdd-contrib-note">
       Required columns: group + series name, model type, Tmin, Tmax.
+      Think of <strong>group</strong> as the comparison set (what is being varied), and <strong>series</strong> as the
+      specific variant inside that set. Example: Group = "Vanadium content", Series = "V=0.1", "V=0.2", "V=0.3".
+      The fields below update based on the model type you select.
+      If a specific row needs different material or composition, open “Override defaults for this row.”
     </p>
     <div id="hdd-contrib-rows" class="hdd-contrib-rows"></div>
     <div class="hdd-contrib-row-actions">
@@ -398,3 +537,4 @@ Please fill in the form below. Optional fields can be left empty if not needed. 
   <textarea id="hdd-json-preview" class="hdd-contrib-preview" readonly placeholder="JSON preview will appear here." title="Local JSON preview. Leave empty if not needed."></textarea>
 </form>
 <script src="/hdd/hdd-contribution.js" defer></script>
+

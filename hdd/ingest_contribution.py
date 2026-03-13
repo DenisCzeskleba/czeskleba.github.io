@@ -27,6 +27,12 @@ def to_kelvin(value, unit):
     return value
 
 
+def normalize_unit(unit):
+    if unit is None:
+        return None
+    return unit.replace("\u00b2", "^2")
+
+
 def deep_merge(base, override):
     if not isinstance(override, dict):
         return base
@@ -36,6 +42,19 @@ def deep_merge(base, override):
         else:
             base[key] = value
     return base
+
+
+def convert_diffusivity(value, unit):
+    if value is None:
+        return None
+    unit = normalize_unit(unit)
+    if unit in (None, "", "mm^2/s"):
+        return value
+    if unit == "cm^2/s":
+        return value * 100.0
+    if unit == "m^2/s":
+        return value * 1e6
+    return value
 
 
 def build_source(payload):
@@ -123,9 +142,7 @@ def build_entries(payload, source_id):
             row.get("overrides", {}).get("metadata") if row.get("overrides") else {},
         )
 
-        reported_as = row.get("reported_as") or defaults.get("reported_as") or "apparent"
-        if row.get("overrides") and row.get("overrides", {}).get("reported_as"):
-            reported_as = row["overrides"]["reported_as"]
+        reported_as = row.get("reported_as") or "apparent"
 
         model = None
         if model_type == "single_point":
@@ -134,12 +151,12 @@ def build_entries(payload, source_id):
             model = {
                 "type": "single_point",
                 "temperature_K": to_kelvin(temp, row_temp_unit),
-                "diffusivity_mm2_per_s": diff,
+                "diffusivity_mm2_per_s": convert_diffusivity(diff, row_diff_unit),
             }
         elif model_type == "arrhenius":
             model = {
                 "type": "arrhenius",
-                "D0_mm2_per_s": row.get("model", {}).get("arrhenius", {}).get("D0"),
+                "D0_mm2_per_s": convert_diffusivity(row.get("model", {}).get("arrhenius", {}).get("D0"), row_diff_unit),
                 "Q_J_per_mol": row.get("model", {}).get("arrhenius", {}).get("Q"),
                 "R_J_per_molK": row.get("model", {}).get("arrhenius", {}).get("R") or 8.314,
             }
@@ -147,7 +164,7 @@ def build_entries(payload, source_id):
             model = {
                 "type": "power",
                 "input": row.get("model", {}).get("power", {}).get("input") or "theta_C",
-                "A_mm2_per_s": row.get("model", {}).get("power", {}).get("A"),
+                "A_mm2_per_s": convert_diffusivity(row.get("model", {}).get("power", {}).get("A"), row_diff_unit),
                 "n": row.get("model", {}).get("power", {}).get("n"),
             }
         else:
@@ -185,7 +202,7 @@ def build_entries(payload, source_id):
 
         entries.append(entry)
         if diffusivity_unit and row_diff_unit != diffusivity_unit:
-            warnings.append(f"Mixed diffusivity units detected: {diffusivity_unit} vs {row_diff_unit}.")
+            warnings.append(f"Mixed diffusivity units detected: {diffusivity_unit} vs {row_diff_unit}. Converted to mm^2/s.")
         diffusivity_unit = row_diff_unit
 
     return {

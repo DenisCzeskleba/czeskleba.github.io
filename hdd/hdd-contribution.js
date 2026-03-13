@@ -44,34 +44,34 @@
       <div class="hdd-contrib-row-grid">
         <div>
           <label>Group name</label>
-          <input type="text" data-field="group_name" required title="Group label for this paper. Leave empty if not needed." />
+          <input type="text" data-field="group_name" required title="Comparison set (what varies). Example: Vanadium content. Leave empty if not needed." />
         </div>
         <div>
           <label>Series name</label>
-          <input type="text" data-field="series_name" required title="Series label within the group. Leave empty if not needed." />
+          <input type="text" data-field="series_name" required title="Specific variant within the group. Example: V=0.1. Leave empty if not needed." />
         </div>
         <div>
           <label>Model type</label>
-          <select data-field="model_type" required title="Model type for this row. Leave empty if not needed.">
-            <option value="single_point">single_point</option>
-            <option value="arrhenius">arrhenius</option>
-            <option value="power">power</option>
+          <select data-field="model_type" required title="Pick the model for this row. Fields below update based on this choice. Leave empty if not needed.">
+            <option value="single_point">Single point</option>
+            <option value="arrhenius">Arrhenius</option>
+            <option value="power">Power law</option>
           </select>
         </div>
         <div>
-          <label>Reported as</label>
-          <select data-field="reported_as" title="Reported-as label. Leave empty if not needed.">
+          <label>Diffusivity type</label>
+          <select data-field="reported_as" title="Type of diffusivity reported: apparent, effective, or lattice. Leave empty if not needed.">
             <option value="apparent" selected>apparent</option>
             <option value="effective">effective</option>
             <option value="lattice">lattice</option>
-            <option value="not_reported">not_reported</option>
           </select>
         </div>
         <div>
           <label>Diffusivity unit</label>
           <select data-field="diffusivity_unit" title="Diffusivity units. Leave empty if not needed.">
-            <option value="mm^2/s" selected>mm^2/s</option>
-            <option value="m^2/s">m^2/s</option>
+            <option value="mm^2/s" selected>mm²/s</option>
+            <option value="cm^2/s">cm²/s</option>
+            <option value="m^2/s">m²/s</option>
           </select>
         </div>
         <div>
@@ -121,10 +121,92 @@
           </select>
         </div>
       </div>
+      <details class="hdd-contrib-override">
+        <summary>Override defaults for this row (optional)</summary>
+        <div class="hdd-contrib-row-grid">
+          <div>
+            <label>Material class</label>
+            <select data-field="override_material_class" data-clone-from="default-material-class" title="Override material class for this row. Leave empty to use defaults."></select>
+          </div>
+          <div>
+            <label>Material grade</label>
+            <select data-field="override_material_grade" data-clone-from="default-material-grade" title="Override material grade for this row. Leave empty to use defaults."></select>
+          </div>
+          <div>
+            <label>Microstructure</label>
+            <select data-field="override_material_microstructure" data-clone-from="default-material-microstructure" title="Override microstructure for this row. Leave empty to use defaults."></select>
+          </div>
+          <div>
+            <label>Phase</label>
+            <select data-field="override_material_phase" data-clone-from="default-material-phase" title="Override phase for this row. Leave empty to use defaults."></select>
+          </div>
+          <div>
+            <label>Processing</label>
+            <select data-field="override_material_processing" data-clone-from="default-material-processing" title="Override processing for this row. Leave empty to use defaults."></select>
+          </div>
+          <div>
+            <label>Tag</label>
+            <select data-field="override_material_tags" data-clone-from="default-material-tags" title="Override tag for this row. Leave empty to use defaults."></select>
+          </div>
+          <div>
+            <label>Material notes</label>
+            <input type="text" data-field="override_material_notes" title="Override material notes for this row. Leave empty to use defaults." />
+          </div>
+        </div>
+        <p class="hdd-contrib-note">Composition overrides (wt%) — leave blank to use defaults.</p>
+        <div class="hdd-contrib-row-grid">
+          <div><label>C</label><input type="number" step="0.01" data-field="override_comp_c" title="Override C in wt%. Leave empty if not needed." /></div>
+          <div><label>Mn</label><input type="number" step="0.01" data-field="override_comp_mn" title="Override Mn in wt%. Leave empty if not needed." /></div>
+          <div><label>Si</label><input type="number" step="0.01" data-field="override_comp_si" title="Override Si in wt%. Leave empty if not needed." /></div>
+          <div><label>Cr</label><input type="number" step="0.01" data-field="override_comp_cr" title="Override Cr in wt%. Leave empty if not needed." /></div>
+          <div><label>Ni</label><input type="number" step="0.01" data-field="override_comp_ni" title="Override Ni in wt%. Leave empty if not needed." /></div>
+          <div><label>Mo</label><input type="number" step="0.01" data-field="override_comp_mo" title="Override Mo in wt%. Leave empty if not needed." /></div>
+          <div><label>V</label><input type="number" step="0.01" data-field="override_comp_v" title="Override V in wt%. Leave empty if not needed." /></div>
+          <div><label>Nb</label><input type="number" step="0.01" data-field="override_comp_nb" title="Override Nb in wt%. Leave empty if not needed." /></div>
+          <div><label>Ti</label><input type="number" step="0.01" data-field="override_comp_ti" title="Override Ti in wt%. Leave empty if not needed." /></div>
+          <div><label>Al</label><input type="number" step="0.01" data-field="override_comp_al" title="Override Al in wt%. Leave empty if not needed." /></div>
+          <div><label>Cu</label><input type="number" step="0.01" data-field="override_comp_cu" title="Override Cu in wt%. Leave empty if not needed." /></div>
+          <div><label>P</label><input type="number" step="0.01" data-field="override_comp_p" title="Override P in wt%. Leave empty if not needed." /></div>
+          <div><label>S</label><input type="number" step="0.01" data-field="override_comp_s" title="Override S in wt%. Leave empty if not needed." /></div>
+          <div><label>N</label><input type="number" step="0.01" data-field="override_comp_n" title="Override N in wt%. Leave empty if not needed." /></div>
+        </div>
+        <div>
+          <label>Composition notes</label>
+          <input type="text" data-field="override_material_composition_notes" title="Override composition notes for this row. Leave empty if not needed." />
+        </div>
+        <div class="hdd-contrib-row-grid">
+          <div>
+            <label>Measurement method</label>
+            <input type="text" data-field="override_measurement_method" title="Override measurement method for this row. Leave empty if not needed." />
+          </div>
+          <div>
+            <label>Charging method</label>
+            <input type="text" data-field="override_charging_method" title="Override charging method for this row. Leave empty if not needed." />
+          </div>
+        </div>
+        <div>
+          <label>Conditions notes</label>
+          <input type="text" data-field="override_conditions_notes" title="Override conditions notes for this row. Leave empty if not needed." />
+        </div>
+        <div>
+          <label>Studied effects (comma-separated)</label>
+          <input type="text" data-field="override_studied_effects" title="Override studied effects for this row. Leave empty if not needed." />
+        </div>
+      </details>
     `;
 
     row.querySelector(".hdd-remove-row").addEventListener("click", () => {
       row.remove();
+    });
+
+    row.querySelectorAll("[data-clone-from]").forEach((select) => {
+      const sourceId = select.getAttribute("data-clone-from");
+      const source = document.getElementById(sourceId);
+      if (!source) return;
+      select.innerHTML = source.innerHTML;
+      if (select.options.length) {
+        select.selectedIndex = 0;
+      }
     });
 
     bindModelToggle(row);
@@ -155,13 +237,89 @@
     return parseNumber(value);
   }
 
-  function resolveMaterialClass() {
-    const selected = getValue("default-material-class");
-    const other = getValue("default-material-class-other") || null;
-    if (!selected || selected === "Other") {
-      return other;
+  function collectCompositionFromRow(row, prefix) {
+    const values = {};
+    const map = {
+      C: `${prefix}_comp_c`,
+      Mn: `${prefix}_comp_mn`,
+      Si: `${prefix}_comp_si`,
+      Cr: `${prefix}_comp_cr`,
+      Ni: `${prefix}_comp_ni`,
+      Mo: `${prefix}_comp_mo`,
+      V: `${prefix}_comp_v`,
+      Nb: `${prefix}_comp_nb`,
+      Ti: `${prefix}_comp_ti`,
+      Al: `${prefix}_comp_al`,
+      Cu: `${prefix}_comp_cu`,
+      P: `${prefix}_comp_p`,
+      S: `${prefix}_comp_s`,
+      N: `${prefix}_comp_n`,
+    };
+
+    Object.keys(map).forEach((element) => {
+      const input = row.querySelector(`[data-field='${map[element]}']`);
+      const value = input ? parseWtPercent(input.value.trim()) : null;
+      if (value !== null) {
+        values[element] = value;
+      }
+    });
+
+    const notesInput = row.querySelector("[data-field='override_material_composition_notes']");
+    const notes = notesInput ? notesInput.value.trim() : "";
+
+    if (!Object.keys(values).length && !notes) {
+      return null;
     }
-    return selected;
+
+    return {
+      basis: "wt_pct",
+      values,
+      notes: notes || "not_reported",
+    };
+  }
+
+  function buildRowOverrides(row, getRowValue) {
+    const overrides = {};
+    const material = {};
+    const conditions = {};
+    const metadata = {};
+
+    const materialClass = getRowValue("override_material_class");
+    const materialGrade = getRowValue("override_material_grade");
+    const materialMicro = getRowValue("override_material_microstructure");
+    const materialPhase = getRowValue("override_material_phase");
+    const materialProcessing = getRowValue("override_material_processing");
+    const materialTags = getRowValue("override_material_tags");
+    const materialNotes = getRowValue("override_material_notes");
+
+    if (materialClass) material.class = materialClass;
+    if (materialGrade) material.grade = materialGrade;
+    if (materialMicro) material.microstructure = materialMicro;
+    if (materialPhase) material.phase = materialPhase;
+    if (materialProcessing) material.processing = [materialProcessing];
+    if (materialTags) material.tags = [materialTags];
+    if (materialNotes) material.notes = materialNotes;
+
+    const composition = collectCompositionFromRow(row, "override");
+    if (composition) {
+      material.chemical_composition = composition;
+    }
+
+    const method = getRowValue("override_measurement_method");
+    const charging = getRowValue("override_charging_method");
+    const conditionsNotes = getRowValue("override_conditions_notes");
+    if (method) conditions.measurement_method = method;
+    if (charging) conditions.charging_method = charging;
+    if (conditionsNotes) conditions.notes = conditionsNotes;
+
+    const effects = getRowValue("override_studied_effects");
+    if (effects) metadata.studied_effects = parseCsvList(effects);
+
+    if (Object.keys(material).length) overrides.material = material;
+    if (Object.keys(conditions).length) overrides.conditions = conditions;
+    if (Object.keys(metadata).length) overrides.metadata = metadata;
+
+    return Object.keys(overrides).length ? overrides : null;
   }
 
   function collectComposition() {
@@ -206,12 +364,12 @@
     const composition = collectComposition();
     const defaults = {
       material: {
-        class: resolveMaterialClass(),
+        class: getValue("default-material-class") || null,
         grade: getValue("default-material-grade") || null,
         microstructure: getValue("default-material-microstructure") || null,
         phase: getValue("default-material-phase") || null,
-        processing: parseCsvList(getValue("default-material-processing")),
-        tags: parseCsvList(getValue("default-material-tags")),
+        processing: getValue("default-material-processing") ? [getValue("default-material-processing")] : [],
+        tags: getValue("default-material-tags") ? [getValue("default-material-tags")] : [],
         notes: getValue("default-material-notes") || null,
         chemical_composition: composition,
       },
@@ -272,6 +430,7 @@
             input: getRowValue("power_input") || "theta_C",
           },
         },
+        overrides: buildRowOverrides(row, getRowValue),
       };
 
       rows.push(rowData);
