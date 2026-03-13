@@ -7,7 +7,7 @@ permalink: /hydrogen-diffusion-database/docs/
 <style>
   .hdd-docs {
     text-align: left;
-    max-width: 900px;
+    max-width: 1100px;
     margin: 0 auto;
     padding: 0 1rem 2.5rem;
   }
@@ -97,7 +97,7 @@ permalink: /hydrogen-diffusion-database/docs/
   .hdd-docs-steps {
     display: grid;
     gap: 1rem;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     margin-top: 1rem;
   }
 
@@ -129,6 +129,17 @@ permalink: /hydrogen-diffusion-database/docs/
 
   .hdd-docs-linkline {
     margin-top: 1rem;
+  }
+
+  .hdd-docs-inline-link {
+    font-weight: 600;
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px dashed transparent;
+  }
+
+  .hdd-docs-inline-link:hover {
+    border-bottom-color: currentColor;
   }
 </style>
 
@@ -210,20 +221,42 @@ permalink: /hydrogen-diffusion-database/docs/
     </div>
 
     <p class="hdd-docs-linkline">
-      For first-time use, the quickest route is simply: filter → plot → export.
+      For first-time use, the quickest route is simply: filter -> plot -> export.
     </p>
+
+    <div class="hdd-docs-callout">
+      <strong>Filters, in plain language.</strong>
+      Start broad and narrow down. Typical flow: pick a material class, then a temperature window, then the exact
+      method or model type you want. The filters are there so you can recreate what a paper claims without digging
+      through every PDF again.
+    </div>
+
+    <ul class="hdd-docs-list">
+      <li><strong>Literature compilations:</strong> include or exclude curated collections so you can compare them against individual papers.</li>
+      <li><strong>Material class / grade:</strong> group by alloy family and then drill into specific grades.</li>
+      <li><strong>Temperature window + year:</strong> trim down time period and operating range before plotting.</li>
+      <li><strong>Model type / measurement method:</strong> separate permeation experiments from diffusion fits or carrier-gas extraction data.</li>
+      <li><strong>Chemical composition, reported as, studied effect, source:</strong> check how the data is framed and where it came from.</li>
+    </ul>
+
+    <div class="hdd-docs-callout">
+      <strong>Plot options you will actually use.</strong>
+      Toggle between Kelvin and °C, decide whether the plot shows fitted envelopes, and choose a numbered legend if
+      you want to align the figure with the original sources. Axis limits and monochrome mode are there for quick
+      exports into reports or slides.
+    </div>
   </section>
 
   <section class="hdd-docs-section" id="quality">
     <h2>Data quality and scope</h2>
     <p>
       The database is built to be useful, but also traceable. Each dataset is tied back to its literature source
-      so that the provenance stays visible and easy to verify.
+      so that the provenance stays visible and easy to verify. We attach DOIs or source links wherever possible
+      because transparency matters.
     </p>
 
     <ul class="hdd-docs-list">
-      <li>Only peer-reviewed, open-access sources are included.</li>
-      <li>Original source links or DOI references are kept wherever possible.</li>
+      <li>Only peer-reviewed, open-access sources are included, with citations attached directly to the data.</li>
       <li>Flagged outliers or unconfirmed values can be shown separately if you want to inspect them.</li>
       <li>The database does not extend Arrhenius fits beyond the valid range stated by the original source.</li>
     </ul>
@@ -232,36 +265,45 @@ permalink: /hydrogen-diffusion-database/docs/
       <strong>No extrapolation by the database.</strong>
       Curves are plotted only within the temperature range that is explicitly supported by the original source.
       If a publication does not state a valid range clearly enough, that dataset may be excluded or handled
-      conservatively.
+      conservatively. When a paper does not state a range but the context is obvious, we apply the most conservative assumption,
+      Examples: 
+      If a paper mentions a 150 °C experimental method but never states the validity range for the Arrhenius fit, it was excluded in the initial dataset.    
+      Permeation experiments were assumed to be at room temperature when otherwise unspecified because from the paper this was obvious and a editorial oversight. 
+      
+      Author-direct submissions are most welcome as this provides the most reliable validity range explicitly; if values look like outliers or units seem off, we flag them and get back to you for clarification.
     </div>
+
   </section>
 
-  <section class="hdd-docs-section" id="contributing">
+    <section class="hdd-docs-section" id="contributing">
     <h2>Contributing data</h2>
     <p>
       Contributions are welcome. The preferred route is the
       <a href="/hydrogen-diffusion-database/contribute/">contribution form</a>, because it keeps submissions
-      structured and makes later verification easier.
+      structured and formats them in a way that plugs straight into the site.
     </p>
     <p>
       To keep the database trustworthy and reusable, submissions should come from peer-reviewed open-access sources
       and include clear publication metadata, model parameters, and the valid temperature range whenever possible.
     </p>
+    <p>
+      If you want to send data by email, that is fine too — just know that the form is much prefered because it is much faster and easier for us to process because it auto-prepares the fields we need. For questions or corrections, email is preferred.
+    </p>
   </section>
 
-  <section class="hdd-docs-section" id="citation">
+    <section class="hdd-docs-section" id="citation">
     <h2>Citation and contact</h2>
     <p>
       If you use the database in your own work, please cite the database or website and also cite the original
-      publications behind the datasets you use.
+      publications behind the datasets you use. When companion papers are available, cite those as well.
     </p>
     <p>
       The public database archive is available on Zenodo under CC BY 4.0:
-      <code>https://doi.org/10.5281/zenodo.18980188</code>
+      <a class="hdd-docs-inline-link" href="https://doi.org/10.5281/zenodo.18980188">https://doi.org/10.5281/zenodo.18980188</a>
     </p>
     <p>
       If you spot an error, missing context, or a citation issue, please contact
-      <code>Denis@Czeskleba.com</code>.
+      <a class="hdd-docs-inline-link" href="mailto:Denis@Czeskleba.com">Denis@Czeskleba.com</a>.
     </p>
   </section>
 </div>
