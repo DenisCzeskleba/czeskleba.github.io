@@ -194,7 +194,7 @@
 
 <h1>Contribution Form</h1>
 
-<p>Help expand the hydrogen diffusivity database for structural steels and related materials. Submit peer-reviewed, open-access sources. We review every entry before adding it to the public dataset.</p>
+<p>Help expand the hydrogen diffusivity database for structural steels and related materials. Submit peer-reviewed, open-access sources. We review every entry before adding it to the public dataset. This form is still experimental; please send suggestions to Denis@Czeskleba.com and we will make sure your data is added with the text, info, and tags you need.</p>
 
 <h2>Submission Flow</h2>
 
@@ -217,13 +217,15 @@
 
 <style>
   main {
-    max-width: 1100px;
+    max-width: 1280px;
     text-align: left;
+    margin: 0 auto;
+    padding: 0 1rem;
   }
 
   .hdd-contrib-form {
     margin: 1.5rem auto 0;
-    max-width: 1000px;
+    max-width: 1280px;
     text-align: left;
     display: grid;
     gap: 18px;
@@ -241,6 +243,9 @@
     display: grid;
     gap: 12px;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+  .hdd-contrib-grid > * {
+    min-width: 0;
   }
   .hdd-contrib-form label {
     font-weight: 600;
@@ -380,21 +385,15 @@
     background: var(--bg);
     color: var(--text);
   }
-  .hdd-contrib-comp-table {
-    width: 100%;
-    border-collapse: collapse;
+  .hdd-comp-grid {
+    display: grid;
+    gap: 2px;
+    grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
   }
-  .hdd-contrib-comp-table th,
-  .hdd-contrib-comp-table td {
-    border: 1px solid var(--border);
-    padding: 8px 10px;
-    text-align: left;
+  .hdd-comp-item {
+    padding: 4px 2px;
   }
-  .hdd-contrib-comp-table th {
-    font-weight: 600;
-    background: color-mix(in srgb, var(--bg) 95%, var(--text));
-  }
-  .hdd-contrib-comp-table input {
+  .hdd-comp-item input {
     width: 100%;
     padding: 6px 8px;
     border-radius: 8px;
@@ -404,8 +403,25 @@
     background: var(--bg);
     color: var(--text);
   }
+  .hdd-comp-element {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 6px;
+    justify-content: center;
+  }
+  .hdd-comp-element input {
+    font-weight: 600;
+    text-align: center;
+    border: none;
+    background: transparent;
+    padding: 0;
+    height: auto;
+    box-shadow: none;
+  }
   .hdd-comp-actions {
-    margin-top: 8px;
+    margin-top: 12px;
+    margin-bottom: 6px;
   }
   .hdd-comp-actions button {
     padding: 8px 12px;
@@ -413,6 +429,23 @@
     border: 1px solid var(--border);
     background: transparent;
     cursor: pointer;
+  }
+  .hdd-comp-remove {
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.9rem;
+    line-height: 1;
+    padding: 0;
+  }
+  .hdd-comp-notes {
+    margin-top: 12px;
+  }
+  .hdd-conditions-notes {
+    margin-top: 12px;
   }
   .hdd-simple-table {
     width: 100%;
@@ -487,6 +520,20 @@
   .hdd-contrib-form details > summary {
     font-weight: 600;
     font-size: 1rem;
+  }
+  .hdd-section-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 16px 0;
+  }
+  .hdd-contrib-inline-selects {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    margin-top: 6px;
+  }
+  .hdd-contrib-inline-selects input {
+    width: 100%;
   }
   .hdd-contrib-form input,
   .hdd-contrib-form select {
@@ -624,14 +671,74 @@
       </div>
     </div>
     <div class="hdd-contrib-grid">
-      <div class="hdd-grid-span hdd-keywords-block">
-        <label for="contrib-keywords">Keywords</label>
-        <input
-          id="contrib-keywords"
-          name="keywords"
-          placeholder="hydrogen diffusion, welding, permeation, steel"
-          autocomplete="off"
-        />
+      <div class="hdd-grid-span">
+        <label>Research focus<span class="hdd-required" aria-hidden="true">*</span></label>
+        <p class="hdd-contrib-note">
+          Select the diffusion mechanisms or material features investigated in the publication that may influence hydrogen diffusion (e.g., microstructure, alloying elements, trapping, surface effects).
+          Papers may address multiple effects, and precise classification is not required. These tags are used for literature discovery and statistical grouping.
+        </p>
+        <div class="hdd-contrib-inline-selects">
+          <select name="studied_effects[]" data-studied-effect>
+            <option value="">Select focus</option>
+            <option value="Alloying Elements">Alloying Elements</option>
+            <option value="Coatings">Coatings</option>
+            <option value="Cold Work and Applied Stresses">Cold Work and Applied Stresses</option>
+            <option value="Grain Boundaries and Particle-Matrix Interfaces">Grain Boundaries and Particle-Matrix Interfaces</option>
+            <option value="HAZ-Specific effects">HAZ-Specific effects</option>
+            <option value="Inner Effects (Trapping)">Inner Effects (Trapping)</option>
+            <option value="Lattice Imperfections">Lattice Imperfections</option>
+            <option value="Liquidus">Liquidus</option>
+            <option value="Microstructure Influence">Microstructure Influence</option>
+            <option value="Microvoids and nonmetallic inclusions">Microvoids and nonmetallic inclusions</option>
+            <option value="Oxide and other Passivators">Oxide and other Passivators</option>
+            <option value="Porosity">Porosity</option>
+            <option value="Surface Effects">Surface Effects</option>
+            <option value="Surface Mass Transfer">Surface Mass Transfer</option>
+            <option value="Surface State and Reactions">Surface State and Reactions</option>
+            <option value="Weld-Metal-Specific Effects">Weld-Metal-Specific Effects</option>
+            <option value="Propose new (explain in notes)">Propose new (explain in notes)</option>
+          </select>
+          <select name="studied_effects[]" data-studied-effect>
+            <option value="">Select focus</option>
+            <option value="Alloying Elements">Alloying Elements</option>
+            <option value="Coatings">Coatings</option>
+            <option value="Cold Work and Applied Stresses">Cold Work and Applied Stresses</option>
+            <option value="Grain Boundaries and Particle-Matrix Interfaces">Grain Boundaries and Particle-Matrix Interfaces</option>
+            <option value="HAZ-Specific effects">HAZ-Specific effects</option>
+            <option value="Inner Effects (Trapping)">Inner Effects (Trapping)</option>
+            <option value="Lattice Imperfections">Lattice Imperfections</option>
+            <option value="Liquidus">Liquidus</option>
+            <option value="Microstructure Influence">Microstructure Influence</option>
+            <option value="Microvoids and nonmetallic inclusions">Microvoids and nonmetallic inclusions</option>
+            <option value="Oxide and other Passivators">Oxide and other Passivators</option>
+            <option value="Porosity">Porosity</option>
+            <option value="Surface Effects">Surface Effects</option>
+            <option value="Surface Mass Transfer">Surface Mass Transfer</option>
+            <option value="Surface State and Reactions">Surface State and Reactions</option>
+            <option value="Weld-Metal-Specific Effects">Weld-Metal-Specific Effects</option>
+            <option value="Propose new (explain in notes)">Propose new (explain in notes)</option>
+          </select>
+          <select name="studied_effects[]" data-studied-effect>
+            <option value="">Select focus</option>
+            <option value="Alloying Elements">Alloying Elements</option>
+            <option value="Coatings">Coatings</option>
+            <option value="Cold Work and Applied Stresses">Cold Work and Applied Stresses</option>
+            <option value="Grain Boundaries and Particle-Matrix Interfaces">Grain Boundaries and Particle-Matrix Interfaces</option>
+            <option value="HAZ-Specific effects">HAZ-Specific effects</option>
+            <option value="Inner Effects (Trapping)">Inner Effects (Trapping)</option>
+            <option value="Lattice Imperfections">Lattice Imperfections</option>
+            <option value="Liquidus">Liquidus</option>
+            <option value="Microstructure Influence">Microstructure Influence</option>
+            <option value="Microvoids and nonmetallic inclusions">Microvoids and nonmetallic inclusions</option>
+            <option value="Oxide and other Passivators">Oxide and other Passivators</option>
+            <option value="Porosity">Porosity</option>
+            <option value="Surface Effects">Surface Effects</option>
+            <option value="Surface Mass Transfer">Surface Mass Transfer</option>
+            <option value="Surface State and Reactions">Surface State and Reactions</option>
+            <option value="Weld-Metal-Specific Effects">Weld-Metal-Specific Effects</option>
+            <option value="Propose new (explain in notes)">Propose new (explain in notes)</option>
+          </select>
+        </div>
       </div>
       <div class="hdd-grid-span">
         <details>
@@ -639,7 +746,7 @@
           <textarea
             id="contrib-abstract"
             name="abstract"
-            placeholder="Optional: Abstract text."
+            placeholder="Abstract text."
             autocomplete="off"
           ></textarea>
         </details>
@@ -650,7 +757,7 @@
           <textarea
             id="contrib-notes"
             name="paper_notes"
-            placeholder="Optional: Additional information you would like us to know."
+            placeholder="Additional context that helps place the paper and its results."
             autocomplete="off"
           ></textarea>
         </details>
@@ -659,11 +766,27 @@
   </fieldset>
 
   <fieldset>
-    <legend>Defaults (apply to all rows unless overridden)</legend>
+    <legend>Study Parameters</legend>
+    <p class="hdd-contrib-note">
+      Use these defaults to describe the general parameters of the diffusion measurements. If you varied one of these
+      in your study, keep the default here and specify the variation per data row below.
+    </p>
+    <p class="hdd-contrib-note">Examples:</p>
+    <ul class="hdd-contrib-note">
+      <li>
+        You measured diffusion as part of other experiments on as-received X80 pipeline steel. You might choose base
+        material (no welding), leave phase blank, and add a Microalloys tag. If you varied V across multiple samples
+        (e.g., 0.01-0.05 wt.%), set it to 0.01 wt.% here and change wt.% per series below.
+      </li>
+      <li>
+        If the material is HSLA S690 and you varied the processing route (quenched vs. thermomechanically rolled),
+        pick one route here and set the other on the specific data row.
+      </li>
+    </ul>
     <div class="hdd-contrib-grid">
       <div>
-        <label for="default-material-class">Material class</label>
-        <select id="default-material-class" name="default_material_class" title="Pick the closest material class. If not listed, choose Other and specify in Material notes.">
+        <label for="default-material-class">Material class<span class="hdd-required" aria-hidden="true">*</span></label>
+        <select id="default-material-class" name="default_material_class" required title="Pick the closest material class. If not listed, choose Other and specify in Material notes.">
           <option value="">Select a class</option>
           <option value="Carbon Steel">Carbon Steel</option>
           <option value="Creep Resistant Steel">Creep Resistant Steel</option>
@@ -681,8 +804,8 @@
         </select>
       </div>
       <div>
-        <label for="default-material-grade">Material grade</label>
-        <select id="default-material-grade" name="default_material_grade" title="Pick the closest grade. If not listed, choose Other and specify in Material notes.">
+        <label for="default-material-grade">Material grade<span class="hdd-required" aria-hidden="true">*</span></label>
+        <select id="default-material-grade" name="default_material_grade" required title="Pick the closest grade. If not listed, choose Other and specify in Material notes.">
           <option value="">Select a grade</option>
           <option value="10G2 steel">10G2 steel</option>
           <option value="15G2ANb">15G2ANb</option>
@@ -759,8 +882,8 @@
         </select>
       </div>
       <div>
-        <label for="default-material-microstructure">Microstructure</label>
-        <select id="default-material-microstructure" name="default_material_microstructure" title="Use Base Material for non-welding cases. If not listed, choose Other and specify in Material notes.">
+        <label for="default-material-microstructure">Microstructure<span class="hdd-required" aria-hidden="true">*</span></label>
+        <select id="default-material-microstructure" name="default_material_microstructure" required title="Use Base Material for non-welding cases. If not listed, choose Other and specify in Material notes.">
           <option value="">Select microstructure</option>
           <option value="Base Material">Base Material</option>
           <option value="CGHAZ">CGHAZ</option>
@@ -828,91 +951,113 @@
         </select>
       </div>
     </div>
-    <div>
-      <label for="default-material-notes">Material notes (optional)</label>
-      <textarea id="default-material-notes" name="default_material_notes" placeholder="Specimen geometry, preparation, or other notes. Leave empty if not needed." title="Optional material notes. Leave empty if not needed."></textarea>
+    <p class="hdd-contrib-note">
+      Composition (wt%). Use values like 0.02 or &lt;0.1 if reported. Leave empty if not needed; remainder is assumed Fe.
+    </p>
+    <div class="hdd-comp-grid" id="hdd-comp-grid">
+      <div class="hdd-comp-item" data-comp-item>
+        <div class="hdd-comp-element"><input type="text" data-comp-element value="C" readonly /></div>
+        <input type="text" data-comp-value title="Carbon in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
+      </div>
+      <div class="hdd-comp-item" data-comp-item>
+        <div class="hdd-comp-element"><input type="text" data-comp-element value="Mn" readonly /></div>
+        <input type="text" data-comp-value title="Manganese in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
+      </div>
+      <div class="hdd-comp-item" data-comp-item>
+        <div class="hdd-comp-element"><input type="text" data-comp-element value="Si" readonly /></div>
+        <input type="text" data-comp-value title="Silicon in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
+      </div>
+      <div class="hdd-comp-item" data-comp-item>
+        <div class="hdd-comp-element"><input type="text" data-comp-element value="Cr" readonly /></div>
+        <input type="text" data-comp-value title="Chromium in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
+      </div>
+      <div class="hdd-comp-item" data-comp-item>
+        <div class="hdd-comp-element"><input type="text" data-comp-element value="Ni" readonly /></div>
+        <input type="text" data-comp-value title="Nickel in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
+      </div>
+      <div class="hdd-comp-item" data-comp-item>
+        <div class="hdd-comp-element"><input type="text" data-comp-element value="Mo" readonly /></div>
+        <input type="text" data-comp-value title="Molybdenum in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
+      </div>
+      <div class="hdd-comp-item" data-comp-item>
+        <div class="hdd-comp-element"><input type="text" data-comp-element value="V" readonly /></div>
+        <input type="text" data-comp-value title="Vanadium in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
+      </div>
+      <div class="hdd-comp-item" data-comp-item>
+        <div class="hdd-comp-element"><input type="text" data-comp-element value="Nb" readonly /></div>
+        <input type="text" data-comp-value title="Niobium in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
+      </div>
+      <div class="hdd-comp-item" data-comp-item>
+        <div class="hdd-comp-element"><input type="text" data-comp-element value="Ti" readonly /></div>
+        <input type="text" data-comp-value title="Titanium in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
+      </div>
+      <div class="hdd-comp-item" data-comp-item>
+        <div class="hdd-comp-element"><input type="text" data-comp-element value="Al" readonly /></div>
+        <input type="text" data-comp-value title="Aluminum in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
+      </div>
+      <div class="hdd-comp-item" data-comp-item>
+        <div class="hdd-comp-element"><input type="text" data-comp-element value="Cu" readonly /></div>
+        <input type="text" data-comp-value title="Copper in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
+      </div>
+      <div class="hdd-comp-item" data-comp-item>
+        <div class="hdd-comp-element"><input type="text" data-comp-element value="P" readonly /></div>
+        <input type="text" data-comp-value title="Phosphorus in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
+      </div>
+      <div class="hdd-comp-item" data-comp-item>
+        <div class="hdd-comp-element"><input type="text" data-comp-element value="S" readonly /></div>
+        <input type="text" data-comp-value title="Sulfur in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
+      </div>
+      <div class="hdd-comp-item" data-comp-item>
+        <div class="hdd-comp-element"><input type="text" data-comp-element value="N" readonly /></div>
+        <input type="text" data-comp-value title="Nitrogen in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
+      </div>
     </div>
-    <p class="hdd-contrib-note">Composition (wt%).</p>
-    <table class="hdd-contrib-comp-table" id="hdd-comp-table">
-      <thead>
-        <tr>
-          <th>Element</th>
-          <th>wt%</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr data-comp-row data-element="C"><td>C</td><td><input type="number" step="0.01" data-comp-value title="Carbon in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
-        <tr data-comp-row data-element="Mn"><td>Mn</td><td><input type="number" step="0.01" data-comp-value title="Manganese in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
-        <tr data-comp-row data-element="Si"><td>Si</td><td><input type="number" step="0.01" data-comp-value title="Silicon in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
-        <tr data-comp-row data-element="Cr"><td>Cr</td><td><input type="number" step="0.01" data-comp-value title="Chromium in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
-        <tr data-comp-row data-element="Ni"><td>Ni</td><td><input type="number" step="0.01" data-comp-value title="Nickel in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
-        <tr data-comp-row data-element="Mo"><td>Mo</td><td><input type="number" step="0.01" data-comp-value title="Molybdenum in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
-        <tr data-comp-row data-element="V"><td>V</td><td><input type="number" step="0.01" data-comp-value title="Vanadium in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
-        <tr data-comp-row data-element="Nb"><td>Nb</td><td><input type="number" step="0.01" data-comp-value title="Niobium in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
-        <tr data-comp-row data-element="Ti"><td>Ti</td><td><input type="number" step="0.01" data-comp-value title="Titanium in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
-        <tr data-comp-row data-element="Al"><td>Al</td><td><input type="number" step="0.01" data-comp-value title="Aluminum in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
-        <tr data-comp-row data-element="Cu"><td>Cu</td><td><input type="number" step="0.01" data-comp-value title="Copper in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
-        <tr data-comp-row data-element="P"><td>P</td><td><input type="number" step="0.01" data-comp-value title="Phosphorus in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
-        <tr data-comp-row data-element="S"><td>S</td><td><input type="number" step="0.01" data-comp-value title="Sulfur in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
-        <tr data-comp-row data-element="N"><td>N</td><td><input type="number" step="0.01" data-comp-value title="Nitrogen in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
-      </tbody>
-    </table>
     <div class="hdd-comp-actions">
       <button type="button" id="hdd-comp-add">Add element</button>
     </div>
-    <div>
-      <label for="default-material-composition-notes">Composition notes (optional)</label>
-      <textarea id="default-material-composition-notes" name="default_material_composition_notes" placeholder="Any extra composition context. Leave empty if not needed." title="Optional composition notes. Leave empty if not needed."></textarea>
+    <div class="hdd-comp-notes">
+      <details>
+        <summary>Material notes</summary>
+        <textarea id="default-material-notes" name="default_material_notes" placeholder="Any extra material context. Leave empty if not needed." title="Any extra material context. Leave empty if not needed."></textarea>
+      </details>
     </div>
-  </fieldset>
-
-  <fieldset>
-    <legend>Conditions</legend>
+    <hr class="hdd-section-divider" />
     <div class="hdd-contrib-grid">
       <div>
         <label for="default-method">Measurement method</label>
-        <input id="default-method" name="default_measurement_method" placeholder="Electrochemical permeation, CGHE, etc." title="Measurement method. Leave empty if not needed." />
+        <select id="default-method" name="default_measurement_method" title="Measurement method. Leave empty if not needed.">
+          <option value="">Select method</option>
+          <option value="Deflection method">Deflection method</option>
+          <option value="Electrical resistance">Electrical resistance</option>
+          <option value="Electrochemical permeation">Electrochemical permeation</option>
+          <option value="Gas permeation">Gas permeation</option>
+          <option value="Hot extraction (CGHE / GC)">Hot extraction (CGHE / GC)</option>
+          <option value="Isothermal effusion / degassing">Isothermal effusion / degassing</option>
+          <option value="Literature compilation">Literature compilation</option>
+          <option value="SIMS">SIMS</option>
+          <option value="Thermal desorption (TDA / TDS)">Thermal desorption (TDA / TDS)</option>
+          <option value="other_explain">Other (explain in notes)</option>
+        </select>
       </div>
       <div>
         <label for="default-charging">Charging method</label>
-        <input id="default-charging" name="default_charging_method" placeholder="electrochemical, gas, not_reported" title="Charging method. Leave empty if not needed." />
-      </div>
-    </div>
-    <div>
-      <label for="default-conditions-notes">Conditions notes (optional)</label>
-      <textarea id="default-conditions-notes" name="default_conditions_notes" placeholder="Electrolyte, current density, or other test details. Leave empty if not needed." title="Optional conditions notes. Leave empty if not needed."></textarea>
-    </div>
-  </fieldset>
-
-  <fieldset>
-    <legend>Metadata</legend>
-    <div class="hdd-contrib-grid">
-      <div>
-        <label for="default-studied-effects">Studied effects</label>
-        <select
-          id="default-studied-effects"
-          name="default_studied_effects"
-          title="If you had to say which effects on the diffusion coefficients did you study?"
-        >
-          <option value="">Select an effect</option>
-          <option value="Alloying Elements">Alloying Elements</option>
-          <option value="Coatings">Coatings</option>
-          <option value="Cold Work and Applied Stresses">Cold Work and Applied Stresses</option>
-          <option value="Grain Boundaries and Particle-Matrix Interfaces">Grain Boundaries and Particle-Matrix Interfaces</option>
-          <option value="HAZ-Specific effects">HAZ-Specific effects</option>
-          <option value="Inner Effects (Trapping)">Inner Effects (Trapping)</option>
-          <option value="Lattice Imperfections">Lattice Imperfections</option>
-          <option value="Liquidus">Liquidus</option>
-          <option value="Microstructure Influence">Microstructure Influence</option>
-          <option value="Microvoids and nonmetallic inclusions">Microvoids and nonmetallic inclusions</option>
-          <option value="Oxide and other Passivators">Oxide and other Passivators</option>
-          <option value="Porosity">Porosity</option>
-          <option value="Surface Effects">Surface Effects</option>
-          <option value="Surface Mass Transfer">Surface Mass Transfer</option>
-          <option value="Surface State and Reactions">Surface State and Reactions</option>
-          <option value="Weld-Metal-Specific Effects">Weld-Metal-Specific Effects</option>
+        <select id="default-charging" name="default_charging_method" title="Charging method. Leave empty if not needed.">
+          <option value="">Select method</option>
+          <option value="cathodic">Cathodic</option>
+          <option value="electrochemical">Electrochemical</option>
+          <option value="electrochemical (Devanathan-Stachursky cell)">Electrochemical (Devanathan-Stachursky cell)</option>
+          <option value="galvanostatic">Galvanostatic</option>
+          <option value="gas_phase">Gas phase</option>
+          <option value="high_pressure_hydrogen">High-pressure hydrogen</option>
+          <option value="immersion_in_distilled_water">Immersion in distilled water</option>
+          <option value="low_pressure_hydrogen">Low-pressure hydrogen</option>
+          <option value="other_explain">Other (explain in notes)</option>
         </select>
       </div>
+    </div>
+    <div class="hdd-conditions-notes">
+      <label for="default-conditions-notes">Measurement notes</label>
+      <textarea id="default-conditions-notes" name="default_conditions_notes" placeholder="Electrolyte, current density, or other test details. Leave empty if not needed." title="Optional conditions notes. Leave empty if not needed."></textarea>
     </div>
   </fieldset>
 
