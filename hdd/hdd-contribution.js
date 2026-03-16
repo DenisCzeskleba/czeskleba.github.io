@@ -302,9 +302,9 @@
     const row = document.createElement("tr");
     row.setAttribute("data-author-row", "");
     row.innerHTML = `
-      <td><input type="text" data-author-first required title="Author first name." /></td>
-      <td><input type="text" data-author-last required title="Author last name." /></td>
-      <td><input type="text" data-author-orcid title="ORCID (optional)." /></td>
+      <td><input type="text" name="author_first[]" data-author-first required autocomplete="given-name" /></td>
+      <td><input type="text" name="author_last[]" data-author-last required autocomplete="family-name" /></td>
+      <td><input type="text" name="author_orcid[]" data-author-orcid autocomplete="off" pattern="^\\d{4}-\\d{4}-\\d{4}-\\d{3}[\\dX]$" /></td>
       <td><button type="button" class="hdd-author-remove" aria-label="Remove author">Remove</button></td>
     `;
     const removeButton = row.querySelector(".hdd-author-remove");

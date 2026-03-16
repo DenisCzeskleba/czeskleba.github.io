@@ -200,7 +200,7 @@
 
 <p><strong>Fill out the form below with:</strong></p>
 <ol>
-  <li>Publication metadata: title, authors, journal, year, DOI, open-access URL, abstract, publication type, volume/issue/pages, language, and keywords.</li>
+  <li>Publication metadata: title, authors, journal, year, DOI, open-access URL, abstract, volume/issue/pages, language, and keywords.</li>
   <li>Model definitions: single-point, Arrhenius, or power-law parameters (with valid temperature ranges).</li>
   <li>Contact info: name + email for follow-up.</li>
 </ol>
@@ -246,6 +246,10 @@
     font-weight: 600;
     display: block;
     margin-bottom: 6px;
+  }
+  .hdd-contrib-form .hdd-required {
+    color: #b91c1c;
+    margin-left: 4px;
   }
   .hdd-contrib-form input,
   .hdd-contrib-form textarea,
@@ -480,10 +484,14 @@
     padding-top: 4px;
     padding-bottom: 4px;
   }
-  .hdd-authors-help {
-    font-size: 0.85rem;
-    color: color-mix(in srgb, var(--text) 70%, var(--bg));
-    margin-top: 6px;
+  .hdd-contrib-form details > summary {
+    font-weight: 600;
+    font-size: 1rem;
+  }
+  .hdd-contrib-form input,
+  .hdd-contrib-form select {
+    height: 32px;
+    padding: 6px 10px;
   }
 </style>
 
@@ -496,25 +504,32 @@
     <legend>Publication</legend>
     <div class="hdd-contrib-grid">
       <div class="hdd-grid-span">
-        <label for="contrib-title">Title</label>
-        <textarea id="contrib-title" name="paper_title" required rows="1" title="Paper title." class="hdd-title-input"></textarea>
+        <label for="contrib-title">Title<span class="hdd-required" aria-hidden="true">*</span></label>
+        <textarea
+          id="contrib-title"
+          name="paper_title"
+          required
+          rows="1"
+          class="hdd-title-input"
+          autocomplete="off"
+        ></textarea>
       </div>
       <div class="hdd-grid-span">
         <label>Authors</label>
         <table class="hdd-simple-table hdd-authors-table" id="hdd-authors-table">
           <thead>
             <tr>
-              <th>First name</th>
-              <th>Last name</th>
-              <th>ORCID (optional)</th>
+              <th>First name<span class="hdd-required" aria-hidden="true">*</span></th>
+              <th>Last name<span class="hdd-required" aria-hidden="true">*</span></th>
+              <th>ORCID</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             <tr data-author-row>
-              <td><input type="text" data-author-first required title="Author first name." /></td>
-              <td><input type="text" data-author-last required title="Author last name." /></td>
-              <td><input type="text" data-author-orcid title="ORCID (optional)." /></td>
+              <td><input type="text" name="author_first[]" data-author-first required autocomplete="given-name" /></td>
+              <td><input type="text" name="author_last[]" data-author-last required autocomplete="family-name" /></td>
+              <td><input type="text" name="author_orcid[]" data-author-orcid autocomplete="off" pattern="^\\d{4}-\\d{4}-\\d{4}-\\d{3}[\\dX]$" /></td>
               <td></td>
             </tr>
           </tbody>
@@ -524,36 +539,45 @@
         </div>
       </div>
       <div>
-        <label for="contrib-journal">Journal / Venue</label>
-        <input id="contrib-journal" name="journal" required title="Journal or venue name." />
+        <label for="contrib-journal">Journal / Venue<span class="hdd-required" aria-hidden="true">*</span></label>
+        <input id="contrib-journal" name="journal" required autocomplete="organization" />
       </div>
       <div>
-        <label for="contrib-volume">Volume (optional)</label>
-        <input id="contrib-volume" name="volume" title="Journal volume (optional)." />
+        <label for="contrib-volume">Volume</label>
+        <input id="contrib-volume" name="volume" autocomplete="off" />
       </div>
       <div>
-        <label for="contrib-issue">Issue (optional)</label>
-        <input id="contrib-issue" name="issue" title="Journal issue (optional)." />
+        <label for="contrib-issue">Issue</label>
+        <input id="contrib-issue" name="issue" autocomplete="off" />
       </div>
       <div>
-        <label for="contrib-pages">Pages (optional)</label>
-        <input id="contrib-pages" name="pages" title="Page range (optional)." />
+        <label for="contrib-pages">Pages</label>
+        <input id="contrib-pages" name="pages" autocomplete="off" />
       </div>
       <div>
-        <label for="contrib-year">Year</label>
-        <input id="contrib-year" name="year" required title="Publication year." />
+        <label for="contrib-year">Year<span class="hdd-required" aria-hidden="true">*</span></label>
+        <input
+          id="contrib-year"
+          name="year"
+          type="number"
+          inputmode="numeric"
+          min="1800"
+          max="2100"
+          required
+          autocomplete="off"
+        />
       </div>
       <div>
-        <label for="contrib-doi">DOI</label>
-        <input id="contrib-doi" name="doi" required title="DOI string." />
+        <label for="contrib-doi">DOI<span class="hdd-required" aria-hidden="true">*</span></label>
+        <input id="contrib-doi" name="doi" required autocomplete="off" />
       </div>
       <div>
-        <label for="contrib-oa">Open-access URL</label>
-        <input id="contrib-oa" name="oa_url" type="url" required title="Open-access link to the paper." />
+        <label for="contrib-oa">Open-access URL<span class="hdd-required" aria-hidden="true">*</span></label>
+        <input id="contrib-oa" name="oa_url" type="url" required autocomplete="url" />
       </div>
       <div>
-        <label for="contrib-language">Language</label>
-        <select id="contrib-language" name="language" required title="Publication language.">
+        <label for="contrib-language">Language<span class="hdd-required" aria-hidden="true">*</span></label>
+        <select id="contrib-language" name="language" required autocomplete="off">
           <option value="">Select language</option>
           <option value="Arabic">Arabic</option>
           <option value="Bengali">Bengali</option>
@@ -602,18 +626,33 @@
     <div class="hdd-contrib-grid">
       <div class="hdd-grid-span hdd-keywords-block">
         <label for="contrib-keywords">Keywords</label>
-        <input id="contrib-keywords" name="keywords" placeholder="hydrogen diffusion, welding, permeation, steel" title="Comma-separated keywords." />
+        <input
+          id="contrib-keywords"
+          name="keywords"
+          placeholder="hydrogen diffusion, welding, permeation, steel"
+          autocomplete="off"
+        />
       </div>
       <div class="hdd-grid-span">
         <details>
           <summary>Abstract</summary>
-          <textarea id="contrib-abstract" name="abstract" placeholder="Optional: Abstract text." title="Optional abstract text."></textarea>
+          <textarea
+            id="contrib-abstract"
+            name="abstract"
+            placeholder="Optional: Abstract text."
+            autocomplete="off"
+          ></textarea>
         </details>
       </div>
       <div class="hdd-grid-span">
         <details>
           <summary>Additional notes</summary>
-          <textarea id="contrib-notes" name="paper_notes" placeholder="Optional: Additional information you would like us to know." title="Optional notes about the paper."></textarea>
+          <textarea
+            id="contrib-notes"
+            name="paper_notes"
+            placeholder="Optional: Additional information you would like us to know."
+            autocomplete="off"
+          ></textarea>
         </details>
       </div>
     </div>
@@ -901,12 +940,12 @@
     <legend>Contact</legend>
     <div class="hdd-contrib-grid">
       <div>
-        <label for="contrib-name">Name</label>
-        <input id="contrib-name" name="name" required title="Required for submission. Leave empty if not needed and explain in notes." />
+        <label for="contrib-name">Name<span class="hdd-required" aria-hidden="true">*</span></label>
+        <input id="contrib-name" name="name" required autocomplete="name" />
       </div>
       <div>
-        <label for="contrib-email">Email</label>
-        <input id="contrib-email" name="email" type="email" required title="Required for submission. Leave empty if not needed and explain in notes." />
+        <label for="contrib-email">Email<span class="hdd-required" aria-hidden="true">*</span></label>
+        <input id="contrib-email" name="email" type="email" required autocomplete="email" />
       </div>
     </div>
   </fieldset>
