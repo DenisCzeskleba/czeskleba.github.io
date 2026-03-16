@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -6,73 +6,168 @@
     <title>Hydrogen Diffusion Database - Contribute</title>
     <link rel="stylesheet" href="./hdd-explorer.css" />
     <style>
-      .hdd-simple-table {
+      :root {
+        --bg: #f6f7f9;
+        --text: #1f2937;
+        --button-bg: #1f2937;
+        --button-text: #fff;
+        --border: #d7dbe2;
+      }
+
+      body.dark {
+        --bg: #15181d;
+        --text: #e5e7eb;
+        --button-bg: #e5e7eb;
+        --button-text: #111827;
+        --border: #2b313a;
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: var(--bg);
+        color: var(--text);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        transition: background-color 0.3s, color 0.3s;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 2rem;
+        background-color: var(--bg);
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
         width: 100%;
-        border-collapse: collapse;
-      }
-      .hdd-simple-table th,
-      .hdd-simple-table td {
-        border: 1px solid var(--border);
-        padding: 8px 10px;
-        text-align: left;
-      }
-      .hdd-simple-table th {
-        font-weight: 600;
-        background: color-mix(in srgb, var(--bg) 95%, var(--text));
-      }
-      .hdd-simple-table input {
-        width: 100%;
-        padding: 6px 8px;
-        border-radius: 8px;
-        border: 1px solid var(--border);
-        font: inherit;
+        z-index: 10;
         box-sizing: border-box;
-        background: var(--bg);
+      }
+
+      header a.logo {
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
         color: var(--text);
       }
-      .hdd-simple-actions {
-        margin-top: 8px;
+
+      header img {
+        height: 30px;
+        width: 30px;
       }
-      .hdd-simple-actions button {
-        padding: 8px 12px;
-        border-radius: 8px;
-        border: 1px solid var(--border);
-        background: transparent;
-        cursor: pointer;
+
+      .header-links {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.95rem;
       }
-      .hdd-contrib-comp-table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-      .hdd-contrib-comp-table th,
-      .hdd-contrib-comp-table td {
-        border: 1px solid var(--border);
-        padding: 8px 10px;
-        text-align: left;
-      }
-      .hdd-contrib-comp-table th {
-        font-weight: 600;
-        background: color-mix(in srgb, var(--bg) 95%, var(--text));
-      }
-      .hdd-contrib-comp-table input {
-        width: 100%;
-        padding: 6px 8px;
-        border-radius: 8px;
-        border: 1px solid var(--border);
-        font: inherit;
-        box-sizing: border-box;
-        background: var(--bg);
+
+      .header-links a {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
         color: var(--text);
+        text-decoration: none;
+        padding: 0.35rem 0.6rem;
+        border-radius: 6px;
+        border: 1px solid transparent;
       }
-      .hdd-comp-actions {
-        margin-top: 8px;
+
+      .header-links a:hover {
+        border-color: var(--border);
+        background-color: color-mix(in srgb, var(--bg) 85%, var(--text));
       }
-      .hdd-comp-actions button {
-        padding: 8px 12px;
-        border-radius: 8px;
-        border: 1px solid var(--border);
-        background: transparent;
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .theme-toggle {
         cursor: pointer;
+        height: 30px;
+        padding: 0 0.8rem;
+        font-size: 0.8rem;
+        background-color: var(--button-bg);
+        color: var(--button-text);
+        border: none;
+        border-radius: 5px;
+        display: inline-flex;
+        align-items: center;
+      }
+
+      .header-sep {
+        color: var(--muted);
+        font-size: 1rem;
+        margin: 0 0.2rem;
+        display: inline-flex;
+        align-items: center;
+        line-height: 1;
+      }
+
+      main {
+        padding: 2rem 1rem;
+        max-width: 820px;
+        width: 100%;
+        margin: 2rem auto 1.5rem;
+        text-align: center;
+      }
+
+      footer {
+        margin-top: 0.125rem;
+        padding-bottom: 0.5rem;
+        font-size: 0.9rem;
+        color: #888;
+      }
+
+      footer a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      footer a:hover {
+        text-decoration: underline;
+      }
+
+      footer a:visited {
+        color: inherit;
+      }
+
+      main a {
+        color: inherit;
+        text-decoration: underline;
+      }
+
+      main a:visited {
+        color: inherit;
+      }
+
+      @media (max-width: 600px) {
+        header {
+          flex-direction: row;
+          flex-wrap: wrap;
+          padding: 1rem;
+          gap: 0.5rem;
+        }
+
+        .header-links {
+          order: 3;
+          width: 100%;
+          justify-content: center;
+          flex-wrap: wrap;
+        }
+
+        .header-actions {
+          margin-left: auto;
+        }
       }
     </style>
   </head>
@@ -86,429 +181,691 @@
           <img src="/assets/HDD.B%20Logo.png" alt="HDD.B" />
           <span>HDD.B</span>
         </a>
-        <span class="header-sep">?</span>
+        <span class="header-sep">&#183;</span>
         <a href="/hydrogen-diffusion-database/docs/">How it works</a>
-        <span class="header-sep">?</span>
+        <span class="header-sep">&#183;</span>
         <a href="/hydrogen-diffusion-database/contribute/">Contribute Data</a>
       </nav>
       <div class="header-actions">
-        <button class="theme-toggle" type="button">?? Mode</button>
+        <button class="theme-toggle" type="button" onclick="toggleTheme()">&#127763; Mode</button>
       </div>
     </header>
     <main>
-      <h1>Contribution Form</h1>
+<h1>Contribution Form</h1>
 
-      <p>Help expand the hydrogen diffusivity database for structural steels and related materials. Submit peer-reviewed, open-access sources; we review every entry before adding it to the public dataset.</p>
+<p>Help expand the hydrogen diffusivity database for structural steels and related materials. Submit peer-reviewed, open-access sources. We review every entry before adding it to the public dataset.</p>
 
-      <h2>Submission Checklist</h2>
+<h2>Submission Flow</h2>
 
-      <ol>
-        <li>Publication metadata: title, authors, journal, year, DOI, and open-access URL.</li>
-        <li>Model definitions: single-point, Arrhenius, or power-law parameters (with valid temperature ranges).</li>
-        <li>Contact info: name + email for follow-up.</li>
-      </ol>
+<p><strong>Fill out the form below with:</strong></p>
+<ol>
+  <li>Publication metadata: title, authors, journal, year, DOI, open-access URL, abstract, publication type, volume/issue/pages, language, and keywords.</li>
+  <li>Model definitions: single-point, Arrhenius, or power-law parameters (with valid temperature ranges).</li>
+  <li>Contact info: name + email for follow-up.</li>
+</ol>
 
-      <h2>Submission Flow</h2>
+<ul>
+  <li><strong>Validation:</strong> the form checks ranges and required parameters before sending.</li>
+  <li><strong>Queue:</strong> submissions are emailed for manual verification; no automatic publishing.</li>
+  <li><strong>Additions:</strong> verified submissions are added to the public database.</li>
+</ul>
 
-      <ul>
-        <li><strong>Validation:</strong> the form checks ranges and required parameters before sending.</li>
-        <li><strong>Queue:</strong> submissions are emailed for manual verification; no automatic publishing.</li>
-        <li><strong>Additions:</strong> verified submissions are added to the public database.</li>
-      </ul>
+<h2>Submit a Contribution</h2>
 
-      <h2>Submit a Contribution</h2>
+<p>Please fill in the form below. Optional fields can be left empty if not needed. Hover each field for a quick tip.</p>
 
-      <p>Please fill in the form below. Optional fields can be left empty if not needed. Hover each field for a quick tip.</p>
+<style>
+  main {
+    max-width: 1100px;
+    text-align: left;
+  }
 
-      <form class="hdd-contrib-form" id="hydrogen-contribution-form" action="https://formspree.io/f/xjgawgej" method="POST" novalidate>
-        <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off" />
-        <input type="hidden" name="_subject" value="Hydrogen Diffusivity Contribution" />
-        <textarea name="submission_json" id="hdd-submission-json" style="display:none"></textarea>
+  .hdd-contrib-form {
+    margin: 1.5rem auto 0;
+    max-width: 1000px;
+    text-align: left;
+    display: grid;
+    gap: 18px;
+  }
+  .hdd-contrib-form fieldset {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+  }
+  .hdd-contrib-form legend {
+    font-weight: 600;
+    padding: 0 6px;
+  }
+  .hdd-contrib-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+  .hdd-contrib-form label {
+    font-weight: 600;
+    display: block;
+    margin-bottom: 6px;
+  }
+  .hdd-contrib-form input,
+  .hdd-contrib-form textarea,
+  .hdd-contrib-form select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    font: inherit;
+    box-sizing: border-box;
+    background: var(--bg);
+    color: var(--text);
+  }
+  .hdd-contrib-form textarea {
+    min-height: 140px;
+    resize: vertical;
+  }
+  .hdd-contrib-form .hdd-contrib-note {
+    font-size: 0.9rem;
+    color: color-mix(in srgb, var(--text) 60%, var(--bg));
+  }
+  .hdd-contrib-rows {
+    display: grid;
+    gap: 16px;
+  }
+  .hdd-contrib-row {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    background: color-mix(in srgb, var(--bg) 95%, var(--text));
+  }
+  .hdd-contrib-row-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .hdd-contrib-row-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+  .hdd-contrib-override {
+    margin-top: 12px;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: color-mix(in srgb, var(--bg) 97%, var(--text));
+  }
+  .hdd-contrib-override summary {
+    cursor: pointer;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .hdd-contrib-row button {
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+  }
+  .hdd-contrib-row button.primary {
+    background: #1f2937;
+    color: #fff;
+    border-color: transparent;
+  }
+  .hdd-contrib-row-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-top: 10px;
+  }
+  .hdd-contrib-row-actions button {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+  }
+  .hdd-contrib-row-actions button.primary {
+    background: #1f2937;
+    color: #fff;
+    border-color: transparent;
+  }
+  .hdd-contrib-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .hdd-contrib-actions button {
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: none;
+    background: #1f2937;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .hdd-contrib-status {
+    font-size: 0.95rem;
+  }
+  .hdd-contrib-local {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
+  .hdd-contrib-local button {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+  }
+  .hdd-contrib-preview {
+    width: 100%;
+    min-height: 180px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    font: inherit;
+    box-sizing: border-box;
+    background: var(--bg);
+    color: var(--text);
+  }
+  .hdd-contrib-comp-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .hdd-contrib-comp-table th,
+  .hdd-contrib-comp-table td {
+    border: 1px solid var(--border);
+    padding: 8px 10px;
+    text-align: left;
+  }
+  .hdd-contrib-comp-table th {
+    font-weight: 600;
+    background: color-mix(in srgb, var(--bg) 95%, var(--text));
+  }
+  .hdd-contrib-comp-table input {
+    width: 100%;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    font: inherit;
+    box-sizing: border-box;
+    background: var(--bg);
+    color: var(--text);
+  }
+  .hdd-comp-actions {
+    margin-top: 8px;
+  }
+  .hdd-comp-actions button {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+  }
+  .hdd-simple-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .hdd-simple-table th,
+  .hdd-simple-table td {
+    border: none;
+    padding: 6px 8px;
+    text-align: left;
+  }
+  .hdd-simple-table th {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: color-mix(in srgb, var(--text) 70%, var(--bg));
+  }
+  .hdd-simple-table input {
+    width: 100%;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    font: inherit;
+    box-sizing: border-box;
+    background: var(--bg);
+    color: var(--text);
+  }
+  .hdd-simple-actions {
+    margin-top: 8px;
+  }
+  .hdd-simple-actions button {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+  }
+  .hdd-grid-span {
+    grid-column: 1 / -1;
+  }
+  .hdd-authors-table {
+    margin-top: 6px;
+  }
+  .hdd-authors-table tbody tr td {
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+  .hdd-authors-help {
+    font-size: 0.85rem;
+    color: color-mix(in srgb, var(--text) 70%, var(--bg));
+    margin-top: 6px;
+  }
+</style>
 
-        <fieldset>
-          <legend>Publication</legend>
-          <div class="hdd-contrib-grid">
-            <div>
-              <label for="contrib-title">Title</label>
-              <input id="contrib-title" name="paper_title" required title="Paper title. Leave empty if not needed and explain in notes." />
-            </div>
-            <div>
-              <label>Authors</label>
-              <table class="hdd-simple-table" id="hdd-authors-table">
-                <thead>
-                  <tr>
-                    <th>First name</th>
-                    <th>Last name</th>
-                    <th>ORCID (optional)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr data-author-row>
-                    <td><input type="text" data-author-first required title="Author first name." /></td>
-                    <td><input type="text" data-author-last required title="Author last name." /></td>
-                    <td><input type="text" data-author-orcid title="ORCID (optional)." /></td>
-                  </tr>
-                </tbody>
-              </table>
-              <div class="hdd-simple-actions">
-                <button type="button" id="hdd-author-add">Add author</button>
-              </div>
-            </div>
-            <div>
-              <label for="contrib-journal">Journal / Venue</label>
-              <input id="contrib-journal" name="journal" required title="Journal or venue name. Leave empty if not needed and explain in notes." />
-            </div>
-            <div>
-              <label for="contrib-year">Year</label>
-              <input id="contrib-year" name="year" placeholder="YYYY" required title="Publication year. Leave empty if not needed and explain in notes." />
-            </div>
-            <div>
-              <label for="contrib-doi">DOI</label>
-              <input id="contrib-doi" name="doi" title="DOI string if available. Leave empty if not needed." />
-            </div>
-            <div>
-              <label for="contrib-oa">Open-access URL</label>
-              <input id="contrib-oa" name="oa_url" type="url" required title="Open-access link to the paper. Leave empty if not needed and explain in notes." />
-            </div>
-            <div>
-              <label for="contrib-pubtype">Publication type</label>
-              <input id="contrib-pubtype" name="publication_type" placeholder="Journal article, conference paper, thesis" title="Publication type. Leave empty if not needed." />
-            </div>
-            <div>
-              <label for="contrib-volume">Volume</label>
-              <input id="contrib-volume" name="volume" title="Journal volume. Leave empty if not needed." />
-            </div>
-            <div>
-              <label for="contrib-issue">Issue</label>
-              <input id="contrib-issue" name="issue" title="Journal issue. Leave empty if not needed." />
-            </div>
-            <div>
-              <label for="contrib-pages">Pages</label>
-              <input id="contrib-pages" name="pages" placeholder="123-135" title="Page range. Leave empty if not needed." />
-            </div>
-            <div>
-              <label for="contrib-language">Language</label>
-              <input id="contrib-language" name="language" placeholder="English" title="Publication language. Leave empty if not needed." />
-            </div>
-          </div>
-          <details>
-            <summary>Abstract (optional)</summary>
-            <textarea id="contrib-abstract" name="abstract" placeholder="Abstract text. Leave empty if not needed." title="Optional abstract text. Leave empty if not needed."></textarea>
-          </details>
-          <div>
-            <label for="contrib-keywords">Keywords (comma-separated)</label>
-            <input id="contrib-keywords" name="keywords" placeholder="hydrogen diffusion, welding, permeation, steel" title="Comma-separated keywords." />
-          </div>
-          <details>
-            <summary>Additional notes (optional)</summary>
-            <textarea id="contrib-notes" name="paper_notes" placeholder="Context, special handling, or clarifications. Leave empty if not needed." title="Optional notes about the paper. Leave empty if not needed."></textarea>
-          </details>
-        </fieldset>
+<form class="hdd-contrib-form" id="hydrogen-contribution-form" action="https://formspree.io/f/xjgawgej" method="POST" novalidate>
+  <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off" />
+  <input type="hidden" name="_subject" value="Hydrogen Diffusivity Contribution" />
+  <textarea name="submission_json" id="hdd-submission-json" style="display:none"></textarea>
 
-        <fieldset>
-          <legend>Defaults (apply to all rows unless overridden)</legend>
-          <div class="hdd-contrib-grid">
-            <div>
-              <label for="default-material-class">Material class</label>
-              <select id="default-material-class" name="default_material_class" title="Pick the closest material class. If not listed, choose Other and specify in Material notes.">
-                <option value="">Select a class</option>
-                <option value="Carbon Steel">Carbon Steel</option>
-                <option value="Creep Resistant Steel">Creep Resistant Steel</option>
-                <option value="HSLA">HSLA</option>
-                <option value="Iron-Nickel Alloy">Iron-Nickel Alloy</option>
-                <option value="Low Alloy Steel">Low Alloy Steel</option>
-                <option value="Martensitic or AHSS">Martensitic or AHSS</option>
-                <option value="Nickel-Based Alloy">Nickel-Based Alloy</option>
-                <option value="Pearlitic Steel">Pearlitic Steel</option>
-                <option value="Pipeline Steel">Pipeline Steel</option>
-                <option value="Pure Iron">Pure Iron</option>
-                <option value="Stainless Steel">Stainless Steel</option>
-                <option value="Structural Steel">Structural Steel</option>
-                <option value="Other">Other (specify in notes)</option>
-              </select>
-            </div>
-            <div>
-              <label for="default-material-grade">Material grade</label>
-              <select id="default-material-grade" name="default_material_grade" title="Pick the closest grade. If not listed, choose Other and specify in Material notes.">
-                <option value="">Select a grade</option>
-                <option value="10G2 steel">10G2 steel</option>
-                <option value="15G2ANb">15G2ANb</option>
-                <option value="17-4 PH">17-4 PH</option>
-                <option value="17HMBVA">17HMBVA</option>
-                <option value="1Cr21Ni5Ti">1Cr21Ni5Ti</option>
-                <option value="2.25Cr-1Mo steel">2.25Cr-1Mo steel</option>
-                <option value="25Kh2NMFA steel">25Kh2NMFA steel</option>
-                <option value="304 stainless steel">304 stainless steel</option>
-                <option value="32MnB5">32MnB5</option>
-                <option value="3Cr-1Mo steel">3Cr-1Mo steel</option>
-                <option value="40Kh steel">40Kh steel</option>
-                <option value="42CrMo4">42CrMo4</option>
-                <option value="9Cr-1Mo steel">9Cr-1Mo steel</option>
-                <option value="A508 Class 3">A508 Class 3</option>
-                <option value="AISI 1090">AISI 1090</option>
-                <option value="AISI 4120">AISI 4120</option>
-                <option value="AISI 4130">AISI 4130</option>
-                <option value="AISI 4140">AISI 4140</option>
-                <option value="AISI 4340">AISI 4340</option>
-                <option value="Alloy 625">Alloy 625</option>
-                <option value="API 2W Grade 60">API 2W Grade 60</option>
-                <option value="API X100">API X100</option>
-                <option value="API X120">API X120</option>
-                <option value="API X42">API X42</option>
-                <option value="API X52">API X52</option>
-                <option value="API X65">API X65</option>
-                <option value="API X70">API X70</option>
-                <option value="API X80">API X80</option>
-                <option value="ASTM A106 Grade B">ASTM A106 Grade B</option>
-                <option value="ASTM A516 Grade 60">ASTM A516 Grade 60</option>
-                <option value="En 8">En 8</option>
-                <option value="EN42">EN42</option>
-                <option value="HSLA-100">HSLA-100</option>
-                <option value="HSLA-80">HSLA-80</option>
-                <option value="JIS SCM435">JIS SCM435</option>
-                <option value="P91">P91</option>
-                <option value="P92">P92</option>
-                <option value="Pure iron">Pure iron</option>
-                <option value="Q235">Q235</option>
-                <option value="REX 539">REX 539</option>
-                <option value="S15C">S15C</option>
-                <option value="S355">S355</option>
-                <option value="S420">S420</option>
-                <option value="S45C">S45C</option>
-                <option value="S690">S690</option>
-                <option value="S890">S890</option>
-                <option value="SAE 1010">SAE 1010</option>
-                <option value="SAE 1020">SAE 1020</option>
-                <option value="SAE 1035">SAE 1035</option>
-                <option value="SAE 1050">SAE 1050</option>
-                <option value="SAE 1065">SAE 1065</option>
-                <option value="SAE 1095">SAE 1095</option>
-                <option value="SCM3">SCM3</option>
-                <option value="SCM4">SCM4</option>
-                <option value="SCr2">SCr2</option>
-                <option value="SCr3">SCr3</option>
-                <option value="SCr4">SCr4</option>
-                <option value="SK3">SK3</option>
-                <option value="SK5">SK5</option>
-                <option value="SK7">SK7</option>
-                <option value="SNC2">SNC2</option>
-                <option value="SNC3">SNC3</option>
-                <option value="SNCM2">SNCM2</option>
-                <option value="SNCM5">SNCM5</option>
-                <option value="SNCM6">SNCM6</option>
-                <option value="SNCM7">SNCM7</option>
-                <option value="SNCM8">SNCM8</option>
-                <option value="St 1303">St 1303</option>
-                <option value="St41">St41</option>
-                <option value="T10">T10</option>
-                <option value="T24">T24</option>
-                <option value="Other">Other (specify in notes)</option>
-              </select>
-            </div>
-            <div>
-              <label for="default-material-microstructure">Microstructure</label>
-              <select id="default-material-microstructure" name="default_material_microstructure" title="Use Base Material for non-welding cases. If not listed, choose Other and specify in Material notes.">
-                <option value="">Select microstructure</option>
-                <option value="Base Material">Base Material</option>
-                <option value="CGHAZ">CGHAZ</option>
-                <option value="FGHAZ">FGHAZ</option>
-                <option value="HAZ">HAZ</option>
-                <option value="ICHAZ">ICHAZ</option>
-                <option value="Weld Metal">Weld Metal</option>
-                <option value="Other">Other (specify in notes)</option>
-              </select>
-            </div>
-            <div>
-              <label for="default-material-phase">Phase</label>
-              <select id="default-material-phase" name="default_material_phase" title="Phase if reported. If not listed, choose Other and specify in Material notes.">
-                <option value="">Select phase</option>
-                <option value="Austenitic">Austenitic</option>
-                <option value="Bainitic/Pearlitic">Bainitic/Pearlitic</option>
-                <option value="Ferritic">Ferritic</option>
-                <option value="Martensitic">Martensitic</option>
-                <option value="Multiphase">Multiphase</option>
-                <option value="Other">Other (specify in notes)</option>
-              </select>
-            </div>
-            <div>
-              <label for="default-material-processing">Processing</label>
-              <select id="default-material-processing" name="default_material_processing" title="Primary processing step. If not listed, choose Other and specify in Material notes.">
-                <option value="">Select processing</option>
-                <option value="Aged">Aged</option>
-                <option value="Annealed">Annealed</option>
-                <option value="As received">As received</option>
-                <option value="As welded">As welded</option>
-                <option value="Cold worked">Cold worked</option>
-                <option value="Normalized">Normalized</option>
-                <option value="PWHT">PWHT</option>
-                <option value="Q&T">Q&amp;T</option>
-                <option value="Quenched">Quenched</option>
-                <option value="Stress relief">Stress relief</option>
-                <option value="Subzero Treated">Subzero Treated</option>
-                <option value="Surface treated">Surface treated</option>
-                <option value="TMCP">TMCP</option>
-                <option value="Other">Other (specify in notes)</option>
-              </select>
-            </div>
-            <div>
-              <label for="default-material-tags">Tag</label>
-              <select id="default-material-tags" name="default_material_tags" title="Pick the closest tag. If not listed, choose Other and specify in Material notes.">
-                <option value="">Select a tag</option>
-                <option value="AHSS">AHSS</option>
-                <option value="Austenitic">Austenitic</option>
-                <option value="Creep resistant">Creep resistant</option>
-                <option value="Cr-Mo">Cr-Mo</option>
-                <option value="Dual phase">Dual phase</option>
-                <option value="Ferritic-martensitic">Ferritic-martensitic</option>
-                <option value="High strength">High strength</option>
-                <option value="Low carbon">Low carbon</option>
-                <option value="Martensitic">Martensitic</option>
-                <option value="Microalloyed">Microalloyed</option>
-                <option value="Nickel alloyed">Nickel alloyed</option>
-                <option value="Pearlitic">Pearlitic</option>
-                <option value="Pipeline">Pipeline</option>
-                <option value="speculative">speculative</option>
-                <option value="Structural Steel">Structural Steel</option>
-                <option value="Tempered martensite">Tempered martensite</option>
-                <option value="Welded">Welded</option>
-                <option value="Other">Other (specify in notes)</option>
-              </select>
-            </div>
-          </div>
-          <div>
-            <label for="default-material-notes">Material notes (optional)</label>
-            <textarea id="default-material-notes" name="default_material_notes" placeholder="Specimen geometry, preparation, or other notes. Leave empty if not needed." title="Optional material notes. Leave empty if not needed."></textarea>
-          </div>
-          <p class="hdd-contrib-note">Composition (wt%).</p>
-          <table class="hdd-contrib-comp-table" id="hdd-comp-table">
-            <thead>
-              <tr>
-                <th>Element</th>
-                <th>wt%</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr data-comp-row data-element="C"><td>C</td><td><input type="number" step="0.01" data-comp-value title="Carbon in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
-              <tr data-comp-row data-element="Mn"><td>Mn</td><td><input type="number" step="0.01" data-comp-value title="Manganese in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
-              <tr data-comp-row data-element="Si"><td>Si</td><td><input type="number" step="0.01" data-comp-value title="Silicon in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
-              <tr data-comp-row data-element="Cr"><td>Cr</td><td><input type="number" step="0.01" data-comp-value title="Chromium in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
-              <tr data-comp-row data-element="Ni"><td>Ni</td><td><input type="number" step="0.01" data-comp-value title="Nickel in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
-              <tr data-comp-row data-element="Mo"><td>Mo</td><td><input type="number" step="0.01" data-comp-value title="Molybdenum in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
-              <tr data-comp-row data-element="V"><td>V</td><td><input type="number" step="0.01" data-comp-value title="Vanadium in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
-              <tr data-comp-row data-element="Nb"><td>Nb</td><td><input type="number" step="0.01" data-comp-value title="Niobium in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
-              <tr data-comp-row data-element="Ti"><td>Ti</td><td><input type="number" step="0.01" data-comp-value title="Titanium in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
-              <tr data-comp-row data-element="Al"><td>Al</td><td><input type="number" step="0.01" data-comp-value title="Aluminum in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
-              <tr data-comp-row data-element="Cu"><td>Cu</td><td><input type="number" step="0.01" data-comp-value title="Copper in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
-              <tr data-comp-row data-element="P"><td>P</td><td><input type="number" step="0.01" data-comp-value title="Phosphorus in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
-              <tr data-comp-row data-element="S"><td>S</td><td><input type="number" step="0.01" data-comp-value title="Sulfur in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
-              <tr data-comp-row data-element="N"><td>N</td><td><input type="number" step="0.01" data-comp-value title="Nitrogen in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
-            </tbody>
-          </table>
-          <div class="hdd-comp-actions">
-            <button type="button" id="hdd-comp-add">Add element</button>
-          </div>
-          <div>
-            <label for="default-material-composition-notes">Composition notes (optional)</label>
-            <textarea id="default-material-composition-notes" name="default_material_composition_notes" placeholder="Any extra composition context. Leave empty if not needed." title="Optional composition notes. Leave empty if not needed."></textarea>
-          </div>
-        </fieldset>
-
-        <fieldset>
-          <legend>Conditions</legend>
-          <div class="hdd-contrib-grid">
-            <div>
-              <label for="default-method">Measurement method</label>
-              <input id="default-method" name="default_measurement_method" placeholder="Electrochemical permeation, CGHE, etc." title="Measurement method. Leave empty if not needed." />
-            </div>
-            <div>
-              <label for="default-charging">Charging method</label>
-              <input id="default-charging" name="default_charging_method" placeholder="electrochemical, gas, not_reported" title="Charging method. Leave empty if not needed." />
-            </div>
-          </div>
-          <div>
-            <label for="default-conditions-notes">Conditions notes (optional)</label>
-            <textarea id="default-conditions-notes" name="default_conditions_notes" placeholder="Electrolyte, current density, or other test details. Leave empty if not needed." title="Optional conditions notes. Leave empty if not needed."></textarea>
-          </div>
-        </fieldset>
-
-        <fieldset>
-          <legend>Metadata</legend>
-          <div class="hdd-contrib-grid">
-            <div>
-              <label for="default-studied-effects">Studied effects</label>
-              <select
-                id="default-studied-effects"
-                name="default_studied_effects"
-                title="If you had to say which effects on the diffusion coefficients did you study?"
-              >
-                <option value="">Select an effect</option>
-                <option value="Alloying Elements">Alloying Elements</option>
-                <option value="Coatings">Coatings</option>
-                <option value="Cold Work and Applied Stresses">Cold Work and Applied Stresses</option>
-                <option value="Grain Boundaries and Particle-Matrix Interfaces">Grain Boundaries and Particle-Matrix Interfaces</option>
-                <option value="HAZ-Specific effects">HAZ-Specific effects</option>
-                <option value="Inner Effects (Trapping)">Inner Effects (Trapping)</option>
-                <option value="Lattice Imperfections">Lattice Imperfections</option>
-                <option value="Liquidus">Liquidus</option>
-                <option value="Microstructure Influence">Microstructure Influence</option>
-                <option value="Microvoids and nonmetallic inclusions">Microvoids and nonmetallic inclusions</option>
-                <option value="Oxide and other Passivators">Oxide and other Passivators</option>
-                <option value="Porosity">Porosity</option>
-                <option value="Surface Effects">Surface Effects</option>
-                <option value="Surface Mass Transfer">Surface Mass Transfer</option>
-                <option value="Surface State and Reactions">Surface State and Reactions</option>
-                <option value="Weld-Metal-Specific Effects">Weld-Metal-Specific Effects</option>
-              </select>
-            </div>
-          </div>
-        </fieldset>
-
-        <fieldset>
-          <legend>Data rows (one row per model or single point)</legend>
-          <p class="hdd-contrib-note">
-            Required columns: group + series name, model type, Tmin, Tmax. Think of <strong>group</strong> as the comparison set
-            (what is being varied), and <strong>series</strong> as the specific variant inside that set. Example: Group =
-            "Vanadium content", Series = "V=0.1", "V=0.2", "V=0.3". The fields below update based on the model type you select.
-            If a specific row needs different material or composition, open "Override defaults for this row."
-          </p>
-          <div id="hdd-contrib-rows" class="hdd-contrib-rows"></div>
-          <div class="hdd-contrib-row-actions">
-            <button type="button" id="hdd-add-row" class="primary">Add row</button>
-          </div>
-        </fieldset>
-
-        <fieldset>
-          <legend>Confirmations</legend>
-          <label><input type="checkbox" name="confirm_peer_reviewed" required title="Required. Leave empty if not needed." /> This source is peer-reviewed and open-access.</label>
-          <label><input type="checkbox" name="confirm_rights" required title="Required. Leave empty if not needed." /> I have the right to share these parameters and links for review.</label>
-        </fieldset>
-        <fieldset>
-          <legend>Contact</legend>
-          <div class="hdd-contrib-grid">
-            <div>
-              <label for="contrib-name">Name</label>
-              <input id="contrib-name" name="name" required title="Required for submission. Leave empty if not needed and explain in notes." />
-            </div>
-            <div>
-              <label for="contrib-email">Email</label>
-              <input id="contrib-email" name="email" type="email" required title="Required for submission. Leave empty if not needed and explain in notes." />
-            </div>
-          </div>
-        </fieldset>
-
-        <div class="hdd-contrib-actions">
-          <button type="submit">Submit for Review</button>
-          <span class="hdd-contrib-status" id="hdd-contrib-status"></span>
+  <fieldset>
+    <legend>Publication</legend>
+    <div class="hdd-contrib-grid">
+      <div>
+        <label for="contrib-title">Title</label>
+        <input id="contrib-title" name="paper_title" required title="Paper title. Leave empty if not needed and explain in notes." />
+      </div>
+      <div class="hdd-grid-span">
+        <label>Authors</label>
+        <table class="hdd-simple-table hdd-authors-table" id="hdd-authors-table">
+          <thead>
+            <tr>
+              <th>First name</th>
+              <th>Last name</th>
+              <th>ORCID (optional)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-author-row>
+              <td><input type="text" data-author-first required title="Author first name." /></td>
+              <td><input type="text" data-author-last required title="Author last name." /></td>
+              <td><input type="text" data-author-orcid title="ORCID (optional)." /></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="hdd-simple-actions">
+          <button type="button" id="hdd-author-add">Add author</button>
         </div>
-        <div class="hdd-contrib-local">
-          <label><input type="checkbox" id="hdd-local-mode" title="Generate JSON locally without sending a submission. Leave empty if not needed." /> Local test mode (do not submit)</label>
-          <button type="button" id="hdd-show-json">Preview JSON</button>
-          <button type="button" id="hdd-copy-json">Copy JSON</button>
-          <button type="button" id="hdd-download-json">Download JSON</button>
-        </div>
-        <textarea id="hdd-json-preview" class="hdd-contrib-preview" readonly placeholder="JSON preview will appear here." title="Local JSON preview. Leave empty if not needed."></textarea>
-      </form>
+        <div class="hdd-authors-help">Add one row per author. ORCID is optional.</div>
+      </div>
+      <div>
+        <label for="contrib-journal">Journal / Venue</label>
+        <input id="contrib-journal" name="journal" required title="Journal or venue name. Leave empty if not needed and explain in notes." />
+      </div>
+      <div>
+        <label for="contrib-year">Year</label>
+        <input id="contrib-year" name="year" placeholder="YYYY" required title="Publication year. Leave empty if not needed and explain in notes." />
+      </div>
+      <div>
+        <label for="contrib-doi">DOI</label>
+        <input id="contrib-doi" name="doi" title="DOI string if available. Leave empty if not needed." />
+      </div>
+      <div>
+        <label for="contrib-oa">Open-access URL</label>
+        <input id="contrib-oa" name="oa_url" type="url" required title="Open-access link to the paper. Leave empty if not needed and explain in notes." />
+      </div>
+      <div>
+        <label for="contrib-pubtype">Publication type</label>
+        <input id="contrib-pubtype" name="publication_type" placeholder="Journal article, conference paper, thesis" title="Publication type. Leave empty if not needed." />
+      </div>
+      <div>
+        <label for="contrib-volume">Volume</label>
+        <input id="contrib-volume" name="volume" title="Journal volume. Leave empty if not needed." />
+      </div>
+      <div>
+        <label for="contrib-issue">Issue</label>
+        <input id="contrib-issue" name="issue" title="Journal issue. Leave empty if not needed." />
+      </div>
+      <div>
+        <label for="contrib-pages">Pages</label>
+        <input id="contrib-pages" name="pages" placeholder="123-135" title="Page range. Leave empty if not needed." />
+      </div>
+      <div>
+        <label for="contrib-language">Language</label>
+        <input id="contrib-language" name="language" placeholder="English" title="Publication language. Leave empty if not needed." />
+      </div>
+    </div>
+    <div>
+      <label for="contrib-keywords">Keywords</label>
+      <input id="contrib-keywords" name="keywords" placeholder="hydrogen diffusion, welding, permeation, steel" title="Comma-separated keywords." />
+    </div>
+    <details>
+      <summary>Abstract (optional)</summary>
+      <textarea id="contrib-abstract" name="abstract" placeholder="Abstract text. Leave empty if not needed." title="Optional abstract text. Leave empty if not needed."></textarea>
+    </details>
+    <details>
+      <summary>Additional notes (optional)</summary>
+      <textarea id="contrib-notes" name="paper_notes" placeholder="Context, special handling, or clarifications. Leave empty if not needed." title="Optional notes about the paper. Leave empty if not needed."></textarea>
+    </details>
+  </fieldset>
+
+  <fieldset>
+    <legend>Defaults (apply to all rows unless overridden)</legend>
+    <div class="hdd-contrib-grid">
+      <div>
+        <label for="default-material-class">Material class</label>
+        <select id="default-material-class" name="default_material_class" title="Pick the closest material class. If not listed, choose Other and specify in Material notes.">
+          <option value="">Select a class</option>
+          <option value="Carbon Steel">Carbon Steel</option>
+          <option value="Creep Resistant Steel">Creep Resistant Steel</option>
+          <option value="HSLA">HSLA</option>
+          <option value="Iron-Nickel Alloy">Iron-Nickel Alloy</option>
+          <option value="Low Alloy Steel">Low Alloy Steel</option>
+          <option value="Martensitic or AHSS">Martensitic or AHSS</option>
+          <option value="Nickel-Based Alloy">Nickel-Based Alloy</option>
+          <option value="Pearlitic Steel">Pearlitic Steel</option>
+          <option value="Pipeline Steel">Pipeline Steel</option>
+          <option value="Pure Iron">Pure Iron</option>
+          <option value="Stainless Steel">Stainless Steel</option>
+          <option value="Structural Steel">Structural Steel</option>
+          <option value="Other">Other (specify in notes)</option>
+        </select>
+      </div>
+      <div>
+        <label for="default-material-grade">Material grade</label>
+        <select id="default-material-grade" name="default_material_grade" title="Pick the closest grade. If not listed, choose Other and specify in Material notes.">
+          <option value="">Select a grade</option>
+          <option value="10G2 steel">10G2 steel</option>
+          <option value="15G2ANb">15G2ANb</option>
+          <option value="17-4 PH">17-4 PH</option>
+          <option value="17HMBVA">17HMBVA</option>
+          <option value="1Cr21Ni5Ti">1Cr21Ni5Ti</option>
+          <option value="2.25Cr-1Mo steel">2.25Cr-1Mo steel</option>
+          <option value="25Kh2NMFA steel">25Kh2NMFA steel</option>
+          <option value="304 stainless steel">304 stainless steel</option>
+          <option value="32MnB5">32MnB5</option>
+          <option value="3Cr-1Mo steel">3Cr-1Mo steel</option>
+          <option value="40Kh steel">40Kh steel</option>
+          <option value="42CrMo4">42CrMo4</option>
+          <option value="9Cr-1Mo steel">9Cr-1Mo steel</option>
+          <option value="A508 Class 3">A508 Class 3</option>
+          <option value="AISI 1090">AISI 1090</option>
+          <option value="AISI 4120">AISI 4120</option>
+          <option value="AISI 4130">AISI 4130</option>
+          <option value="AISI 4140">AISI 4140</option>
+          <option value="AISI 4340">AISI 4340</option>
+          <option value="Alloy 625">Alloy 625</option>
+          <option value="API 2W Grade 60">API 2W Grade 60</option>
+          <option value="API X100">API X100</option>
+          <option value="API X120">API X120</option>
+          <option value="API X42">API X42</option>
+          <option value="API X52">API X52</option>
+          <option value="API X65">API X65</option>
+          <option value="API X70">API X70</option>
+          <option value="API X80">API X80</option>
+          <option value="ASTM A106 Grade B">ASTM A106 Grade B</option>
+          <option value="ASTM A516 Grade 60">ASTM A516 Grade 60</option>
+          <option value="En 8">En 8</option>
+          <option value="EN42">EN42</option>
+          <option value="HSLA-100">HSLA-100</option>
+          <option value="HSLA-80">HSLA-80</option>
+          <option value="JIS SCM435">JIS SCM435</option>
+          <option value="P91">P91</option>
+          <option value="P92">P92</option>
+          <option value="Pure iron">Pure iron</option>
+          <option value="Q235">Q235</option>
+          <option value="REX 539">REX 539</option>
+          <option value="S15C">S15C</option>
+          <option value="S355">S355</option>
+          <option value="S420">S420</option>
+          <option value="S45C">S45C</option>
+          <option value="S690">S690</option>
+          <option value="S890">S890</option>
+          <option value="SAE 1010">SAE 1010</option>
+          <option value="SAE 1020">SAE 1020</option>
+          <option value="SAE 1035">SAE 1035</option>
+          <option value="SAE 1050">SAE 1050</option>
+          <option value="SAE 1065">SAE 1065</option>
+          <option value="SAE 1095">SAE 1095</option>
+          <option value="SCM3">SCM3</option>
+          <option value="SCM4">SCM4</option>
+          <option value="SCr2">SCr2</option>
+          <option value="SCr3">SCr3</option>
+          <option value="SCr4">SCr4</option>
+          <option value="SK3">SK3</option>
+          <option value="SK5">SK5</option>
+          <option value="SK7">SK7</option>
+          <option value="SNC2">SNC2</option>
+          <option value="SNC3">SNC3</option>
+          <option value="SNCM2">SNCM2</option>
+          <option value="SNCM5">SNCM5</option>
+          <option value="SNCM6">SNCM6</option>
+          <option value="SNCM7">SNCM7</option>
+          <option value="SNCM8">SNCM8</option>
+          <option value="St 1303">St 1303</option>
+          <option value="St41">St41</option>
+          <option value="T10">T10</option>
+          <option value="T24">T24</option>
+          <option value="Other">Other (specify in notes)</option>
+        </select>
+      </div>
+      <div>
+        <label for="default-material-microstructure">Microstructure</label>
+        <select id="default-material-microstructure" name="default_material_microstructure" title="Use Base Material for non-welding cases. If not listed, choose Other and specify in Material notes.">
+          <option value="">Select microstructure</option>
+          <option value="Base Material">Base Material</option>
+          <option value="CGHAZ">CGHAZ</option>
+          <option value="FGHAZ">FGHAZ</option>
+          <option value="HAZ">HAZ</option>
+          <option value="ICHAZ">ICHAZ</option>
+          <option value="Weld Metal">Weld Metal</option>
+          <option value="Other">Other (specify in notes)</option>
+        </select>
+      </div>
+      <div>
+        <label for="default-material-phase">Phase</label>
+        <select id="default-material-phase" name="default_material_phase" title="Phase if reported. If not listed, choose Other and specify in Material notes.">
+          <option value="">Select phase</option>
+          <option value="Austenitic">Austenitic</option>
+          <option value="Bainitic/Pearlitic">Bainitic/Pearlitic</option>
+          <option value="Ferritic">Ferritic</option>
+          <option value="Martensitic">Martensitic</option>
+          <option value="Multiphase">Multiphase</option>
+          <option value="Other">Other (specify in notes)</option>
+        </select>
+      </div>
+      <div>
+        <label for="default-material-processing">Processing</label>
+        <select id="default-material-processing" name="default_material_processing" title="Primary processing step. If not listed, choose Other and specify in Material notes.">
+          <option value="">Select processing</option>
+          <option value="Aged">Aged</option>
+          <option value="Annealed">Annealed</option>
+          <option value="As received">As received</option>
+          <option value="As welded">As welded</option>
+          <option value="Cold worked">Cold worked</option>
+          <option value="Normalized">Normalized</option>
+          <option value="PWHT">PWHT</option>
+          <option value="Q&T">Q&amp;T</option>
+          <option value="Quenched">Quenched</option>
+          <option value="Stress relief">Stress relief</option>
+          <option value="Subzero Treated">Subzero Treated</option>
+          <option value="Surface treated">Surface treated</option>
+          <option value="TMCP">TMCP</option>
+          <option value="Other">Other (specify in notes)</option>
+        </select>
+      </div>
+      <div>
+        <label for="default-material-tags">Tag</label>
+        <select id="default-material-tags" name="default_material_tags" title="Pick the closest tag. If not listed, choose Other and specify in Material notes.">
+          <option value="">Select a tag</option>
+          <option value="AHSS">AHSS</option>
+          <option value="Austenitic">Austenitic</option>
+          <option value="Creep resistant">Creep resistant</option>
+          <option value="Cr-Mo">Cr-Mo</option>
+          <option value="Dual phase">Dual phase</option>
+          <option value="Ferritic-martensitic">Ferritic-martensitic</option>
+          <option value="High strength">High strength</option>
+          <option value="Low carbon">Low carbon</option>
+          <option value="Martensitic">Martensitic</option>
+          <option value="Microalloyed">Microalloyed</option>
+          <option value="Nickel alloyed">Nickel alloyed</option>
+          <option value="Pearlitic">Pearlitic</option>
+          <option value="Pipeline">Pipeline</option>
+          <option value="speculative">speculative</option>
+          <option value="Structural Steel">Structural Steel</option>
+          <option value="Tempered martensite">Tempered martensite</option>
+          <option value="Welded">Welded</option>
+          <option value="Other">Other (specify in notes)</option>
+        </select>
+      </div>
+    </div>
+    <div>
+      <label for="default-material-notes">Material notes (optional)</label>
+      <textarea id="default-material-notes" name="default_material_notes" placeholder="Specimen geometry, preparation, or other notes. Leave empty if not needed." title="Optional material notes. Leave empty if not needed."></textarea>
+    </div>
+    <p class="hdd-contrib-note">Composition (wt%).</p>
+    <table class="hdd-contrib-comp-table" id="hdd-comp-table">
+      <thead>
+        <tr>
+          <th>Element</th>
+          <th>wt%</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr data-comp-row data-element="C"><td>C</td><td><input type="number" step="0.01" data-comp-value title="Carbon in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
+        <tr data-comp-row data-element="Mn"><td>Mn</td><td><input type="number" step="0.01" data-comp-value title="Manganese in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
+        <tr data-comp-row data-element="Si"><td>Si</td><td><input type="number" step="0.01" data-comp-value title="Silicon in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
+        <tr data-comp-row data-element="Cr"><td>Cr</td><td><input type="number" step="0.01" data-comp-value title="Chromium in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
+        <tr data-comp-row data-element="Ni"><td>Ni</td><td><input type="number" step="0.01" data-comp-value title="Nickel in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
+        <tr data-comp-row data-element="Mo"><td>Mo</td><td><input type="number" step="0.01" data-comp-value title="Molybdenum in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
+        <tr data-comp-row data-element="V"><td>V</td><td><input type="number" step="0.01" data-comp-value title="Vanadium in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
+        <tr data-comp-row data-element="Nb"><td>Nb</td><td><input type="number" step="0.01" data-comp-value title="Niobium in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
+        <tr data-comp-row data-element="Ti"><td>Ti</td><td><input type="number" step="0.01" data-comp-value title="Titanium in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
+        <tr data-comp-row data-element="Al"><td>Al</td><td><input type="number" step="0.01" data-comp-value title="Aluminum in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
+        <tr data-comp-row data-element="Cu"><td>Cu</td><td><input type="number" step="0.01" data-comp-value title="Copper in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
+        <tr data-comp-row data-element="P"><td>P</td><td><input type="number" step="0.01" data-comp-value title="Phosphorus in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
+        <tr data-comp-row data-element="S"><td>S</td><td><input type="number" step="0.01" data-comp-value title="Sulfur in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
+        <tr data-comp-row data-element="N"><td>N</td><td><input type="number" step="0.01" data-comp-value title="Nitrogen in wt% (e.g., 0.2 for 0.2%). Leave empty if not needed." /></td></tr>
+      </tbody>
+    </table>
+    <div class="hdd-comp-actions">
+      <button type="button" id="hdd-comp-add">Add element</button>
+    </div>
+    <div>
+      <label for="default-material-composition-notes">Composition notes (optional)</label>
+      <textarea id="default-material-composition-notes" name="default_material_composition_notes" placeholder="Any extra composition context. Leave empty if not needed." title="Optional composition notes. Leave empty if not needed."></textarea>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Conditions</legend>
+    <div class="hdd-contrib-grid">
+      <div>
+        <label for="default-method">Measurement method</label>
+        <input id="default-method" name="default_measurement_method" placeholder="Electrochemical permeation, CGHE, etc." title="Measurement method. Leave empty if not needed." />
+      </div>
+      <div>
+        <label for="default-charging">Charging method</label>
+        <input id="default-charging" name="default_charging_method" placeholder="electrochemical, gas, not_reported" title="Charging method. Leave empty if not needed." />
+      </div>
+    </div>
+    <div>
+      <label for="default-conditions-notes">Conditions notes (optional)</label>
+      <textarea id="default-conditions-notes" name="default_conditions_notes" placeholder="Electrolyte, current density, or other test details. Leave empty if not needed." title="Optional conditions notes. Leave empty if not needed."></textarea>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Metadata</legend>
+    <div class="hdd-contrib-grid">
+      <div>
+        <label for="default-studied-effects">Studied effects</label>
+        <select
+          id="default-studied-effects"
+          name="default_studied_effects"
+          title="If you had to say which effects on the diffusion coefficients did you study?"
+        >
+          <option value="">Select an effect</option>
+          <option value="Alloying Elements">Alloying Elements</option>
+          <option value="Coatings">Coatings</option>
+          <option value="Cold Work and Applied Stresses">Cold Work and Applied Stresses</option>
+          <option value="Grain Boundaries and Particle-Matrix Interfaces">Grain Boundaries and Particle-Matrix Interfaces</option>
+          <option value="HAZ-Specific effects">HAZ-Specific effects</option>
+          <option value="Inner Effects (Trapping)">Inner Effects (Trapping)</option>
+          <option value="Lattice Imperfections">Lattice Imperfections</option>
+          <option value="Liquidus">Liquidus</option>
+          <option value="Microstructure Influence">Microstructure Influence</option>
+          <option value="Microvoids and nonmetallic inclusions">Microvoids and nonmetallic inclusions</option>
+          <option value="Oxide and other Passivators">Oxide and other Passivators</option>
+          <option value="Porosity">Porosity</option>
+          <option value="Surface Effects">Surface Effects</option>
+          <option value="Surface Mass Transfer">Surface Mass Transfer</option>
+          <option value="Surface State and Reactions">Surface State and Reactions</option>
+          <option value="Weld-Metal-Specific Effects">Weld-Metal-Specific Effects</option>
+        </select>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Data rows (one row per model or single point)</legend>
+    <p class="hdd-contrib-note">
+      Required columns: group + series name, model type, Tmin, Tmax.
+      Think of <strong>group</strong> as the comparison set (what is being varied), and <strong>series</strong> as the
+      specific variant inside that set. Example: Group = "Vanadium content", Series = "V=0.1", "V=0.2", "V=0.3".
+      The fields below update based on the model type you select.
+      If a specific row needs different material or composition, open "Override defaults for this row."
+    </p>
+    <div id="hdd-contrib-rows" class="hdd-contrib-rows"></div>
+    <div class="hdd-contrib-row-actions">
+      <button type="button" id="hdd-add-row" class="primary">Add row</button>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Confirmations</legend>
+    <label><input type="checkbox" name="confirm_peer_reviewed" required title="Required. Leave empty if not needed." /> This source is peer-reviewed and open-access.</label>
+    <label><input type="checkbox" name="confirm_rights" required title="Required. Leave empty if not needed." /> I have the right to share these parameters and links for review.</label>
+  </fieldset>
+  <fieldset>
+    <legend>Contact</legend>
+    <div class="hdd-contrib-grid">
+      <div>
+        <label for="contrib-name">Name</label>
+        <input id="contrib-name" name="name" required title="Required for submission. Leave empty if not needed and explain in notes." />
+      </div>
+      <div>
+        <label for="contrib-email">Email</label>
+        <input id="contrib-email" name="email" type="email" required title="Required for submission. Leave empty if not needed and explain in notes." />
+      </div>
+    </div>
+  </fieldset>
+
+  <div class="hdd-contrib-actions">
+    <button type="submit">Submit for Review</button>
+    <span class="hdd-contrib-status" id="hdd-contrib-status"></span>
+  </div>
+  <div class="hdd-contrib-local">
+    <label><input type="checkbox" id="hdd-local-mode" title="Generate JSON locally without sending a submission. Leave empty if not needed." /> Local test mode (do not submit)</label>
+    <button type="button" id="hdd-show-json">Preview JSON</button>
+    <button type="button" id="hdd-copy-json">Copy JSON</button>
+    <button type="button" id="hdd-download-json">Download JSON</button>
+  </div>
+  <textarea id="hdd-json-preview" class="hdd-contrib-preview" readonly placeholder="JSON preview will appear here." title="Local JSON preview. Leave empty if not needed."></textarea>
+</form>
+<script src="/hdd/hdd-contribution.js" defer></script>
+
     </main>
+    <footer>
+      <p>&copy; 2025 czeskleba.com Â· <a href="/impressum.html">Impressum</a></p>
+    </footer>
+    <script>
+      function toggleTheme() {
+        document.body.classList.toggle("dark");
+        localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
+      }
+
+      (function () {
+        const saved = localStorage.getItem("theme");
+        if (saved !== "light") {
+          document.body.classList.add("dark");
+        }
+      })();
+    </script>
     <script src="./hdd-contribution.js" defer></script>
   </body>
 </html>

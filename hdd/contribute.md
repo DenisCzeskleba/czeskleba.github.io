@@ -4,28 +4,28 @@ title: Contribute Hydrogen Data
 permalink: /hydrogen-diffusion-database/contribute/
 ---
 
-# Contribution Form
+<h1>Contribution Form</h1>
 
-Help expand the hydrogen diffusivity database for structural steels and related materials. Submit peer-reviewed, open-access sources. We review every entry before adding it to the public dataset.
+<p>Help expand the hydrogen diffusivity database for structural steels and related materials. Submit peer-reviewed, open-access sources. We review every entry before adding it to the public dataset.</p>
 
-## Submission Flow
+<h2>Submission Flow</h2>
 
-**Fill out the form below with:**
-1. Publication metadata: title, authors, journal, year, DOI, and open-access URL, abstract, publication type, Volume/Issue/Pages, Language, 
-2. 
+<p><strong>Fill out the form below with:</strong></p>
+<ol>
+  <li>Publication metadata: title, authors, journal, year, DOI, open-access URL, abstract, publication type, volume/issue/pages, language, and keywords.</li>
+  <li>Model definitions: single-point, Arrhenius, or power-law parameters (with valid temperature ranges).</li>
+  <li>Contact info: name + email for follow-up.</li>
+</ol>
 
-2. Model definitions: single-point, Arrhenius, or power-law parameters (with valid temperature ranges).
-3. Contact info: name + email for follow-up.
+<ul>
+  <li><strong>Validation:</strong> the form checks ranges and required parameters before sending.</li>
+  <li><strong>Queue:</strong> submissions are emailed for manual verification; no automatic publishing.</li>
+  <li><strong>Additions:</strong> verified submissions are added to the public database.</li>
+</ul>
 
+<h2>Submit a Contribution</h2>
 
-
-- **Validation:** the form checks ranges and required parameters before sending.
-- **Queue:** submissions are emailed for manual verification; no automatic publishing.
-- **Additions:** verified submissions are added to the public database.
-
-## Submit a Contribution
-
-Please fill in the form below. Optional fields can be left empty if not needed. Hover each field for a quick tip.
+<p>Please fill in the form below. Optional fields can be left empty if not needed. Hover each field for a quick tip.</p>
 
 <style>
   main {
@@ -224,13 +224,14 @@ Please fill in the form below. Optional fields can be left empty if not needed. 
   }
   .hdd-simple-table th,
   .hdd-simple-table td {
-    border: 1px solid var(--border);
-    padding: 8px 10px;
+    border: none;
+    padding: 6px 8px;
     text-align: left;
   }
   .hdd-simple-table th {
     font-weight: 600;
-    background: color-mix(in srgb, var(--bg) 95%, var(--text));
+    font-size: 0.9rem;
+    color: color-mix(in srgb, var(--text) 70%, var(--bg));
   }
   .hdd-simple-table input {
     width: 100%;
@@ -252,6 +253,21 @@ Please fill in the form below. Optional fields can be left empty if not needed. 
     background: transparent;
     cursor: pointer;
   }
+  .hdd-grid-span {
+    grid-column: 1 / -1;
+  }
+  .hdd-authors-table {
+    margin-top: 6px;
+  }
+  .hdd-authors-table tbody tr td {
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+  .hdd-authors-help {
+    font-size: 0.85rem;
+    color: color-mix(in srgb, var(--text) 70%, var(--bg));
+    margin-top: 6px;
+  }
 </style>
 
 <form class="hdd-contrib-form" id="hydrogen-contribution-form" action="https://formspree.io/f/xjgawgej" method="POST" novalidate>
@@ -266,9 +282,9 @@ Please fill in the form below. Optional fields can be left empty if not needed. 
         <label for="contrib-title">Title</label>
         <input id="contrib-title" name="paper_title" required title="Paper title. Leave empty if not needed and explain in notes." />
       </div>
-      <div>
+      <div class="hdd-grid-span">
         <label>Authors</label>
-        <table class="hdd-simple-table" id="hdd-authors-table">
+        <table class="hdd-simple-table hdd-authors-table" id="hdd-authors-table">
           <thead>
             <tr>
               <th>First name</th>
@@ -287,6 +303,7 @@ Please fill in the form below. Optional fields can be left empty if not needed. 
         <div class="hdd-simple-actions">
           <button type="button" id="hdd-author-add">Add author</button>
         </div>
+        <div class="hdd-authors-help">Add one row per author. ORCID is optional.</div>
       </div>
       <div>
         <label for="contrib-journal">Journal / Venue</label>
@@ -325,14 +342,14 @@ Please fill in the form below. Optional fields can be left empty if not needed. 
         <input id="contrib-language" name="language" placeholder="English" title="Publication language. Leave empty if not needed." />
       </div>
     </div>
+    <div>
+      <label for="contrib-keywords">Keywords</label>
+      <input id="contrib-keywords" name="keywords" placeholder="hydrogen diffusion, welding, permeation, steel" title="Comma-separated keywords." />
+    </div>
     <details>
       <summary>Abstract (optional)</summary>
       <textarea id="contrib-abstract" name="abstract" placeholder="Abstract text. Leave empty if not needed." title="Optional abstract text. Leave empty if not needed."></textarea>
     </details>
-    <div>
-      <label for="contrib-keywords">Keywords (comma-separated)</label>
-      <input id="contrib-keywords" name="keywords" placeholder="hydrogen diffusion, welding, permeation, steel" title="Comma-separated keywords." />
-    </div>
     <details>
       <summary>Additional notes (optional)</summary>
       <textarea id="contrib-notes" name="paper_notes" placeholder="Context, special handling, or clarifications. Leave empty if not needed." title="Optional notes about the paper. Leave empty if not needed."></textarea>
@@ -604,7 +621,7 @@ Please fill in the form below. Optional fields can be left empty if not needed. 
       Think of <strong>group</strong> as the comparison set (what is being varied), and <strong>series</strong> as the
       specific variant inside that set. Example: Group = "Vanadium content", Series = "V=0.1", "V=0.2", "V=0.3".
       The fields below update based on the model type you select.
-      If a specific row needs different material or composition, open “Override defaults for this row.”
+      If a specific row needs different material or composition, open "Override defaults for this row."
     </p>
     <div id="hdd-contrib-rows" class="hdd-contrib-rows"></div>
     <div class="hdd-contrib-row-actions">
