@@ -15,16 +15,17 @@
   --canvas: #ffffff;
   --line: #e2e8f0;
   --plot-canvas: #ffffff;
-  --plot-ink: #0f172a;
-  --plot-muted: #64748b;
-  --plot-line: #cbd5f5;
+  --plot-ink: #111111;
+  --plot-muted: #5a5a5a;
+  --plot-line: #d0d0d0;
   --accent: #0f766e;
   --accent-soft: rgba(15, 118, 110, 0.15);
   --accent-warm: #f97316;
   --shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
   --radius: 18px;
-  --font-body: "IBM Plex Sans", "Segoe UI", sans-serif;
-  --font-display: "Space Grotesk", "Segoe UI", sans-serif;
+  --font-body: "Calibri", "Times New Roman", "Arial", "Segoe UI", sans-serif;
+  --font-display: "Calibri", "Times New Roman", "Arial", "Segoe UI", sans-serif;
+  --plot-font: "Calibri", "Times New Roman", "Arial", "Segoe UI", sans-serif;
 }
 
 body {
@@ -442,6 +443,25 @@ body.dark .hdd-toggle-group button.is-active {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+}
+
+.hdd-slider-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.hdd-slider-row input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.hdd-slider-value {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  min-width: 3.1rem;
+  text-align: right;
 }
 
 .hdd-plot-axis {

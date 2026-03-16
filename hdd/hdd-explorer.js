@@ -5,14 +5,14 @@
   const FILTER_LIST_DEFAULT_HEIGHT = 280;
   const FILTER_LIST_MIN_HEIGHT = 150;
   const COLORS = [
-    "#111827",
-    "#0f766e",
-    "#2563eb",
-    "#ea580c",
-    "#6d28d9",
-    "#059669",
-    "#dc2626",
-    "#0891b2",
+    "#000000",
+    "#426b9c",
+    "#840084",
+    "#c00000",
+    "#008000",
+    "#e69900",
+    "#008080",
+    "#595959",
   ];
 
   const mount = document.getElementById("hydrogen-explorer-app");
@@ -47,6 +47,8 @@
     numbering: document.getElementById("hdd-numbering"),
     legendGroup: document.getElementById("hdd-legend-group"),
     monochrome: document.getElementById("hdd-monochrome"),
+    lineThickness: document.getElementById("hdd-line-thickness"),
+    lineThicknessValue: document.getElementById("hdd-line-thickness-value"),
     gridX: document.getElementById("hdd-grid-x"),
     gridY: document.getElementById("hdd-grid-y"),
     axisXMin: document.getElementById("hdd-axis-x-min"),
@@ -92,6 +94,7 @@
     numbering: true,
     legendBySource: true,
     monochrome: false,
+    lineThickness: 1,
     gridX: true,
     gridY: true,
     tempMin: null,
@@ -153,6 +156,9 @@
     state.includeUnconfirmed = dom.includeUnconfirmed?.checked ?? false;
     state.literatureMode = dom.literatureMode?.value || "include";
     state.includeUnknownComposition = dom.filterUnknownComposition?.checked ?? false;
+    const thickness = parseNumber(dom.lineThickness?.value);
+    state.lineThickness = isFiniteNumber(thickness) ? clampValue(thickness, 0.5, 2) : 1;
+    updateLineThicknessLabel();
     initializeFilterModes();
     populateFilters(payload);
     initializeYearFilter(payload);
@@ -428,6 +434,12 @@
     });
     dom.gridY?.addEventListener("change", () => {
       state.gridY = dom.gridY.checked;
+      plotSelectedSeries();
+    });
+    dom.lineThickness?.addEventListener("input", () => {
+      const value = parseNumber(dom.lineThickness.value);
+      state.lineThickness = isFiniteNumber(value) ? clampValue(value, 0.5, 2) : 1;
+      updateLineThicknessLabel();
       plotSelectedSeries();
     });
     [dom.axisXMin, dom.axisXMax, dom.axisYMin, dom.axisYMax].forEach((input) => {
@@ -825,7 +837,7 @@
     const footerLine = getDatabaseFooterLine();
     if (!footerLine) return;
     ctx.save();
-    ctx.font = "11px IBM Plex Sans, Arial, sans-serif";
+    ctx.font = `11px ${lastPlotContext?.theme?.font || "Calibri, Times New Roman, Arial, sans-serif"}`;
     ctx.fillStyle = lastPlotContext?.theme?.muted || "#64748b";
     ctx.textAlign = "left";
     ctx.textBaseline = "bottom";
@@ -1727,7 +1739,8 @@
     const logMin = Math.log10(axisMinY);
     const logMax = Math.log10(axisMaxY);
 
-    const fontAxis = Math.round(14 * layoutScale);
+    const labelScale = Math.max(0.85, Math.min(1.25, width / 760));
+    const fontAxis = Math.round(16 * labelScale);
     const fontTick = Math.round(12 * layoutScale);
     const fontLegend = Math.round(11 * layoutScale);
     const fontLabel = Math.round(11 * layoutScale);
@@ -1735,7 +1748,7 @@
     const legendLineHeight = Math.round(16 * layoutScale);
     const legendHeight =
       legendMaxLines != null ? legendLineHeight * legendMaxLines + Math.round(12 * layoutScale) : 0;
-    const legendWidth = isNarrow ? 0 : estimateLegendWidth(ctx, series, width, layoutScale);
+    const legendWidth = isNarrow ? 0 : estimateLegendWidth(ctx, series, width, theme, layoutScale);
     const margin = {
       top: Math.round(26 * layoutScale),
       right: isNarrow ? Math.round(14 * layoutScale) : legendWidth,
@@ -1766,20 +1779,22 @@
     ctx.fillStyle = theme.canvas;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.strokeStyle = theme.line;
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = theme.ink;
+    ctx.lineWidth = 1.2;
     ctx.beginPath();
     ctx.moveTo(margin.left, margin.top);
     ctx.lineTo(margin.left, margin.top + plotHeight);
     ctx.lineTo(margin.left + plotWidth, margin.top + plotHeight);
+    ctx.lineTo(margin.left + plotWidth, margin.top);
+    ctx.lineTo(margin.left, margin.top);
     ctx.stroke();
 
     ctx.fillStyle = theme.ink;
-    ctx.font = `${fontAxis}px IBM Plex Sans, Arial, sans-serif`;
+    ctx.font = `${fontAxis}px ${theme.font}`;
     ctx.textAlign = "center";
     const tempUnitLabel = state.units === "C" ? "°C" : "°K";
-    const axisLabelOffset = Math.round(36 * layoutScale);
-    const axisLabelXOffset = Math.round(15 * layoutScale);
+    const axisLabelOffset = Math.round(36 * labelScale);
+    const axisLabelXOffset = Math.round(15 * labelScale);
     ctx.fillText(
       `Temperature [${tempUnitLabel}]`,
       margin.left + plotWidth / 2,
@@ -1788,7 +1803,7 @@
     ctx.save();
     ctx.translate(axisLabelXOffset, margin.top + plotHeight / 2);
     ctx.rotate(-Math.PI / 2);
-    ctx.fillText("Apparent Diffusivity [mm²/s]", 0, 0);
+    ctx.fillText("Diffusivity [mm²/s]", 0, 0);
     ctx.restore();
 
     drawXTicks(
@@ -1827,7 +1842,17 @@
 
     fillEnvelopes(series, xToPx, yToPx);
 
-    ctx.lineWidth = Math.max(1.5, 2 * layoutScale);
+    const seriesCount = series.length;
+    let densityScale = 1;
+    if (seriesCount > 120) densityScale = 0.45;
+    else if (seriesCount > 80) densityScale = 0.6;
+    else if (seriesCount > 40) densityScale = 0.75;
+    else if (seriesCount > 20) densityScale = 0.9;
+    const thickness = clampValue(state.lineThickness || 1, 0.5, 2);
+    const seriesLineWidth = Math.max(0.7, 1.6 * layoutScale * densityScale * thickness);
+    const pointRadius = Math.max(1.2, Math.round(2.4 * layoutScale * densityScale * thickness));
+
+    ctx.lineWidth = seriesLineWidth;
     series.forEach((item, index) => {
       if (item.axisLineSegments?.length) {
         ctx.strokeStyle = item.color;
@@ -1849,13 +1874,13 @@
 
       if (item.axisPoints.length) {
         ctx.fillStyle = item.color;
-        const pointRadius = Math.max(2, Math.round(3 * layoutScale));
+        const pointRadiusValue = pointRadius;
         item.axisPoints.forEach((point) => {
           ctx.beginPath();
           ctx.arc(
             xToPx(point.temperature_axis),
             yToPx(point.diffusivity),
-            pointRadius,
+            pointRadiusValue,
             0,
             Math.PI * 2
           );
@@ -1867,7 +1892,7 @@
         const lastPoint = item.axisLine[item.axisLine.length - 1] || item.axisPoints[item.axisPoints.length - 1];
         if (lastPoint) {
           ctx.fillStyle = item.color;
-          ctx.font = `${fontLabel}px IBM Plex Sans, Arial, sans-serif`;
+          ctx.font = `${fontLabel}px ${theme.font}`;
           ctx.textAlign = "left";
           const labelIndex = Number.isFinite(item.legendIndex) ? item.legendIndex + 1 : index + 1;
           ctx.fillText(
@@ -1926,6 +1951,14 @@
       logMin,
       logMax,
       theme,
+      fontAxis,
+      fontTick,
+      fontLegend,
+      fontLabel,
+      axisLabelOffset,
+      axisLabelXOffset,
+      lineWidth: seriesLineWidth,
+      pointRadius,
       units: state.units,
       scale: state.scale,
       gridX: state.gridX,
@@ -2247,7 +2280,7 @@
     const steps = 5;
     ctx.fillStyle = theme.ink;
     ctx.textAlign = "center";
-    ctx.font = `${fontSize}px IBM Plex Sans, Arial, sans-serif`;
+    ctx.font = `${fontSize}px ${theme.font}`;
     const tickLen = Math.max(4, Math.round(5 * scale));
     const labelOffset = Math.max(12, Math.round(16 * scale));
     for (let i = 0; i <= steps; i++) {
@@ -2255,9 +2288,9 @@
       const x = xToPx(value);
       if (drawGrid) {
         ctx.save();
-        ctx.strokeStyle = theme.ink;
-        ctx.globalAlpha = 0.35;
-        ctx.lineWidth = 1;
+        ctx.strokeStyle = theme.line;
+        ctx.globalAlpha = 0.7;
+        ctx.lineWidth = 0.8;
         ctx.beginPath();
         ctx.moveTo(x, margin.top);
         ctx.lineTo(x, margin.top + height);
@@ -2290,7 +2323,7 @@
   ) {
     ctx.textAlign = "right";
     ctx.fillStyle = theme.ink;
-    ctx.font = `${fontSize}px IBM Plex Sans, Arial, sans-serif`;
+    ctx.font = `${fontSize}px ${theme.font}`;
     const tickLenMajor = Math.max(4, Math.round(6 * scale));
     const tickLenMinor = Math.max(3, Math.round(3 * scale));
     const labelOffsetX = Math.max(6, Math.round(8 * scale));
@@ -2302,9 +2335,9 @@
         const y = yToPx(value);
         if (drawGrid) {
           ctx.save();
-          ctx.strokeStyle = theme.ink;
-          ctx.globalAlpha = 0.35;
-          ctx.lineWidth = 1;
+          ctx.strokeStyle = theme.line;
+          ctx.globalAlpha = 0.7;
+          ctx.lineWidth = 0.8;
           ctx.beginPath();
           ctx.moveTo(margin.left, y);
           ctx.lineTo(margin.left + width, y);
@@ -2331,9 +2364,9 @@
         const y = yToPx(value);
         if (drawGrid) {
           ctx.save();
-          ctx.strokeStyle = theme.ink;
-          ctx.lineWidth = factor === 1 ? 1.2 : 1;
-          ctx.globalAlpha = factor === 1 ? 0.7 : 0.35;
+          ctx.strokeStyle = theme.line;
+          ctx.lineWidth = factor === 1 ? 1 : 0.8;
+          ctx.globalAlpha = factor === 1 ? 0.85 : 0.6;
           ctx.beginPath();
           ctx.moveTo(margin.left, y);
           ctx.lineTo(margin.left + width, y);
@@ -2341,7 +2374,7 @@
           ctx.restore();
         }
         const tickLen = factor === 1 ? tickLenMajor : tickLenMinor;
-        ctx.strokeStyle = factor === 1 ? theme.ink : theme.line;
+        ctx.strokeStyle = theme.ink;
         ctx.beginPath();
         ctx.moveTo(margin.left - tickLen, y);
         ctx.lineTo(margin.left, y);
@@ -2353,13 +2386,13 @@
     }
   }
 
-  function estimateLegendWidth(ctx, series, chartWidth, scale = 1) {
+  function estimateLegendWidth(ctx, series, chartWidth, theme, scale = 1) {
     if (!ctx || !Array.isArray(series) || !series.length) return 140;
     const items = buildLegendItems(series);
     if (!items.length) return 140;
     ctx.save();
     const fontSize = Math.round(11 * scale);
-    ctx.font = `${fontSize}px IBM Plex Sans, Arial, sans-serif`;
+    ctx.font = `${fontSize}px ${theme?.font || "Calibri, Times New Roman, Arial, sans-serif"}`;
     let maxLabel = 0;
     items.forEach((item) => {
       const label = `${item.index + 1}. ${item.label}`;
@@ -2552,7 +2585,7 @@
     let legendY = isBottom
       ? margin.top + plotHeight + axisLabelOffset + Math.round(16 * scale)
       : margin.top + 10;
-    ctx.font = `${fontSize}px IBM Plex Sans, Arial, sans-serif`;
+    ctx.font = `${fontSize}px ${theme.font}`;
     ctx.textAlign = "left";
     const maxY = isBottom
       ? legendY + Math.max(0, (maxLines || 0) * Math.round(16 * scale))
@@ -2776,6 +2809,12 @@
     return Number.isFinite(parsed) ? parsed : null;
   }
 
+  function updateLineThicknessLabel() {
+    if (!dom.lineThicknessValue) return;
+    const value = clampValue(state.lineThickness || 1, 0.5, 2);
+    dom.lineThicknessValue.textContent = `${value.toFixed(2)}×`;
+  }
+
   function selectedValues(listbox) {
     if (!listbox) return [];
     return Array.from(listbox.querySelectorAll("input[type='checkbox']:checked")).map(
@@ -2975,6 +3014,14 @@
       logMin,
       logMax,
       theme,
+      fontAxis = 16,
+      fontTick = 12,
+      fontLegend = 11,
+      fontLabel = 11,
+      axisLabelOffset = 36,
+      axisLabelXOffset = 15,
+      lineWidth = 1.6,
+      pointRadius = 2.4,
       units,
       scale,
       gridX,
@@ -2998,8 +3045,9 @@
     };
 
     const parts = [];
+    const svgFont = String(theme.font || "Calibri, Times New Roman, Arial, sans-serif").replace(/["']/g, "");
     parts.push(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="font-family:${svgFont};">`
     );
     parts.push(`<rect width="100%" height="100%" fill="${theme.canvas}"/>`);
     parts.push(
@@ -3014,7 +3062,7 @@
         parts.push(
           `<line x1="${x}" y1="${margin.top}" x2="${x}" y2="${
             margin.top + plotHeight
-          }" stroke="${theme.line}" stroke-width="1" opacity="0.35"/>`
+          }" stroke="${theme.line}" stroke-width="0.8" opacity="0.7"/>`
         );
       }
     }
@@ -3028,7 +3076,7 @@
           parts.push(
             `<line x1="${margin.left}" y1="${y}" x2="${
               margin.left + plotWidth
-            }" y2="${y}" stroke="${theme.line}" stroke-width="1" opacity="0.35"/>`
+            }" y2="${y}" stroke="${theme.line}" stroke-width="0.8" opacity="0.7"/>`
           );
         }
       } else {
@@ -3045,8 +3093,8 @@
               `<line x1="${margin.left}" y1="${y}" x2="${
                 margin.left + plotWidth
               }" y2="${y}" stroke="${theme.line}" stroke-width="${
-                major ? 1.2 : 1
-              }" opacity="${major ? 0.7 : 0.25}"/>`
+                major ? 1 : 0.8
+              }" opacity="${major ? 0.85 : 0.6}"/>`
             );
           }
         }
@@ -3054,27 +3102,20 @@
     }
 
     parts.push(
-      `<line x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${
-        margin.top + plotHeight
-      }" stroke="${theme.line}" stroke-width="1"/>`
-    );
-    parts.push(
-      `<line x1="${margin.left}" y1="${margin.top + plotHeight}" x2="${
-        margin.left + plotWidth
-      }" y2="${margin.top + plotHeight}" stroke="${theme.line}" stroke-width="1"/>`
+      `<rect x="${margin.left}" y="${margin.top}" width="${plotWidth}" height="${plotHeight}" fill="none" stroke="${theme.ink}" stroke-width="1.2"/>`
     );
 
     parts.push(
       `<text x="${margin.left + plotWidth / 2}" y="${
-        margin.top + plotHeight + 36
-        }" fill="${theme.ink}" font-size="14" text-anchor="middle">Temperature [${
+        margin.top + plotHeight + axisLabelOffset
+        }" fill="${theme.ink}" font-size="${fontAxis}" text-anchor="middle">Temperature [${
         units === "C" ? "C" : "K"
       }]</text>`
     );
     parts.push(
-      `<text x="15" y="${margin.top + plotHeight / 2}" fill="${theme.ink}" font-size="14" text-anchor="middle" transform="rotate(-90 15 ${
+      `<text x="${axisLabelXOffset}" y="${margin.top + plotHeight / 2}" fill="${theme.ink}" font-size="${fontAxis}" text-anchor="middle" transform="rotate(-90 ${axisLabelXOffset} ${
         margin.top + plotHeight / 2
-      })">Apparent Diffusivity [mm2/s]</text>`
+      })">Diffusivity [mm²/s]</text>`
     );
 
     const xticks = 6;
@@ -3084,10 +3125,10 @@
       parts.push(
         `<line x1="${x}" y1="${margin.top + plotHeight}" x2="${x}" y2="${
           margin.top + plotHeight + 6
-        }" stroke="${theme.line}" stroke-width="1"/>`
+        }" stroke="${theme.ink}" stroke-width="1"/>`
       );
       parts.push(
-        `<text x="${x}" y="${margin.top + plotHeight + 22}" fill="${theme.ink}" font-size="12" text-anchor="middle">${Math.round(
+        `<text x="${x}" y="${margin.top + plotHeight + Math.round(fontTick + 10)}" fill="${theme.ink}" font-size="${fontTick}" text-anchor="middle">${Math.round(
           value
         )}</text>`
       );
@@ -3099,10 +3140,10 @@
         const value = axisMinY + ((axisMaxY - axisMinY) / steps) * i;
         const y = yToPx(value);
         parts.push(
-          `<line x1="${margin.left - 6}" y1="${y}" x2="${margin.left}" y2="${y}" stroke="${theme.line}" stroke-width="1"/>`
+          `<line x1="${margin.left - 6}" y1="${y}" x2="${margin.left}" y2="${y}" stroke="${theme.ink}" stroke-width="1"/>`
         );
         parts.push(
-          `<text x="${margin.left - 10}" y="${y + 3}" fill="${theme.ink}" font-size="12" text-anchor="end">${value.toExponential(
+          `<text x="${margin.left - 10}" y="${y + 3}" fill="${theme.ink}" font-size="${fontTick}" text-anchor="end">${value.toExponential(
             1
           )}</text>`
         );
@@ -3118,11 +3159,11 @@
           const y = yToPx(value);
           const tickLen = factor === 1 ? 6 : 3;
           parts.push(
-            `<line x1="${margin.left - tickLen}" y1="${y}" x2="${margin.left}" y2="${y}" stroke="${theme.line}" stroke-width="1"/>`
+            `<line x1="${margin.left - tickLen}" y1="${y}" x2="${margin.left}" y2="${y}" stroke="${theme.ink}" stroke-width="${factor === 1 ? 1 : 0.8}"/>`
           );
           if (factor === 1) {
             parts.push(
-              `<text x="${margin.left - 10}" y="${y + 3}" fill="${theme.ink}" font-size="12" text-anchor="end">${value.toExponential(
+              `<text x="${margin.left - 10}" y="${y + 3}" fill="${theme.ink}" font-size="${fontTick}" text-anchor="end">${value.toExponential(
                 1
               )}</text>`
             );
@@ -3178,7 +3219,7 @@
             })
             .join(" ");
           parts.push(
-            `<path d="${d}" fill="none" stroke="${item.color}" stroke-width="2"/>`
+            `<path d="${d}" fill="none" stroke="${item.color}" stroke-width="${lineWidth}"/>`
           );
         });
       }
@@ -3187,7 +3228,7 @@
           const x = xToPx(point.temperature_axis);
           const y = yToPx(point.diffusivity);
           parts.push(
-            `<circle cx="${x}" cy="${y}" r="3" fill="${item.color}"/>`
+            `<circle cx="${x}" cy="${y}" r="${pointRadius}" fill="${item.color}"/>`
           );
         });
       }
@@ -3202,7 +3243,7 @@
           parts.push(
             `<text x="${xToPx(lastPoint.temperature_axis) + 4}" y="${yToPx(
               lastPoint.diffusivity
-            )}" fill="${item.color}" font-size="11" text-anchor="start">${labelIndex}</text>`
+            )}" fill="${item.color}" font-size="${fontLabel}" text-anchor="start">${labelIndex}</text>`
           );
         }
       }
@@ -3215,7 +3256,7 @@
     const showSwatch = !monochrome;
     const textX = legendX + (showSwatch ? 14 : 0);
     const items = buildLegendItems(series);
-    const lineHeight = 16;
+    const lineHeight = Math.round(16 * (fontLegend / 11));
     const availableLines = Math.max(0, Math.floor((maxY - legendY) / lineHeight));
     const needsMore = items.length > availableLines;
     const displayCount = needsMore ? Math.max(0, availableLines - 1) : items.length;
@@ -3228,7 +3269,7 @@
         );
       }
       parts.push(
-        `<text x="${textX}" y="${legendY}" fill="${theme.ink}" font-size="11" text-anchor="start">${item.index + 1}. ${
+        `<text x="${textX}" y="${legendY}" fill="${theme.ink}" font-size="${fontLegend}" text-anchor="start">${item.index + 1}. ${
           item.label
         }</text>`
       );
@@ -3236,7 +3277,7 @@
     }
       if (needsMore) {
         parts.push(
-          `<text x="${textX}" y="${legendY}" fill="${theme.accent || theme.muted}" font-size="11" text-anchor="start">... +${
+          `<text x="${textX}" y="${legendY}" fill="${theme.accent || theme.muted}" font-size="${fontLegend}" text-anchor="start">... +${
             items.length - i
           } more</text>`
         );
@@ -3245,7 +3286,7 @@
       const footerLine = getDatabaseFooterLine();
       if (footerLine) {
         parts.push(
-          `<text x="12" y="${height - 12}" fill="${theme.muted}" font-size="11" text-anchor="start">${escapeHtml(
+          `<text x="12" y="${height - 12}" fill="${theme.muted}" font-size="${fontLegend}" text-anchor="start">${escapeHtml(
             footerLine
           )}</text>`
         );
@@ -3335,6 +3376,9 @@
       line: styles.getPropertyValue("--plot-line").trim() || "#d1d5db",
       canvas: styles.getPropertyValue("--plot-canvas").trim() || "#f9fafb",
       accent: styles.getPropertyValue("--accent").trim() || "#0f766e",
+      font:
+        styles.getPropertyValue("--plot-font").trim() ||
+        "Calibri, Times New Roman, Arial, sans-serif",
     };
   }
 

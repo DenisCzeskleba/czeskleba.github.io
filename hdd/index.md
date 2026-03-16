@@ -192,7 +192,6 @@ permalink: /hydrogen-diffusion-database/
                     </div>
                   </div>
                 </div>
-                <div class="hdd-axis-help">Leave blank for auto.</div>
                 <label class="hdd-inline-checkbox" title="Shade the uncertainty or scatter band.">
                   <input type="checkbox" id="hdd-envelope" checked />
                   <span>Envelope fill</span>
@@ -218,6 +217,19 @@ permalink: /hydrogen-diffusion-database/
                     <input type="checkbox" id="hdd-grid-y" checked />
                     <span>Y grid</span>
                   </label>
+                </div>
+                <div class="hdd-slider-row">
+                  <label for="hdd-line-thickness">Line thickness</label>
+                  <input
+                    id="hdd-line-thickness"
+                    type="range"
+                    min="0.5"
+                    max="2"
+                    step="0.05"
+                    value="1"
+                    aria-label="Line thickness multiplier"
+                  />
+                  <span class="hdd-slider-value" id="hdd-line-thickness-value">1.00×</span>
                 </div>
                 <button type="button" id="hdd-reset-zoom">Reset zoom</button>
               </div>

@@ -233,11 +233,10 @@
                       </div>
                     </div>
                   </div>
-                  <div class="hdd-axis-help">Leave blank for auto.</div>
-                  <label class="hdd-inline-checkbox" title="Shade the uncertainty or scatter band.">
-                    <input type="checkbox" id="hdd-envelope" checked />
-                    <span>Envelope fill</span>
-                  </label>
+                <label class="hdd-inline-checkbox" title="Shade the uncertainty or scatter band.">
+                  <input type="checkbox" id="hdd-envelope" checked />
+                  <span>Envelope fill</span>
+                </label>
                   <label class="hdd-inline-checkbox" title="Number curves to match the legend list.">
                     <input type="checkbox" id="hdd-numbering" checked />
                     <span>Numbered plots</span>
@@ -250,19 +249,32 @@
                     <input type="checkbox" id="hdd-monochrome" />
                     <span>Black &amp; white</span>
                   </label>
-                  <div class="hdd-inline-row">
-                    <label class="hdd-inline-checkbox" title="Toggle vertical grid lines.">
-                      <input type="checkbox" id="hdd-grid-x" checked />
-                      <span>X grid</span>
-                    </label>
-                    <label class="hdd-inline-checkbox" title="Toggle horizontal grid lines.">
-                      <input type="checkbox" id="hdd-grid-y" checked />
-                      <span>Y grid</span>
-                    </label>
-                  </div>
-                  <button type="button" id="hdd-reset-zoom">Reset zoom</button>
+                <div class="hdd-inline-row">
+                  <label class="hdd-inline-checkbox" title="Toggle vertical grid lines.">
+                    <input type="checkbox" id="hdd-grid-x" checked />
+                    <span>X grid</span>
+                  </label>
+                  <label class="hdd-inline-checkbox" title="Toggle horizontal grid lines.">
+                    <input type="checkbox" id="hdd-grid-y" checked />
+                    <span>Y grid</span>
+                  </label>
                 </div>
-              </details>
+                <div class="hdd-slider-row">
+                  <label for="hdd-line-thickness">Line thickness</label>
+                  <input
+                    id="hdd-line-thickness"
+                    type="range"
+                    min="0.5"
+                    max="2"
+                    step="0.05"
+                    value="1"
+                    aria-label="Line thickness multiplier"
+                  />
+                  <span class="hdd-slider-value" id="hdd-line-thickness-value">1.00×</span>
+                </div>
+                <button type="button" id="hdd-reset-zoom">Reset zoom</button>
+              </div>
+            </details>
                 <details class="hdd-plot-options hdd-citation-panel" id="hdd-citation" data-order="citation">
                   <summary>Citation</summary>
                   <div class="hdd-plot-options-body">
