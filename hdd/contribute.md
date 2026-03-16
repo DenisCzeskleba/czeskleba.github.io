@@ -231,7 +231,7 @@ permalink: /hydrogen-diffusion-database/contribute/
   .hdd-simple-table th {
     font-weight: 600;
     font-size: 0.9rem;
-    color: color-mix(in srgb, var(--text) 70%, var(--bg));
+    color: var(--text);
   }
   .hdd-simple-table input {
     width: 100%;
@@ -266,18 +266,23 @@ permalink: /hydrogen-diffusion-database/contribute/
     width: 1%;
     white-space: nowrap;
   }
-  .hdd-title-input {
-    min-height: unset;
-    height: 1.4em;
+  .hdd-keywords-block {
+    margin-top: 8px;
+  }
+  .hdd-contrib-form textarea.hdd-title-input {
+    min-height: 32px;
+    height: auto;
     resize: none;
-    padding: 6px 10px;
-    line-height: 1.2;
+    padding: 4px 8px;
+    line-height: 1.1;
+    overflow: hidden;
   }
   .hdd-grid-span {
     grid-column: 1 / -1;
   }
   .hdd-authors-table {
     margin-top: 6px;
+    margin-left: -8px;
   }
   .hdd-authors-table tbody tr td {
     padding-top: 4px;
@@ -356,26 +361,54 @@ permalink: /hydrogen-diffusion-database/contribute/
       </div>
       <div>
         <label for="contrib-language">Language</label>
-        <input id="contrib-language" name="language" list="hdd-language-options" required title="Publication language." />
-        <datalist id="hdd-language-options">
-          <option value="English"></option>
-          <option value="German"></option>
-          <option value="French"></option>
-          <option value="Spanish"></option>
-          <option value="Italian"></option>
-          <option value="Portuguese"></option>
-          <option value="Chinese"></option>
-          <option value="Japanese"></option>
-          <option value="Korean"></option>
-          <option value="Russian"></option>
-          <option value="Polish"></option>
-          <option value="Czech"></option>
-          <option value="Turkish"></option>
-        </datalist>
+        <select id="contrib-language" name="language" required title="Publication language.">
+          <option value="">Select language</option>
+          <option value="Arabic">Arabic</option>
+          <option value="Bengali">Bengali</option>
+          <option value="Bulgarian">Bulgarian</option>
+          <option value="Chinese">Chinese</option>
+          <option value="Croatian">Croatian</option>
+          <option value="Czech">Czech</option>
+          <option value="Danish">Danish</option>
+          <option value="Dutch">Dutch</option>
+          <option value="English">English</option>
+          <option value="Estonian">Estonian</option>
+          <option value="Finnish">Finnish</option>
+          <option value="French">French</option>
+          <option value="German">German</option>
+          <option value="Greek">Greek</option>
+          <option value="Hebrew">Hebrew</option>
+          <option value="Hindi">Hindi</option>
+          <option value="Hungarian">Hungarian</option>
+          <option value="Indonesian">Indonesian</option>
+          <option value="Italian">Italian</option>
+          <option value="Japanese">Japanese</option>
+          <option value="Korean">Korean</option>
+          <option value="Latvian">Latvian</option>
+          <option value="Lithuanian">Lithuanian</option>
+          <option value="Malay">Malay</option>
+          <option value="Norwegian">Norwegian</option>
+          <option value="Persian">Persian</option>
+          <option value="Polish">Polish</option>
+          <option value="Portuguese">Portuguese</option>
+          <option value="Romanian">Romanian</option>
+          <option value="Russian">Russian</option>
+          <option value="Serbian">Serbian</option>
+          <option value="Slovak">Slovak</option>
+          <option value="Slovenian">Slovenian</option>
+          <option value="Spanish">Spanish</option>
+          <option value="Swedish">Swedish</option>
+          <option value="Thai">Thai</option>
+          <option value="Turkish">Turkish</option>
+          <option value="Ukrainian">Ukrainian</option>
+          <option value="Urdu">Urdu</option>
+          <option value="Vietnamese">Vietnamese</option>
+          <option value="Other">Other</option>
+        </select>
       </div>
     </div>
     <div class="hdd-contrib-grid">
-      <div class="hdd-grid-span">
+      <div class="hdd-grid-span hdd-keywords-block">
         <label for="contrib-keywords">Keywords</label>
         <input id="contrib-keywords" name="keywords" placeholder="hydrogen diffusion, welding, permeation, steel" title="Comma-separated keywords." />
       </div>

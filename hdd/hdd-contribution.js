@@ -15,6 +15,7 @@
   const jsonPreview = document.getElementById("hdd-json-preview");
   const authorTable = document.getElementById("hdd-authors-table");
   const authorAddButton = document.getElementById("hdd-author-add");
+  const titleField = document.getElementById("contrib-title");
 
   function setStatus(message, tone) {
     if (!status) return;
@@ -313,6 +314,17 @@
     tbody.appendChild(row);
   }
 
+  function autoGrowTextarea(textarea) {
+    if (!textarea) return;
+    const resize = () => {
+      textarea.style.height = "auto";
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    };
+    textarea.addEventListener("input", resize);
+    window.addEventListener("resize", resize);
+    resize();
+  }
+
   function collectAuthors(table) {
     const authors = [];
     if (!table) return authors;
@@ -586,6 +598,8 @@
   }
 
   ensureInitialRow();
+
+  autoGrowTextarea(titleField);
 
   const defaultCompTable = document.getElementById("hdd-comp-table");
   const defaultCompAdd = document.getElementById("hdd-comp-add");
