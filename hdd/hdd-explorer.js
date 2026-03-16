@@ -79,6 +79,7 @@
     includeUnconfirmed: document.getElementById("hdd-include-unconfirmed"),
     literatureMode: document.getElementById("hdd-literature-mode"),
     filterModeToggles: document.querySelectorAll("[data-filter-mode]"),
+    filterMicrostructureMode: document.querySelector("[data-filter-mode='materialMicrostructure']"),
     filterUnknownComposition: document.querySelector("[data-filter-unknown='chemicalComposition']"),
     resetZoom: document.getElementById("hdd-reset-zoom"),
     plotOptionPanels: mount.querySelectorAll(".hdd-plot-options"),
@@ -546,10 +547,11 @@
         });
       });
 
-      [
-        dom.filterSource,
-        dom.filterClass,
+    [
+      dom.filterSource,
+      dom.filterClass,
       dom.filterGrade,
+      dom.filterMicrostructure,
       dom.filterComposition,
       dom.filterReported,
       dom.filterEffect,
@@ -929,6 +931,9 @@
       if (!key) return;
       state.filterMode[key] = toggle.checked ? "exclude" : "include";
     });
+    if (dom.filterMicrostructureMode && state.filterMode.materialMicrostructure == null) {
+      state.filterMode.materialMicrostructure = dom.filterMicrostructureMode.checked ? "exclude" : "include";
+    }
   }
 
   function toOptions(values = []) {
@@ -1106,13 +1111,16 @@
 
   function entryMatchesFilters(entry, filters, query, ignoreKey = null) {
     const mode = filters.mode || {};
+    const microMode =
+      mode.materialMicrostructure ||
+      (dom.filterMicrostructureMode?.checked ? "exclude" : "include");
     if (ignoreKey !== "plottingStatus" && !isPlottingAllowed(entry, filters.includeUnconfirmed)) return false;
     if (filters.literatureMode === "exclude" && hasLiteratureCompilation(entry)) return false;
     if (filters.literatureMode === "only" && !hasLiteratureCompilation(entry)) return false;
     if (ignoreKey !== "source" && !matchesValue(filters.source, entry.sourceId, mode.source)) return false;
     if (ignoreKey !== "materialClass" && !matchesSet(filters.materialClass, entry.meta.material_class, mode.materialClass)) return false;
     if (ignoreKey !== "materialGrade" && !matchesSet(filters.materialGrade, entry.meta.material_grade, mode.materialGrade)) return false;
-    if (ignoreKey !== "materialMicrostructure" && !matchesSet(filters.materialMicrostructure, entry.meta.material_microstructure, mode.materialMicrostructure)) return false;
+    if (ignoreKey !== "materialMicrostructure" && !matchesSet(filters.materialMicrostructure, entry.meta.material_microstructure, microMode)) return false;
     if (ignoreKey !== "chemicalComposition" && !matchesComposition(filters.chemicalComposition, entry.compositionRanges, filters.includeUnknownComposition)) return false;
     if (ignoreKey !== "reportedAs" && !matchesSet(filters.reportedAs, entry.meta.reported_as, mode.reportedAs)) return false;
     if (ignoreKey !== "studiedEffects" && !matchesSet(filters.studiedEffects, entry.meta.studied_effects, mode.studiedEffects)) return false;
