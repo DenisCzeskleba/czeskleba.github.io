@@ -299,7 +299,7 @@ permalink: /hydrogen-diffusion-database/docs/
     <h2>Citation and contact</h2>
     <p>
       If you use the database in your own work, please cite the database or website and also cite the original
-      publications behind the datasets you use. When companion papers are available, cite those as well.
+      publications behind the datasets you use. When companion papers are available, add here.
     </p>
     <p>
       The public database archive is available on Zenodo under CC BY 4.0:

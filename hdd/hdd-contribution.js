@@ -304,7 +304,12 @@
       <td><input type="text" data-author-first required title="Author first name." /></td>
       <td><input type="text" data-author-last required title="Author last name." /></td>
       <td><input type="text" data-author-orcid title="ORCID (optional)." /></td>
+      <td><button type="button" class="hdd-author-remove" aria-label="Remove author">Remove</button></td>
     `;
+    const removeButton = row.querySelector(".hdd-author-remove");
+    if (removeButton) {
+      removeButton.addEventListener("click", () => row.remove());
+    }
     tbody.appendChild(row);
   }
 
@@ -439,7 +444,6 @@
       oa_url: getValue("contrib-oa"),
       abstract: getValue("contrib-abstract"),
       keywords: parseKeywords(getValue("contrib-keywords")),
-      publication_type: getValue("contrib-pubtype"),
       volume: getValue("contrib-volume"),
       issue: getValue("contrib-issue"),
       pages: getValue("contrib-pages"),
@@ -590,7 +594,16 @@
   }
 
   if (authorTable && authorAddButton) {
-    authorAddButton.addEventListener("click", () => addAuthorRow(authorTable));
+    if (!authorAddButton.dataset.bound) {
+      authorAddButton.dataset.bound = "true";
+      authorAddButton.addEventListener("click", () => addAuthorRow(authorTable));
+    }
+    authorTable.querySelectorAll(".hdd-author-remove").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        const row = event.target.closest("[data-author-row]");
+        if (row) row.remove();
+      });
+    });
   }
 
   if (showJsonButton) {
