@@ -5,49 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Hydrogen Diffusion Database</title>
     <link rel="stylesheet" href="./hdd-explorer.css" />
-    <style>
-      .hdd-dev-nav {
-        display: flex;
-        gap: 0.75rem;
-        justify-content: center;
-        align-items: center;
-        margin: 1rem auto 0;
-        flex-wrap: wrap;
-        font-size: 0.95rem;
-      }
-      .hdd-dev-nav a {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.45rem;
-        color: inherit;
-        text-decoration: none;
-        padding: 0.35rem 0.6rem;
-        border-radius: 6px;
-        border: 1px solid rgba(255, 255, 255, 0.12);
-      }
-      .hdd-dev-nav a:hover {
-        border-color: rgba(255, 255, 255, 0.3);
-      }
-      .hdd-dev-sep {
-        opacity: 0.6;
-      }
-      .hdd-dev-nav img {
-        width: 30px;
-        height: 30px;
-      }
-    </style>
+    <style></style>
   </head>
   <body>
-    <nav class="hdd-dev-nav" aria-label="HDD links">
-      <a href="/hydrogen-diffusion-database/">
-        <img src="/assets/HDD.B%20Logo.png" alt="HDD.B" />
-        <span>HDD.B</span>
+    <header>
+      <a class="logo" href="/">
+        <img src="/assets/logo.svg" alt="Home" />
       </a>
-      <span class="hdd-dev-sep">·</span>
-      <a href="/hydrogen-diffusion-database/docs/">How it works</a>
-      <span class="hdd-dev-sep">·</span>
-      <a href="/hydrogen-diffusion-database/contribute/">Contribute Data</a>
-    </nav>
+      <nav class="header-links" aria-label="HDD links">
+        <a href="/hydrogen-diffusion-database/">
+          <img src="/assets/HDD.B%20Logo.png" alt="HDD.B" />
+          <span>HDD.B</span>
+        </a>
+        <span class="header-sep">?</span>
+        <a href="/hydrogen-diffusion-database/docs/">How it works</a>
+        <span class="header-sep">?</span>
+        <a href="/hydrogen-diffusion-database/contribute/">Contribute Data</a>
+      </nav>
+      <div class="header-actions">
+        <button class="theme-toggle" type="button">?? Mode</button>
+      </div>
+    </header>
     <main>
       <h1>Hydrogen Diffusion Database</h1>
       <p>
@@ -105,6 +83,16 @@
       </label>
       <span id="hdd-filter-grade-label" class="hdd-sr-only">Material Grade</span>
       <div id="hdd-filter-grade" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-grade-label" aria-multiselectable="true"></div>
+    </details>
+    <details class="hdd-filter-block">
+      <summary>Microstructure</summary>
+      <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+        <input type="checkbox" data-filter-mode="materialMicrostructure" checked />
+        <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+        <span class="hdd-toggle-label">Exclude selected</span>
+      </label>
+      <span id="hdd-filter-microstructure-label" class="hdd-sr-only">Microstructure</span>
+      <div id="hdd-filter-microstructure" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-microstructure-label" aria-multiselectable="true"></div>
     </details>
     <details class="hdd-filter-block">
       <summary>Temperature Window [&deg;C]</summary>

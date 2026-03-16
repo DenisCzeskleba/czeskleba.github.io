@@ -70,6 +70,7 @@
     filterSource: document.getElementById("hdd-filter-source"),
     filterClass: document.getElementById("hdd-filter-class"),
     filterGrade: document.getElementById("hdd-filter-grade"),
+    filterMicrostructure: document.getElementById("hdd-filter-microstructure"),
     filterComposition: document.getElementById("hdd-filter-composition"),
     filterReported: document.getElementById("hdd-filter-reported"),
     filterEffect: document.getElementById("hdd-filter-effect"),
@@ -583,6 +584,10 @@
     setSelectOptions(dom.filterClass, toOptions(payload.filters?.material_class));
     applyDefaultMaterialClassExclusions();
     setSelectOptions(dom.filterGrade, toOptions(payload.filters?.material_grade));
+    setSelectOptions(
+      dom.filterMicrostructure,
+      toOptions(collectMetaValues(state.seriesList, "material_microstructure"))
+    );
     populateCompositionFilters(state.seriesList);
     setSelectOptions(dom.filterReported, toOptions(payload.filters?.reported_as));
     setSelectOptions(dom.filterEffect, toOptions(payload.filters?.studied_effects));
@@ -965,7 +970,7 @@
   }
 
   function clearFilters() {
-    [dom.filterSource, dom.filterClass, dom.filterGrade, dom.filterComposition, dom.filterReported, dom.filterEffect, dom.filterMethod, dom.filterModel]
+    [dom.filterSource, dom.filterClass, dom.filterGrade, dom.filterMicrostructure, dom.filterComposition, dom.filterReported, dom.filterEffect, dom.filterMethod, dom.filterModel]
       .forEach((listbox) => {
         if (!listbox) return;
         listbox.querySelectorAll("input[type='checkbox']").forEach((checkbox) => {
@@ -1002,6 +1007,7 @@
       source: selectedValues(dom.filterSource),
       materialClass: selectedValues(dom.filterClass),
       materialGrade: selectedValues(dom.filterGrade),
+      materialMicrostructure: selectedValues(dom.filterMicrostructure),
       chemicalComposition: state.compositionFilters,
       reportedAs: selectedValues(dom.filterReported),
       studiedEffects: selectedValues(dom.filterEffect),
@@ -1052,6 +1058,7 @@
       dom.filterSource,
       dom.filterClass,
       dom.filterGrade,
+      dom.filterMicrostructure,
       dom.filterComposition,
       dom.filterReported,
       dom.filterEffect,
@@ -1105,6 +1112,7 @@
     if (ignoreKey !== "source" && !matchesValue(filters.source, entry.sourceId, mode.source)) return false;
     if (ignoreKey !== "materialClass" && !matchesSet(filters.materialClass, entry.meta.material_class, mode.materialClass)) return false;
     if (ignoreKey !== "materialGrade" && !matchesSet(filters.materialGrade, entry.meta.material_grade, mode.materialGrade)) return false;
+    if (ignoreKey !== "materialMicrostructure" && !matchesSet(filters.materialMicrostructure, entry.meta.material_microstructure, mode.materialMicrostructure)) return false;
     if (ignoreKey !== "chemicalComposition" && !matchesComposition(filters.chemicalComposition, entry.compositionRanges, filters.includeUnknownComposition)) return false;
     if (ignoreKey !== "reportedAs" && !matchesSet(filters.reportedAs, entry.meta.reported_as, mode.reportedAs)) return false;
     if (ignoreKey !== "studiedEffects" && !matchesSet(filters.studiedEffects, entry.meta.studied_effects, mode.studiedEffects)) return false;
@@ -1171,6 +1179,7 @@
       source: new Set(),
       materialClass: new Set(),
       materialGrade: new Set(),
+      materialMicrostructure: new Set(),
       chemicalComposition: new Set(),
       reportedAs: new Set(),
       studiedEffects: new Set(),
@@ -1191,6 +1200,13 @@
     state.seriesList.forEach((entry) => {
       if (!entryMatchesFilters(entry, filters, query, "materialGrade")) return;
       entry.meta.material_grade?.forEach((value) => availability.materialGrade.add(String(value)));
+    });
+
+    state.seriesList.forEach((entry) => {
+      if (!entryMatchesFilters(entry, filters, query, "materialMicrostructure")) return;
+      entry.meta.material_microstructure?.forEach((value) =>
+        availability.materialMicrostructure.add(String(value))
+      );
     });
 
     state.seriesList.forEach((entry) => {
@@ -1225,6 +1241,7 @@
     updateSelectAvailability(dom.filterSource, availability.source);
     updateSelectAvailability(dom.filterClass, availability.materialClass);
     updateSelectAvailability(dom.filterGrade, availability.materialGrade);
+    updateSelectAvailability(dom.filterMicrostructure, availability.materialMicrostructure);
     updateSelectAvailability(dom.filterReported, availability.reportedAs);
     updateSelectAvailability(dom.filterEffect, availability.studiedEffects);
     updateSelectAvailability(dom.filterMethod, availability.measurementMethod);
@@ -2902,6 +2919,7 @@
     addList("source", selectedValues(dom.filterSource));
     addList("material_class", selectedValues(dom.filterClass));
     addList("material_grade", selectedValues(dom.filterGrade));
+    addList("material_microstructure", selectedValues(dom.filterMicrostructure));
     const compositionFilters = formatCompositionFilters(state.compositionFilters);
     if (compositionFilters.length) summary.chemical_composition = compositionFilters;
     if (state.includeUnknownComposition) summary.chemical_composition_unknown = true;

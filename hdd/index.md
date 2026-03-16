@@ -64,6 +64,16 @@ permalink: /hydrogen-diffusion-database/
       <div id="hdd-filter-grade" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-grade-label" aria-multiselectable="true"></div>
     </details>
     <details class="hdd-filter-block">
+      <summary>Microstructure</summary>
+      <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+        <input type="checkbox" data-filter-mode="materialMicrostructure" checked />
+        <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+        <span class="hdd-toggle-label">Exclude selected</span>
+      </label>
+      <span id="hdd-filter-microstructure-label" class="hdd-sr-only">Microstructure</span>
+      <div id="hdd-filter-microstructure" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-microstructure-label" aria-multiselectable="true"></div>
+    </details>
+    <details class="hdd-filter-block">
       <summary>Temperature Window [&deg;C]</summary>
       <label class="hdd-sr-only" for="hdd-temp-min">Temperature min (C)</label>
       <label class="hdd-sr-only" for="hdd-temp-max">Temperature max (C)</label>
