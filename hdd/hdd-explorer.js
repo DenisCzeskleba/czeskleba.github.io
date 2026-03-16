@@ -873,8 +873,8 @@
       row.className = "hdd-comp-row";
       row.innerHTML = `
         <label>${escapeHtml(element)}</label>
-        <input type="number" data-comp-element="${escapeHtml(element)}" data-comp-bound="min" placeholder="min" step="0.01" min="0" />
-        <input type="number" data-comp-element="${escapeHtml(element)}" data-comp-bound="max" placeholder="max" step="0.01" min="0" />
+        <input type="number" lang="en" data-comp-element="${escapeHtml(element)}" data-comp-bound="min" placeholder="min" step="0.01" min="0" />
+        <input type="number" lang="en" data-comp-element="${escapeHtml(element)}" data-comp-bound="max" placeholder="max" step="0.01" min="0" />
       `;
       dom.filterComposition.appendChild(row);
     });
@@ -1216,6 +1216,9 @@
 
   function clampNonNegativeNumberInput(input) {
     if (!input) return null;
+    if (input.value && input.value.includes(",")) {
+      input.value = input.value.replace(/,/g, ".");
+    }
     const value = parseNumber(input.value);
     if (value == null) return null;
     if (value < 0) {
@@ -1237,8 +1240,17 @@
     const maxInput = dom.filterComposition?.querySelector(
       `input[data-comp-element="${esc}"][data-comp-bound="max"]`
     );
-    const minVal = clampNonNegativeNumberInput(minInput);
-    const maxVal = clampNonNegativeNumberInput(maxInput);
+    let minVal = clampNonNegativeNumberInput(minInput);
+    let maxVal = clampNonNegativeNumberInput(maxInput);
+    if (minVal != null && maxVal != null && minVal > maxVal) {
+      if (input.dataset.compBound === "min") {
+        maxVal = minVal;
+        if (maxInput) maxInput.value = String(maxVal);
+      } else if (input.dataset.compBound === "max") {
+        minVal = maxVal;
+        if (minInput) minInput.value = String(minVal);
+      }
+    }
     if (minVal == null && maxVal == null) {
       delete state.compositionFilters[element];
     } else {
