@@ -873,8 +873,8 @@
       row.className = "hdd-comp-row";
       row.innerHTML = `
         <label>${escapeHtml(element)}</label>
-        <input type="number" data-comp-element="${escapeHtml(element)}" data-comp-bound="min" placeholder="min" step="any" />
-        <input type="number" data-comp-element="${escapeHtml(element)}" data-comp-bound="max" placeholder="max" step="any" />
+        <input type="number" data-comp-element="${escapeHtml(element)}" data-comp-bound="min" placeholder="min" step="0.01" min="0" />
+        <input type="number" data-comp-element="${escapeHtml(element)}" data-comp-bound="max" placeholder="max" step="0.01" min="0" />
       `;
       dom.filterComposition.appendChild(row);
     });
@@ -1214,6 +1214,17 @@
     adjustFilterListHeight(listbox);
   }
 
+  function clampNonNegativeNumberInput(input) {
+    if (!input) return null;
+    const value = parseNumber(input.value);
+    if (value == null) return null;
+    if (value < 0) {
+      input.value = "0";
+      return 0;
+    }
+    return value;
+  }
+
   function handleCompositionInput(event) {
     const input = event.target;
     if (!(input instanceof HTMLInputElement)) return;
@@ -1226,8 +1237,8 @@
     const maxInput = dom.filterComposition?.querySelector(
       `input[data-comp-element="${esc}"][data-comp-bound="max"]`
     );
-    const minVal = parseNumber(minInput?.value);
-    const maxVal = parseNumber(maxInput?.value);
+    const minVal = clampNonNegativeNumberInput(minInput);
+    const maxVal = clampNonNegativeNumberInput(maxInput);
     if (minVal == null && maxVal == null) {
       delete state.compositionFilters[element];
     } else {
