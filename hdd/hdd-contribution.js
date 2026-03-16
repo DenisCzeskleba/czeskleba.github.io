@@ -13,6 +13,8 @@
   const copyJsonButton = document.getElementById("hdd-copy-json");
   const downloadJsonButton = document.getElementById("hdd-download-json");
   const jsonPreview = document.getElementById("hdd-json-preview");
+  const authorTable = document.getElementById("hdd-authors-table");
+  const authorAddButton = document.getElementById("hdd-author-add");
 
   function setStatus(message, tone) {
     if (!status) return;
@@ -31,6 +33,14 @@
     };
     modelSelect.addEventListener("change", toggleFields);
     toggleFields();
+  }
+
+  function bindCompositionTable(root) {
+    if (!root) return;
+    const table = root.querySelector(".hdd-comp-table");
+    const addButton = root.querySelector(".hdd-comp-add");
+    if (!table || !addButton) return;
+    addButton.addEventListener("click", () => addCustomCompositionRow(table));
   }
 
   function createRow() {
@@ -154,21 +164,32 @@
           </div>
         </div>
         <p class="hdd-contrib-note">Composition overrides (wt%) — leave blank to use defaults.</p>
-        <div class="hdd-contrib-row-grid">
-          <div><label>C</label><input type="number" step="0.01" data-field="override_comp_c" title="Override C in wt%. Leave empty if not needed." /></div>
-          <div><label>Mn</label><input type="number" step="0.01" data-field="override_comp_mn" title="Override Mn in wt%. Leave empty if not needed." /></div>
-          <div><label>Si</label><input type="number" step="0.01" data-field="override_comp_si" title="Override Si in wt%. Leave empty if not needed." /></div>
-          <div><label>Cr</label><input type="number" step="0.01" data-field="override_comp_cr" title="Override Cr in wt%. Leave empty if not needed." /></div>
-          <div><label>Ni</label><input type="number" step="0.01" data-field="override_comp_ni" title="Override Ni in wt%. Leave empty if not needed." /></div>
-          <div><label>Mo</label><input type="number" step="0.01" data-field="override_comp_mo" title="Override Mo in wt%. Leave empty if not needed." /></div>
-          <div><label>V</label><input type="number" step="0.01" data-field="override_comp_v" title="Override V in wt%. Leave empty if not needed." /></div>
-          <div><label>Nb</label><input type="number" step="0.01" data-field="override_comp_nb" title="Override Nb in wt%. Leave empty if not needed." /></div>
-          <div><label>Ti</label><input type="number" step="0.01" data-field="override_comp_ti" title="Override Ti in wt%. Leave empty if not needed." /></div>
-          <div><label>Al</label><input type="number" step="0.01" data-field="override_comp_al" title="Override Al in wt%. Leave empty if not needed." /></div>
-          <div><label>Cu</label><input type="number" step="0.01" data-field="override_comp_cu" title="Override Cu in wt%. Leave empty if not needed." /></div>
-          <div><label>P</label><input type="number" step="0.01" data-field="override_comp_p" title="Override P in wt%. Leave empty if not needed." /></div>
-          <div><label>S</label><input type="number" step="0.01" data-field="override_comp_s" title="Override S in wt%. Leave empty if not needed." /></div>
-          <div><label>N</label><input type="number" step="0.01" data-field="override_comp_n" title="Override N in wt%. Leave empty if not needed." /></div>
+        <table class="hdd-contrib-comp-table hdd-comp-table">
+          <thead>
+            <tr>
+              <th>Element</th>
+              <th>wt%</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-comp-row data-element="C"><td>C</td><td><input type="number" step="0.01" data-comp-value title="Override C in wt%. Leave empty if not needed." /></td></tr>
+            <tr data-comp-row data-element="Mn"><td>Mn</td><td><input type="number" step="0.01" data-comp-value title="Override Mn in wt%. Leave empty if not needed." /></td></tr>
+            <tr data-comp-row data-element="Si"><td>Si</td><td><input type="number" step="0.01" data-comp-value title="Override Si in wt%. Leave empty if not needed." /></td></tr>
+            <tr data-comp-row data-element="Cr"><td>Cr</td><td><input type="number" step="0.01" data-comp-value title="Override Cr in wt%. Leave empty if not needed." /></td></tr>
+            <tr data-comp-row data-element="Ni"><td>Ni</td><td><input type="number" step="0.01" data-comp-value title="Override Ni in wt%. Leave empty if not needed." /></td></tr>
+            <tr data-comp-row data-element="Mo"><td>Mo</td><td><input type="number" step="0.01" data-comp-value title="Override Mo in wt%. Leave empty if not needed." /></td></tr>
+            <tr data-comp-row data-element="V"><td>V</td><td><input type="number" step="0.01" data-comp-value title="Override V in wt%. Leave empty if not needed." /></td></tr>
+            <tr data-comp-row data-element="Nb"><td>Nb</td><td><input type="number" step="0.01" data-comp-value title="Override Nb in wt%. Leave empty if not needed." /></td></tr>
+            <tr data-comp-row data-element="Ti"><td>Ti</td><td><input type="number" step="0.01" data-comp-value title="Override Ti in wt%. Leave empty if not needed." /></td></tr>
+            <tr data-comp-row data-element="Al"><td>Al</td><td><input type="number" step="0.01" data-comp-value title="Override Al in wt%. Leave empty if not needed." /></td></tr>
+            <tr data-comp-row data-element="Cu"><td>Cu</td><td><input type="number" step="0.01" data-comp-value title="Override Cu in wt%. Leave empty if not needed." /></td></tr>
+            <tr data-comp-row data-element="P"><td>P</td><td><input type="number" step="0.01" data-comp-value title="Override P in wt%. Leave empty if not needed." /></td></tr>
+            <tr data-comp-row data-element="S"><td>S</td><td><input type="number" step="0.01" data-comp-value title="Override S in wt%. Leave empty if not needed." /></td></tr>
+            <tr data-comp-row data-element="N"><td>N</td><td><input type="number" step="0.01" data-comp-value title="Override N in wt%. Leave empty if not needed." /></td></tr>
+          </tbody>
+        </table>
+        <div class="hdd-comp-actions">
+          <button type="button" class="hdd-comp-add">Add element</button>
         </div>
         <div>
           <label>Composition notes</label>
@@ -189,8 +210,26 @@
           <input type="text" data-field="override_conditions_notes" title="Override conditions notes for this row. Leave empty if not needed." />
         </div>
         <div>
-          <label>Studied effects (comma-separated)</label>
-          <input type="text" data-field="override_studied_effects" title="Override studied effects for this row. Leave empty if not needed." />
+          <label>Studied effects</label>
+          <select data-field="override_studied_effects" title="If you had to say which effects on the diffusion coefficients did you study?">
+            <option value="">Select an effect</option>
+            <option value="Alloying Elements">Alloying Elements</option>
+            <option value="Coatings">Coatings</option>
+            <option value="Cold Work and Applied Stresses">Cold Work and Applied Stresses</option>
+            <option value="Grain Boundaries and Particle-Matrix Interfaces">Grain Boundaries and Particle-Matrix Interfaces</option>
+            <option value="HAZ-Specific effects">HAZ-Specific effects</option>
+            <option value="Inner Effects (Trapping)">Inner Effects (Trapping)</option>
+            <option value="Lattice Imperfections">Lattice Imperfections</option>
+            <option value="Liquidus">Liquidus</option>
+            <option value="Microstructure Influence">Microstructure Influence</option>
+            <option value="Microvoids and nonmetallic inclusions">Microvoids and nonmetallic inclusions</option>
+            <option value="Oxide and other Passivators">Oxide and other Passivators</option>
+            <option value="Porosity">Porosity</option>
+            <option value="Surface Effects">Surface Effects</option>
+            <option value="Surface Mass Transfer">Surface Mass Transfer</option>
+            <option value="Surface State and Reactions">Surface State and Reactions</option>
+            <option value="Weld-Metal-Specific Effects">Weld-Metal-Specific Effects</option>
+          </select>
         </div>
       </details>
     `;
@@ -210,6 +249,7 @@
     });
 
     bindModelToggle(row);
+    bindCompositionTable(row);
 
     return row;
   }
@@ -219,7 +259,11 @@
     return el ? el.value.trim() : "";
   }
 
-  function parseCsvList(value) {
+  function parseStudiedEffect(value) {
+    return value ? [value] : [];
+  }
+
+  function parseKeywords(value) {
     if (!value) return [];
     return value
       .split(",")
@@ -237,36 +281,69 @@
     return parseNumber(value);
   }
 
-  function collectCompositionFromRow(row, prefix) {
-    const values = {};
-    const map = {
-      C: `${prefix}_comp_c`,
-      Mn: `${prefix}_comp_mn`,
-      Si: `${prefix}_comp_si`,
-      Cr: `${prefix}_comp_cr`,
-      Ni: `${prefix}_comp_ni`,
-      Mo: `${prefix}_comp_mo`,
-      V: `${prefix}_comp_v`,
-      Nb: `${prefix}_comp_nb`,
-      Ti: `${prefix}_comp_ti`,
-      Al: `${prefix}_comp_al`,
-      Cu: `${prefix}_comp_cu`,
-      P: `${prefix}_comp_p`,
-      S: `${prefix}_comp_s`,
-      N: `${prefix}_comp_n`,
-    };
+  function addCustomCompositionRow(table) {
+    if (!table) return;
+    const tbody = table.querySelector("tbody");
+    if (!tbody) return;
+    const row = document.createElement("tr");
+    row.setAttribute("data-comp-row", "");
+    row.innerHTML = `
+      <td><input type="text" data-comp-element placeholder="Element" title="Element symbol or name. Leave empty if not needed." /></td>
+      <td><input type="number" step="0.01" data-comp-value title="Element in wt%. Leave empty if not needed." /></td>
+    `;
+    tbody.appendChild(row);
+  }
 
-    Object.keys(map).forEach((element) => {
-      const input = row.querySelector(`[data-field='${map[element]}']`);
-      const value = input ? parseWtPercent(input.value.trim()) : null;
-      if (value !== null) {
-        values[element] = value;
-      }
+  function addAuthorRow(table) {
+    if (!table) return;
+    const tbody = table.querySelector("tbody");
+    if (!tbody) return;
+    const row = document.createElement("tr");
+    row.setAttribute("data-author-row", "");
+    row.innerHTML = `
+      <td><input type="text" data-author-first required title="Author first name." /></td>
+      <td><input type="text" data-author-last required title="Author last name." /></td>
+      <td><input type="text" data-author-orcid title="ORCID (optional)." /></td>
+    `;
+    tbody.appendChild(row);
+  }
+
+  function collectAuthors(table) {
+    const authors = [];
+    if (!table) return authors;
+    table.querySelectorAll("[data-author-row]").forEach((row) => {
+      const first = row.querySelector("[data-author-first]");
+      const last = row.querySelector("[data-author-last]");
+      const orcid = row.querySelector("[data-author-orcid]");
+      const firstName = first ? first.value.trim() : "";
+      const lastName = last ? last.value.trim() : "";
+      const orcidValue = orcid ? orcid.value.trim() : "";
+      if (!firstName && !lastName && !orcidValue) return;
+      authors.push({
+        first_name: firstName,
+        last_name: lastName,
+        orcid: orcidValue || null,
+      });
     });
+    return authors;
+  }
 
-    const notesInput = row.querySelector("[data-field='override_material_composition_notes']");
-    const notes = notesInput ? notesInput.value.trim() : "";
+  function collectCompositionFromTable(table, notesValue) {
+    const values = {};
+    if (table) {
+      table.querySelectorAll("tr[data-comp-row]").forEach((row) => {
+        const elementAttr = row.getAttribute("data-element");
+        const elementInput = row.querySelector("[data-comp-element]");
+        const element = elementAttr || (elementInput ? elementInput.value.trim() : "");
+        const valueInput = row.querySelector("[data-comp-value]");
+        const value = valueInput ? parseWtPercent(valueInput.value.trim()) : null;
+        if (element && value !== null) {
+          values[element] = value;
+        }
+      });
+    }
 
+    const notes = notesValue ? notesValue.trim() : "";
     if (!Object.keys(values).length && !notes) {
       return null;
     }
@@ -300,7 +377,9 @@
     if (materialTags) material.tags = [materialTags];
     if (materialNotes) material.notes = materialNotes;
 
-    const composition = collectCompositionFromRow(row, "override");
+    const overrideTable = row.querySelector(".hdd-comp-table");
+    const notesInput = row.querySelector("[data-field='override_material_composition_notes']");
+    const composition = collectCompositionFromTable(overrideTable, notesInput ? notesInput.value : "");
     if (composition) {
       material.chemical_composition = composition;
     }
@@ -313,7 +392,7 @@
     if (conditionsNotes) conditions.notes = conditionsNotes;
 
     const effects = getRowValue("override_studied_effects");
-    if (effects) metadata.studied_effects = parseCsvList(effects);
+    if (effects) metadata.studied_effects = parseStudiedEffect(effects);
 
     if (Object.keys(material).length) overrides.material = material;
     if (Object.keys(conditions).length) overrides.conditions = conditions;
@@ -323,41 +402,9 @@
   }
 
   function collectComposition() {
-    const values = {};
-    const map = {
-      C: "comp-c",
-      Mn: "comp-mn",
-      Si: "comp-si",
-      Cr: "comp-cr",
-      Ni: "comp-ni",
-      Mo: "comp-mo",
-      V: "comp-v",
-      Nb: "comp-nb",
-      Ti: "comp-ti",
-      Al: "comp-al",
-      Cu: "comp-cu",
-      P: "comp-p",
-      S: "comp-s",
-      N: "comp-n",
-    };
-
-    Object.keys(map).forEach((element) => {
-      const value = parseWtPercent(getValue(map[element]));
-      if (value !== null) {
-        values[element] = value;
-      }
-    });
-
-    const notes = getValue("default-material-composition-notes") || null;
-    if (!Object.keys(values).length && !notes) {
-      return null;
-    }
-
-    return {
-      basis: "wt_pct",
-      values,
-      notes: notes || "not_reported",
-    };
+    const table = document.getElementById("hdd-comp-table");
+    const notes = getValue("default-material-composition-notes") || "";
+    return collectCompositionFromTable(table, notes);
   }
 
   function buildPayload() {
@@ -379,17 +426,24 @@
         notes: getValue("default-conditions-notes") || null,
       },
       metadata: {
-        studied_effects: parseCsvList(getValue("default-studied-effects")),
+        studied_effects: parseStudiedEffect(getValue("default-studied-effects")),
       },
     };
 
     const source = {
       title: getValue("contrib-title"),
-      authors: getValue("contrib-authors"),
+      authors: collectAuthors(authorTable),
       journal: getValue("contrib-journal"),
       year: getValue("contrib-year"),
       doi: getValue("contrib-doi"),
       oa_url: getValue("contrib-oa"),
+      abstract: getValue("contrib-abstract"),
+      keywords: parseKeywords(getValue("contrib-keywords")),
+      publication_type: getValue("contrib-pubtype"),
+      volume: getValue("contrib-volume"),
+      issue: getValue("contrib-issue"),
+      pages: getValue("contrib-pages"),
+      language: getValue("contrib-language"),
       notes: getValue("contrib-notes") || null,
       contact: {
         name: getValue("contrib-name"),
@@ -446,6 +500,17 @@
   function validateRows(payload) {
     if (!payload.rows.length) {
       return "Please add at least one data row.";
+    }
+
+    if (!payload.source.authors.length) {
+      return "Please add at least one author.";
+    }
+
+    for (let i = 0; i < payload.source.authors.length; i += 1) {
+      const author = payload.source.authors[i];
+      if (!author.first_name || !author.last_name) {
+        return "Each author must include first and last name.";
+      }
     }
 
     for (let i = 0; i < payload.rows.length; i += 1) {
@@ -517,6 +582,16 @@
   }
 
   ensureInitialRow();
+
+  const defaultCompTable = document.getElementById("hdd-comp-table");
+  const defaultCompAdd = document.getElementById("hdd-comp-add");
+  if (defaultCompTable && defaultCompAdd) {
+    defaultCompAdd.addEventListener("click", () => addCustomCompositionRow(defaultCompTable));
+  }
+
+  if (authorTable && authorAddButton) {
+    authorAddButton.addEventListener("click", () => addAuthorRow(authorTable));
+  }
 
   if (showJsonButton) {
     showJsonButton.addEventListener("click", () => {

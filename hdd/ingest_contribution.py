@@ -16,7 +16,17 @@ def slugify(value):
 def parse_authors(authors_raw):
     if not authors_raw:
         return []
-    return [a.strip() for a in authors_raw.split(",") if a.strip()]
+    if isinstance(authors_raw, list):
+        authors = []
+        for entry in authors_raw:
+            if not isinstance(entry, dict):
+                continue
+            first = str(entry.get("first_name", "")).strip()
+            last = str(entry.get("last_name", "")).strip()
+            if first or last:
+                authors.append(" ".join([name for name in (first, last) if name]))
+        return authors
+    return [a.strip() for a in str(authors_raw).split(",") if a.strip()]
 
 
 def to_kelvin(value, unit):
@@ -74,6 +84,13 @@ def build_source(payload):
                 "journal": source.get("journal", ""),
                 "doi": source.get("doi", ""),
                 "url_open_access": source.get("oa_url", ""),
+                "abstract": source.get("abstract", ""),
+                "keywords": source.get("keywords", []),
+                "publication_type": source.get("publication_type", ""),
+                "volume": source.get("volume", ""),
+                "issue": source.get("issue", ""),
+                "pages": source.get("pages", ""),
+                "language": source.get("language", ""),
                 "license_hint": "open_access",
                 "notes": source.get("notes") or "",
                 "ingest_status": "draft",
