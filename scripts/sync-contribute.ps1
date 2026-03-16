@@ -11,7 +11,7 @@ if ($Output -ne "hdd\dev-contribute.html") {
 }
 
 $md = Get-Content -Raw $Source
-if ($md -notmatch "\n---\n\n([\s\S]*)$") {
+if ($md -notmatch "^---\r?\n[\s\S]*?\r?\n---\r?\n([\s\S]*)$") {
   throw "Failed to find content after front matter in $Source"
 }
 
