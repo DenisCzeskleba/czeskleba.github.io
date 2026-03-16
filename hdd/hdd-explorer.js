@@ -2655,18 +2655,16 @@
       ctx.fillText(`${item.index + 1}. ${item.label}`, textX, legendY);
       legendY += lineHeight;
     }
-    if (needsMore) {
-      const label = `... +${items.length - i} more`;
-      ctx.fillStyle = theme.accent || theme.muted;
-      ctx.fillText(label, textX, legendY);
-      const metrics = ctx.measureText(label);
-      moreRect = {
-        x: textX,
-        y: legendY - lineHeight + 2,
-        width: metrics.width,
-        height: lineHeight,
-      };
-    }
+    const label = needsMore ? `... +${items.length - i} more` : "Full list";
+    ctx.fillStyle = theme.accent || theme.muted;
+    ctx.fillText(label, textX, legendY);
+    const metrics = ctx.measureText(label);
+    moreRect = {
+      x: textX,
+      y: legendY - lineHeight + 2,
+      width: metrics.width,
+      height: lineHeight,
+    };
     return { moreRect };
   }
 
@@ -3317,13 +3315,10 @@
       );
       legendY += lineHeight;
     }
-      if (needsMore) {
-        parts.push(
-          `<text x="${textX}" y="${legendY}" fill="${theme.accent || theme.muted}" font-size="${fontLegend}" text-anchor="start">... +${
-            items.length - i
-          } more</text>`
-        );
-      }
+      const label = needsMore ? `... +${items.length - i} more` : "Full list";
+      parts.push(
+        `<text x="${textX}" y="${legendY}" fill="${theme.accent || theme.muted}" font-size="${fontLegend}" text-anchor="start">${label}</text>`
+      );
 
       const footerLine = getDatabaseFooterLine();
       if (footerLine) {
