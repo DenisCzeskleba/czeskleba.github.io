@@ -112,6 +112,7 @@
     axisInputActive: false,
     selectionMode: "filtered",
     filteredList: [],
+    materialClassDefaultsApplied: false,
   };
 
   let currentSeries = [];
@@ -580,12 +581,35 @@
 
     setSelectOptions(dom.filterSource, sourceOptions);
     setSelectOptions(dom.filterClass, toOptions(payload.filters?.material_class));
+    applyDefaultMaterialClassExclusions();
     setSelectOptions(dom.filterGrade, toOptions(payload.filters?.material_grade));
     populateCompositionFilters(state.seriesList);
     setSelectOptions(dom.filterReported, toOptions(payload.filters?.reported_as));
     setSelectOptions(dom.filterEffect, toOptions(payload.filters?.studied_effects));
     setSelectOptions(dom.filterMethod, toOptions(payload.filters?.measurement_method));
     setSelectOptions(dom.filterModel, toOptions(collectMetaValues(state.seriesList, "model_type")));
+  }
+
+  function normalizeFilterLabel(value) {
+    return String(value || "")
+      .toLowerCase()
+      .replace(/[\u2010-\u2015-]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function applyDefaultMaterialClassExclusions() {
+    if (!dom.filterClass || state.materialClassDefaultsApplied) return;
+    const targets = ["stainless steel", "nickel based alloy", "nickel based alloys"];
+    dom.filterClass.querySelectorAll(".hdd-filter-item").forEach((item) => {
+      const label = normalizeFilterLabel(item.querySelector("span")?.textContent || "");
+      if (!label) return;
+      const isMatch = targets.some((target) => label.includes(target));
+      if (!isMatch) return;
+      const checkbox = item.querySelector("input");
+      if (checkbox) checkbox.checked = true;
+    });
+    state.materialClassDefaultsApplied = true;
   }
 
   function initializeYearFilter(payload) {
@@ -1849,8 +1873,8 @@
     else if (seriesCount > 40) densityScale = 0.75;
     else if (seriesCount > 20) densityScale = 0.9;
     const thickness = clampValue(state.lineThickness || 1, 0.5, 2);
-    const seriesLineWidth = Math.max(0.7, 1.6 * layoutScale * densityScale * thickness);
-    const pointRadius = Math.max(1.2, Math.round(2.4 * layoutScale * densityScale * thickness));
+    const seriesLineWidth = Math.max(0.7, 2.4 * layoutScale * densityScale * thickness);
+    const pointRadius = Math.max(1.2, Math.round(3.6 * layoutScale * densityScale * thickness));
 
     ctx.lineWidth = seriesLineWidth;
     series.forEach((item, index) => {

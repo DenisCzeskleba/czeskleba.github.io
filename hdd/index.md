@@ -8,7 +8,7 @@ permalink: /hydrogen-diffusion-database/
   <img class="hdd-hero-logo" src="/assets/HDD.B%20Logo.png" alt="HDD.B logo" decoding="async" loading="lazy" />
   <div class="hdd-hero-text">
     <h1>Hydrogen Diffusion Database</h1>
-    <p>Browse curated diffusivity datasets, filter by material or source, and plot series directly in the browser. Export images and data, and <a class="hdd-inline-link" href="/hydrogen-diffusion-database/contribute/">contribute</a> your peer-reviewed open-access results back to the database.</p>
+    <p>A curated database of hydrogen diffusivity datasets for structural steels and related materials. Filter by material or source, plot series directly in the browser, export images or data, and <a class="hdd-inline-link" href="/hydrogen-diffusion-database/contribute/">contribute</a> peer-reviewed open-access datasets to expand the database.</p>
   </div>
 </div>
 
