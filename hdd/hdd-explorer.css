@@ -1432,8 +1432,38 @@ body.dark .hdd-toggle-group button.is-active {
   z-index: 50;
 }
 
+#hdd-chart-tooltip.is-pinned {
+  pointer-events: auto;
+}
+
 #hdd-chart-tooltip strong {
   font-weight: 600;
+}
+
+.hdd-tooltip-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.hdd-tooltip-cite {
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.hdd-tooltip-actions button {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.hdd-tooltip-actions button:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 

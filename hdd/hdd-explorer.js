@@ -115,12 +115,16 @@
     selectionMode: "filtered",
     filteredList: [],
     materialClassDefaultsApplied: false,
+    excludedSeries: new Set(),
+    tooltipPinned: null,
   };
 
   let currentSeries = [];
   let currentCanvas = null;
   let lastPlotContext = null;
   let hoverCache = null;
+  let lastZoomDragAt = 0;
+  let isZoomDragging = false;
 
   initialize();
 
@@ -584,7 +588,7 @@
 
     setSelectOptions(dom.filterSource, sourceOptions);
     setSelectOptions(dom.filterClass, toOptions(payload.filters?.material_class));
-    applyDefaultMaterialClassExclusions();
+    applyDefaultMaterialClassExclusions(true);
     setSelectOptions(dom.filterGrade, toOptions(payload.filters?.material_grade));
     setSelectOptions(
       dom.filterMicrostructure,
@@ -605,15 +609,18 @@
       .trim();
   }
 
-  function applyDefaultMaterialClassExclusions() {
-    if (!dom.filterClass || state.materialClassDefaultsApplied) return;
+  function applyDefaultMaterialClassExclusions(force = false) {
+    if (!dom.filterClass || (!force && state.materialClassDefaultsApplied)) return;
     const targets = ["stainless steel", "nickel based alloy", "nickel based alloys"];
-    dom.filterClass.querySelectorAll(".hdd-filter-item").forEach((item) => {
-      const label = normalizeFilterLabel(item.querySelector("span")?.textContent || "");
-      if (!label) return;
-      const isMatch = targets.some((target) => label.includes(target));
-      if (!isMatch) return;
+    const items = Array.from(dom.filterClass.querySelectorAll(".hdd-filter-item"));
+    if (!items.length) return;
+    items.forEach((item) => {
       const checkbox = item.querySelector("input");
+      const label = normalizeFilterLabel(item.querySelector("span")?.textContent || "");
+      const value = normalizeFilterLabel(checkbox?.value || "");
+      if (!label && !value) return;
+      const isMatch = targets.some((target) => label.includes(target) || value.includes(target));
+      if (!isMatch) return;
       if (checkbox) checkbox.checked = true;
     });
     state.materialClassDefaultsApplied = true;
@@ -982,6 +989,19 @@
           checkbox.checked = false;
         });
       });
+    dom.filterModeToggles?.forEach((toggle) => {
+      toggle.checked = true;
+      const key = toggle.dataset.filterMode;
+      if (key) state.filterMode[key] = "exclude";
+    });
+    if (dom.filterUnknownComposition) {
+      dom.filterUnknownComposition.checked = false;
+      state.includeUnknownComposition = false;
+    }
+    if (dom.literatureMode) {
+      dom.literatureMode.value = "include";
+      state.literatureMode = "include";
+    }
     if (dom.filterComposition) {
       dom.filterComposition.querySelectorAll("input[type='number']").forEach((input) => {
         input.value = "";
@@ -1000,7 +1020,12 @@
     if (state.yearDomain) {
       updateYearHandles(state.yearDomain.min, state.yearDomain.max);
     }
-    applyFilters();
+    requestAnimationFrame(() => {
+      applyDefaultMaterialClassExclusions(true);
+      applyFilters();
+    });
+    state.excludedSeries = new Set();
+    return;
   }
 
   function applyFilters(options = {}) {
@@ -1114,6 +1139,7 @@
     const microMode =
       mode.materialMicrostructure ||
       (dom.filterMicrostructureMode?.checked ? "exclude" : "include");
+    if (state.excludedSeries?.has(entry.id)) return false;
     if (ignoreKey !== "plottingStatus" && !isPlottingAllowed(entry, filters.includeUnconfirmed)) return false;
     if (filters.literatureMode === "exclude" && hasLiteratureCompilation(entry)) return false;
     if (filters.literatureMode === "only" && !hasLiteratureCompilation(entry)) return false;
@@ -2113,6 +2139,7 @@
       if (event.button !== 0) return;
       const start = getOffset(event);
       if (!isInsidePlot(start.x, start.y)) return;
+      isZoomDragging = true;
       dragStart = { x: start.x, y: start.y };
       dragCurrent = { x: start.x, y: start.y };
       drawSelection();
@@ -2129,6 +2156,7 @@
         if (width < 6 || height < 6) {
           clearSelection();
           window.removeEventListener("mouseup", onMouseUp);
+          isZoomDragging = false;
           return;
         }
 
@@ -2138,6 +2166,8 @@
         const yMax = pxToAxisY(Math.min(startPoint.y, end.y));
         state.zoom = { xMin, xMax, yMin, yMax };
         window.removeEventListener("mouseup", onMouseUp);
+        isZoomDragging = false;
+        lastZoomDragAt = Date.now();
         plotSelectedSeries();
       };
 
@@ -2483,35 +2513,10 @@
     const tooltip = ensureTooltip();
     const radius = 6;
     const lineRadius = 5;
+    const pinDistance = 120;
 
-    function handleMove(event) {
-      if (!hoverCache) return;
-      const rect = canvas.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-      const legendRect = hoverCache.legendMoreRect;
-      if (legendRect) {
-        const insideLegend =
-          x >= legendRect.x &&
-          x <= legendRect.x + legendRect.width &&
-          y >= legendRect.y &&
-          y <= legendRect.y + legendRect.height;
-        if (insideLegend) {
-          canvas.style.cursor = "pointer";
-          tooltip.style.opacity = "0";
-          return;
-        }
-      }
-      const plotLeft = hoverCache.margin.left;
-      const plotTop = hoverCache.margin.top;
-      const plotRight = plotLeft + hoverCache.plotWidth;
-      const plotBottom = plotTop + hoverCache.plotHeight;
-      if (x < plotLeft || x > plotRight || y < plotTop || y > plotBottom) {
-        canvas.style.cursor = "default";
-        tooltip.style.opacity = "0";
-        return;
-      }
-
+    function findNearest(x, y) {
+      if (!hoverCache) return null;
       let best = null;
       let bestDist = radius * radius;
       hoverCache.series.forEach((series) => {
@@ -2542,17 +2547,82 @@
           }
         });
       });
+      return best;
+    }
+
+    function renderTooltipContent(target, pinned = false) {
+      const label = seriesDisplayLabel(target.series.descriptor);
+      const seriesLabel = target.series.seriesLabel || "";
+      const ordinal = Number.isFinite(target.series.legendIndex) ? target.series.legendIndex + 1 : "";
+      const prefix = ordinal ? `${ordinal}. ` : "";
+      const header = `<strong>${escapeHtml(prefix + label)}</strong>`;
+      const range = formatRangeValue(target.series.descriptor.temperatureRange) || "";
+      const meta = seriesLabel ? `<div>${escapeHtml(seriesLabel)}${range ? ` - ${escapeHtml(range)}` : ""}</div>` : range ? `<div>${escapeHtml(range)}</div>` : "";
+      let details = "";
+      if (pinned) {
+        const sourceMeta = state.dataset?.sources?.[target.series.descriptor.sourceId] || null;
+        const citation = buildCitation(sourceMeta, target.series.descriptor);
+        if (citation) {
+          details = `<div class="hdd-tooltip-cite">${escapeHtml(cleanCsvField(citation))}</div>`;
+        }
+      }
+      const actions = pinned
+        ? `<div class="hdd-tooltip-actions">
+            <button type="button" data-action="tooltip-exclude">Exclude</button>
+          </div>`
+        : "";
+      return `${header}${meta}${details}${actions}`;
+    }
+
+    function handleMove(event) {
+      if (state.tooltipPinned) {
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        const dx = x - state.tooltipPinned.px;
+        const dy = y - state.tooltipPinned.py;
+        if (dx * dx + dy * dy > pinDistance * pinDistance) {
+          state.tooltipPinned = null;
+          tooltip.classList.remove("is-pinned");
+          tooltip.style.opacity = "0";
+        }
+        return;
+      }
+      if (!hoverCache) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      const legendRect = hoverCache.legendMoreRect;
+      if (legendRect) {
+        const insideLegend =
+          x >= legendRect.x &&
+          x <= legendRect.x + legendRect.width &&
+          y >= legendRect.y &&
+          y <= legendRect.y + legendRect.height;
+        if (insideLegend) {
+          canvas.style.cursor = "pointer";
+          tooltip.style.opacity = "0";
+          return;
+        }
+      }
+      const plotLeft = hoverCache.margin.left;
+      const plotTop = hoverCache.margin.top;
+      const plotRight = plotLeft + hoverCache.plotWidth;
+      const plotBottom = plotTop + hoverCache.plotHeight;
+      if (x < plotLeft || x > plotRight || y < plotTop || y > plotBottom) {
+        canvas.style.cursor = "default";
+        tooltip.style.opacity = "0";
+        return;
+      }
+
+      const best = findNearest(x, y);
 
       if (!best) {
         tooltip.style.opacity = "0";
         return;
       }
 
-      const label = seriesDisplayLabel(best.series.descriptor);
-      const seriesLabel = best.series.seriesLabel || "";
-      const ordinal = Number.isFinite(best.series.legendIndex) ? best.series.legendIndex + 1 : "";
-      const prefix = ordinal ? `${ordinal}. ` : "";
-      tooltip.innerHTML = `<strong>${escapeHtml(prefix + label)}</strong><br/>${escapeHtml(seriesLabel)}`;
+      tooltip.innerHTML = renderTooltipContent(best, false);
       tooltip.style.opacity = "1";
       tooltip.style.left = `${rect.left + window.scrollX + best.px + 12}px`;
       tooltip.style.top = `${rect.top + window.scrollY + best.py - 10}px`;
@@ -2560,6 +2630,7 @@
     }
 
     function handleLeave() {
+      if (state.tooltipPinned) return;
       tooltip.style.opacity = "0";
     }
 
@@ -2576,7 +2647,27 @@
         y <= legendRect.y + legendRect.height;
       if (insideLegend) {
         openSummaryModal();
+        return;
       }
+      if (isZoomDragging || Date.now() - lastZoomDragAt < 200) return;
+      const plotLeft = hoverCache.margin.left;
+      const plotTop = hoverCache.margin.top;
+      const plotRight = plotLeft + hoverCache.plotWidth;
+      const plotBottom = plotTop + hoverCache.plotHeight;
+      if (x < plotLeft || x > plotRight || y < plotTop || y > plotBottom) return;
+      const best = findNearest(x, y);
+      if (!best) {
+        state.tooltipPinned = null;
+        tooltip.classList.remove("is-pinned");
+        tooltip.style.opacity = "0";
+        return;
+      }
+      state.tooltipPinned = best;
+      tooltip.innerHTML = renderTooltipContent(best, true);
+      tooltip.classList.add("is-pinned");
+      tooltip.style.opacity = "1";
+      tooltip.style.left = `${rect.left + window.scrollX + best.px + 12}px`;
+      tooltip.style.top = `${rect.top + window.scrollY + best.py - 10}px`;
     }
 
     canvas.removeEventListener("mousemove", handleMove);
@@ -2585,6 +2676,30 @@
     canvas.addEventListener("mousemove", handleMove);
     canvas.addEventListener("mouseleave", handleLeave);
     canvas.addEventListener("click", handleClick);
+
+    tooltip.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const action = target.dataset.action;
+      if (!action || !state.tooltipPinned) return;
+      event.stopPropagation();
+      if (action === "tooltip-exclude") {
+        state.excludedSeries.add(state.tooltipPinned.series.id);
+        state.tooltipPinned = null;
+        tooltip.classList.remove("is-pinned");
+        tooltip.style.opacity = "0";
+        applyFilters();
+        plotSelectedSeries(true);
+      }
+    });
+
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        state.tooltipPinned = null;
+        tooltip.classList.remove("is-pinned");
+        tooltip.style.opacity = "0";
+      }
+    });
   }
 
   function ensureTooltip() {
