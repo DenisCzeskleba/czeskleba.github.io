@@ -71,6 +71,10 @@ permalink: /hydrogen-diffusion-database/contribute/
     background: var(--bg);
     color: var(--text);
   }
+  .hdd-contrib-form input,
+  .hdd-contrib-form select {
+    height: 42px;
+  }
   .hdd-contrib-form textarea {
     min-height: 140px;
     resize: vertical;
@@ -270,7 +274,7 @@ permalink: /hydrogen-diffusion-database/contribute/
     margin-top: 8px;
   }
   .hdd-contrib-form textarea.hdd-title-input {
-    min-height: 32px;
+    min-height: 44px;
     height: auto;
     resize: none;
     padding: 4px 8px;
