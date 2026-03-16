@@ -34,6 +34,54 @@ body {
   background: radial-gradient(circle at top, #f8fafc 0%, #f1f5f9 45%, #ffffff 100%);
 }
 
+header,
+header .header-links,
+header .header-links a,
+header .header-actions,
+header .theme-toggle {
+  font-family: Arial, sans-serif;
+}
+
+header {
+  background-color: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+header img {
+  height: 30px;
+  width: 30px;
+}
+
+.header-links {
+  gap: 0.75rem;
+  font-size: 0.95rem;
+}
+
+.header-links a {
+  gap: 0.45rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid transparent;
+}
+
+.header-links a:hover {
+  border-color: var(--border);
+  background-color: color-mix(in srgb, var(--bg) 85%, var(--text));
+}
+
+.header-sep {
+  color: var(--muted);
+  font-size: 1rem;
+  margin: 0 0.2rem;
+  line-height: 1;
+}
+
+.theme-toggle {
+  height: 30px;
+  font-size: 0.8rem;
+  border-radius: 5px;
+}
+
 body.dark {
   color-scheme: dark;
   --ink: #e5e7eb;

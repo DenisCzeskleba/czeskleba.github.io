@@ -6,7 +6,7 @@ permalink: /hydrogen-diffusion-database/contribute/
 
 # Contribution Form
 
-Help expand the hydrogen diffusivity dataset by submitting peer-reviewed, open-access sources. We review every entry before adding it to the public database.
+Help expand the hydrogen diffusivity database for structural steels and related materials. Submit peer-reviewed, open-access sources. We review every entry before adding it to the public dataset.
 
 ## Submission Checklist
 
