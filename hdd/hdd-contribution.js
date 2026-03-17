@@ -49,6 +49,57 @@
     });
   }
 
+  function bindMicrostructureToggle(container, enabledSelector, microBlockSelector) {
+    const enabled = container.querySelector(enabledSelector);
+    const microBlock = container.querySelector(microBlockSelector);
+    const microSelect = microBlock ? microBlock.querySelector("select") : null;
+    const weldingSection = container.querySelector("[data-welding-section]");
+    if (!enabled || !microBlock || !microSelect) return;
+    const toggle = () => {
+      const isYes = enabled.value === "yes";
+      microBlock.style.display = isYes ? "block" : "none";
+      if (weldingSection) {
+        weldingSection.style.display = isYes ? "block" : "none";
+        if (!isYes) {
+          const weldingSelect = weldingSection.querySelector("#default-welding-process");
+          if (weldingSelect) {
+            weldingSelect.value = "";
+            weldingSelect.required = false;
+          }
+          const weldingLayer = weldingSection.querySelector("#default-welding-layer");
+          if (weldingLayer) {
+            weldingLayer.value = "";
+            weldingLayer.required = false;
+          }
+          const weldingT85 = weldingSection.querySelector("#default-welding-t85");
+          if (weldingT85) {
+            weldingT85.value = "";
+            weldingT85.required = false;
+          }
+          const weldingNotes = weldingSection.querySelector("#default-welding-notes");
+          if (weldingNotes) weldingNotes.value = "";
+        } else {
+          const weldingSelect = weldingSection.querySelector("#default-welding-process");
+          if (weldingSelect) weldingSelect.required = true;
+          const weldingLayer = weldingSection.querySelector("#default-welding-layer");
+          if (weldingLayer) weldingLayer.required = true;
+          const weldingT85 = weldingSection.querySelector("#default-welding-t85");
+          if (weldingT85) weldingT85.required = true;
+        }
+      }
+      microSelect.required = isYes;
+      if (!isYes) {
+        if (Array.from(microSelect.options).some((opt) => opt.value === "Base Material")) {
+          microSelect.value = "Base Material";
+        } else {
+          microSelect.value = "";
+        }
+      }
+    };
+    enabled.addEventListener("change", toggle);
+    toggle();
+  }
+
   function bindCompositionGrid(root) {
     if (!root) return;
     const grid = root.querySelector(".hdd-comp-grid");
@@ -156,6 +207,13 @@
             <select data-field="override_material_grade" data-clone-from="default-material-grade" title="Override material grade for this row. Leave empty to use defaults."></select>
           </div>
           <div>
+            <label>Welded</label>
+            <select data-field="override_microstructure_enabled" data-default-from="default-microstructure-enabled" title="Set to yes for welded material.">
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </select>
+          </div>
+          <div data-microstructure-block>
             <label>Microstructure</label>
             <select data-field="override_material_microstructure" data-clone-from="default-material-microstructure" title="Override microstructure for this row. Leave empty to use defaults."></select>
           </div>
@@ -168,12 +226,12 @@
             <select data-field="override_material_processing" data-clone-from="default-material-processing" title="Override processing for this row. Leave empty to use defaults."></select>
           </div>
           <div>
-            <label>Tag</label>
-            <select data-field="override_material_tags" data-clone-from="default-material-tags" title="Override tag for this row. Leave empty to use defaults."></select>
+            <label>Additional Material Tags</label>
+            <div data-field="override_material_tags" data-clone-from="default-material-tags"></div>
           </div>
           <div>
             <label>Material notes</label>
-            <input type="text" data-field="override_material_notes" title="Override material notes for this row. Leave empty to use defaults." />
+            <input type="text" data-field="override_material_notes" data-default-from="default-material-notes" title="Override material notes for this row. Leave empty to use defaults." />
           </div>
         </div>
         <p class="hdd-contrib-note">Composition overrides (wt%) - leave blank to use defaults.</p>
@@ -246,16 +304,16 @@
         <div class="hdd-contrib-row-grid">
           <div>
             <label>Measurement method</label>
-            <input type="text" data-field="override_measurement_method" title="Override measurement method for this row. Leave empty if not needed." />
+            <select data-field="override_measurement_method" data-clone-from="default-method" title="Override measurement method for this row. Leave empty to use defaults."></select>
           </div>
           <div>
             <label>Charging method</label>
-            <input type="text" data-field="override_charging_method" title="Override charging method for this row. Leave empty if not needed." />
+            <select data-field="override_charging_method" data-clone-from="default-charging" title="Override charging method for this row. Leave empty to use defaults."></select>
           </div>
         </div>
         <div>
           <label>Conditions notes</label>
-          <input type="text" data-field="override_conditions_notes" title="Override conditions notes for this row. Leave empty if not needed." />
+          <input type="text" data-field="override_conditions_notes" data-default-from="default-conditions-notes" title="Override conditions notes for this row. Leave empty to use defaults." />
         </div>
       </details>
     `;
@@ -264,18 +322,35 @@
       row.remove();
     });
 
-    row.querySelectorAll("[data-clone-from]").forEach((select) => {
-      const sourceId = select.getAttribute("data-clone-from");
+    row.querySelectorAll("[data-clone-from]").forEach((field) => {
+      const sourceId = field.getAttribute("data-clone-from");
       const source = document.getElementById(sourceId);
       if (!source) return;
-      select.innerHTML = source.innerHTML;
-      if (select.options.length) {
-        select.selectedIndex = 0;
+      field.innerHTML = source.innerHTML;
+      if (field.matches("select")) {
+        if (source.value) {
+          field.value = source.value;
+        } else if (field.options.length) {
+          field.selectedIndex = 0;
+        }
+      }
+    });
+    row.querySelectorAll("[data-default-from]").forEach((field) => {
+      const sourceId = field.getAttribute("data-default-from");
+      const source = document.getElementById(sourceId);
+      if (!source) return;
+      if (source.value) {
+        field.value = source.value;
       }
     });
 
     bindModelToggle(row);
     bindCompositionGrid(row);
+    bindMicrostructureToggle(
+      row,
+      "[data-field='override_microstructure_enabled']",
+      "[data-microstructure-block]"
+    );
 
     return row;
   }
@@ -283,6 +358,26 @@
   function getValue(id) {
     const el = document.getElementById(id);
     return el ? el.value.trim() : "";
+  }
+
+  function applyDataOriginToMethods() {
+    const origin = getValue("contrib-data-origin");
+    const methodSelect = document.getElementById("default-method");
+    if (!methodSelect) return;
+    if (origin === "Literature review") {
+      methodSelect.value = "Literature compilation";
+    }
+  }
+
+  function getSelectedValues(id) {
+    const el = document.getElementById(id);
+    if (!el) return [];
+    if (el.matches("select")) {
+      return Array.from(el.selectedOptions).map((opt) => opt.value).filter(Boolean);
+    }
+    return Array.from(el.querySelectorAll("input[type='checkbox']:checked"))
+      .map((input) => input.value)
+      .filter(Boolean);
   }
 
   function collectStudiedEffects() {
@@ -405,21 +500,59 @@
     const material = {};
     const conditions = {};
 
+    const defaults = {
+      material_class: getValue("default-material-class"),
+      material_grade: getValue("default-material-grade"),
+      material_micro: getValue("default-microstructure-enabled") === "yes"
+        ? getValue("default-material-microstructure")
+        : "Base Material",
+      micro_enabled: getValue("default-microstructure-enabled"),
+      welded: getValue("default-microstructure-enabled") === "yes",
+      material_phase: getValue("default-material-phase"),
+      material_processing: getValue("default-material-processing"),
+      material_tags: getSelectedValues("default-material-tags"),
+      material_notes: getValue("default-material-notes"),
+      measurement_method: getValue("default-method"),
+      charging_method: getValue("default-charging"),
+      conditions_notes: getValue("default-conditions-notes"),
+      welding_process: getValue("default-welding-process"),
+      welding_layer: getValue("default-welding-layer"),
+      welding_t85: getValue("default-welding-t85"),
+      welding_notes: getValue("default-welding-notes"),
+    };
+
     const materialClass = getRowValue("override_material_class");
     const materialGrade = getRowValue("override_material_grade");
+    const microEnabled = getRowValue("override_microstructure_enabled");
     const materialMicro = getRowValue("override_material_microstructure");
     const materialPhase = getRowValue("override_material_phase");
     const materialProcessing = getRowValue("override_material_processing");
     const materialTags = getRowValue("override_material_tags");
     const materialNotes = getRowValue("override_material_notes");
 
-    if (materialClass) material.class = materialClass;
-    if (materialGrade) material.grade = materialGrade;
-    if (materialMicro) material.microstructure = materialMicro;
-    if (materialPhase) material.phase = materialPhase;
-    if (materialProcessing) material.processing = [materialProcessing];
-    if (materialTags) material.tags = [materialTags];
-    if (materialNotes) material.notes = materialNotes;
+    if (materialClass && materialClass !== defaults.material_class) material.class = materialClass;
+    if (materialGrade && materialGrade !== defaults.material_grade) material.grade = materialGrade;
+    if (microEnabled && (microEnabled === "yes") !== defaults.welded) {
+      material.welded = { enabled: microEnabled === "yes" };
+    }
+    if (microEnabled === "yes") {
+      if (materialMicro && materialMicro !== defaults.material_micro) {
+        material.microstructure = materialMicro;
+      }
+    } else if (microEnabled === "no" && defaults.material_micro !== "Base Material") {
+      material.microstructure = "Base Material";
+    }
+    if (materialPhase && materialPhase !== defaults.material_phase) material.phase = materialPhase;
+    if (materialProcessing && materialProcessing !== defaults.material_processing) {
+      material.processing = [materialProcessing];
+    }
+    if (materialTags.length) {
+      const a = [...materialTags].sort();
+      const b = [...defaults.material_tags].sort();
+      const same = a.length === b.length && a.every((val, idx) => val === b[idx]);
+      if (!same) material.tags = materialTags;
+    }
+    if (materialNotes && materialNotes !== defaults.material_notes) material.notes = materialNotes;
 
     const overrideTable = row.querySelector(".hdd-comp-grid");
     const notesInput = row.querySelector("[data-field='override_material_composition_notes']");
@@ -431,9 +564,9 @@
     const method = getRowValue("override_measurement_method");
     const charging = getRowValue("override_charging_method");
     const conditionsNotes = getRowValue("override_conditions_notes");
-    if (method) conditions.measurement_method = method;
-    if (charging) conditions.charging_method = charging;
-    if (conditionsNotes) conditions.notes = conditionsNotes;
+    if (method && method !== defaults.measurement_method) conditions.measurement_method = method;
+    if (charging && charging !== defaults.charging_method) conditions.charging_method = charging;
+    if (conditionsNotes && conditionsNotes !== defaults.conditions_notes) conditions.notes = conditionsNotes;
 
     if (Object.keys(material).length) overrides.material = material;
     if (Object.keys(conditions).length) overrides.conditions = conditions;
@@ -448,25 +581,43 @@
 
   function buildPayload() {
     const composition = collectComposition();
+    const origin = getValue("contrib-data-origin");
+    const measurementMethod =
+      origin === "Literature review" ? "Literature compilation" : getValue("default-method");
     const defaults = {
       material: {
         class: getValue("default-material-class") || null,
         grade: getValue("default-material-grade") || null,
-        microstructure: getValue("default-material-microstructure") || null,
+        welded: null,
+        microstructure: null,
         phase: getValue("default-material-phase") || null,
         processing: getValue("default-material-processing") ? [getValue("default-material-processing")] : [],
-        tags: getValue("default-material-tags") ? [getValue("default-material-tags")] : [],
+        tags: getSelectedValues("default-material-tags"),
         notes: getValue("default-material-notes") || null,
         chemical_composition: composition,
       },
       conditions: {
-        measurement_method: getValue("default-method") || null,
+        measurement_method: measurementMethod || null,
         charging_method: getValue("default-charging") || null,
         notes: getValue("default-conditions-notes") || null,
       },
     };
 
+    const microEnabled = getValue("default-microstructure-enabled") === "yes";
+    defaults.material.microstructure = microEnabled
+      ? getValue("default-material-microstructure") || null
+      : "Base Material";
+    defaults.material.welded = {
+      enabled: microEnabled,
+      process: getValue("default-welding-process") || null,
+      layer: getValue("default-welding-layer") || null,
+      t85: parseNumber(getValue("default-welding-t85")),
+      notes: getValue("default-welding-notes") || null,
+    };
+
     const source = {
+      data_origin: getValue("contrib-data-origin"),
+      data_notes: getValue("contrib-data-notes") || null,
       title: getValue("contrib-title"),
       authors: collectAuthors(authorTable),
       journal: getValue("contrib-journal"),
@@ -491,6 +642,13 @@
       const getRowValue = (field) => {
         const input = row.querySelector(`[data-field='${field}']`);
         return input ? input.value.trim() : "";
+      };
+      const getRowSelected = (field) => {
+        const input = row.querySelector(`[data-field='${field}']`);
+        if (!input) return [];
+        return Array.from(input.querySelectorAll("input[type='checkbox']:checked"))
+          .map((cb) => cb.value)
+          .filter(Boolean);
       };
 
       const rowData = {
@@ -519,7 +677,12 @@
             input: getRowValue("power_input") || "theta_C",
           },
         },
-        overrides: buildRowOverrides(row, getRowValue),
+        overrides: buildRowOverrides(row, (field) => {
+          if (field === "override_material_tags") {
+            return getRowSelected(field);
+          }
+          return getRowValue(field);
+        }),
       };
 
       rows.push(rowData);
@@ -627,6 +790,11 @@
   ensureInitialRow();
 
   autoGrowTextarea(titleField);
+  bindMicrostructureToggle(
+    document,
+    "#default-microstructure-enabled",
+    "[data-microstructure-block]"
+  );
 
   const defaultCompTable = document.getElementById("hdd-comp-grid");
   const defaultCompAdd = document.getElementById("hdd-comp-add");
@@ -733,4 +901,10 @@
         if (submitButton) submitButton.disabled = false;
       });
   });
+
+  const dataOrigin = document.getElementById("contrib-data-origin");
+  if (dataOrigin) {
+    dataOrigin.addEventListener("change", applyDataOriginToMethods);
+    applyDataOriginToMethods();
+  }
 })();

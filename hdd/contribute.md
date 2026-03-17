@@ -84,6 +84,10 @@ permalink: /hydrogen-diffusion-database/contribute/
   .hdd-contrib-form select {
     height: 42px;
   }
+  .hdd-contrib-form select[multiple] {
+    height: auto;
+    min-height: 120px;
+  }
   .hdd-contrib-form textarea {
     min-height: 140px;
     resize: vertical;
@@ -256,6 +260,15 @@ permalink: /hydrogen-diffusion-database/contribute/
   .hdd-comp-notes {
     margin-top: 12px;
   }
+  .hdd-comp-details {
+    margin-top: 12px;
+  }
+  .hdd-tag-details {
+    margin-top: 12px;
+  }
+  .hdd-data-notes {
+    margin-top: 12px;
+  }
   .hdd-conditions-notes {
     margin-top: 12px;
   }
@@ -338,6 +351,19 @@ permalink: /hydrogen-diffusion-database/contribute/
     border-top: 1px solid var(--border);
     margin: 16px 0;
   }
+  .hdd-section-heading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 12px 0;
+    font-weight: 600;
+  }
+  .hdd-section-heading::before,
+  .hdd-section-heading::after {
+    content: "";
+    flex: 1;
+    border-top: 1px solid var(--border);
+  }
   .hdd-contrib-inline-selects {
     display: grid;
     gap: 12px;
@@ -346,6 +372,24 @@ permalink: /hydrogen-diffusion-database/contribute/
   }
   .hdd-contrib-inline-selects input {
     width: 100%;
+  }
+  .hdd-tag-grid {
+    display: grid;
+    gap: 8px 12px;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    margin-top: 8px;
+  }
+  .hdd-tag-grid label {
+    font-weight: 500;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 0;
+  }
+  .hdd-tag-grid input[type="checkbox"] {
+    width: auto;
+    height: auto;
+    margin: 0;
   }
   .hdd-contrib-form input,
   .hdd-contrib-form select {
@@ -478,7 +522,7 @@ permalink: /hydrogen-diffusion-database/contribute/
           <option value="Ukrainian">Ukrainian</option>
           <option value="Urdu">Urdu</option>
           <option value="Vietnamese">Vietnamese</option>
-          <option value="Other">Other</option>
+          <option value="Other">Other (specify in notes)</option>
         </select>
       </div>
     </div>
@@ -508,7 +552,7 @@ permalink: /hydrogen-diffusion-database/contribute/
             <option value="Surface Mass Transfer">Surface Mass Transfer</option>
             <option value="Surface State and Reactions">Surface State and Reactions</option>
             <option value="Weld-Metal-Specific Effects">Weld-Metal-Specific Effects</option>
-            <option value="Propose new (explain in notes)">Propose new (explain in notes)</option>
+            <option value="Propose new (specify in notes)">Propose new (specify in notes)</option>
           </select>
           <select name="studied_effects[]" data-studied-effect>
             <option value="">Select focus</option>
@@ -528,7 +572,7 @@ permalink: /hydrogen-diffusion-database/contribute/
             <option value="Surface Mass Transfer">Surface Mass Transfer</option>
             <option value="Surface State and Reactions">Surface State and Reactions</option>
             <option value="Weld-Metal-Specific Effects">Weld-Metal-Specific Effects</option>
-            <option value="Propose new (explain in notes)">Propose new (explain in notes)</option>
+            <option value="Propose new (specify in notes)">Propose new (specify in notes)</option>
           </select>
           <select name="studied_effects[]" data-studied-effect>
             <option value="">Select focus</option>
@@ -548,7 +592,7 @@ permalink: /hydrogen-diffusion-database/contribute/
             <option value="Surface Mass Transfer">Surface Mass Transfer</option>
             <option value="Surface State and Reactions">Surface State and Reactions</option>
             <option value="Weld-Metal-Specific Effects">Weld-Metal-Specific Effects</option>
-            <option value="Propose new (explain in notes)">Propose new (explain in notes)</option>
+            <option value="Propose new (specify in notes)">Propose new (specify in notes)</option>
           </select>
         </div>
       </div>
@@ -578,10 +622,9 @@ permalink: /hydrogen-diffusion-database/contribute/
   </fieldset>
 
   <fieldset>
-    <legend>Study Parameters</legend>
+    <legend>Experimental Setup</legend>
     <p class="hdd-contrib-note">
-      Use these defaults to describe the general parameters of the diffusion measurements. If you varied one of these
-      in your study, keep the default here and specify the variation per data row below.
+      Use these defaults to describe the general parameters of the diffusion measurements. If you varied one of these in your study, keep the default here and specify the variation per data row below. Most studies will only have one material but if you have multiple different ones, pick one here and then adjust the variations on a per data-series level below. For example if you worked with X65 and CrMoV in one study for some reason, class/grade etc. varies, so adjust this in the data section.
     </p>
     <p class="hdd-contrib-note">Examples:</p>
     <ul class="hdd-contrib-note">
@@ -595,6 +638,35 @@ permalink: /hydrogen-diffusion-database/contribute/
         pick one route here and set the other on the specific data row.
       </li>
     </ul>
+    <div class="hdd-section-heading">Data origin</div>
+    <div class="hdd-contrib-grid">
+      <div>
+        <label for="contrib-data-origin">Data source<span class="hdd-required" aria-hidden="true">*</span></label>
+        <p class="hdd-contrib-note">
+          Select whether you directly measured diffusion coefficients or calculated/simulated them. "Extracted from graph"
+          and "Literature review" should mostly be legacy options, but feel free to provide additional info below.
+        </p>
+        <select id="contrib-data-origin" name="data_origin" required>
+          <option value="Direct measurement" selected>Direct measurement</option>
+          <option value="Calculated / Simulation">Calculated / Simulation</option>
+          <option value="Extracted from graph">Extracted from graph</option>
+          <option value="Literature review">Literature review</option>
+          <option value="Other (specify in notes)">Other (specify in notes)</option>
+        </select>
+      </div>
+    </div>
+    <div class="hdd-grid-span hdd-data-notes">
+      <details>
+        <summary>Data notes</summary>
+        <textarea
+          id="contrib-data-notes"
+          name="data_notes"
+          placeholder="Additional context about where the data came from and any caveats."
+          autocomplete="off"
+        ></textarea>
+      </details>
+    </div>
+    <div class="hdd-section-heading">Materials</div>
     <div class="hdd-contrib-grid">
       <div>
         <label for="default-material-class">Material class<span class="hdd-required" aria-hidden="true">*</span></label>
@@ -694,8 +766,15 @@ permalink: /hydrogen-diffusion-database/contribute/
         </select>
       </div>
       <div>
+        <label for="default-microstructure-enabled">Welded</label>
+        <select id="default-microstructure-enabled" name="default_microstructure_enabled" title="Set to yes for welded material.">
+          <option value="no" selected>No</option>
+          <option value="yes">Yes</option>
+        </select>
+      </div>
+      <div data-microstructure-block>
         <label for="default-material-microstructure">Microstructure<span class="hdd-required" aria-hidden="true">*</span></label>
-        <select id="default-material-microstructure" name="default_material_microstructure" required title="Use Base Material for non-welding cases. If not listed, choose Other and specify in Material notes.">
+        <select id="default-material-microstructure" name="default_material_microstructure" title="Use Base Material for non-welding cases. If not listed, choose Other and specify in Material notes.">
           <option value="">Select microstructure</option>
           <option value="Base Material">Base Material</option>
           <option value="CGHAZ">CGHAZ</option>
@@ -739,34 +818,58 @@ permalink: /hydrogen-diffusion-database/contribute/
         </select>
       </div>
       <div>
-        <label for="default-material-tags">Tag</label>
-        <select id="default-material-tags" name="default_material_tags" title="Pick the closest tag. If not listed, choose Other and specify in Material notes.">
-          <option value="">Select a tag</option>
-          <option value="AHSS">AHSS</option>
-          <option value="Austenitic">Austenitic</option>
-          <option value="Creep resistant">Creep resistant</option>
-          <option value="Cr-Mo">Cr-Mo</option>
-          <option value="Dual phase">Dual phase</option>
-          <option value="Ferritic-martensitic">Ferritic-martensitic</option>
-          <option value="High strength">High strength</option>
-          <option value="Low carbon">Low carbon</option>
-          <option value="Martensitic">Martensitic</option>
-          <option value="Microalloyed">Microalloyed</option>
-          <option value="Nickel alloyed">Nickel alloyed</option>
-          <option value="Pearlitic">Pearlitic</option>
-          <option value="Pipeline">Pipeline</option>
-          <option value="speculative">speculative</option>
-          <option value="Structural Steel">Structural Steel</option>
-          <option value="Tempered martensite">Tempered martensite</option>
-          <option value="Welded">Welded</option>
-          <option value="Other">Other (specify in notes)</option>
-        </select>
       </div>
     </div>
-    <p class="hdd-contrib-note">
-      Composition (wt%). Use values like 0.02 or &lt;0.1 if reported. Leave empty if not needed; remainder is assumed Fe.
-    </p>
-    <div class="hdd-comp-grid" id="hdd-comp-grid">
+    <details class="hdd-tag-details hdd-grid-span">
+      <summary>Additional Material Tags</summary>
+      <p class="hdd-contrib-note">
+        Add additional tags to your material for future filtering. For example, an X65 could be a pipeline steel,
+        structural steel, HSLA, or low alloyed.
+      </p>
+      <div class="hdd-tag-grid" id="default-material-tags">
+        <label><input type="checkbox" name="default_material_tags[]" value="Carbon Steel" /> Carbon Steel</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="Creep Resistant Steel" /> Creep Resistant Steel</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="HSLA" /> HSLA</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="Iron-Nickel Alloy" /> Iron-Nickel Alloy</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="Low Alloy Steel" /> Low Alloy Steel</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="Martensitic or AHSS" /> Martensitic or AHSS</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="Nickel-Based Alloy" /> Nickel-Based Alloy</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="Pearlitic Steel" /> Pearlitic Steel</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="Pipeline Steel" /> Pipeline Steel</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="Pure Iron" /> Pure Iron</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="Stainless Steel" /> Stainless Steel</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="Structural Steel" /> Structural Steel</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="Base Material" /> Base Material</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="CGHAZ" /> CGHAZ</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="FGHAZ" /> FGHAZ</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="HAZ" /> HAZ</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="ICHAZ" /> ICHAZ</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="Weld Metal" /> Weld Metal</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="Austenitic" /> Austenitic</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="Bainitic/Pearlitic" /> Bainitic/Pearlitic</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="Ferritic" /> Ferritic</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="Martensitic" /> Martensitic</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="Multiphase" /> Multiphase</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="Aged" /> Aged</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="Annealed" /> Annealed</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="As received" /> As received</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="As welded" /> As welded</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="Cold worked" /> Cold worked</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="Normalized" /> Normalized</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="PWHT" /> PWHT</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="Q&T" /> Q&amp;T</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="Quenched" /> Quenched</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="Stress relief" /> Stress relief</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="Subzero Treated" /> Subzero Treated</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="Surface treated" /> Surface treated</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="TMCP" /> TMCP</label>
+        <label><input type="checkbox" name="default_material_tags[]" value="Other (specify in notes)" /> Other (specify in notes)</label>
+      </div>
+    </details>
+    <details class="hdd-comp-details">
+      <summary>Chemical composition</summary>
+      <p class="hdd-contrib-note">Use 0.02 or &lt;0.1 in wt.% | Remainder is assumed Fe | Leave empty if not applicable</p>
+      <div class="hdd-comp-grid" id="hdd-comp-grid">
       <div class="hdd-comp-item" data-comp-item>
         <div class="hdd-comp-element"><input type="text" data-comp-element value="C" readonly /></div>
         <input type="text" data-comp-value title="Carbon in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
@@ -823,17 +926,55 @@ permalink: /hydrogen-diffusion-database/contribute/
         <div class="hdd-comp-element"><input type="text" data-comp-element value="N" readonly /></div>
         <input type="text" data-comp-value title="Nitrogen in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
       </div>
-    </div>
-    <div class="hdd-comp-actions">
-      <button type="button" id="hdd-comp-add">Add element</button>
-    </div>
+      </div>
+      <div class="hdd-comp-actions">
+        <button type="button" id="hdd-comp-add">Add element</button>
+      </div>
+    </details>
     <div class="hdd-comp-notes">
       <details>
         <summary>Material notes</summary>
         <textarea id="default-material-notes" name="default_material_notes" placeholder="Any extra material context. Leave empty if not needed." title="Any extra material context. Leave empty if not needed."></textarea>
       </details>
     </div>
-    <hr class="hdd-section-divider" />
+    <div data-welding-section>
+      <div class="hdd-section-heading">Welding Parameters</div>
+      <div class="hdd-contrib-grid">
+        <div>
+          <label for="default-welding-process">Welding process<span class="hdd-required" aria-hidden="true">*</span></label>
+          <select id="default-welding-process" name="default_welding_process">
+            <option value="">Select process</option>
+            <option value="SMAW">SMAW (Stick)</option>
+            <option value="GMAW">GMAW (MIG/MAG)</option>
+            <option value="GTAW">GTAW (TIG)</option>
+            <option value="SAW">SAW</option>
+            <option value="FCAW">FCAW</option>
+            <option value="Laser">Laser</option>
+            <option value="Electron Beam">Electron Beam</option>
+            <option value="Other (specify in notes)">Other (specify in notes)</option>
+          </select>
+        </div>
+        <div>
+          <label for="default-welding-layer">Layering<span class="hdd-required" aria-hidden="true">*</span></label>
+          <select id="default-welding-layer" name="default_welding_layer">
+            <option value="">Select</option>
+            <option value="single_layer">Single layer</option>
+            <option value="multi_layer">Multi-layer</option>
+          </select>
+        </div>
+        <div>
+          <label for="default-welding-t85">t<sub>8/5</sub> (s)<span class="hdd-required" aria-hidden="true">*</span></label>
+          <input id="default-welding-t85" name="default_welding_t85" type="number" step="any" placeholder="e.g., 12" />
+        </div>
+      </div>
+      <div class="hdd-comp-notes">
+        <details>
+          <summary>Welding notes</summary>
+          <textarea id="default-welding-notes" name="default_welding_notes" placeholder="Any extra welding context. Leave empty if not needed."></textarea>
+        </details>
+      </div>
+    </div>
+    <div class="hdd-section-heading">Hydrogen Measurement</div>
     <div class="hdd-contrib-grid">
       <div>
         <label for="default-method">Measurement method</label>
@@ -848,7 +989,7 @@ permalink: /hydrogen-diffusion-database/contribute/
           <option value="Literature compilation">Literature compilation</option>
           <option value="SIMS">SIMS</option>
           <option value="Thermal desorption (TDA / TDS)">Thermal desorption (TDA / TDS)</option>
-          <option value="other_explain">Other (explain in notes)</option>
+          <option value="other_explain">Other (specify in notes)</option>
         </select>
       </div>
       <div>
@@ -863,7 +1004,7 @@ permalink: /hydrogen-diffusion-database/contribute/
           <option value="high_pressure_hydrogen">High-pressure hydrogen</option>
           <option value="immersion_in_distilled_water">Immersion in distilled water</option>
           <option value="low_pressure_hydrogen">Low-pressure hydrogen</option>
-          <option value="other_explain">Other (explain in notes)</option>
+          <option value="other_explain">Other (specify in notes)</option>
         </select>
       </div>
     </div>
