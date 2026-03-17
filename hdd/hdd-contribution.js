@@ -133,14 +133,6 @@
           </select>
         </div>
         <div>
-          <label>Diffusivity type</label>
-          <select data-field="reported_as" title="Type of diffusivity reported: apparent, effective, or lattice. Leave empty if not needed.">
-            <option value="apparent" selected>apparent</option>
-            <option value="effective">effective</option>
-            <option value="lattice">lattice</option>
-          </select>
-        </div>
-        <div>
           <label>Diffusivity unit</label>
           <select data-field="diffusivity_unit" title="Diffusivity units. Leave empty if not needed.">
             <option value="mm^2/s" selected>mm²/s</option>
@@ -310,6 +302,22 @@
             <label>Charging method</label>
             <select data-field="override_charging_method" data-clone-from="default-charging" title="Override charging method for this row. Leave empty to use defaults."></select>
           </div>
+          <div>
+            <label>Calculation model</label>
+            <select data-field="override_calculation_model" data-clone-from="default-calculation-model" title="Override calculation model for this row. Leave empty to use defaults."></select>
+          </div>
+          <div>
+            <label>Diffusivity type</label>
+            <select data-field="override_reported_as" data-clone-from="default-reported-as" title="Override diffusivity type for this row. Leave empty to use defaults."></select>
+          </div>
+          <div>
+            <label>Sample geometry</label>
+            <select data-field="override_sample_geometry" data-clone-from="default-sample-geometry" title="Override sample geometry for this row. Leave empty to use defaults."></select>
+          </div>
+          <div>
+            <label>Characteristic length (mm)</label>
+            <input type="number" step="any" data-field="override_characteristic_length" data-default-from="default-characteristic-length" title="Override characteristic length in mm for this row. Leave empty to use defaults." />
+          </div>
         </div>
         <div>
           <label>Conditions notes</label>
@@ -366,7 +374,64 @@
     if (!methodSelect) return;
     if (origin === "Literature review") {
       methodSelect.value = "Literature compilation";
+      methodSelect.dispatchEvent(new Event("change"));
     }
+  }
+
+  function bindMethodChargingDefaults() {
+    const methodSelect = document.getElementById("default-method");
+    const chargingSelect = document.getElementById("default-charging");
+    if (!methodSelect || !chargingSelect) return;
+
+    const update = () => {
+      if (methodSelect.value === "Electrochemical permeation") {
+        chargingSelect.value = "devanathan_stachursky_cell";
+        chargingSelect.dispatchEvent(new Event("change"));
+      }
+    };
+
+    methodSelect.addEventListener("change", update);
+    update();
+  }
+
+  function bindMeasurementConditionals() {
+    const methodSelect = document.getElementById("default-method");
+    const sections = Array.from(document.querySelectorAll("[data-method]"));
+    if (!methodSelect || !sections.length) return;
+
+    const update = () => {
+      const method = methodSelect.value;
+      sections.forEach((section) => {
+        if (section.dataset.method === method) {
+          section.classList.add("is-active");
+        } else {
+          section.classList.remove("is-active");
+        }
+      });
+    };
+
+    methodSelect.addEventListener("change", update);
+    update();
+  }
+
+  function bindChargingConditionals() {
+    const chargingSelect = document.getElementById("default-charging");
+    const sections = Array.from(document.querySelectorAll("[data-charging]"));
+    if (!chargingSelect || !sections.length) return;
+
+    const update = () => {
+      const method = chargingSelect.value;
+      sections.forEach((section) => {
+        if (section.dataset.charging === method) {
+          section.classList.add("is-active");
+        } else {
+          section.classList.remove("is-active");
+        }
+      });
+    };
+
+    chargingSelect.addEventListener("change", update);
+    update();
   }
 
   function getSelectedValues(id) {
@@ -384,6 +449,100 @@
     const selects = Array.from(document.querySelectorAll("[data-studied-effect]"));
     const values = selects.map((select) => select.value).filter(Boolean);
     return Array.from(new Set(values));
+  }
+
+  function collectConditionalFields() {
+    const method = getValue("default-method");
+    if (!method) return null;
+
+    const fields = {};
+    const addIfAny = (key, values) => {
+      const hasValue = Object.values(values).some((val) => val !== null && val !== "");
+      if (hasValue) fields[key] = values;
+    };
+
+    if (method === "Thermal desorption (TDA / TDS)") {
+      addIfAny("thermal_desorption_tda_tds", {
+        heating_rate_k_per_min: parseNumber(getValue("cond-tda-heating-rate")),
+        peak_analysis_method: getValue("cond-tda-peak-method") || null,
+      });
+    }
+
+    if (method === "Gas permeation") {
+      addIfAny("gas_permeation", {
+        gas_detection_mode: getValue("cond-gas-detection") || null,
+      });
+    }
+
+    if (method === "SIMS") {
+      addIfAny("sims", {
+        sims_type: getValue("cond-sims-type") || null,
+      });
+    }
+
+    if (method === "Hot extraction (CGHE / GC)") {
+      addIfAny("hot_extraction_cghe_gc", {
+        extraction_temperature_c: parseNumber(getValue("cond-hot-extraction-temp")),
+      });
+    }
+
+    if (method === "Isothermal effusion / degassing") {
+      addIfAny("isothermal_effusion_degassing", {
+        degassing_temperature_c: parseNumber(getValue("cond-degassing-temp")),
+      });
+    }
+
+    const charging = getValue("default-charging");
+    if (charging === "devanathan_stachursky_cell") {
+      addIfAny("electrochemical_devanathan_stachursky_cell", {
+        electrolyte_entry_side: getValue("cond-devanathan-entry-electrolyte") || null,
+        electrolyte_exit_side: getValue("cond-devanathan-exit-electrolyte") || null,
+        current_density_mA_per_mm2: parseNumber(getValue("cond-devanathan-current-density")),
+        poison_additive: getValue("cond-devanathan-poison") || null,
+      });
+    }
+    if (charging === "cathodic") {
+      addIfAny("cathodic", {
+        electrolyte: getValue("cond-cathodic-electrolyte") || null,
+        current_density_mA_per_cm2: parseNumber(getValue("cond-cathodic-current")),
+        poison_additive: getValue("cond-cathodic-poison") || null,
+      });
+    }
+    if (charging === "electrochemical") {
+      addIfAny("electrochemical", {
+        electrolyte: getValue("cond-electrochemical-electrolyte") || null,
+        control_mode: getValue("cond-electrochemical-control") || null,
+        current_density_mA_per_cm2: parseNumber(getValue("cond-electrochemical-current")),
+        applied_potential_v: parseNumber(getValue("cond-electrochemical-potential")),
+        poison_additive: getValue("cond-electrochemical-poison") || null,
+      });
+    }
+    if (charging === "high_pressure_hydrogen") {
+      addIfAny("high_pressure_hydrogen", {
+        pressure_bar: parseNumber(getValue("cond-high-pressure")),
+        gas_composition: getValue("cond-high-gas") || null,
+      });
+    }
+    if (charging === "gas_phase") {
+      addIfAny("gas_phase", {
+        gas_composition: getValue("cond-gas-phase-composition") || null,
+        pressure_bar: parseNumber(getValue("cond-gas-phase-pressure")),
+        gas_purity: getValue("cond-gas-phase-purity") || null,
+      });
+    }
+    if (charging === "low_pressure_hydrogen") {
+      addIfAny("low_pressure_hydrogen", {
+        pressure_bar: parseNumber(getValue("cond-low-pressure")),
+        gas_composition: getValue("cond-low-gas") || null,
+      });
+    }
+    if (charging === "immersion_in_distilled_water") {
+      addIfAny("immersion_in_distilled_water", {
+        solution_notes: getValue("cond-distilled-water-notes") || null,
+      });
+    }
+
+    return Object.keys(fields).length ? fields : null;
   }
 
   function parseNumber(value) {
@@ -514,6 +673,12 @@
       material_notes: getValue("default-material-notes"),
       measurement_method: getValue("default-method"),
       charging_method: getValue("default-charging"),
+      charging_duration_h: parseNumber(getValue("default-charging-duration")),
+      charging_temperature_c: parseNumber(getValue("default-charging-temperature")),
+      calculation_model: getValue("default-calculation-model"),
+      reported_as: getValue("default-reported-as"),
+      sample_geometry: getValue("default-sample-geometry"),
+      characteristic_length_mm: parseNumber(getValue("default-characteristic-length")),
       conditions_notes: getValue("default-conditions-notes"),
       welding_process: getValue("default-welding-process"),
       welding_layer: getValue("default-welding-layer"),
@@ -563,9 +728,23 @@
 
     const method = getRowValue("override_measurement_method");
     const charging = getRowValue("override_charging_method");
+    const calculationModel = getRowValue("override_calculation_model");
+    const reportedAs = getRowValue("override_reported_as");
+    const geometry = getRowValue("override_sample_geometry");
+    const characteristicLength = parseNumber(getRowValue("override_characteristic_length"));
     const conditionsNotes = getRowValue("override_conditions_notes");
     if (method && method !== defaults.measurement_method) conditions.measurement_method = method;
     if (charging && charging !== defaults.charging_method) conditions.charging_method = charging;
+    if (calculationModel && calculationModel !== defaults.calculation_model) {
+      conditions.calculation_model = calculationModel;
+    }
+    if (reportedAs && reportedAs !== defaults.reported_as) {
+      conditions.reported_as = reportedAs;
+    }
+    if (geometry && geometry !== defaults.sample_geometry) conditions.sample_geometry = geometry;
+    if (characteristicLength !== null && characteristicLength !== defaults.characteristic_length_mm) {
+      conditions.characteristic_length_mm = characteristicLength;
+    }
     if (conditionsNotes && conditionsNotes !== defaults.conditions_notes) conditions.notes = conditionsNotes;
 
     if (Object.keys(material).length) overrides.material = material;
@@ -584,6 +763,7 @@
     const origin = getValue("contrib-data-origin");
     const measurementMethod =
       origin === "Literature review" ? "Literature compilation" : getValue("default-method");
+    const conditionalFields = collectConditionalFields();
     const defaults = {
       material: {
         class: getValue("default-material-class") || null,
@@ -599,6 +779,13 @@
       conditions: {
         measurement_method: measurementMethod || null,
         charging_method: getValue("default-charging") || null,
+        charging_duration_h: parseNumber(getValue("default-charging-duration")),
+        charging_temperature_c: parseNumber(getValue("default-charging-temperature")),
+        calculation_model: getValue("default-calculation-model") || null,
+        reported_as: getValue("default-reported-as") || "apparent",
+        sample_geometry: getValue("default-sample-geometry") || null,
+        characteristic_length_mm: parseNumber(getValue("default-characteristic-length")),
+        conditional_fields: conditionalFields,
         notes: getValue("default-conditions-notes") || null,
       },
     };
@@ -655,7 +842,7 @@
         group_name: getRowValue("group_name"),
         series_name: getRowValue("series_name"),
         model_type: getRowValue("model_type"),
-        reported_as: getRowValue("reported_as") || "apparent",
+        reported_as: getRowValue("override_reported_as") || getValue("default-reported-as") || "apparent",
         diffusivity_unit: getRowValue("diffusivity_unit") || "mm^2/s",
         temperature_unit: getRowValue("temperature_unit") || "K",
         temperature_validity: {
@@ -907,4 +1094,8 @@
     dataOrigin.addEventListener("change", applyDataOriginToMethods);
     applyDataOriginToMethods();
   }
+
+  bindMethodChargingDefaults();
+  bindMeasurementConditionals();
+  bindChargingConditionals();
 })();

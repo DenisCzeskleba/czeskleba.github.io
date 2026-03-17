@@ -460,6 +460,12 @@
   .hdd-conditions-notes {
     margin-top: 12px;
   }
+  .hdd-conditional {
+    display: none;
+  }
+  .hdd-conditional.is-active {
+    display: block;
+  }
   .hdd-simple-table {
     width: 100%;
     border-collapse: collapse;
@@ -1186,7 +1192,7 @@
           <option value="">Select method</option>
           <option value="cathodic">Cathodic</option>
           <option value="electrochemical">Electrochemical</option>
-          <option value="electrochemical (Devanathan-Stachursky cell)">Electrochemical (Devanathan-Stachursky cell)</option>
+          <option value="devanathan_stachursky_cell">Devanathan-Stachursky cell (electrochemical)</option>
           <option value="galvanostatic">Galvanostatic</option>
           <option value="gas_phase">Gas phase</option>
           <option value="high_pressure_hydrogen">High-pressure hydrogen</option>
@@ -1194,6 +1200,222 @@
           <option value="low_pressure_hydrogen">Low-pressure hydrogen</option>
           <option value="other_explain">Other (specify in notes)</option>
         </select>
+      </div>
+      <div>
+        <label for="default-charging-duration">Charging duration [h]</label>
+        <input id="default-charging-duration" name="default_charging_duration_h" type="number" step="any" placeholder="e.g., 24" />
+      </div>
+      <div>
+        <label for="default-charging-temperature">Charging temperature [Â°C]</label>
+        <input id="default-charging-temperature" name="default_charging_temperature_c" type="number" step="any" placeholder="e.g., 25" />
+      </div>
+      <div>
+        <label for="default-calculation-model">Calculation model</label>
+        <select id="default-calculation-model" name="default_calculation_model" title="Calculation model used to extract diffusivity. Choose Other and explain in notes if needed.">
+          <option value="">Select model</option>
+          <option value="time_lag_method">Time-lag method</option>
+          <option value="breakthrough_time">Breakthrough time</option>
+          <option value="inflection_point">Inflection point</option>
+          <option value="numerical_fit">Numerical fit</option>
+          <option value="other">Other (specify in notes)</option>
+        </select>
+      </div>
+      <div>
+        <label for="default-reported-as">Diffusivity type</label>
+        <select id="default-reported-as" name="default_reported_as" title="Lattice: diffusion in the crystal lattice without trapping. Apparent: measured diffusion including trapping effects. Effective: diffusion when trapping and release reach equilibrium. Note: terminology is sometimes ambiguous in the literature. If unsure, use Apparent.">
+          <option value="apparent" selected>Apparent</option>
+          <option value="effective">Effective</option>
+          <option value="lattice">Lattice</option>
+        </select>
+      </div>
+      <div>
+        <label for="default-sample-geometry">Sample geometry</label>
+        <select id="default-sample-geometry" name="default_sample_geometry" title="Sample geometry. Leave empty if not needed.">
+          <option value="">Select geometry</option>
+          <option value="membrane">Membrane</option>
+          <option value="plate">Plate</option>
+          <option value="sheet">Sheet</option>
+          <option value="wire">Wire</option>
+          <option value="rod">Rod</option>
+          <option value="cylinder">Cylinder</option>
+          <option value="other">Other (specify in notes)</option>
+        </select>
+      </div>
+      <div>
+        <label for="default-characteristic-length">Characteristic length [mm]</label>
+        <input id="default-characteristic-length" name="default_characteristic_length" type="number" step="any" placeholder="e.g., 1.2" title="Use the diffusion path length used in the analysis. For flat membranes or plates, this is usually the thickness." />
+      </div>
+      <div class="hdd-conditional" data-charging="devanathan_stachursky_cell">
+        <label for="cond-devanathan-entry-electrolyte">Electrolyte (entry side)</label>
+        <select id="cond-devanathan-entry-electrolyte">
+          <option value="">Select electrolyte</option>
+          <option value="naoh">NaOH</option>
+          <option value="h2so4">H2SO4</option>
+          <option value="nacl">NaCl</option>
+          <option value="borate">Borate</option>
+          <option value="other">Other (specify in notes)</option>
+        </select>
+      </div>
+      <div class="hdd-conditional" data-charging="devanathan_stachursky_cell">
+        <label for="cond-devanathan-exit-electrolyte">Electrolyte (exit side)</label>
+        <select id="cond-devanathan-exit-electrolyte">
+          <option value="">Select electrolyte</option>
+          <option value="naoh">NaOH</option>
+          <option value="h2so4">H2SO4</option>
+          <option value="nacl">NaCl</option>
+          <option value="borate">Borate</option>
+          <option value="other">Other (specify in notes)</option>
+        </select>
+      </div>
+      <div class="hdd-conditional" data-charging="devanathan_stachursky_cell">
+        <label for="cond-devanathan-current-density">Current density [mA/mmÂ²]</label>
+        <input id="cond-devanathan-current-density" type="number" step="any" placeholder="e.g., 0.5" />
+      </div>
+      <div class="hdd-conditional" data-charging="devanathan_stachursky_cell">
+        <label for="cond-devanathan-poison">Poison additive</label>
+        <select id="cond-devanathan-poison">
+          <option value="">Select additive</option>
+          <option value="none">None</option>
+          <option value="thiourea">Thiourea</option>
+          <option value="as2o3">As2O3</option>
+          <option value="other">Other (specify in notes)</option>
+        </select>
+      </div>
+      <div class="hdd-conditional" data-charging="high_pressure_hydrogen">
+        <label for="cond-high-pressure">Pressure [bar]</label>
+        <input id="cond-high-pressure" type="number" step="any" placeholder="e.g., 100" />
+      </div>
+      <div class="hdd-conditional" data-charging="high_pressure_hydrogen">
+        <label for="cond-high-gas">Gas composition</label>
+        <input id="cond-high-gas" type="text" placeholder="e.g., H2" />
+      </div>
+      <div class="hdd-conditional" data-charging="cathodic">
+        <label for="cond-cathodic-electrolyte">Electrolyte</label>
+        <select id="cond-cathodic-electrolyte">
+          <option value="">Select electrolyte</option>
+          <option value="naoh">NaOH</option>
+          <option value="h2so4">H2SO4</option>
+          <option value="nacl">NaCl</option>
+          <option value="borate">Borate</option>
+          <option value="other">Other (specify in notes)</option>
+        </select>
+      </div>
+      <div class="hdd-conditional" data-charging="cathodic">
+        <label for="cond-cathodic-current">Current density [mA/cmÂ²]</label>
+        <input id="cond-cathodic-current" type="number" step="any" placeholder="e.g., 5" />
+      </div>
+      <div class="hdd-conditional" data-charging="cathodic">
+        <label for="cond-cathodic-poison">Poison additive</label>
+        <select id="cond-cathodic-poison">
+          <option value="">Select additive</option>
+          <option value="none">None</option>
+          <option value="thiourea">Thiourea</option>
+          <option value="as2o3">As2O3</option>
+          <option value="other">Other (specify in notes)</option>
+        </select>
+      </div>
+      <div class="hdd-conditional" data-charging="electrochemical">
+        <label for="cond-electrochemical-electrolyte">Electrolyte</label>
+        <select id="cond-electrochemical-electrolyte">
+          <option value="">Select electrolyte</option>
+          <option value="naoh">NaOH</option>
+          <option value="h2so4">H2SO4</option>
+          <option value="nacl">NaCl</option>
+          <option value="borate">Borate</option>
+          <option value="other">Other (specify in notes)</option>
+        </select>
+      </div>
+      <div class="hdd-conditional" data-charging="electrochemical">
+        <label for="cond-electrochemical-control">Control mode</label>
+        <select id="cond-electrochemical-control">
+          <option value="">Select mode</option>
+          <option value="galvanostatic">Galvanostatic</option>
+          <option value="potentiostatic">Potentiostatic</option>
+          <option value="other">Other (specify in notes)</option>
+        </select>
+      </div>
+      <div class="hdd-conditional" data-charging="electrochemical">
+        <label for="cond-electrochemical-current">Current density [mA/cmÂ²]</label>
+        <input id="cond-electrochemical-current" type="number" step="any" placeholder="e.g., 5" />
+      </div>
+      <div class="hdd-conditional" data-charging="electrochemical">
+        <label for="cond-electrochemical-potential">Applied potential [V]</label>
+        <input id="cond-electrochemical-potential" type="number" step="any" placeholder="e.g., -1.0" />
+      </div>
+      <div class="hdd-conditional" data-charging="electrochemical">
+        <label for="cond-electrochemical-poison">Poison additive</label>
+        <select id="cond-electrochemical-poison">
+          <option value="">Select additive</option>
+          <option value="none">None</option>
+          <option value="thiourea">Thiourea</option>
+          <option value="as2o3">As2O3</option>
+          <option value="other">Other (specify in notes)</option>
+        </select>
+      </div>
+      <div class="hdd-conditional" data-charging="gas_phase">
+        <label for="cond-gas-phase-composition">Gas composition</label>
+        <input id="cond-gas-phase-composition" type="text" placeholder="e.g., H2 + Ar" />
+      </div>
+      <div class="hdd-conditional" data-charging="gas_phase">
+        <label for="cond-gas-phase-pressure">Pressure [bar]</label>
+        <input id="cond-gas-phase-pressure" type="number" step="any" placeholder="e.g., 1" />
+      </div>
+      <div class="hdd-conditional" data-charging="gas_phase">
+        <label for="cond-gas-phase-purity">Gas purity</label>
+        <input id="cond-gas-phase-purity" type="text" placeholder="e.g., 99.999%" />
+      </div>
+      <div class="hdd-conditional" data-charging="low_pressure_hydrogen">
+        <label for="cond-low-pressure">Pressure [bar]</label>
+        <input id="cond-low-pressure" type="number" step="any" placeholder="e.g., 1" />
+      </div>
+      <div class="hdd-conditional" data-charging="low_pressure_hydrogen">
+        <label for="cond-low-gas">Gas composition</label>
+        <input id="cond-low-gas" type="text" placeholder="e.g., H2" />
+      </div>
+      <div class="hdd-conditional" data-charging="immersion_in_distilled_water">
+        <label for="cond-distilled-water-notes">Solution notes</label>
+        <textarea id="cond-distilled-water-notes" rows="3" placeholder="e.g., distilled water with additives"></textarea>
+      </div>
+      <div class="hdd-conditional" data-method="Thermal desorption (TDA / TDS)">
+        <label for="cond-tda-heating-rate">Heating rate [Â°C/min]</label>
+        <input id="cond-tda-heating-rate" type="number" step="any" placeholder="e.g., 10" />
+      </div>
+      <div class="hdd-conditional" data-method="Thermal desorption (TDA / TDS)">
+        <label for="cond-tda-peak-method">Peak analysis method</label>
+        <select id="cond-tda-peak-method">
+          <option value="">Select method</option>
+          <option value="kissinger">Kissinger</option>
+          <option value="peak_fitting">Peak fitting</option>
+          <option value="direct_peak_assignment">Direct peak assignment</option>
+          <option value="other">Other (specify in notes)</option>
+        </select>
+      </div>
+      <div class="hdd-conditional" data-method="Gas permeation">
+        <label for="cond-gas-detection">Gas detection mode</label>
+        <select id="cond-gas-detection">
+          <option value="">Select mode</option>
+          <option value="pressure_decay">Pressure decay</option>
+          <option value="gas_chromatography">Gas chromatography</option>
+          <option value="mass_spectrometry">Mass spectrometry</option>
+          <option value="other">Other (specify in notes)</option>
+        </select>
+      </div>
+      <div class="hdd-conditional" data-method="SIMS">
+        <label for="cond-sims-type">SIMS type</label>
+        <select id="cond-sims-type">
+          <option value="">Select type</option>
+          <option value="tof_sims">TOF-SIMS</option>
+          <option value="dynamic_sims">Dynamic SIMS</option>
+          <option value="other">Other (specify in notes)</option>
+        </select>
+      </div>
+      <div class="hdd-conditional" data-method="Hot extraction (CGHE / GC)">
+        <label for="cond-hot-extraction-temp">Extraction temperature [Â°C]</label>
+        <input id="cond-hot-extraction-temp" type="number" step="any" placeholder="e.g., 400" />
+      </div>
+      <div class="hdd-conditional" data-method="Isothermal effusion / degassing">
+        <label for="cond-degassing-temp">Degassing temperature [Â°C]</label>
+        <input id="cond-degassing-temp" type="number" step="any" placeholder="e.g., 200" />
       </div>
     </div>
     <div class="hdd-conditions-notes">
