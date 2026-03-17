@@ -879,7 +879,7 @@ permalink: /hydrogen-diffusion-database/contribute/
     </details>
     <details class="hdd-comp-details">
       <summary>Chemical composition</summary>
-      <p class="hdd-contrib-note">Optional but highly recommended. Use 0.02 or &lt;0.1 in wt.% | Remainder is assumed Fe | Leave empty if not applicable</p>
+      <p class="hdd-contrib-note">Use 0.02 or &lt;0.1 in wt.% | Remainder is assumed Fe | Leave empty if not applicable</p>
       <div class="hdd-comp-grid" id="hdd-comp-grid">
       <div class="hdd-comp-item" data-comp-item>
         <div class="hdd-comp-element"><input type="text" data-comp-element value="C" readonly /></div>

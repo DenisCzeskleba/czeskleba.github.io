@@ -67,6 +67,7 @@
     clearFilters: document.getElementById("hdd-clear-filters"),
     selectAll: document.getElementById("hdd-select-all"),
     deselectAll: document.getElementById("hdd-deselect-all"),
+    showAll: document.getElementById("hdd-show-all"),
     filterSource: document.getElementById("hdd-filter-source"),
     filterClass: document.getElementById("hdd-filter-class"),
     filterGrade: document.getElementById("hdd-filter-grade"),
@@ -528,6 +529,7 @@
     dom.clearFilters?.addEventListener("click", clearFilters);
     dom.selectAll?.addEventListener("click", selectAllVisible);
     dom.deselectAll?.addEventListener("click", deselectAllVisible);
+    dom.showAll?.addEventListener("click", showAllSeriesList);
       dom.includeUnconfirmed?.addEventListener("change", () => {
         state.includeUnconfirmed = dom.includeUnconfirmed.checked;
         applyFilters();
@@ -1428,6 +1430,11 @@
     plotSelectedSeries(true);
   }
 
+  function showAllSeriesList() {
+    if (dom.search) dom.search.value = "";
+    renderSeriesList(state.seriesList);
+  }
+
   function handleSelectionChange(event) {
     if (!event.target || !event.target.matches("input[type='checkbox']")) return;
     const id = event.target.value;
@@ -1564,6 +1571,9 @@
     if (!dom.seriesDrawer) return;
     dom.seriesDrawer.classList.toggle("is-open", open);
     dom.seriesDrawer.setAttribute("aria-hidden", open ? "false" : "true");
+    if (open) {
+      applyFilters({ preserveManual: true, replot: false });
+    }
   }
 
   function plotSelectedSeries(force = false) {

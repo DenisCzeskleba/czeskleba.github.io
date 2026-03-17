@@ -322,6 +322,7 @@ permalink: /hydrogen-diffusion-database/
           <div class="hdd-series-actions">
             <button type="button" id="hdd-select-all" class="is-accent">Select All</button>
             <button type="button" id="hdd-deselect-all">Deselect All</button>
+            <button type="button" id="hdd-show-all">Show All</button>
           </div>
         </div>
     <div id="hdd-series-list" class="hdd-group-list" aria-live="polite">
