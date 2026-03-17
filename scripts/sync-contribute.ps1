@@ -213,7 +213,7 @@ $html = @"
 $content
     </main>
     <footer>
-      <p>&copy; 2025 czeskleba.com · <a href="/impressum.html">Impressum</a></p>
+      <p>&copy; 2025 czeskleba.com &middot; <a href="/impressum.html">Impressum</a></p>
     </footer>
     <script>
       function toggleTheme() {

@@ -460,6 +460,9 @@
   .hdd-conditions-notes {
     margin-top: 12px;
   }
+  .hdd-surface-notes {
+    margin-top: 12px;
+  }
   .hdd-conditional {
     display: none;
   }
@@ -1171,7 +1174,7 @@
     <div class="hdd-section-heading">Hydrogen Measurement</div>
     <div class="hdd-contrib-grid">
       <div>
-        <label for="default-method">Measurement method</label>
+        <label for="default-method">Measurement method<span class="hdd-required" aria-hidden="true">*</span></label>
         <select id="default-method" name="default_measurement_method" title="Measurement method. Leave empty if not needed.">
           <option value="">Select method</option>
           <option value="Deflection method">Deflection method</option>
@@ -1206,7 +1209,7 @@
         <input id="default-charging-duration" name="default_charging_duration_h" type="number" step="any" placeholder="e.g., 24" />
       </div>
       <div>
-        <label for="default-charging-temperature">Charging temperature [Â°C]</label>
+        <label for="default-charging-temperature">Charging temperature [&deg;C]</label>
         <input id="default-charging-temperature" name="default_charging_temperature_c" type="number" step="any" placeholder="e.g., 25" />
       </div>
       <div>
@@ -1268,7 +1271,7 @@
         </select>
       </div>
       <div class="hdd-conditional" data-charging="devanathan_stachursky_cell">
-        <label for="cond-devanathan-current-density">Current density [mA/mmÂ²]</label>
+        <label for="cond-devanathan-current-density">Current density [mA/mm&sup2;]</label>
         <input id="cond-devanathan-current-density" type="number" step="any" placeholder="e.g., 0.5" />
       </div>
       <div class="hdd-conditional" data-charging="devanathan_stachursky_cell">
@@ -1301,7 +1304,7 @@
         </select>
       </div>
       <div class="hdd-conditional" data-charging="cathodic">
-        <label for="cond-cathodic-current">Current density [mA/cmÂ²]</label>
+        <label for="cond-cathodic-current">Current density [mA/cm&sup2;]</label>
         <input id="cond-cathodic-current" type="number" step="any" placeholder="e.g., 5" />
       </div>
       <div class="hdd-conditional" data-charging="cathodic">
@@ -1335,7 +1338,7 @@
         </select>
       </div>
       <div class="hdd-conditional" data-charging="electrochemical">
-        <label for="cond-electrochemical-current">Current density [mA/cmÂ²]</label>
+        <label for="cond-electrochemical-current">Current density [mA/cm&sup2;]</label>
         <input id="cond-electrochemical-current" type="number" step="any" placeholder="e.g., 5" />
       </div>
       <div class="hdd-conditional" data-charging="electrochemical">
@@ -1377,7 +1380,7 @@
         <textarea id="cond-distilled-water-notes" rows="3" placeholder="e.g., distilled water with additives"></textarea>
       </div>
       <div class="hdd-conditional" data-method="Thermal desorption (TDA / TDS)">
-        <label for="cond-tda-heating-rate">Heating rate [Â°C/min]</label>
+        <label for="cond-tda-heating-rate">Heating rate [&deg;C/min]</label>
         <input id="cond-tda-heating-rate" type="number" step="any" placeholder="e.g., 10" />
       </div>
       <div class="hdd-conditional" data-method="Thermal desorption (TDA / TDS)">
@@ -1410,17 +1413,89 @@
         </select>
       </div>
       <div class="hdd-conditional" data-method="Hot extraction (CGHE / GC)">
-        <label for="cond-hot-extraction-temp">Extraction temperature [Â°C]</label>
+        <label for="cond-hot-extraction-temp">Extraction temperature [&deg;C]</label>
         <input id="cond-hot-extraction-temp" type="number" step="any" placeholder="e.g., 400" />
       </div>
       <div class="hdd-conditional" data-method="Isothermal effusion / degassing">
-        <label for="cond-degassing-temp">Degassing temperature [Â°C]</label>
+        <label for="cond-degassing-temp">Degassing temperature [&deg;C]</label>
         <input id="cond-degassing-temp" type="number" step="any" placeholder="e.g., 200" />
       </div>
     </div>
     <div class="hdd-conditions-notes">
-      <label for="default-conditions-notes">Measurement notes</label>
-      <textarea id="default-conditions-notes" name="default_conditions_notes" placeholder="Electrolyte, current density, or other test details. Leave empty if not needed." title="Optional conditions notes. Leave empty if not needed."></textarea>
+      <details>
+        <summary>Measurement notes</summary>
+        <textarea id="default-conditions-notes" name="default_conditions_notes" placeholder="Electrolyte, current density, or other test details. Leave empty if not needed." title="Optional conditions notes. Leave empty if not needed."></textarea>
+      </details>
+    </div>
+    <div class="hdd-section-heading">Surface Condition</div>
+    <p class="hdd-contrib-note">
+      Surface state can strongly affect charging, entry, passivation, and permeability. Please select the appropriate
+      surface condition.
+    </p>
+    <div class="hdd-contrib-grid">
+      <div>
+        <label for="default-surface-condition">Surface condition</label>
+        <select id="default-surface-condition" name="default_surface_condition">
+          <option value="">Select condition</option>
+          <option value="as_received">As received</option>
+          <option value="ground">Ground</option>
+          <option value="polished">Polished</option>
+          <option value="electropolished">Electropolished</option>
+          <option value="pickled">Pickled</option>
+          <option value="oxidized">Oxidized</option>
+          <option value="coated">Coated</option>
+          <option value="plated">Plated</option>
+          <option value="passivated">Passivated</option>
+          <option value="etched">Etched</option>
+          <option value="surface_treated">Surface treated</option>
+          <option value="other">Other (specify in notes)</option>
+        </select>
+      </div>
+      <div>
+        <label for="default-surface-finish">Surface finish detail</label>
+        <select id="default-surface-finish" name="default_surface_finish_detail">
+          <option value="">Select finish</option>
+          <option value="grit_240">Grit 240</option>
+          <option value="grit_600">Grit 600</option>
+          <option value="grit_1200">Grit 1200</option>
+          <option value="mirror_polished">Mirror polished</option>
+          <option value="other">Other (specify in notes)</option>
+        </select>
+      </div>
+      <div>
+        <label for="default-surface-coated">Coated</label>
+        <select id="default-surface-coated" name="default_surface_coated">
+          <option value="no" selected>No</option>
+          <option value="yes">Yes</option>
+        </select>
+      </div>
+      <div class="hdd-conditional" data-surface-coated="yes">
+        <label for="default-coating-type">Coating type</label>
+        <select id="default-coating-type" name="default_coating_type">
+          <option value="">Select coating</option>
+          <option value="zinc">Zinc</option>
+          <option value="nickel">Nickel</option>
+          <option value="chromium">Chromium</option>
+          <option value="copper">Copper</option>
+          <option value="aluminum">Aluminum</option>
+          <option value="oxide">Oxide</option>
+          <option value="phosphate">Phosphate</option>
+          <option value="paint_polymer">Paint / polymer</option>
+          <option value="conversion_coating">Conversion coating</option>
+          <option value="inhibitor_film">Inhibitor film</option>
+          <option value="other">Other (specify in notes)</option>
+        </select>
+      </div>
+      <div class="hdd-conditional" data-surface-coated="yes">
+        <label for="default-coating-thickness">Coating thickness [&micro;m]</label>
+        <input id="default-coating-thickness" name="default_coating_thickness_um" type="number" step="any" placeholder="e.g., 5" />
+      </div>
+    </div>
+    <div class="hdd-surface-notes">
+      <details>
+        <summary>Surface condition notes</summary>
+        <textarea id="default-coating-notes" name="default_coating_notes" rows="3" placeholder="Any surface condition details. Leave empty if not needed."></textarea>
+      </details>
     </div>
   </fieldset>
 
@@ -1474,7 +1549,7 @@
 
     </main>
     <footer>
-      <p>&copy; 2025 czeskleba.com Â· <a href="/impressum.html">Impressum</a></p>
+      <p>&copy; 2025 czeskleba.com &middot; <a href="/impressum.html">Impressum</a></p>
     </footer>
     <script>
       function toggleTheme() {

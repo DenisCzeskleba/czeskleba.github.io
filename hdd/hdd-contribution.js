@@ -434,6 +434,26 @@
     update();
   }
 
+  function bindSurfaceConditionals() {
+    const coatedSelect = document.getElementById("default-surface-coated");
+    const sections = Array.from(document.querySelectorAll("[data-surface-coated]"));
+    if (!coatedSelect || !sections.length) return;
+
+    const update = () => {
+      const value = coatedSelect.value;
+      sections.forEach((section) => {
+        if (section.dataset.surfaceCoated === value) {
+          section.classList.add("is-active");
+        } else {
+          section.classList.remove("is-active");
+        }
+      });
+    };
+
+    coatedSelect.addEventListener("change", update);
+    update();
+  }
+
   function getSelectedValues(id) {
     const el = document.getElementById(id);
     if (!el) return [];
@@ -786,6 +806,12 @@
         sample_geometry: getValue("default-sample-geometry") || null,
         characteristic_length_mm: parseNumber(getValue("default-characteristic-length")),
         conditional_fields: conditionalFields,
+        surface_condition: getValue("default-surface-condition") || null,
+        surface_finish_detail: getValue("default-surface-finish") || null,
+        coated: getValue("default-surface-coated") === "yes",
+        coating_type: getValue("default-coating-type") || null,
+        coating_thickness_um: parseNumber(getValue("default-coating-thickness")),
+        coating_notes: getValue("default-coating-notes") || null,
         notes: getValue("default-conditions-notes") || null,
       },
     };
@@ -1098,4 +1124,5 @@
   bindMethodChargingDefaults();
   bindMeasurementConditionals();
   bindChargingConditionals();
+  bindSurfaceConditionals();
 })();

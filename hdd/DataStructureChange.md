@@ -21,102 +21,6 @@ Dropdown: Data source
 
 **--------------------------------------------------------------**
 
-    charging_context:
-      charging_method:
-        type: select
-        required: true
-        options:
-          - cathodic
-          - electrochemical
-          - electrochemical_devanathan_stachursky_cell
-          - galvanostatic
-          - gas_phase
-          - high_pressure_hydrogen
-          - immersion_in_distilled_water
-          - low_pressure_hydrogen
-          - other
-
-      charging_duration_h:
-        type: number
-        required: false
-
-      charging_temperature_c:
-        type: number
-        required: false
-
-      conditional_fields:
-        cathodic:
-          electrolyte:
-            type: select_or_text
-            options:
-              - naoh
-              - h2so4
-              - nacl
-              - borate
-              - other
-          current_density_mA_per_cm2:
-            type: number
-          poison_additive:
-            type: select_or_text
-            options:
-              - none
-              - thiourea
-              - as2o3
-              - other
-
-        electrochemical:
-          electrolyte:
-            type: select_or_text
-          control_mode:
-            type: select
-            options:
-              - galvanostatic
-              - potentiostatic
-              - not_reported
-          current_density_mA_per_cm2:
-            type: number
-            required: false
-          applied_potential_v:
-            type: number
-            required: false
-          poison_additive:
-            type: select_or_text
-            required: false
-
-        gas_phase:
-          gas_composition:
-            type: text
-            required: false
-          pressure_bar:
-            type: number
-            required: false
-          gas_purity:
-            type: text
-            required: false
-
-        high_pressure_hydrogen:
-          pressure_bar:
-            type: number
-            required: true
-          gas_composition:
-            type: text
-            required: false
-
-        low_pressure_hydrogen:
-          pressure_bar:
-            type: number
-            required: false
-          gas_composition:
-            type: text
-            required: false
-
-        immersion_in_distilled_water:
-          solution_notes:
-            type: textarea
-            required: false
-
------------------------
-
     surface_condition:
       include_section: true
       reason: >
@@ -186,6 +90,9 @@ Dropdown: Data source
           visible_if:
             coated: true
 
+-----------------------
+
+
     data_rows:
       description: >
         One row per model, condition, or single-point value. Row-level overrides should
@@ -224,17 +131,3 @@ Dropdown: Data source
         - diffusion_coefficient_determination
         - trapping_considered
 
-    contact:
-      contributor_name:
-        type: text
-        required: true
-      contributor_email:
-        type: email
-        required: true
-
-  ui_logic:
-    - show measurement_context.conditional_fields based on measurement_method
-    - show charging_context.conditional_fields based on charging_method
-    - show coating fields only when coated = true
-    - allow per-row overrides collapsed by default
-    - keep notes fields available after major "categories" (so materials for example) for uncommon cases
