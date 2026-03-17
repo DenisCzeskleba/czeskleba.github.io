@@ -454,6 +454,56 @@
     update();
   }
 
+  function bindDeformationConditionals() {
+    const deformationSelect = document.getElementById("default-deformation-history");
+    const sections = Array.from(document.querySelectorAll("[data-deformation]"));
+    if (!deformationSelect || !sections.length) return;
+
+    const update = () => {
+      const value = deformationSelect.value;
+      sections.forEach((section) => {
+        const match =
+          section.dataset.deformation === value || section.dataset.deformationAlt === value;
+        if (match) {
+          section.classList.add("is-active");
+        } else {
+          section.classList.remove("is-active");
+        }
+      });
+    };
+
+    deformationSelect.addEventListener("change", update);
+    update();
+  }
+
+  function bindLoadingConditionals() {
+    const loadingSelect = document.getElementById("default-mechanical-loading");
+    const sections = Array.from(document.querySelectorAll("[data-loading]"));
+    if (!loadingSelect || !sections.length) return;
+
+    const update = () => {
+      const value = loadingSelect.value;
+      sections.forEach((section) => {
+        const match =
+          section.dataset.loading === value ||
+          section.dataset.loadingAlt === value ||
+          section.dataset.loadingAlt2 === value ||
+          section.dataset.loadingAlt3 === value ||
+          section.dataset.loadingAlt4 === value ||
+          section.dataset.loadingAlt5 === value ||
+          section.dataset.loadingAlt6 === value;
+        if (match) {
+          section.classList.add("is-active");
+        } else {
+          section.classList.remove("is-active");
+        }
+      });
+    };
+
+    loadingSelect.addEventListener("change", update);
+    update();
+  }
+
   function getSelectedValues(id) {
     const el = document.getElementById(id);
     if (!el) return [];
@@ -812,6 +862,14 @@
         coating_type: getValue("default-coating-type") || null,
         coating_thickness_um: parseNumber(getValue("default-coating-thickness")),
         coating_notes: getValue("default-coating-notes") || null,
+        deformation_history: getValue("default-deformation-history") || null,
+        pre_strain_percent: parseNumber(getValue("default-pre-strain")),
+        cold_reduction_percent: parseNumber(getValue("default-cold-reduction")),
+        mechanical_loading_during_test: getValue("default-mechanical-loading") || null,
+        loading_regime: getValue("default-loading-regime") || null,
+        applied_stress_mpa: parseNumber(getValue("default-applied-stress")),
+        applied_strain_percent: parseNumber(getValue("default-applied-strain")),
+        stress_notes: getValue("default-stress-notes") || null,
         notes: getValue("default-conditions-notes") || null,
       },
     };
@@ -1125,4 +1183,6 @@
   bindMeasurementConditionals();
   bindChargingConditionals();
   bindSurfaceConditionals();
+  bindDeformationConditionals();
+  bindLoadingConditionals();
 })();

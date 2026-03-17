@@ -21,75 +21,71 @@ Dropdown: Data source
 
 **--------------------------------------------------------------**
 
-    surface_condition:
-      include_section: true
-      reason: >
-        Surface state can strongly affect charging, entry, passivation, and permeability.
-        This should be filterable and not hidden only in notes.
+Based on what I’ve seen in the dataset, likely gaps are:
 
-      fields:
-        surface_condition:
-          type: select
-          required: false
-          options:
-            - as_received
-            - ground
-            - polished
-            - electropolished
-            - pickled
-            - oxidized
-            - coated
-            - plated
-            - passivated
-            - etched
-            - surface_treated
-            - unknown
-            - other
+Material state: cold work %, heat treatment details (temp/time/sequence), residual stress/applied stress.
+Microstructure specifics: phase fractions, grain size, inclusion content, trap density, dislocation density.
+Surface specifics: roughness (Ra), specific prep steps (e.g., grit size if not in list), oxide type.
+Experimental context: sample orientation, thickness used in model (if not same as physical thickness), reference method used to derive D.
 
-        surface_finish_detail:
-          type: select_or_text
-          required: false
-          options:
-            - grit_240
-            - grit_600
-            - grit_1200
-            - mirror_polished
-            - ra_reported_elsewhere
-            - other
+**---**
 
-        coated:
-          type: boolean
-          default: false
+deformation_history:
+  type: select
+  options:
+    - none
+    - cold_worked
+    - pre_strained
+    - plastically_deformed
+    - fatigue_preloaded
+    - other
 
-        coating_type:
-          type: select_or_text
-          visible_if:
-            coated: true
-          options:
-            - zinc
-            - nickel
-            - chromium
-            - copper
-            - aluminum
-            - oxide
-            - phosphate
-            - paint_polymer
-            - conversion_coating
-            - inhibitor_film
-            - other
+pre_strain_percent:
+  type: number
+  required: false
+  visible_if:
+    deformation_history in [pre_strained, plastically_deformed]
 
-        coating_thickness_um:
-          type: number
-          required: false
-          visible_if:
-            coated: true
+cold_reduction_percent:
+  type: number
+  required: false
+  visible_if:
+    deformation_history == cold_worked
 
-        coating_notes:
-          type: textarea
-          required: false
-          visible_if:
-            coated: true
+and also
 
+mechanical_loading_during_test:
+  type: select
+  required: false
+  options:
+    - none
+    - constant_tension
+    - constant_compression
+    - constant_strain
+    - cyclic_loading
+    - fatigue_loading
+    - slow_strain_rate
+    - residual_stress_only
+    - other
+
+dependables:
+
+loading_regime:
+  type: select
+  required: false
+  options:
+    - elastic
+    - elastic_plastic
+    - plastic
+    - other
+
+applied_stress_mpa:
+  type: number
+  required: false
+
+applied_strain_percent:
+  type: number
+  required: false
 -----------------------
 
 

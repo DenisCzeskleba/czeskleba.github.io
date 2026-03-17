@@ -676,6 +676,10 @@ permalink: /hydrogen-diffusion-database/contribute/
       </details>
     </div>
     <div class="hdd-section-heading">Materials</div>
+    <p class="hdd-contrib-note">
+      Select the material class and grade that best match the paper. Add microstructure, phase, processing, and tags to
+      capture the key material context. Chemical composition is optional but highly recommended.
+    </p>
     <div class="hdd-contrib-grid">
       <div>
         <label for="default-material-class">Material class<span class="hdd-required" aria-hidden="true">*</span></label>
@@ -814,14 +818,12 @@ permalink: /hydrogen-diffusion-database/contribute/
           <option value="Annealed">Annealed</option>
           <option value="As received">As received</option>
           <option value="As welded">As welded</option>
-          <option value="Cold worked">Cold worked</option>
           <option value="Normalized">Normalized</option>
           <option value="PWHT">PWHT</option>
           <option value="Q&T">Q&amp;T</option>
           <option value="Quenched">Quenched</option>
           <option value="Stress relief">Stress relief</option>
           <option value="Subzero Treated">Subzero Treated</option>
-          <option value="Surface treated">Surface treated</option>
           <option value="TMCP">TMCP</option>
           <option value="Other">Other (specify in notes)</option>
         </select>
@@ -877,7 +879,7 @@ permalink: /hydrogen-diffusion-database/contribute/
     </details>
     <details class="hdd-comp-details">
       <summary>Chemical composition</summary>
-      <p class="hdd-contrib-note">Use 0.02 or &lt;0.1 in wt.% | Remainder is assumed Fe | Leave empty if not applicable</p>
+      <p class="hdd-contrib-note">Optional but highly recommended. Use 0.02 or &lt;0.1 in wt.% | Remainder is assumed Fe | Leave empty if not applicable</p>
       <div class="hdd-comp-grid" id="hdd-comp-grid">
       <div class="hdd-comp-item" data-comp-item>
         <div class="hdd-comp-element"><input type="text" data-comp-element value="C" readonly /></div>
@@ -984,6 +986,10 @@ permalink: /hydrogen-diffusion-database/contribute/
       </div>
     </div>
     <div class="hdd-section-heading">Hydrogen Measurement</div>
+    <p class="hdd-contrib-note">
+      Please choose the measurement method and calculation model that best match your paper. If you need an option that
+      is not listed, propose it in the measurement notes.
+    </p>
     <div class="hdd-contrib-grid">
       <div>
         <label for="default-method">Measurement method<span class="hdd-required" aria-hidden="true">*</span></label>
@@ -1307,6 +1313,70 @@ permalink: /hydrogen-diffusion-database/contribute/
       <details>
         <summary>Surface condition notes</summary>
         <textarea id="default-coating-notes" name="default_coating_notes" rows="3" placeholder="Any surface condition details. Leave empty if not needed."></textarea>
+      </details>
+    </div>
+    <div class="hdd-section-heading">Cold Work and Applied Stresses</div>
+    <p class="hdd-contrib-note">
+      Plastic deformation and applied stresses can alter trap density, diffusion pathways, and effective diffusivity.
+      Please select the options that best match the experimental setup.
+    </p>
+    <div class="hdd-contrib-grid">
+      <div>
+        <label for="default-deformation-history">Deformation history</label>
+        <select id="default-deformation-history" name="default_deformation_history">
+          <option value="">Select history</option>
+          <option value="cold_worked">Cold worked</option>
+          <option value="pre_strained">Pre-strained</option>
+          <option value="plastically_deformed">Plastically deformed</option>
+          <option value="fatigue_preloaded">Fatigue preloaded</option>
+          <option value="other">Other (specify in notes)</option>
+        </select>
+      </div>
+      <div class="hdd-conditional" data-deformation="pre_strained" data-deformation-alt="plastically_deformed">
+        <label for="default-pre-strain">Pre-strain [%]</label>
+        <input id="default-pre-strain" name="default_pre_strain_percent" type="number" step="any" placeholder="e.g., 2" />
+      </div>
+      <div class="hdd-conditional" data-deformation="cold_worked">
+        <label for="default-cold-reduction">Cold reduction [%]</label>
+        <input id="default-cold-reduction" name="default_cold_reduction_percent" type="number" step="any" placeholder="e.g., 10" />
+      </div>
+      <div>
+        <label for="default-mechanical-loading">Mechanical loading during test</label>
+        <select id="default-mechanical-loading" name="default_mechanical_loading">
+          <option value="">Select loading</option>
+          <option value="constant_tension">Constant tension</option>
+          <option value="constant_compression">Constant compression</option>
+          <option value="constant_strain">Constant strain</option>
+          <option value="cyclic_loading">Cyclic loading</option>
+          <option value="fatigue_loading">Fatigue loading</option>
+          <option value="slow_strain_rate">Slow strain rate</option>
+          <option value="residual_stress_only">Residual stress only</option>
+          <option value="other">Other (specify in notes)</option>
+        </select>
+      </div>
+      <div class="hdd-conditional" data-loading="constant_tension" data-loading-alt="constant_compression" data-loading-alt2="constant_strain" data-loading-alt3="cyclic_loading" data-loading-alt4="fatigue_loading" data-loading-alt5="slow_strain_rate" data-loading-alt6="residual_stress_only">
+        <label for="default-loading-regime">Loading regime</label>
+        <select id="default-loading-regime" name="default_loading_regime">
+          <option value="">Select regime</option>
+          <option value="elastic">Elastic</option>
+          <option value="elastic_plastic">Elastic-plastic</option>
+          <option value="plastic">Plastic</option>
+          <option value="other">Other (specify in notes)</option>
+        </select>
+      </div>
+      <div class="hdd-conditional" data-loading="constant_tension" data-loading-alt="constant_compression" data-loading-alt2="constant_strain" data-loading-alt3="cyclic_loading" data-loading-alt4="fatigue_loading" data-loading-alt5="slow_strain_rate" data-loading-alt6="residual_stress_only">
+        <label for="default-applied-stress">Applied stress [MPa]</label>
+        <input id="default-applied-stress" name="default_applied_stress_mpa" type="number" step="any" placeholder="e.g., 400" />
+      </div>
+      <div class="hdd-conditional" data-loading="constant_tension" data-loading-alt="constant_compression" data-loading-alt2="constant_strain" data-loading-alt3="cyclic_loading" data-loading-alt4="fatigue_loading" data-loading-alt5="slow_strain_rate" data-loading-alt6="residual_stress_only">
+        <label for="default-applied-strain">Applied strain [%]</label>
+        <input id="default-applied-strain" name="default_applied_strain_percent" type="number" step="any" placeholder="e.g., 1" />
+      </div>
+    </div>
+    <div class="hdd-conditions-notes">
+      <details>
+        <summary>Cold work and stress notes</summary>
+        <textarea id="default-stress-notes" name="default_stress_notes" placeholder="Any extra deformation or loading details. Leave empty if not needed."></textarea>
       </details>
     </div>
   </fieldset>
