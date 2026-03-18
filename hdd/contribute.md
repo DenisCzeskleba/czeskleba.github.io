@@ -125,6 +125,72 @@ permalink: /hydrogen-diffusion-database/contribute/
     padding: 10px 12px;
     background: color-mix(in srgb, var(--bg) 97%, var(--text));
   }
+  .hdd-override-picker {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    background: color-mix(in srgb, var(--bg) 96%, var(--text));
+  }
+  .hdd-override-columns {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+  .hdd-override-column-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+  }
+  .hdd-override-list {
+    display: grid;
+    gap: 6px;
+  }
+  .hdd-override-list button {
+    text-align: left;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+  }
+  .hdd-override-list button.is-active {
+    background: #1f2937;
+    color: #fff;
+    border-color: transparent;
+  }
+  .hdd-override-selected {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .hdd-override-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px 8px;
+    background: var(--bg);
+  }
+  .hdd-override-chip button {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 0 4px;
+    font-size: 0.95rem;
+  }
+  .hdd-override-field {
+    display: none;
+  }
+  .hdd-override-field.is-active {
+    display: block;
+  }
+  .hdd-override-injected {
+    display: grid;
+    gap: 12px;
+    margin-top: 12px;
+  }
   .hdd-contrib-override summary {
     cursor: pointer;
     font-weight: 600;
@@ -399,6 +465,22 @@ permalink: /hydrogen-diffusion-database/contribute/
     width: auto;
     height: auto;
     margin: 0;
+  }
+  .hdd-tag-grid--compact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    margin-top: 6px;
+  }
+  .hdd-tag-grid--compact label {
+    font-size: 0.85rem;
+    padding: 2px 8px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--bg) 96%, var(--text));
+  }
+  .hdd-tag-grid--compact input[type="checkbox"] {
+    margin: 0 6px 0 0;
   }
   .hdd-contrib-form input,
   .hdd-contrib-form select {
@@ -883,59 +965,59 @@ permalink: /hydrogen-diffusion-database/contribute/
       <div class="hdd-comp-grid" id="hdd-comp-grid">
       <div class="hdd-comp-item" data-comp-item>
         <div class="hdd-comp-element"><input type="text" data-comp-element value="C" readonly /></div>
-        <input type="text" data-comp-value title="Carbon in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
+        <input type="text" data-comp-value title="Carbon in wt% (e.g., 0.2 or <0.1)." />
       </div>
       <div class="hdd-comp-item" data-comp-item>
         <div class="hdd-comp-element"><input type="text" data-comp-element value="Mn" readonly /></div>
-        <input type="text" data-comp-value title="Manganese in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
+        <input type="text" data-comp-value title="Manganese in wt% (e.g., 0.2 or <0.1)." />
       </div>
       <div class="hdd-comp-item" data-comp-item>
         <div class="hdd-comp-element"><input type="text" data-comp-element value="Si" readonly /></div>
-        <input type="text" data-comp-value title="Silicon in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
+        <input type="text" data-comp-value title="Silicon in wt% (e.g., 0.2 or <0.1)." />
       </div>
       <div class="hdd-comp-item" data-comp-item>
         <div class="hdd-comp-element"><input type="text" data-comp-element value="Cr" readonly /></div>
-        <input type="text" data-comp-value title="Chromium in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
+        <input type="text" data-comp-value title="Chromium in wt% (e.g., 0.2 or <0.1)." />
       </div>
       <div class="hdd-comp-item" data-comp-item>
         <div class="hdd-comp-element"><input type="text" data-comp-element value="Ni" readonly /></div>
-        <input type="text" data-comp-value title="Nickel in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
+        <input type="text" data-comp-value title="Nickel in wt% (e.g., 0.2 or <0.1)." />
       </div>
       <div class="hdd-comp-item" data-comp-item>
         <div class="hdd-comp-element"><input type="text" data-comp-element value="Mo" readonly /></div>
-        <input type="text" data-comp-value title="Molybdenum in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
+        <input type="text" data-comp-value title="Molybdenum in wt% (e.g., 0.2 or <0.1)." />
       </div>
       <div class="hdd-comp-item" data-comp-item>
         <div class="hdd-comp-element"><input type="text" data-comp-element value="V" readonly /></div>
-        <input type="text" data-comp-value title="Vanadium in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
+        <input type="text" data-comp-value title="Vanadium in wt% (e.g., 0.2 or <0.1)." />
       </div>
       <div class="hdd-comp-item" data-comp-item>
         <div class="hdd-comp-element"><input type="text" data-comp-element value="Nb" readonly /></div>
-        <input type="text" data-comp-value title="Niobium in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
+        <input type="text" data-comp-value title="Niobium in wt% (e.g., 0.2 or <0.1)." />
       </div>
       <div class="hdd-comp-item" data-comp-item>
         <div class="hdd-comp-element"><input type="text" data-comp-element value="Ti" readonly /></div>
-        <input type="text" data-comp-value title="Titanium in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
+        <input type="text" data-comp-value title="Titanium in wt% (e.g., 0.2 or <0.1)." />
       </div>
       <div class="hdd-comp-item" data-comp-item>
         <div class="hdd-comp-element"><input type="text" data-comp-element value="Al" readonly /></div>
-        <input type="text" data-comp-value title="Aluminum in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
+        <input type="text" data-comp-value title="Aluminum in wt% (e.g., 0.2 or <0.1)." />
       </div>
       <div class="hdd-comp-item" data-comp-item>
         <div class="hdd-comp-element"><input type="text" data-comp-element value="Cu" readonly /></div>
-        <input type="text" data-comp-value title="Copper in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
+        <input type="text" data-comp-value title="Copper in wt% (e.g., 0.2 or <0.1)." />
       </div>
       <div class="hdd-comp-item" data-comp-item>
         <div class="hdd-comp-element"><input type="text" data-comp-element value="P" readonly /></div>
-        <input type="text" data-comp-value title="Phosphorus in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
+        <input type="text" data-comp-value title="Phosphorus in wt% (e.g., 0.2 or <0.1)." />
       </div>
       <div class="hdd-comp-item" data-comp-item>
         <div class="hdd-comp-element"><input type="text" data-comp-element value="S" readonly /></div>
-        <input type="text" data-comp-value title="Sulfur in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
+        <input type="text" data-comp-value title="Sulfur in wt% (e.g., 0.2 or <0.1)." />
       </div>
       <div class="hdd-comp-item" data-comp-item>
         <div class="hdd-comp-element"><input type="text" data-comp-element value="N" readonly /></div>
-        <input type="text" data-comp-value title="Nitrogen in wt% (e.g., 0.2 or <0.1). Leave empty if not needed." />
+        <input type="text" data-comp-value title="Nitrogen in wt% (e.g., 0.2 or <0.1)." />
       </div>
       </div>
       <div class="hdd-comp-actions">
@@ -945,7 +1027,7 @@ permalink: /hydrogen-diffusion-database/contribute/
     <div class="hdd-comp-notes">
       <details>
         <summary>Material notes</summary>
-        <textarea id="default-material-notes" name="default_material_notes" placeholder="Any extra material context. Leave empty if not needed." title="Any extra material context. Leave empty if not needed."></textarea>
+        <textarea id="default-material-notes" name="default_material_notes" placeholder="Any extra material context." title="Any extra material context."></textarea>
       </details>
     </div>
     <div data-welding-section>
@@ -981,7 +1063,7 @@ permalink: /hydrogen-diffusion-database/contribute/
       <div class="hdd-comp-notes">
         <details>
           <summary>Welding notes</summary>
-          <textarea id="default-welding-notes" name="default_welding_notes" placeholder="Any extra welding context. Leave empty if not needed."></textarea>
+          <textarea id="default-welding-notes" name="default_welding_notes" placeholder="Any extra welding context."></textarea>
         </details>
       </div>
     </div>
@@ -993,7 +1075,7 @@ permalink: /hydrogen-diffusion-database/contribute/
     <div class="hdd-contrib-grid">
       <div>
         <label for="default-method">Measurement method<span class="hdd-required" aria-hidden="true">*</span></label>
-        <select id="default-method" name="default_measurement_method" title="Measurement method. Leave empty if not needed.">
+        <select id="default-method" name="default_measurement_method" title="Measurement method.">
           <option value="">Select method</option>
           <option value="Deflection method">Deflection method</option>
           <option value="Electrical resistance">Electrical resistance</option>
@@ -1009,7 +1091,7 @@ permalink: /hydrogen-diffusion-database/contribute/
       </div>
       <div>
         <label for="default-charging">Charging method</label>
-        <select id="default-charging" name="default_charging_method" title="Charging method. Leave empty if not needed.">
+        <select id="default-charging" name="default_charging_method" title="Charging method.">
           <option value="">Select method</option>
           <option value="cathodic">Cathodic</option>
           <option value="electrochemical">Electrochemical</option>
@@ -1051,7 +1133,7 @@ permalink: /hydrogen-diffusion-database/contribute/
       </div>
       <div>
         <label for="default-sample-geometry">Sample geometry</label>
-        <select id="default-sample-geometry" name="default_sample_geometry" title="Sample geometry. Leave empty if not needed.">
+        <select id="default-sample-geometry" name="default_sample_geometry" title="Sample geometry.">
           <option value="">Select geometry</option>
           <option value="membrane">Membrane</option>
           <option value="plate">Plate</option>
@@ -1193,10 +1275,6 @@ permalink: /hydrogen-diffusion-database/contribute/
         <label for="cond-low-gas">Gas composition</label>
         <input id="cond-low-gas" type="text" placeholder="e.g., H2" />
       </div>
-      <div class="hdd-conditional" data-charging="immersion_in_distilled_water">
-        <label for="cond-distilled-water-notes">Solution notes</label>
-        <textarea id="cond-distilled-water-notes" rows="3" placeholder="e.g., distilled water with additives"></textarea>
-      </div>
       <div class="hdd-conditional" data-method="Thermal desorption (TDA / TDS)">
         <label for="cond-tda-heating-rate">Heating rate [&deg;C/min]</label>
         <input id="cond-tda-heating-rate" type="number" step="any" placeholder="e.g., 10" />
@@ -1242,7 +1320,7 @@ permalink: /hydrogen-diffusion-database/contribute/
     <div class="hdd-conditions-notes">
       <details>
         <summary>Measurement notes</summary>
-        <textarea id="default-conditions-notes" name="default_conditions_notes" placeholder="Electrolyte, current density, or other test details. Leave empty if not needed." title="Optional conditions notes. Leave empty if not needed."></textarea>
+        <textarea id="default-conditions-notes" name="default_conditions_notes" placeholder="Electrolyte, current density, or other test details." title="Optional conditions notes."></textarea>
       </details>
     </div>
     <div class="hdd-section-heading">Surface Condition</div>
@@ -1312,7 +1390,7 @@ permalink: /hydrogen-diffusion-database/contribute/
     <div class="hdd-surface-notes">
       <details>
         <summary>Surface condition notes</summary>
-        <textarea id="default-coating-notes" name="default_coating_notes" rows="3" placeholder="Any surface condition details. Leave empty if not needed."></textarea>
+        <textarea id="default-coating-notes" name="default_coating_notes" rows="3" placeholder="Any surface condition details."></textarea>
       </details>
     </div>
     <div class="hdd-section-heading">Cold Work and Applied Stresses</div>
@@ -1376,19 +1454,26 @@ permalink: /hydrogen-diffusion-database/contribute/
     <div class="hdd-conditions-notes">
       <details>
         <summary>Cold work and stress notes</summary>
-        <textarea id="default-stress-notes" name="default_stress_notes" placeholder="Any extra deformation or loading details. Leave empty if not needed."></textarea>
+        <textarea id="default-stress-notes" name="default_stress_notes" placeholder="Any extra deformation or loading details."></textarea>
       </details>
     </div>
   </fieldset>
 
   <fieldset>
-    <legend>Data rows (one row per model or single point)</legend>
+    <legend>Data rows (one row per model, single point, or list of values)</legend>
     <p class="hdd-contrib-note">
-      Required columns: group + series name, model type, Tmin, Tmax.
-      Think of <strong>group</strong> as the comparison set (what is being varied), and <strong>series</strong> as the
-      specific variant inside that set. Example: Group = "Vanadium content", Series = "V=0.1", "V=0.2", "V=0.3".
+      Required columns: display name and model type.
+      Pick a fitting name that will be displayed on the curve or in the legend. The first author's last name and year
+      will be included automatically. Don't include a temperature range here, as we can add that dynamically. Do use
+      something like "S690 HAZ" or "Vanadium 0.1 wt.%" or "5% Cr" or "5um Pd coated exit side". Usually this will be
+      something that is varied in the overrides below.
+      Minimum and maximum temperatures are required for Arrhenius and power-law models. Single points and list-of-values
+      rows will derive the range from their data.
+      Arrhenius uses D = D0 * exp(-Q/RT).
+      Power law uses D = A * T^n, where T is the temperature in the unit selected above.
+      List of values means a two-column table (temperature, diffusivity), like you would paste from Excel or CSV.
       The fields below update based on the model type you select.
-      If a specific row needs different material or composition, open "Override defaults for this row."
+      If a specific row needs different material or composition, open "Changes from defaults (this row only)".
     </p>
     <div id="hdd-contrib-rows" class="hdd-contrib-rows"></div>
     <div class="hdd-contrib-row-actions">
@@ -1398,8 +1483,8 @@ permalink: /hydrogen-diffusion-database/contribute/
 
   <fieldset>
     <legend>Confirmations</legend>
-    <label><input type="checkbox" name="confirm_peer_reviewed" required title="Required. Leave empty if not needed." /> This source is peer-reviewed and open-access.</label>
-    <label><input type="checkbox" name="confirm_rights" required title="Required. Leave empty if not needed." /> I have the right to share these parameters and links for review.</label>
+    <label><input type="checkbox" name="confirm_peer_reviewed" required title="Required." /> This source is peer-reviewed and open-access.</label>
+    <label><input type="checkbox" name="confirm_rights" required title="Required." /> I have the right to share these parameters and links for review.</label>
   </fieldset>
   <fieldset>
     <legend>Contact</legend>
@@ -1420,11 +1505,11 @@ permalink: /hydrogen-diffusion-database/contribute/
     <span class="hdd-contrib-status" id="hdd-contrib-status"></span>
   </div>
   <div class="hdd-contrib-local">
-    <label><input type="checkbox" id="hdd-local-mode" title="Generate JSON locally without sending a submission. Leave empty if not needed." /> Local test mode (do not submit)</label>
+    <label><input type="checkbox" id="hdd-local-mode" title="Generate JSON locally without sending a submission." /> Local test mode (do not submit)</label>
     <button type="button" id="hdd-show-json">Preview JSON</button>
     <button type="button" id="hdd-copy-json">Copy JSON</button>
     <button type="button" id="hdd-download-json">Download JSON</button>
   </div>
-  <textarea id="hdd-json-preview" class="hdd-contrib-preview" readonly placeholder="JSON preview will appear here." title="Local JSON preview. Leave empty if not needed."></textarea>
+  <textarea id="hdd-json-preview" class="hdd-contrib-preview" readonly placeholder="JSON preview will appear here." title="Local JSON preview."></textarea>
 </form>
 <script src="/hdd/hdd-contribution.js" defer></script>

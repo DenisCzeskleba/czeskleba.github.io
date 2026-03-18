@@ -1,3 +1,147 @@
+# Data Structure Change Plan (Notes to Self)
+
+These are working notes that explain the refactor plan for the HDD data structure. The goal is to make the model
+understandable and consistent, and to stop carrying legacy group/series/variant scaffolding that is confusing and
+error-prone.
+
+## Goal
+- Replace the current nested group/series/entry structure with a simpler, line-first model.
+- Make each plotted line/curve a first-class object.
+- Remove the old `group_id`, `series_id`, `variant_key`, and `series_key` logic from the new format.
+- Keep plotting and filtering intact by moving meaning into structured attributes, not into ad-hoc naming fields.
+
+## Why this change
+The current model repeats the same metadata at multiple levels and makes it hard to reason about what a "group",
+"series", or "entry" actually means. This leads to confusion and makes the contribution workflow too complex.
+
+We want a model that:
+- Maps directly to plotting (one line = one object).
+- Keeps all metadata attached to the line.
+- Uses structured attributes (material, conditions, composition, etc.) for comparisons instead of free-text series labels.
+
+## New mental model
+- **Line (or Entry)** is the unit of plotting.
+- Each line belongs to one source (paper).
+- Each line contains either:
+  - one or more model segments (arrhenius/power/single_point), or
+  - a list of digitized points.
+- All metadata (material, conditions, composition, etc.) lives on the line.
+
+## What changes
+### Remove
+- `group_id` as a required plotting concept.
+- `series_id`, `series_key`, `series_value`.
+- `variant_key`, `variant_value`, `variant_unit`.
+
+### Keep
+- `entry_id` (or rename to `line_id`) for each line.
+- `source_id` to tie back to the paper.
+- `model.type` and model parameters.
+- `temperature_validity` when needed.
+
+### Add/standardize
+- A single line label for the legend (human-readable).
+- A `plotting` hint on the line when needed (e.g., scatterband shading).
+- Structured attributes for all varying factors (composition, processing, surface, charging, etc.).
+
+## Example target structure (conceptual)
+Each source produces multiple line entries:
+
+- entry_id (line_id)
+- source_id
+- label (legend)
+- meta (material/conditions/etc.)
+- segments[] (each segment has model type + parameters + validity)
+  OR
+- points[] (digitized data)
+
+### Example 1: Arrhenius line (single segment)
+```
+{
+  "entry_id": "asano_1974_coldwork_40pct",
+  "source_id": "asano_1974_trapping_effect_of",
+  "label": "40% cold reduction",
+  "meta": {
+    "material": {
+      "class": "Low Alloy Steel",
+      "grade": "X70"
+    },
+    "conditions": {
+      "measurement_method": "Electrochemical permeation",
+      "charging_method": "devanathan_stachursky_cell",
+      "reported_as": "apparent"
+    }
+  },
+  "segments": [
+    {
+      "type": "arrhenius",
+      "D0_mm2_per_s": 24.0,
+      "Q_J_per_mol": 33890.4,
+      "temperature_validity_K": [293.15, 353.15]
+    }
+  ]
+}
+```
+
+### Example 2: Piecewise Arrhenius (two segments, one line)
+```
+{
+  "entry_id": "abe_2013_crmov_piecewise",
+  "source_id": "abe_2013_influence_of_dehydrogenation_heat",
+  "label": "CrMoV (piecewise)",
+  "meta": { "material": { "class": "Creep Resistant Steel" } },
+  "segments": [
+    {
+      "type": "arrhenius",
+      "D0_mm2_per_s": 11.0,
+      "Q_J_per_mol": 38874.0,
+      "temperature_validity_K": [293.15, 573.15]
+    },
+    {
+      "type": "arrhenius",
+      "D0_mm2_per_s": 0.9,
+      "Q_J_per_mol": 18900.0,
+      "temperature_validity_K": [573.15, 873.15]
+    }
+  ]
+}
+```
+
+### Example 3: Digitized curve (points)
+```
+{
+  "entry_id": "boellinghaus_1995_scatterband_low_c",
+  "source_id": "boellinghaus_1995_scatterband_microalloyed_low_carbon",
+  "label": "Low C (scatter band)",
+  "plotting": { "style": "band" },
+  "meta": { "material": { "class": "Low Alloy Steel" } },
+  "points": [
+    { "temperature_K": 300.0, "diffusivity_mm2_per_s": 0.0031 },
+    { "temperature_K": 325.0, "diffusivity_mm2_per_s": 0.0038 }
+  ]
+}
+```
+
+## Migration strategy (high level)
+1. Rebuild exporter from `hydrogen-diffusion-database/data/entries`.
+2. For each existing group/series/entry, emit a line entry:
+   - Use series labels for the line label.
+   - Merge all relevant metadata into the line meta.
+3. Encode piecewise models as multiple segments in one line entry.
+4. Encode digitized curves as points on the line entry.
+5. Update Explorer to read line entries directly (no nested groups/series).
+
+## Important
+This is a deliberate break from the old model. Do not keep backwards compatibility.
+Do not re-introduce group/series/variant naming in the new format.
+All comparisons should be driven by structured metadata on each line.
+arging_method
+        - diffusion_coefficient_determination
+        - trapping_considered
+
+
+Notes for the user, random thoughts just so i dont foget. AI should ignore everything that follows:
+
 Here I will work on a future structure change. We already have a decent database but we also have a lot info that we didnt know how it would fit into filters etc so we wrote everything i noted down while reading the papers in "notes" so we dont lose info.
 
 we also have random tags/keys i created that hold information that originally wouldnt fit anywhere. The plan is to now make a sort of definitive list of tags by setting the contribution form. This will lead to new submissions having different tags then the old data entries.**
@@ -7,96 +151,3 @@ we also have random tags/keys i created that hold information that originally wo
 2. Phase Two: Then we will go thru notes and see if the information there is already present in the tags we have after phase 1. if yes, remove THAT piece of informatin from notes. if not, which tag/key should hold this info? -> Add it there.
 3. Phase three: are there still notes left? if yes, what and why? Decide if we want new tags | leave in notes | or drop information all together
 4. Phase four: Is there any information from the original papers missing in this new structure? Go back to original notes from reading papers and see if you have that piece of info, if yes add, if no... well sh... mark this in some way so maybe someone can go back and read again? 
-
-**-------- Space for random thoughts of what to include --------**
-I think for the material wehave everything we want. We have big buckets for the material class, smaller to grade, microstructure and then phase and even processing. 
-
-For publication level we need to add the "Data origin" tag 
-Dropdown: Data source
-- Direct measurement
-- Extracted from graph
-- Calculated / Simulation
-- Literature review
-
-
-**--------------------------------------------------------------**
-Here’s how to read that row, in plain terms:
-
-Identifiers
-
-entry_id:   Unique ID for this exact data row (one temperature point or one model fit).
-source_id:  The publication (paper) this data comes from.
-group_id:   The figure/table or dataset grouping within that source (e.g., “Fig. 8”). It ties multiple rows together.
-
-
-What varies across rows
-
-variant_key:    The main variable being changed across the group (e.g., “Cr content”).
-variant_value:  The specific value for this row (e.g., 0.0).
-variant_unit:   Unit for the variant (e.g., at.%).
-
-
-What defines the series
-
-series_key:     The second dimension (often temperature or processing condition).
-series_value:   The label/value for this row in that series (e.g., "45 C").
-
-
-The data model
-
-model.type =    What kind of data this row represents.
-single_point =  one measured diffusivity at one temperature.
-arrhenius = a   fitted D0 + Q across a temperature range.
-power =         a D = A * x^n style fit.
-model.temperature_K:            Temperature for a single point (always stored in K).
-model.diffusivity_mm2_per_s:    Diffusivity value (normalized to mm^2/s).
-
-
-So this row reads as:
-From paper bockris_1970..., figure group bockris_1970_fecr_fig8, the variant is Cr content = 0.0 at.%; the series is Temperature = 45 C; and it gives a single-point diffusivity at 318.15 K of 0.002686 mm²/s.
-
-ask this later maybe:
-
-for now im not worried about the readibility, how current database is a mess in that sense anyway. Im ust trying to wrap my head around this.
-
-so the x axis is always temperatre and y is always diffusion coeff. its like a touple we assign (for a single point) or maybe a small table for arrhenious basically. and then these have attributes, like all the stuff "experimental setup" for example. like so and so much Vanadium lets say. And also a paper where they come from, say Denis or what ever. Now Denis might have looked at the effect of the Cr content so he has a table with 3 Cr contents: 1%, 2%, 3% and each gets a D_app value (lets go for single point for now)=
-**--------------------------------------------------------------**
-
-    data_rows:
-      description: >
-        One row per model, condition, or single-point value. Row-level overrides should
-        be available when one series differs from study defaults.
-
-      required_fields:
-        - group_name
-        - series_name
-        - model_type
-        - tmin_c
-        - tmax_c
-
-      optional_fields:
-        - diffusion_coefficient_value
-        - activation_energy
-        - pre_exponential_factor
-        - power_law_parameters
-        - notes
-
-      override_defaults_per_row: true
-      row_override_fields:
-        - material_class
-        - material_grade
-        - microstructure_region
-        - phase
-        - processing_state
-        - thickness_mm
-        - geometry
-        - test_temperature_c
-        - surface_condition
-        - coated
-        - coating_type
-        - coating_thickness_um
-        - measurement_method
-        - charging_method
-        - diffusion_coefficient_determination
-        - trapping_considered
-
