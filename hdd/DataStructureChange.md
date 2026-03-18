@@ -20,74 +20,47 @@ Dropdown: Data source
 
 
 **--------------------------------------------------------------**
+Here’s how to read that row, in plain terms:
 
-Based on what I’ve seen in the dataset, likely gaps are:
+Identifiers
 
-Material state: cold work %, heat treatment details (temp/time/sequence), residual stress/applied stress.
-Microstructure specifics: phase fractions, grain size, inclusion content, trap density, dislocation density.
-Surface specifics: roughness (Ra), specific prep steps (e.g., grit size if not in list), oxide type.
-Experimental context: sample orientation, thickness used in model (if not same as physical thickness), reference method used to derive D.
+entry_id:   Unique ID for this exact data row (one temperature point or one model fit).
+source_id:  The publication (paper) this data comes from.
+group_id:   The figure/table or dataset grouping within that source (e.g., “Fig. 8”). It ties multiple rows together.
 
-**---**
 
-deformation_history:
-  type: select
-  options:
-    - none
-    - cold_worked
-    - pre_strained
-    - plastically_deformed
-    - fatigue_preloaded
-    - other
+What varies across rows
 
-pre_strain_percent:
-  type: number
-  required: false
-  visible_if:
-    deformation_history in [pre_strained, plastically_deformed]
+variant_key:    The main variable being changed across the group (e.g., “Cr content”).
+variant_value:  The specific value for this row (e.g., 0.0).
+variant_unit:   Unit for the variant (e.g., at.%).
 
-cold_reduction_percent:
-  type: number
-  required: false
-  visible_if:
-    deformation_history == cold_worked
 
-and also
+What defines the series
 
-mechanical_loading_during_test:
-  type: select
-  required: false
-  options:
-    - none
-    - constant_tension
-    - constant_compression
-    - constant_strain
-    - cyclic_loading
-    - fatigue_loading
-    - slow_strain_rate
-    - residual_stress_only
-    - other
+series_key:     The second dimension (often temperature or processing condition).
+series_value:   The label/value for this row in that series (e.g., "45 C").
 
-dependables:
 
-loading_regime:
-  type: select
-  required: false
-  options:
-    - elastic
-    - elastic_plastic
-    - plastic
-    - other
+The data model
 
-applied_stress_mpa:
-  type: number
-  required: false
+model.type =    What kind of data this row represents.
+single_point =  one measured diffusivity at one temperature.
+arrhenius = a   fitted D0 + Q across a temperature range.
+power =         a D = A * x^n style fit.
+model.temperature_K:            Temperature for a single point (always stored in K).
+model.diffusivity_mm2_per_s:    Diffusivity value (normalized to mm^2/s).
 
-applied_strain_percent:
-  type: number
-  required: false
------------------------
 
+So this row reads as:
+From paper bockris_1970..., figure group bockris_1970_fecr_fig8, the variant is Cr content = 0.0 at.%; the series is Temperature = 45 C; and it gives a single-point diffusivity at 318.15 K of 0.002686 mm²/s.
+
+ask this later maybe:
+
+for now im not worried about the readibility, how current database is a mess in that sense anyway. Im ust trying to wrap my head around this.
+
+so the x axis is always temperatre and y is always diffusion coeff. its like a touple we assign (for a single point) or maybe a small table for arrhenious basically. and then these have attributes, like all the stuff "experimental setup" for example. like so and so much Vanadium lets say. And also a paper where they come from, say Denis or what ever. Now Denis might have looked at the effect of the Cr content so he has a table with 3 Cr contents: 1%, 2%, 3% and each gets a D_app value (lets go for single point for now)=
+**--------------------------------------------------------------**
 
     data_rows:
       description: >
