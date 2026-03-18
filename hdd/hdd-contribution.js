@@ -86,13 +86,11 @@
     { key: "override_material_microstructure", label: "Microstructure", cat: "Material", sub: "Microstructure", selector: "[data-field='override_material_microstructure']", depends: ["override_microstructure_enabled"] },
     { key: "override_material_phase", label: "Phase", cat: "Material", sub: "Phase & processing", selector: "[data-field='override_material_phase']" },
     { key: "override_material_processing", label: "Processing", cat: "Material", sub: "Phase & processing", selector: "[data-field='override_material_processing']" },
-    { key: "override_material_tags", label: "Additional Material Tags", cat: "Material", sub: "Tags", selector: "[data-field='override_material_tags']" },
-    { key: "override_composition_values", label: "Chemical composition", cat: "Material", sub: "Composition", getWrapper: "composition" },
-    { key: "override_material_composition_notes", label: "Composition notes", cat: "Material", sub: "Composition", selector: "[data-field='override_material_composition_notes']" },
+    { key: "override_material_tags", label: "Additional Material Tags", cat: "Material", sub: "Composition & Tags", selector: "[data-field='override_material_tags']" },
+    { key: "override_composition_values", label: "Chemical composition", cat: "Material", sub: "Composition & Tags", getWrapper: "composition" },
     { key: "override_material_notes", label: "Material notes", cat: "Material", sub: "Notes", selector: "[data-field='override_material_notes']" },
-    { key: "override_row_notes", label: "Row notes", cat: "Row notes", sub: "General", create: { type: "textarea", field: "override_row_notes", rows: 3 } },
     { key: "override_measurement_method", label: "Measurement method", cat: "Hydrogen measurement", sub: "Method", selector: "[data-field='override_measurement_method']" },
-    { key: "override_charging_method", label: "Charging method", cat: "Hydrogen measurement", sub: "Charging details", create: { type: "select", field: "override_charging_method", sourceId: "default-charging" } },
+    { key: "override_charging_method", label: "Charging method", cat: "Hydrogen measurement", sub: "Charging details", selector: "[data-field='override_charging_method']" },
     { key: "override_charging_duration", label: "Charging duration [h]", cat: "Hydrogen measurement", sub: "Charging details", create: { type: "number", field: "override_charging_duration", defaultFrom: "default-charging-duration" } },
     { key: "override_charging_temperature", label: "Charging temperature [°C]", cat: "Hydrogen measurement", sub: "Charging details", create: { type: "number", field: "override_charging_temperature", defaultFrom: "default-charging-temperature" } },
     { key: "override_calculation_model", label: "Calculation model", cat: "Hydrogen measurement", sub: "Calculation", selector: "[data-field='override_calculation_model']" },
@@ -130,7 +128,7 @@
     { key: "override_surface_coated", label: "Coated", cat: "Surface condition", sub: "Coating", create: { type: "select", field: "override_surface_coated", defaultFrom: "default-surface-coated", options: [{ value: "no", label: "No" }, { value: "yes", label: "Yes" }] } },
     { key: "override_coating_type", label: "Coating type", cat: "Surface condition", sub: "Coating", create: { type: "select", field: "override_coating_type", sourceId: "default-coating-type" }, depends: ["override_surface_coated"] },
     { key: "override_coating_thickness", label: "Coating thickness [µm]", cat: "Surface condition", sub: "Coating", create: { type: "number", field: "override_coating_thickness", defaultFrom: "default-coating-thickness" }, depends: ["override_surface_coated"] },
-    { key: "override_coating_notes", label: "Surface condition notes", cat: "Surface condition", sub: "Coating", create: { type: "textarea", field: "override_coating_notes", rows: 3, defaultFrom: "default-coating-notes" }, depends: ["override_surface_coated"] },
+    { key: "override_coating_notes", label: "Surface condition notes", cat: "Surface condition", sub: "Notes", create: { type: "textarea", field: "override_coating_notes", rows: 3, defaultFrom: "default-coating-notes" }, depends: ["override_surface_coated"] },
     { key: "override_deformation_history", label: "Deformation history", cat: "Cold work and applied stresses", sub: "Deformation", create: { type: "select", field: "override_deformation_history", sourceId: "default-deformation-history" } },
     { key: "override_pre_strain", label: "Pre-strain [%]", cat: "Cold work and applied stresses", sub: "Deformation", create: { type: "number", field: "override_pre_strain", defaultFrom: "default-pre-strain" }, depends: ["override_deformation_history"] },
     { key: "override_cold_reduction", label: "Cold reduction [%]", cat: "Cold work and applied stresses", sub: "Deformation", create: { type: "number", field: "override_cold_reduction", defaultFrom: "default-cold-reduction" }, depends: ["override_deformation_history"] },
@@ -138,11 +136,11 @@
     { key: "override_loading_regime", label: "Loading regime", cat: "Cold work and applied stresses", sub: "Loading", create: { type: "select", field: "override_loading_regime", sourceId: "default-loading-regime" }, depends: ["override_mechanical_loading"] },
     { key: "override_applied_stress", label: "Applied stress [MPa]", cat: "Cold work and applied stresses", sub: "Loading", create: { type: "number", field: "override_applied_stress", defaultFrom: "default-applied-stress" }, depends: ["override_mechanical_loading"] },
     { key: "override_applied_strain", label: "Applied strain [%]", cat: "Cold work and applied stresses", sub: "Loading", create: { type: "number", field: "override_applied_strain", defaultFrom: "default-applied-strain" }, depends: ["override_mechanical_loading"] },
-    { key: "override_stress_notes", label: "Cold work and stress notes", cat: "Cold work and applied stresses", sub: "Loading", create: { type: "textarea", field: "override_stress_notes", rows: 3, defaultFrom: "default-stress-notes" }, depends: ["override_mechanical_loading"] },
+    { key: "override_stress_notes", label: "Cold work and stress notes", cat: "Cold work and applied stresses", sub: "Notes", create: { type: "textarea", field: "override_stress_notes", rows: 3, defaultFrom: "default-stress-notes" }, depends: ["override_mechanical_loading"] },
     { key: "override_welding_process", label: "Welding process", cat: "Welding", sub: "Process", create: { type: "select", field: "override_welding_process", sourceId: "default-welding-process" }, depends: ["override_microstructure_enabled"] },
     { key: "override_welding_layer", label: "Layering", cat: "Welding", sub: "Process", create: { type: "select", field: "override_welding_layer", sourceId: "default-welding-layer" }, depends: ["override_microstructure_enabled"] },
-    { key: "override_welding_t85", label: "t8/5 (s)", cat: "Welding", sub: "Process", create: { type: "number", field: "override_welding_t85", defaultFrom: "default-welding-t85" }, depends: ["override_microstructure_enabled"] },
-    { key: "override_welding_notes", label: "Welding notes", cat: "Welding", sub: "Process", create: { type: "textarea", field: "override_welding_notes", rows: 3, defaultFrom: "default-welding-notes" }, depends: ["override_microstructure_enabled"] },
+    { key: "override_welding_t85", label: "t8/5 (s)", labelHtml: "t<sub>8/5</sub> (s)", cat: "Welding", sub: "Process", create: { type: "number", field: "override_welding_t85", defaultFrom: "default-welding-t85" }, depends: ["override_microstructure_enabled"] },
+    { key: "override_welding_notes", label: "Welding notes", cat: "Welding", sub: "Notes", create: { type: "textarea", field: "override_welding_notes", rows: 3, defaultFrom: "default-welding-notes" }, depends: ["override_microstructure_enabled"] },
   ];
 
   function createOverrideField(def) {
@@ -158,7 +156,11 @@
 
     if (def.create) {
       const label = document.createElement("label");
-      label.textContent = def.label;
+      if (def.labelHtml) {
+        label.innerHTML = def.labelHtml;
+      } else {
+        label.textContent = def.label;
+      }
       wrapper.appendChild(label);
 
       if (def.create.type === "select") {
@@ -291,9 +293,12 @@
     if (!catList || !subList || !fieldList || !selectedList) return;
 
     const fieldEls = Array.from(details.querySelectorAll("[data-override-key]"));
+    const defByKey = new Map();
+    overrideFieldDefs.forEach((def) => defByKey.set(def.key, def));
     const fields = fieldEls.map((el) => ({
       key: el.dataset.overrideKey,
       label: el.dataset.overrideLabel || el.dataset.overrideKey,
+      labelHtml: (defByKey.get(el.dataset.overrideKey) || {}).labelHtml || null,
       cat: el.dataset.overrideCat || "Other",
       sub: el.dataset.overrideSub || "General",
       depends: el.dataset.overrideDepends ? el.dataset.overrideDepends.split(",") : [],
@@ -313,8 +318,7 @@
         "Class & grade",
         "Microstructure",
         "Phase & processing",
-        "Tags",
-        "Composition",
+        "Composition & Tags",
         "Notes",
       ],
       "Hydrogen measurement": [
@@ -325,9 +329,9 @@
         "Geometry",
         "Notes",
       ],
-      "Surface condition": ["Condition", "Coating"],
-      "Cold work and applied stresses": ["Deformation", "Loading"],
-      Welding: ["Process"],
+      "Surface condition": ["Condition", "Coating", "Notes"],
+      "Cold work and applied stresses": ["Deformation", "Loading", "Notes"],
+      Welding: ["Process", "Notes"],
       "Row notes": ["General"],
     };
     const categories = categoryOrder.filter((cat) => fields.some((f) => f.cat === cat));
@@ -371,7 +375,11 @@
         const chip = document.createElement("span");
         chip.className = "hdd-override-chip";
         const label = document.createElement("span");
-        label.textContent = field.label;
+        if (field.labelHtml) {
+          label.innerHTML = field.labelHtml;
+        } else {
+          label.textContent = field.label;
+        }
         const remove = document.createElement("button");
         remove.type = "button";
         remove.textContent = "×";
@@ -544,7 +552,11 @@
       list.forEach((field) => {
         const button = document.createElement("button");
         button.type = "button";
-        button.textContent = field.label;
+        if (field.labelHtml) {
+          button.innerHTML = field.labelHtml;
+        } else {
+          button.textContent = field.label;
+        }
         if (activeFieldOrder.includes(field.key)) button.classList.add("is-active");
         button.addEventListener("click", () => {
           if (activeFieldOrder.includes(field.key)) {
@@ -767,6 +779,14 @@
             title="Paste two columns: temperature and diffusivity. Use comma or tab separators only, no headers. Temperatures must match the unit selected above."
           ></textarea>
         </div>
+        <details class="hdd-grid-span hdd-row-notes">
+          <summary>Row notes</summary>
+          <textarea
+            data-field="override_row_notes"
+            rows="3"
+            title="Row-specific context that is not captured elsewhere."
+          ></textarea>
+        </details>
       </div>
       <details class="hdd-contrib-override">
         <summary>Changes from defaults (this row only)</summary>
@@ -826,14 +846,6 @@
           <div>
             <label>Material notes</label>
             <input type="text" data-field="override_material_notes" data-default-from="default-material-notes" title="Override material notes for this row. Leave empty to use defaults." />
-          </div>
-          <div>
-            <label>Row notes</label>
-            <textarea
-              data-field="override_row_notes"
-              rows="3"
-              title="Use this if the overrides above still do not capture the row-specific context."
-            ></textarea>
           </div>
         </div>
         <p class="hdd-contrib-note">Composition overrides (wt%) - leave blank to use defaults.</p>
@@ -896,12 +908,9 @@
             <input type="text" data-comp-value title="Override N in wt%." />
           </div>
         </div>
+        </div>
         <div class="hdd-comp-actions">
           <button type="button" class="hdd-comp-add">Add element</button>
-        </div>
-        <div>
-          <label>Composition notes</label>
-          <input type="text" data-field="override_material_composition_notes" title="Override composition notes for this row." />
         </div>
         <div class="hdd-contrib-row-grid">
           <div>
@@ -1509,8 +1518,7 @@
     if (materialNotes && materialNotes !== defaults.material_notes) material.notes = materialNotes;
 
     const overrideTable = row.querySelector(".hdd-comp-grid");
-    const notesInput = row.querySelector("[data-field='override_material_composition_notes']");
-    const composition = collectCompositionFromTable(overrideTable, notesInput ? notesInput.value : "");
+    const composition = collectCompositionFromTable(overrideTable, "");
     if (composition) {
       material.chemical_composition = composition;
     }

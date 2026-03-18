@@ -89,7 +89,7 @@ permalink: /hydrogen-diffusion-database/contribute/
     min-height: 120px;
   }
   .hdd-contrib-form textarea {
-    min-height: 140px;
+    min-height: 100px;
     resize: vertical;
   }
   .hdd-contrib-form .hdd-contrib-note {
@@ -408,6 +408,9 @@ permalink: /hydrogen-diffusion-database/contribute/
   }
   .hdd-grid-span {
     grid-column: 1 / -1;
+  }
+  .hdd-row-notes {
+    margin-top: 4px;
   }
   .hdd-authors-table {
     margin-top: 6px;
