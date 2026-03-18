@@ -12,6 +12,7 @@
   const showJsonButton = document.getElementById("hdd-show-json");
   const copyJsonButton = document.getElementById("hdd-copy-json");
   const downloadJsonButton = document.getElementById("hdd-download-json");
+  const skipValidationToggle = document.getElementById("hdd-skip-validation");
   const jsonPreview = document.getElementById("hdd-json-preview");
   const authorTable = document.getElementById("hdd-authors-table");
   const authorAddButton = document.getElementById("hdd-author-add");
@@ -90,39 +91,39 @@
     { key: "override_composition_values", label: "Chemical composition", cat: "Material", sub: "Composition & Tags", getWrapper: "composition" },
     { key: "override_material_notes", label: "Material notes", cat: "Material", sub: "Notes", selector: "[data-field='override_material_notes']" },
     { key: "override_measurement_method", label: "Measurement method", cat: "Hydrogen measurement", sub: "Method", selector: "[data-field='override_measurement_method']" },
-    { key: "override_charging_method", label: "Charging method", cat: "Hydrogen measurement", sub: "Charging details", selector: "[data-field='override_charging_method']" },
-    { key: "override_charging_duration", label: "Charging duration [h]", cat: "Hydrogen measurement", sub: "Charging details", create: { type: "number", field: "override_charging_duration", defaultFrom: "default-charging-duration" } },
-    { key: "override_charging_temperature", label: "Charging temperature [°C]", cat: "Hydrogen measurement", sub: "Charging details", create: { type: "number", field: "override_charging_temperature", defaultFrom: "default-charging-temperature" } },
+    { key: "override_charging_method", label: "Charging method", cat: "Hydrogen measurement", sub: "Charging", selector: "[data-field='override_charging_method']" },
+    { key: "override_charging_duration", label: "Charging duration [h]", cat: "Hydrogen measurement", sub: "Charging", create: { type: "number", field: "override_charging_duration", defaultFrom: "default-charging-duration" } },
+    { key: "override_charging_temperature", label: "Charging temperature [°C]", cat: "Hydrogen measurement", sub: "Charging", create: { type: "number", field: "override_charging_temperature", defaultFrom: "default-charging-temperature" } },
     { key: "override_calculation_model", label: "Calculation model", cat: "Hydrogen measurement", sub: "Calculation", selector: "[data-field='override_calculation_model']" },
     { key: "override_reported_as", label: "Diffusivity type", cat: "Hydrogen measurement", sub: "Calculation", selector: "[data-field='override_reported_as']" },
     { key: "override_sample_geometry", label: "Sample geometry", cat: "Hydrogen measurement", sub: "Geometry", selector: "[data-field='override_sample_geometry']" },
     { key: "override_characteristic_length", label: "Characteristic length [mm]", cat: "Hydrogen measurement", sub: "Geometry", selector: "[data-field='override_characteristic_length']" },
     { key: "override_conditions_notes", label: "Measurement notes", cat: "Hydrogen measurement", sub: "Notes", selector: "[data-field='override_conditions_notes']" },
-    { key: "override_cond_tda_heating_rate", label: "Heating rate [°C/min]", cat: "Hydrogen measurement", sub: "Method details", create: { type: "number", field: "override_cond_tda_heating_rate" }, depends: ["override_measurement_method"] },
-    { key: "override_cond_tda_peak_method", label: "Peak analysis method", cat: "Hydrogen measurement", sub: "Method details", create: { type: "select", field: "override_cond_tda_peak_method", sourceId: "cond-tda-peak-method" }, depends: ["override_measurement_method"] },
-    { key: "override_cond_gas_detection", label: "Gas detection mode", cat: "Hydrogen measurement", sub: "Method details", create: { type: "select", field: "override_cond_gas_detection", sourceId: "cond-gas-detection" }, depends: ["override_measurement_method"] },
-    { key: "override_cond_sims_type", label: "SIMS type", cat: "Hydrogen measurement", sub: "Method details", create: { type: "select", field: "override_cond_sims_type", sourceId: "cond-sims-type" }, depends: ["override_measurement_method"] },
-    { key: "override_cond_hot_extraction_temp", label: "Extraction temperature [°C]", cat: "Hydrogen measurement", sub: "Method details", create: { type: "number", field: "override_cond_hot_extraction_temp" }, depends: ["override_measurement_method"] },
-    { key: "override_cond_degassing_temp", label: "Degassing temperature [°C]", cat: "Hydrogen measurement", sub: "Method details", create: { type: "number", field: "override_cond_degassing_temp" }, depends: ["override_measurement_method"] },
-    { key: "override_cond_dev_entry_electrolyte", label: "Electrolyte (entry side)", cat: "Hydrogen measurement", sub: "Charging details", create: { type: "select", field: "override_cond_dev_entry_electrolyte", sourceId: "cond-devanathan-entry-electrolyte" }, depends: ["override_charging_method"] },
-    { key: "override_cond_dev_exit_electrolyte", label: "Electrolyte (exit side)", cat: "Hydrogen measurement", sub: "Charging details", create: { type: "select", field: "override_cond_dev_exit_electrolyte", sourceId: "cond-devanathan-exit-electrolyte" }, depends: ["override_charging_method"] },
-    { key: "override_cond_dev_current_density", label: "Current density [mA/mm²]", cat: "Hydrogen measurement", sub: "Charging details", create: { type: "number", field: "override_cond_dev_current_density" }, depends: ["override_charging_method"] },
-    { key: "override_cond_dev_poison", label: "Poison additive", cat: "Hydrogen measurement", sub: "Charging details", create: { type: "select", field: "override_cond_dev_poison", sourceId: "cond-devanathan-poison" }, depends: ["override_charging_method"] },
-    { key: "override_cond_cathodic_electrolyte", label: "Electrolyte", cat: "Hydrogen measurement", sub: "Charging details", create: { type: "select", field: "override_cond_cathodic_electrolyte", sourceId: "cond-cathodic-electrolyte" }, depends: ["override_charging_method"] },
-    { key: "override_cond_cathodic_current", label: "Current density [mA/cm²]", cat: "Hydrogen measurement", sub: "Charging details", create: { type: "number", field: "override_cond_cathodic_current" }, depends: ["override_charging_method"] },
-    { key: "override_cond_cathodic_poison", label: "Poison additive", cat: "Hydrogen measurement", sub: "Charging details", create: { type: "select", field: "override_cond_cathodic_poison", sourceId: "cond-cathodic-poison" }, depends: ["override_charging_method"] },
-    { key: "override_cond_electrochemical_electrolyte", label: "Electrolyte", cat: "Hydrogen measurement", sub: "Charging details", create: { type: "select", field: "override_cond_electrochemical_electrolyte", sourceId: "cond-electrochemical-electrolyte" }, depends: ["override_charging_method"] },
-    { key: "override_cond_electrochemical_control", label: "Control mode", cat: "Hydrogen measurement", sub: "Charging details", create: { type: "select", field: "override_cond_electrochemical_control", sourceId: "cond-electrochemical-control" }, depends: ["override_charging_method"] },
-    { key: "override_cond_electrochemical_current", label: "Current density [mA/cm²]", cat: "Hydrogen measurement", sub: "Charging details", create: { type: "number", field: "override_cond_electrochemical_current" }, depends: ["override_charging_method"] },
-    { key: "override_cond_electrochemical_potential", label: "Applied potential [V]", cat: "Hydrogen measurement", sub: "Charging details", create: { type: "number", field: "override_cond_electrochemical_potential" }, depends: ["override_charging_method"] },
-    { key: "override_cond_electrochemical_poison", label: "Poison additive", cat: "Hydrogen measurement", sub: "Charging details", create: { type: "select", field: "override_cond_electrochemical_poison", sourceId: "cond-electrochemical-poison" }, depends: ["override_charging_method"] },
-    { key: "override_cond_high_pressure", label: "Pressure [bar]", cat: "Hydrogen measurement", sub: "Charging details", create: { type: "number", field: "override_cond_high_pressure" }, depends: ["override_charging_method"] },
-    { key: "override_cond_high_gas", label: "Gas composition", cat: "Hydrogen measurement", sub: "Charging details", create: { type: "text", field: "override_cond_high_gas" }, depends: ["override_charging_method"] },
-    { key: "override_cond_gas_phase_composition", label: "Gas composition", cat: "Hydrogen measurement", sub: "Charging details", create: { type: "text", field: "override_cond_gas_phase_composition" }, depends: ["override_charging_method"] },
-    { key: "override_cond_gas_phase_pressure", label: "Pressure [bar]", cat: "Hydrogen measurement", sub: "Charging details", create: { type: "number", field: "override_cond_gas_phase_pressure" }, depends: ["override_charging_method"] },
-    { key: "override_cond_gas_phase_purity", label: "Gas purity", cat: "Hydrogen measurement", sub: "Charging details", create: { type: "text", field: "override_cond_gas_phase_purity" }, depends: ["override_charging_method"] },
-    { key: "override_cond_low_pressure", label: "Pressure [bar]", cat: "Hydrogen measurement", sub: "Charging details", create: { type: "number", field: "override_cond_low_pressure" }, depends: ["override_charging_method"] },
-    { key: "override_cond_low_gas", label: "Gas composition", cat: "Hydrogen measurement", sub: "Charging details", create: { type: "text", field: "override_cond_low_gas" }, depends: ["override_charging_method"] },
+    { key: "override_cond_tda_heating_rate", label: "Heating rate [°C/min]", cat: "Hydrogen measurement", sub: "Method", create: { type: "number", field: "override_cond_tda_heating_rate", defaultFrom: "cond-tda-heating-rate" }, depends: ["override_measurement_method"], method: ["Thermal desorption (TDA / TDS)"] },
+    { key: "override_cond_tda_peak_method", label: "Peak analysis method", cat: "Hydrogen measurement", sub: "Method", create: { type: "select", field: "override_cond_tda_peak_method", sourceId: "cond-tda-peak-method", defaultFrom: "cond-tda-peak-method" }, depends: ["override_measurement_method"], method: ["Thermal desorption (TDA / TDS)"] },
+    { key: "override_cond_gas_detection", label: "Gas detection mode", cat: "Hydrogen measurement", sub: "Method", create: { type: "select", field: "override_cond_gas_detection", sourceId: "cond-gas-detection", defaultFrom: "cond-gas-detection" }, depends: ["override_measurement_method"], method: ["Gas permeation"] },
+    { key: "override_cond_sims_type", label: "SIMS type", cat: "Hydrogen measurement", sub: "Method", create: { type: "select", field: "override_cond_sims_type", sourceId: "cond-sims-type", defaultFrom: "cond-sims-type" }, depends: ["override_measurement_method"], method: ["SIMS"] },
+    { key: "override_cond_hot_extraction_temp", label: "Extraction temperature [°C]", cat: "Hydrogen measurement", sub: "Method", create: { type: "number", field: "override_cond_hot_extraction_temp", defaultFrom: "cond-hot-extraction-temp" }, depends: ["override_measurement_method"], method: ["Hot extraction (CGHE / GC)"] },
+    { key: "override_cond_degassing_temp", label: "Degassing temperature [°C]", cat: "Hydrogen measurement", sub: "Method", create: { type: "number", field: "override_cond_degassing_temp", defaultFrom: "cond-degassing-temp" }, depends: ["override_measurement_method"], method: ["Isothermal effusion / degassing"] },
+    { key: "override_cond_dev_entry_electrolyte", label: "Electrolyte (entry side)", cat: "Hydrogen measurement", sub: "Charging", create: { type: "select", field: "override_cond_dev_entry_electrolyte", sourceId: "cond-devanathan-entry-electrolyte", defaultFrom: "cond-devanathan-entry-electrolyte" }, depends: ["override_charging_method"], charging: ["devanathan_stachursky_cell"] },
+    { key: "override_cond_dev_exit_electrolyte", label: "Electrolyte (exit side)", cat: "Hydrogen measurement", sub: "Charging", create: { type: "select", field: "override_cond_dev_exit_electrolyte", sourceId: "cond-devanathan-exit-electrolyte", defaultFrom: "cond-devanathan-exit-electrolyte" }, depends: ["override_charging_method"], charging: ["devanathan_stachursky_cell"] },
+    { key: "override_cond_dev_current_density", label: "Current density [mA/mm²]", cat: "Hydrogen measurement", sub: "Charging", create: { type: "number", field: "override_cond_dev_current_density", defaultFrom: "cond-devanathan-current-density" }, depends: ["override_charging_method"], charging: ["devanathan_stachursky_cell"] },
+    { key: "override_cond_dev_poison", label: "Poison additive", cat: "Hydrogen measurement", sub: "Charging", create: { type: "select", field: "override_cond_dev_poison", sourceId: "cond-devanathan-poison", defaultFrom: "cond-devanathan-poison" }, depends: ["override_charging_method"], charging: ["devanathan_stachursky_cell"] },
+    { key: "override_cond_cathodic_electrolyte", label: "Electrolyte", cat: "Hydrogen measurement", sub: "Charging", create: { type: "select", field: "override_cond_cathodic_electrolyte", sourceId: "cond-cathodic-electrolyte", defaultFrom: "cond-cathodic-electrolyte" }, depends: ["override_charging_method"], charging: ["cathodic"] },
+    { key: "override_cond_cathodic_current", label: "Current density [mA/cm²]", cat: "Hydrogen measurement", sub: "Charging", create: { type: "number", field: "override_cond_cathodic_current", defaultFrom: "cond-cathodic-current" }, depends: ["override_charging_method"], charging: ["cathodic"] },
+    { key: "override_cond_cathodic_poison", label: "Poison additive", cat: "Hydrogen measurement", sub: "Charging", create: { type: "select", field: "override_cond_cathodic_poison", sourceId: "cond-cathodic-poison", defaultFrom: "cond-cathodic-poison" }, depends: ["override_charging_method"], charging: ["cathodic"] },
+    { key: "override_cond_electrochemical_electrolyte", label: "Electrolyte", cat: "Hydrogen measurement", sub: "Charging", create: { type: "select", field: "override_cond_electrochemical_electrolyte", sourceId: "cond-electrochemical-electrolyte", defaultFrom: "cond-electrochemical-electrolyte" }, depends: ["override_charging_method"], charging: ["electrochemical"] },
+    { key: "override_cond_electrochemical_control", label: "Control mode", cat: "Hydrogen measurement", sub: "Charging", create: { type: "select", field: "override_cond_electrochemical_control", sourceId: "cond-electrochemical-control", defaultFrom: "cond-electrochemical-control" }, depends: ["override_charging_method"], charging: ["electrochemical"] },
+    { key: "override_cond_electrochemical_current", label: "Current density [mA/cm²]", cat: "Hydrogen measurement", sub: "Charging", create: { type: "number", field: "override_cond_electrochemical_current", defaultFrom: "cond-electrochemical-current" }, depends: ["override_charging_method"], charging: ["electrochemical"] },
+    { key: "override_cond_electrochemical_potential", label: "Applied potential [V]", cat: "Hydrogen measurement", sub: "Charging", create: { type: "number", field: "override_cond_electrochemical_potential", defaultFrom: "cond-electrochemical-potential" }, depends: ["override_charging_method"], charging: ["electrochemical"] },
+    { key: "override_cond_electrochemical_poison", label: "Poison additive", cat: "Hydrogen measurement", sub: "Charging", create: { type: "select", field: "override_cond_electrochemical_poison", sourceId: "cond-electrochemical-poison", defaultFrom: "cond-electrochemical-poison" }, depends: ["override_charging_method"], charging: ["electrochemical"] },
+    { key: "override_cond_high_pressure", label: "Pressure [bar]", cat: "Hydrogen measurement", sub: "Charging", create: { type: "number", field: "override_cond_high_pressure", defaultFrom: "cond-high-pressure" }, depends: ["override_charging_method"], charging: ["high_pressure_hydrogen"] },
+    { key: "override_cond_high_gas", label: "Gas composition", cat: "Hydrogen measurement", sub: "Charging", create: { type: "text", field: "override_cond_high_gas", defaultFrom: "cond-high-gas" }, depends: ["override_charging_method"], charging: ["high_pressure_hydrogen"] },
+    { key: "override_cond_gas_phase_composition", label: "Gas composition", cat: "Hydrogen measurement", sub: "Charging", create: { type: "text", field: "override_cond_gas_phase_composition", defaultFrom: "cond-gas-phase-composition" }, depends: ["override_charging_method"], charging: ["gas_phase"] },
+    { key: "override_cond_gas_phase_pressure", label: "Pressure [bar]", cat: "Hydrogen measurement", sub: "Charging", create: { type: "number", field: "override_cond_gas_phase_pressure", defaultFrom: "cond-gas-phase-pressure" }, depends: ["override_charging_method"], charging: ["gas_phase"] },
+    { key: "override_cond_gas_phase_purity", label: "Gas purity", cat: "Hydrogen measurement", sub: "Charging", create: { type: "text", field: "override_cond_gas_phase_purity", defaultFrom: "cond-gas-phase-purity" }, depends: ["override_charging_method"], charging: ["gas_phase"] },
+    { key: "override_cond_low_pressure", label: "Pressure [bar]", cat: "Hydrogen measurement", sub: "Charging", create: { type: "number", field: "override_cond_low_pressure", defaultFrom: "cond-low-pressure" }, depends: ["override_charging_method"], charging: ["low_pressure_hydrogen"] },
+    { key: "override_cond_low_gas", label: "Gas composition", cat: "Hydrogen measurement", sub: "Charging", create: { type: "text", field: "override_cond_low_gas", defaultFrom: "cond-low-gas" }, depends: ["override_charging_method"], charging: ["low_pressure_hydrogen"] },
     { key: "override_surface_condition", label: "Surface condition", cat: "Surface condition", sub: "Condition", create: { type: "select", field: "override_surface_condition", sourceId: "default-surface-condition" } },
     { key: "override_surface_finish_detail", label: "Surface finish detail", cat: "Surface condition", sub: "Condition", create: { type: "select", field: "override_surface_finish_detail", sourceId: "default-surface-finish" } },
     { key: "override_surface_coated", label: "Coated", cat: "Surface condition", sub: "Coating", create: { type: "select", field: "override_surface_coated", defaultFrom: "default-surface-coated", options: [{ value: "no", label: "No" }, { value: "yes", label: "Yes" }] } },
@@ -299,6 +300,8 @@
       key: el.dataset.overrideKey,
       label: el.dataset.overrideLabel || el.dataset.overrideKey,
       labelHtml: (defByKey.get(el.dataset.overrideKey) || {}).labelHtml || null,
+      method: (defByKey.get(el.dataset.overrideKey) || {}).method || null,
+      charging: (defByKey.get(el.dataset.overrideKey) || {}).charging || null,
       cat: el.dataset.overrideCat || "Other",
       sub: el.dataset.overrideSub || "General",
       depends: el.dataset.overrideDepends ? el.dataset.overrideDepends.split(",") : [],
@@ -323,8 +326,7 @@
       ],
       "Hydrogen measurement": [
         "Method",
-        "Charging details",
-        "Method details",
+        "Charging",
         "Calculation",
         "Geometry",
         "Notes",
@@ -421,6 +423,7 @@
         activeFieldOrder.push(key);
       }
       if (pinned) field.el.dataset.overridePinned = "true";
+      applyDefaultsIfEmpty(field);
       reorderFields();
       updateSelected();
     }
@@ -544,9 +547,79 @@
       renderFields();
     }
 
+    function getRowValue(field) {
+      const input = row.querySelector(`[data-field='${field}']`);
+      return input ? input.value.trim() : "";
+    }
+
+    function getEffectiveMethod() {
+      const override = getRowValue("override_measurement_method");
+      return override || getValue("default-method") || "";
+    }
+
+    function getEffectiveCharging() {
+      const override = getRowValue("override_charging_method");
+      return override || getValue("default-charging") || "";
+    }
+
+    function fieldEligible(field, methodValue, chargingValue) {
+      if (field.method && field.method.length) {
+        if (!methodValue || !field.method.includes(methodValue)) return false;
+      }
+      if (field.charging && field.charging.length) {
+        if (!chargingValue || !field.charging.includes(chargingValue)) return false;
+      }
+      return true;
+    }
+
+    function applyDefaultsIfEmpty(field) {
+      const inputs = field.el.querySelectorAll("input, textarea, select");
+      inputs.forEach((input) => {
+        if (elementHasUserValue(input)) return;
+        const sourceId = input.getAttribute("data-default-from") || input.getAttribute("data-clone-from");
+        if (!sourceId) return;
+        const source = document.getElementById(sourceId);
+        if (!source) return;
+        if (input.matches("select")) {
+          if (source.value) {
+            input.value = source.value;
+          }
+        } else if (source.value) {
+          input.value = source.value;
+        }
+      });
+    }
+
+    function updateConditionalEligibility() {
+      const methodValue = getEffectiveMethod();
+      const chargingValue = getEffectiveCharging();
+      fields.forEach((field) => {
+        if (!fieldEligible(field, methodValue, chargingValue)) {
+          hideField(field.key, { source: "conditional", force: true, reset: true });
+        }
+      });
+      const methodOverride = getRowValue("override_measurement_method");
+      const chargingOverride = getRowValue("override_charging_method");
+      fields.forEach((field) => {
+        if (!fieldEligible(field, methodValue, chargingValue)) return;
+        if (field.method && methodOverride) {
+          showField(field.key, true, false, "conditional");
+          applyDefaultsIfEmpty(field);
+        }
+        if (field.charging && chargingOverride) {
+          showField(field.key, true, false, "conditional");
+          applyDefaultsIfEmpty(field);
+        }
+      });
+      renderFields();
+    }
+
     function renderFields() {
+      const methodValue = getEffectiveMethod();
+      const chargingValue = getEffectiveCharging();
       const list = fields
         .filter((f) => f.cat === activeCat && f.sub === activeSub)
+        .filter((f) => fieldEligible(f, methodValue, chargingValue))
         .sort((a, b) => fieldOrder(a) - fieldOrder(b));
       fieldList.innerHTML = "";
       list.forEach((field) => {
@@ -585,6 +658,18 @@
         }
       });
     }
+
+    const methodSelect = row.querySelector("[data-field='override_measurement_method']");
+    if (methodSelect) {
+      methodSelect.addEventListener("change", updateConditionalEligibility);
+    }
+
+    const chargingSelect = row.querySelector("[data-field='override_charging_method']");
+    if (chargingSelect) {
+      chargingSelect.addEventListener("change", updateConditionalEligibility);
+    }
+
+    updateConditionalEligibility();
 
     fields.forEach((field) => {
       const inputs = field.el.querySelectorAll("input, textarea, select");
@@ -1437,7 +1522,7 @@
     };
   }
 
-  function buildRowOverrides(row, getRowValue) {
+  function buildRowOverrides(row, getRowValue, getDefaultValue) {
     const overrides = {};
     const material = {};
     const conditions = {};
@@ -1523,8 +1608,8 @@
       material.chemical_composition = composition;
     }
 
-    const method = getRowValue("override_measurement_method");
-    const charging = getRowValue("override_charging_method");
+    const method = getRowValue("override_measurement_method") || getDefaultValue("default-method");
+    const charging = getRowValue("override_charging_method") || getDefaultValue("default-charging");
     const chargingDuration = parseNumber(getRowValue("override_charging_duration"));
     const chargingTemperature = parseNumber(getRowValue("override_charging_temperature"));
     const calculationModel = getRowValue("override_calculation_model");
@@ -1732,15 +1817,25 @@
     rowsBody.querySelectorAll(".hdd-contrib-row").forEach((row) => {
       const getRowValue = (field) => {
         const input = row.querySelector(`[data-field='${field}']`);
-        return input ? input.value.trim() : "";
+        if (!input) return "";
+        const overrideField = input.closest(".hdd-override-field");
+        if (overrideField && !overrideField.classList.contains("is-active")) {
+          return "";
+        }
+        return input.value.trim();
       };
       const getRowSelected = (field) => {
         const input = row.querySelector(`[data-field='${field}']`);
         if (!input) return [];
+        const overrideField = input.closest(".hdd-override-field");
+        if (overrideField && !overrideField.classList.contains("is-active")) {
+          return [];
+        }
         return Array.from(input.querySelectorAll("input[type='checkbox']:checked"))
           .map((cb) => cb.value)
           .filter(Boolean);
       };
+      const getDefaultValue = (field) => getValue(field);
 
       const rowData = {
         display_name: getRowValue("display_name"),
@@ -1775,7 +1870,7 @@
             return getRowSelected(field);
           }
           return getRowValue(field);
-        }),
+        }, getDefaultValue),
       };
 
       rows.push(rowData);
@@ -1859,10 +1954,12 @@
 
   function updateJsonPreview() {
     const payload = buildPayload();
-    const rowError = validateRows(payload);
-    if (rowError) {
-      setStatus(rowError, "error");
-      return null;
+    if (!skipValidationToggle || !skipValidationToggle.checked) {
+      const rowError = validateRows(payload);
+      if (rowError) {
+        setStatus(rowError, "error");
+        return null;
+      }
     }
     const jsonText = JSON.stringify(payload, null, 2);
     if (jsonField) {

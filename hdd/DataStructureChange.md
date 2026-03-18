@@ -140,7 +140,7 @@ arging_method
         - trapping_considered
 
 
-Notes for the user, random thoughts just so i dont foget. AI should ignore everything that follows:
+**Notes for the user, random thoughts just so i dont foget. AI should ignore everything that follows:**
 
 Here I will work on a future structure change. We already have a decent database but we also have a lot info that we didnt know how it would fit into filters etc so we wrote everything i noted down while reading the papers in "notes" so we dont lose info.
 
@@ -151,3 +151,5 @@ we also have random tags/keys i created that hold information that originally wo
 2. Phase Two: Then we will go thru notes and see if the information there is already present in the tags we have after phase 1. if yes, remove THAT piece of informatin from notes. if not, which tag/key should hold this info? -> Add it there.
 3. Phase three: are there still notes left? if yes, what and why? Decide if we want new tags | leave in notes | or drop information all together
 4. Phase four: Is there any information from the original papers missing in this new structure? Go back to original notes from reading papers and see if you have that piece of info, if yes add, if no... well sh... mark this in some way so maybe someone can go back and read again? 
+
+Worry about the Plotting tag 
