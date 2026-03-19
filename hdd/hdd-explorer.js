@@ -2665,8 +2665,14 @@
   }
 
   function inferBand(descriptor) {
-    const band = descriptor.segments?.[0]?.metadata?.band;
-    if (band) return band;
+    const raw = descriptor.segments?.[0]?.plotting?.envelope_fill;
+    if (raw && raw !== "not_reported") {
+      const token = String(raw).toLowerCase();
+      if (token === "avg") return "mean";
+      if (token === "min" || token === "max" || token === "mean") return token;
+    }
+    const legacyBand = descriptor.segments?.[0]?.metadata?.band;
+    if (legacyBand) return legacyBand;
     const candidate = String(descriptor.groupId || descriptor.label || descriptor.id || "");
     if (!candidate) return null;
     const match = candidate.match(/(?:^|_)(mean|avg|min|max)(?:_|$)/i);
@@ -3134,7 +3140,7 @@
       ctx.fillText(`${item.index + 1}. ${item.label}`, textX, legendY);
       legendY += lineHeight;
     }
-    const label = needsMore ? `... +${items.length - i} more` : "Full list";
+    const label = needsMore ? `Show all ${items.length}` : "Show full list";
     ctx.fillStyle = theme.accent || theme.muted;
     ctx.fillText(label, textX, legendY);
     const metrics = ctx.measureText(label);
@@ -3804,7 +3810,7 @@
       );
       legendY += lineHeight;
     }
-      const label = needsMore ? `... +${items.length - i} more` : "Full list";
+      const label = needsMore ? `Show all ${items.length}` : "Show full list";
       parts.push(
         `<text x="${textX}" y="${legendY}" fill="${theme.accent || theme.muted}" font-size="${fontLegend}" text-anchor="start">${label}</text>`
       );
