@@ -15,9 +15,9 @@
   --canvas: #ffffff;
   --line: #e2e8f0;
   --plot-canvas: #ffffff;
+  --plot-line: #d0d0d0;
   --plot-ink: #111111;
   --plot-muted: #5a5a5a;
-  --plot-line: #d0d0d0;
   --accent: #0f766e;
   --accent-soft: rgba(15, 118, 110, 0.15);
   --accent-warm: #f97316;
@@ -242,10 +242,22 @@ main > h1 {
 }
 
 .hdd-section-title {
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.18em;
   color: var(--muted);
+}
+
+.hdd-section-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.hdd-advanced-toggle {
+  margin-left: auto;
+  font-size: 0.85rem;
 }
 
 .hdd-actions {
@@ -261,6 +273,7 @@ main > h1 {
 
 .hdd-action-row button {
   width: 100%;
+  white-space: nowrap;
 }
 
 .hdd-action-secondary {
@@ -277,6 +290,17 @@ main > h1 {
 .hdd-action-secondary:hover {
   background: var(--panel);
   border-color: color-mix(in srgb, var(--line) 75%, var(--ink));
+}
+
+.hdd-action-accent {
+  background: var(--accent);
+  color: #ffffff;
+  border-color: var(--accent);
+}
+
+.hdd-action-accent:hover {
+  background: color-mix(in srgb, var(--accent) 85%, #000);
+  border-color: color-mix(in srgb, var(--accent) 85%, #000);
 }
 
 .hdd-filter-scroll {

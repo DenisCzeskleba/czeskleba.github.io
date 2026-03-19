@@ -25,7 +25,7 @@
     status: document.getElementById("hdd-data-status"),
     search: document.getElementById("hdd-search"),
     list: document.getElementById("hdd-series-list"),
-    plotButton: document.getElementById("hdd-plot-btn"),
+    advancedToggle: document.getElementById("hdd-advanced-toggle"),
     openSeries: document.getElementById("hdd-open-series"),
     seriesDrawer: document.getElementById("hdd-series-drawer"),
     chart: document.getElementById("hdd-chart"),
@@ -72,6 +72,8 @@
     selectAll: document.getElementById("hdd-select-all"),
     deselectAll: document.getElementById("hdd-deselect-all"),
     showAll: document.getElementById("hdd-show-all"),
+    advancedFilters: document.getElementById("hdd-advanced-filters"),
+    weldedMode: document.getElementById("hdd-welded-mode"),
     filterSource: document.getElementById("hdd-filter-source"),
     filterClass: document.getElementById("hdd-filter-class"),
     filterGrade: document.getElementById("hdd-filter-grade"),
@@ -112,6 +114,7 @@
     yearDomain: null,
     includeUnconfirmed: false,
     literatureMode: "include",
+    weldedMode: "include",
     includeUnknownComposition: false,
     compositionFilters: {},
     filterMode: {},
@@ -169,6 +172,8 @@
     state.legendBySource = dom.legendGroup?.checked ?? true;
     state.includeUnconfirmed = dom.includeUnconfirmed?.checked ?? false;
     state.literatureMode = dom.literatureMode?.value || "include";
+    state.weldedMode = dom.weldedMode?.value || "include";
+    setAdvancedFiltersVisible(dom.advancedToggle?.checked ?? false);
     state.includeUnknownComposition = dom.filterUnknownComposition?.checked ?? false;
     const thickness = parseNumber(dom.lineThickness?.value);
     state.lineThickness = isFiniteNumber(thickness) ? clampValue(thickness, 0.5, 2) : 1;
@@ -409,6 +414,7 @@
       measurement_method: new Set(),
       model_type: new Set(),
       plotting_status: new Set(),
+      welded_enabled: new Set(),
     };
 
     segments.forEach((segment) => {
@@ -427,6 +433,9 @@
 
       const conditions = segment.conditions || {};
       addIfPresent(meta.measurement_method, conditions.measurement_method);
+
+      const welded = segment.material?.welded?.enabled;
+      addIfPresent(meta.welded_enabled, welded);
 
       const metadata = segment.metadata || {};
       (metadata.studied_effects || []).forEach((value) => addIfPresent(meta.studied_effects, value));
@@ -552,9 +561,17 @@
       state.includeUnknownComposition = dom.filterUnknownComposition.checked;
       applyFilters();
     });
+    dom.weldedMode?.addEventListener("change", () => {
+      state.weldedMode = dom.weldedMode.value || "include";
+      applyFilters();
+    });
     dom.literatureMode?.addEventListener("change", () => {
       state.literatureMode = dom.literatureMode.value || "include";
       applyFilters();
+    });
+    dom.advancedToggle?.addEventListener("change", () => {
+      const open = dom.advancedToggle.checked;
+      setAdvancedFiltersVisible(open);
     });
     dom.filterModeToggles?.forEach((toggle) => {
       toggle.addEventListener("click", (event) => event.stopPropagation());
@@ -577,10 +594,6 @@
     );
     bindTempRange();
     bindYearRange();
-    dom.plotButton?.addEventListener("click", () => {
-      setZoomFromInputs();
-      plotSelectedSeries(true);
-    });
     dom.openSeries?.addEventListener("click", () => toggleSeriesDrawer(true));
     dom.refreshPlot?.addEventListener("click", () => {
       setZoomFromInputs();
@@ -713,7 +726,8 @@
       .map((entry) => entry.temperatureRange || [])
       .filter((range) => Array.isArray(range) && range.length === 2)
       .map((range) => [Number(range[0]), Number(range[1])])
-      .filter(([min, max]) => Number.isFinite(min) && Number.isFinite(max));
+      .filter(([min, max]) => Number.isFinite(min) && Number.isFinite(max))
+      .filter(([min, max]) => min > 0 && max > 0 && max >= min);
     if (!ranges.length) {
       [dom.tempMin, dom.tempMax, dom.tempHandleMin, dom.tempHandleMax].forEach((el) => {
         if (el) el.disabled = true;
@@ -1215,6 +1229,10 @@
       dom.literatureMode.value = "include";
       state.literatureMode = "include";
     }
+    if (dom.weldedMode) {
+      dom.weldedMode.value = "include";
+      state.weldedMode = "include";
+    }
     if (dom.filterComposition) {
       dom.filterComposition.querySelectorAll("input[type='number']").forEach((input) => {
         input.value = "";
@@ -1265,6 +1283,7 @@
       yearMax: state.yearMax,
       includeUnconfirmed: state.includeUnconfirmed,
       literatureMode: state.literatureMode,
+      weldedMode: state.weldedMode,
       includeUnknownComposition: state.includeUnknownComposition,
       mode: state.filterMode,
     };
@@ -1295,6 +1314,15 @@
       requestAnimationFrame(() => {
         dom.panelLeft.scrollTop = previousScrollTop;
       });
+    }
+  }
+
+  function setAdvancedFiltersVisible(open) {
+    if (!dom.advancedFilters) return;
+    if (open) {
+      dom.advancedFilters.removeAttribute("hidden");
+    } else {
+      dom.advancedFilters.setAttribute("hidden", "true");
     }
   }
 
@@ -1359,6 +1387,8 @@
     if (ignoreKey !== "plottingStatus" && !isPlottingAllowed(entry, filters.includeUnconfirmed)) return false;
     if (filters.literatureMode === "exclude" && hasLiteratureCompilation(entry)) return false;
     if (filters.literatureMode === "only" && !hasLiteratureCompilation(entry)) return false;
+    if (filters.weldedMode === "exclude" && hasWeldedMaterial(entry)) return false;
+    if (filters.weldedMode === "only" && !hasWeldedMaterial(entry)) return false;
     if (ignoreKey !== "source" && !matchesValue(filters.source, entry.sourceId, mode.source)) return false;
     if (ignoreKey !== "materialClass" && !matchesSet(filters.materialClass, entry.meta.material_class, mode.materialClass)) return false;
     if (ignoreKey !== "materialGrade" && !matchesSet(filters.materialGrade, entry.meta.material_grade, mode.materialGrade)) return false;
@@ -1741,7 +1771,7 @@
       ? `<button type="button" class="hdd-summary-toggle">${toggleLabel}</button>`
       : "";
     const modeLabel = state.selectionMode === "manual" ? "selection" : "filters";
-    const actionLabel = state.selectionMode === "manual" ? "Plot Selected" : "Plot Filtered";
+    const actionLabel = "Refresh";
     const statusLine =
       plottedCount && plottedCount !== selectedCount
         ? `<p>${plottedCount} plotted from current ${modeLabel}. Click "${actionLabel}" to refresh.</p>`
@@ -1779,10 +1809,6 @@
 
   function setSelectionMode(mode) {
     state.selectionMode = mode === "manual" ? "manual" : "filtered";
-    if (dom.plotButton) {
-      dom.plotButton.textContent =
-        state.selectionMode === "manual" ? "Plot Selected" : "Plot Filtered";
-    }
   }
 
   function toggleSeriesDrawer(open) {
@@ -2168,6 +2194,13 @@
       fontTick,
       layoutScale
     );
+
+    // Redraw axis box so grid lines never wash out the plot border.
+    ctx.strokeStyle = theme.ink;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.rect(margin.left, margin.top, plotWidth, plotHeight);
+    ctx.stroke();
 
     ctx.save();
     ctx.beginPath();
@@ -2776,6 +2809,12 @@
     return legendItems.sort((a, b) => a.index - b.index);
   }
 
+  function getLegendHeader() {
+    const modeLabel = state.selectionMode === "manual" ? "Selected" : "Filtered";
+    const scopeLabel = state.legendBySource ? "Sources" : "Series";
+    return `${modeLabel} ${scopeLabel}`;
+  }
+
   function setupHoverTooltip(canvas) {
     if (!canvas) return;
     const tooltip = ensureTooltip();
@@ -3030,9 +3069,16 @@
     const swatchSize = Math.max(8, Math.round(10 * scale));
     const textX = legendX + swatchOffset;
     const lineHeight = Math.round(16 * scale);
+    const header = getLegendHeader();
+    if (header) {
+      ctx.fillStyle = theme.muted;
+      ctx.fillText(header, textX, legendY);
+      legendY += lineHeight;
+    }
+    const headerLines = header ? 1 : 0;
     const availableLines = Math.max(
       0,
-      maxLines != null ? maxLines : Math.floor((maxY - legendY) / lineHeight)
+      maxLines != null ? Math.max(0, maxLines - headerLines) : Math.floor((maxY - legendY) / lineHeight)
     );
     const needsMore = items.length > availableLines;
     const displayCount = needsMore ? Math.max(0, availableLines - 1) : items.length;
@@ -3327,6 +3373,9 @@
     if (state.includeUnconfirmed) summary.include_unconfirmed = true;
     if (state.literatureMode && state.literatureMode !== "include") {
       summary.literature_compilations = state.literatureMode;
+    }
+    if (state.weldedMode && state.weldedMode !== "include") {
+      summary.welded = state.weldedMode;
     }
     const excludeModes = {};
     Object.keys(state.filterMode || {}).forEach((key) => {
@@ -3690,6 +3739,13 @@
     const textX = legendX + (showSwatch ? 14 : 0);
     const items = buildLegendItems(series);
     const lineHeight = Math.round(16 * (fontLegend / 11));
+    const header = getLegendHeader();
+    if (header) {
+      parts.push(
+        `<text x="${textX}" y="${legendY}" fill="${theme.muted}" font-size="${fontLegend}" text-anchor="start">${escapeHtml(header)}</text>`
+      );
+      legendY += lineHeight;
+    }
     const availableLines = Math.max(0, Math.floor((maxY - legendY) / lineHeight));
     const needsMore = items.length > availableLines;
     const displayCount = needsMore ? Math.max(0, availableLines - 1) : items.length;
@@ -3737,6 +3793,15 @@
     if (!methods || !methods.size) return false;
     for (const method of methods) {
       if (String(method).toLowerCase() === "literature compilation") return true;
+    }
+    return false;
+  }
+
+  function hasWeldedMaterial(entry) {
+    const values = entry.meta?.welded_enabled;
+    if (!values || !values.size) return false;
+    for (const value of values) {
+      if (String(value).toLowerCase() === "yes") return true;
     }
     return false;
   }

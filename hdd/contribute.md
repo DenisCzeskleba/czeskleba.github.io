@@ -859,6 +859,7 @@ permalink: /hydrogen-diffusion-database/contribute/
           <option value="SNCM8">SNCM8</option>
           <option value="St 1303">St 1303</option>
           <option value="St41">St41</option>
+          <option value="SS41">SS41</option>
           <option value="T10">T10</option>
           <option value="T24">T24</option>
           <option value="WDL690D">WDL690D</option>
@@ -1395,6 +1396,7 @@ permalink: /hydrogen-diffusion-database/contribute/
           <option value="">Select finish</option>
           <option value="grit_240">Grit 240</option>
           <option value="grit_360">Grit 360</option>
+          <option value="grit_500">Grit 500</option>
           <option value="grit_600">Grit 600</option>
           <option value="grit_1000">Grit 1000</option>
           <option value="grit_1200">Grit 1200</option>

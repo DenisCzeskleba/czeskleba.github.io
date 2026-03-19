@@ -21,47 +21,34 @@ permalink: /hydrogen-diffusion-database/
 
       <form class="hdd-controls" id="hdd-controls" autocomplete="off">
         <div class="hdd-controls-top">
-          <div class="hdd-actions">
-            <button type="button" id="hdd-plot-btn" class="hdd-action-primary" title="Plot all series that match the current filters.">Plot Filtered</button>
-            <div class="hdd-action-row">
+              <div class="hdd-actions">
+                  <div class="hdd-action-row">
                     <button type="button" id="hdd-clear-filters" class="hdd-action-secondary" title="Reset filters to the default state.">Reset Filters</button>
-              <button type="button" id="hdd-open-series" class="hdd-action-secondary" title="Manually choose specific series before plotting.">Select Series</button>
-            </div>
-          </div>
+                    <button type="button" id="hdd-open-series" class="hdd-action-secondary hdd-action-accent" title="Manually choose specific series before plotting.">Select Series</button>
+                  </div>
+                </div>
         </div>
 
         <div class="hdd-controls-middle">
-  <div class="hdd-section-title">Filters</div>
+  <div class="hdd-section-title-row">
+    <div class="hdd-section-title">Filters</div>
+    <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-advanced-toggle">
+      <input type="checkbox" id="hdd-advanced-toggle" />
+      <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+      <span class="hdd-toggle-label">Advanced</span>
+    </label>
+  </div>
   <div class="hdd-control hdd-filter-grid hdd-filter-scroll">
+  <div id="hdd-advanced-filters" class="hdd-advanced-filters" hidden>
     <details class="hdd-filter-block">
-      <summary>Literature Compilations</summary>
-      <label class="hdd-inline-select" for="hdd-literature-mode" title="Include or exclude literature compilation sources.">
-        <select id="hdd-literature-mode" title="Include or exclude literature compilation sources.">
+      <summary>Welded</summary>
+      <label class="hdd-inline-select" for="hdd-welded-mode" title="Include or exclude welded materials.">
+        <select id="hdd-welded-mode" title="Include or exclude welded materials.">
           <option value="include" selected>Include</option>
           <option value="only">Only</option>
           <option value="exclude">Exclude</option>
         </select>
       </label>
-    </details>
-    <details class="hdd-filter-block">
-      <summary>Material Class</summary>
-      <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
-        <input type="checkbox" data-filter-mode="materialClass" checked />
-        <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
-        <span class="hdd-toggle-label">Exclude selected</span>
-      </label>
-      <span id="hdd-filter-class-label" class="hdd-sr-only">Material Class</span>
-      <div id="hdd-filter-class" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-class-label" aria-multiselectable="true"></div>
-    </details>
-    <details class="hdd-filter-block">
-      <summary>Material Grade</summary>
-      <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
-        <input type="checkbox" data-filter-mode="materialGrade" checked />
-        <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
-        <span class="hdd-toggle-label">Exclude selected</span>
-      </label>
-      <span id="hdd-filter-grade-label" class="hdd-sr-only">Material Grade</span>
-      <div id="hdd-filter-grade" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-grade-label" aria-multiselectable="true"></div>
     </details>
     <details class="hdd-filter-block">
       <summary>Microstructure</summary>
@@ -74,35 +61,6 @@ permalink: /hydrogen-diffusion-database/
       <div id="hdd-filter-microstructure" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-microstructure-label" aria-multiselectable="true"></div>
     </details>
     <details class="hdd-filter-block">
-      <summary>Temperature Window [&deg;C]</summary>
-      <label class="hdd-sr-only" for="hdd-temp-min">Temperature min (C)</label>
-      <label class="hdd-sr-only" for="hdd-temp-max">Temperature max (C)</label>
-      <div class="hdd-toggle-group">
-        <input type="number" id="hdd-temp-min" placeholder="min" />
-        <input type="number" id="hdd-temp-max" placeholder="max" />
-      </div>
-      <div class="hdd-range-dual" title="Drag handles to set a temperature range" data-range="temp">
-        <div class="hdd-range-track"></div>
-        <div class="hdd-range-fill" id="hdd-temp-range-fill"></div>
-        <button type="button" class="hdd-range-handle hdd-range-handle-min" id="hdd-temp-handle-min" aria-label="Temperature minimum"></button>
-        <button type="button" class="hdd-range-handle hdd-range-handle-max" id="hdd-temp-handle-max" aria-label="Temperature maximum"></button>
-      </div>
-    </details>
-    <details class="hdd-filter-block">
-  <summary>Year</summary>
-  <label class="hdd-sr-only" for="hdd-year-min">Year min</label>
-  <label class="hdd-sr-only" for="hdd-year-max">Year max</label>
-  <div class="hdd-toggle-group">
-    <input type="number" id="hdd-year-min" title="Type a minimum year" placeholder="min" />
-    <input type="number" id="hdd-year-max" title="Type a maximum year" placeholder="max" />
-  </div>
-  <div class="hdd-range-dual" title="Drag handles to set a year range" data-range="year">
-    <div class="hdd-range-track"></div>
-    <div class="hdd-range-fill" id="hdd-year-range-fill"></div>
-    <button type="button" class="hdd-range-handle hdd-range-handle-min" id="hdd-year-handle-min" aria-label="Year minimum"></button>
-    <button type="button" class="hdd-range-handle hdd-range-handle-max" id="hdd-year-handle-max" aria-label="Year maximum"></button>
-  </div>
-</details><details class="hdd-filter-block">
       <summary>Model Type</summary>
       <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
         <input type="checkbox" data-filter-mode="modelType" checked />
@@ -111,16 +69,6 @@ permalink: /hydrogen-diffusion-database/
       </label>
       <span id="hdd-filter-model-label" class="hdd-sr-only">Model Type</span>
       <div id="hdd-filter-model" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-model-label" aria-multiselectable="true"></div>
-    </details>
-    <details class="hdd-filter-block">
-      <summary>Measurement Method</summary>
-      <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
-        <input type="checkbox" data-filter-mode="measurementMethod" checked />
-        <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
-        <span class="hdd-toggle-label">Exclude selected</span>
-      </label>
-      <span id="hdd-filter-method-label" class="hdd-sr-only">Measurement Method</span>
-      <div id="hdd-filter-method" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-method-label" aria-multiselectable="true"></div>
     </details>
     <details class="hdd-filter-block">
       <summary>Chemical Composition</summary>
@@ -153,6 +101,77 @@ permalink: /hydrogen-diffusion-database/
       <span id="hdd-filter-effect-label" class="hdd-sr-only">Studied Effect</span>
       <div id="hdd-filter-effect" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-effect-label" aria-multiselectable="true"></div>
     </details>
+  </div>
+    <details class="hdd-filter-block">
+      <summary>Material Class</summary>
+      <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+        <input type="checkbox" data-filter-mode="materialClass" checked />
+        <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+        <span class="hdd-toggle-label">Exclude selected</span>
+      </label>
+      <span id="hdd-filter-class-label" class="hdd-sr-only">Material Class</span>
+      <div id="hdd-filter-class" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-class-label" aria-multiselectable="true"></div>
+    </details>
+    <details class="hdd-filter-block">
+      <summary>Material Grade</summary>
+      <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+        <input type="checkbox" data-filter-mode="materialGrade" checked />
+        <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+        <span class="hdd-toggle-label">Exclude selected</span>
+      </label>
+      <span id="hdd-filter-grade-label" class="hdd-sr-only">Material Grade</span>
+      <div id="hdd-filter-grade" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-grade-label" aria-multiselectable="true"></div>
+    </details>
+    <details class="hdd-filter-block">
+      <summary>Measurement Method</summary>
+      <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+        <input type="checkbox" data-filter-mode="measurementMethod" checked />
+        <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+        <span class="hdd-toggle-label">Exclude selected</span>
+      </label>
+      <span id="hdd-filter-method-label" class="hdd-sr-only">Measurement Method</span>
+      <div id="hdd-filter-method" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-method-label" aria-multiselectable="true"></div>
+    </details>
+    <details class="hdd-filter-block">
+      <summary>Temperature Window [&deg;C]</summary>
+      <label class="hdd-sr-only" for="hdd-temp-min">Temperature min (C)</label>
+      <label class="hdd-sr-only" for="hdd-temp-max">Temperature max (C)</label>
+      <div class="hdd-toggle-group">
+        <input type="number" id="hdd-temp-min" placeholder="min" />
+        <input type="number" id="hdd-temp-max" placeholder="max" />
+      </div>
+      <div class="hdd-range-dual" title="Drag handles to set a temperature range" data-range="temp">
+        <div class="hdd-range-track"></div>
+        <div class="hdd-range-fill" id="hdd-temp-range-fill"></div>
+        <button type="button" class="hdd-range-handle hdd-range-handle-min" id="hdd-temp-handle-min" aria-label="Temperature minimum"></button>
+        <button type="button" class="hdd-range-handle hdd-range-handle-max" id="hdd-temp-handle-max" aria-label="Temperature maximum"></button>
+      </div>
+    </details>
+  <details class="hdd-filter-block">
+    <summary>Literature Compilations</summary>
+    <label class="hdd-inline-select" for="hdd-literature-mode" title="Include or exclude literature compilation sources.">
+      <select id="hdd-literature-mode" title="Include or exclude literature compilation sources.">
+        <option value="include" selected>Include</option>
+        <option value="only">Only</option>
+        <option value="exclude">Exclude</option>
+      </select>
+    </label>
+  </details>
+    <details class="hdd-filter-block">
+  <summary>Year</summary>
+  <label class="hdd-sr-only" for="hdd-year-min">Year min</label>
+  <label class="hdd-sr-only" for="hdd-year-max">Year max</label>
+  <div class="hdd-toggle-group">
+    <input type="number" id="hdd-year-min" title="Type a minimum year" placeholder="min" />
+    <input type="number" id="hdd-year-max" title="Type a maximum year" placeholder="max" />
+  </div>
+  <div class="hdd-range-dual" title="Drag handles to set a year range" data-range="year">
+    <div class="hdd-range-track"></div>
+    <div class="hdd-range-fill" id="hdd-year-range-fill"></div>
+    <button type="button" class="hdd-range-handle hdd-range-handle-min" id="hdd-year-handle-min" aria-label="Year minimum"></button>
+    <button type="button" class="hdd-range-handle hdd-range-handle-max" id="hdd-year-handle-max" aria-label="Year maximum"></button>
+  </div>
+</details>
     <details class="hdd-filter-block">
       <summary>Source</summary>
       <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
