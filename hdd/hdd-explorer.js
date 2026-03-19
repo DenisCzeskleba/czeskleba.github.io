@@ -83,6 +83,19 @@
     filterEffect: document.getElementById("hdd-filter-effect"),
     filterMethod: document.getElementById("hdd-filter-method"),
     filterModel: document.getElementById("hdd-filter-model"),
+    coreFilters: document.getElementById("hdd-core-filters"),
+    coreFiltersBody: document.getElementById("hdd-core-filters-body"),
+    bucketMaterial: document.getElementById("hdd-bucket-material"),
+    bucketConditions: document.getElementById("hdd-bucket-conditions"),
+    bucketMethod: document.getElementById("hdd-bucket-method"),
+    bucketAnalysis: document.getElementById("hdd-bucket-analysis"),
+    filterBlockClass: document.getElementById("hdd-filter-block-class"),
+    filterBlockGrade: document.getElementById("hdd-filter-block-grade"),
+    filterBlockMethod: document.getElementById("hdd-filter-block-method"),
+    filterBlockTemp: document.getElementById("hdd-filter-block-temp"),
+    filterBlockLiterature: document.getElementById("hdd-filter-block-literature"),
+    filterBlockYear: document.getElementById("hdd-filter-block-year"),
+    filterBlockSource: document.getElementById("hdd-filter-block-source"),
     includeUnconfirmed: document.getElementById("hdd-include-unconfirmed"),
     literatureMode: document.getElementById("hdd-literature-mode"),
     filterModeToggles: document.querySelectorAll("[data-filter-mode]"),
@@ -1320,10 +1333,37 @@
   function setAdvancedFiltersVisible(open) {
     if (!dom.advancedFilters) return;
     if (open) {
+      moveCoreFiltersToBuckets();
       dom.advancedFilters.removeAttribute("hidden");
     } else {
       dom.advancedFilters.setAttribute("hidden", "true");
+      moveCoreFiltersToCore();
     }
+  }
+
+  function moveCoreFiltersToBuckets() {
+    if (!dom.bucketMaterial || !dom.bucketConditions || !dom.bucketMethod || !dom.bucketAnalysis) return;
+    if (dom.filterBlockClass) dom.bucketMaterial.appendChild(dom.filterBlockClass);
+    if (dom.filterBlockGrade) dom.bucketMaterial.appendChild(dom.filterBlockGrade);
+    if (dom.filterBlockMethod) dom.bucketMethod.appendChild(dom.filterBlockMethod);
+    if (dom.filterBlockYear) dom.bucketAnalysis.appendChild(dom.filterBlockYear);
+    if (dom.filterBlockSource) dom.bucketAnalysis.appendChild(dom.filterBlockSource);
+  }
+
+  function moveCoreFiltersToCore() {
+    if (!dom.coreFiltersBody) return;
+    const ordered = [
+      dom.filterBlockClass,
+      dom.filterBlockGrade,
+      dom.filterBlockMethod,
+      dom.filterBlockTemp,
+      dom.filterBlockLiterature,
+      dom.filterBlockYear,
+      dom.filterBlockSource,
+    ];
+    ordered.forEach((block) => {
+      if (block) dom.coreFiltersBody.appendChild(block);
+    });
   }
 
   function captureSelectScroll() {

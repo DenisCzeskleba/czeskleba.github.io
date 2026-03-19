@@ -242,7 +242,7 @@ main > h1 {
 }
 
 .hdd-section-title {
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   text-transform: uppercase;
   letter-spacing: 0.18em;
   color: var(--muted);
@@ -258,6 +258,60 @@ main > h1 {
 .hdd-advanced-toggle {
   margin-left: auto;
   font-size: 0.85rem;
+}
+
+.hdd-advanced-filters {
+  display: grid;
+  gap: 14px;
+}
+
+.hdd-advanced-filters[hidden] {
+  display: none !important;
+}
+
+.hdd-filter-section {
+  position: relative;
+  padding: 12px 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--panel) 88%, var(--panel-strong));
+}
+
+.hdd-filter-section::before {
+  content: "";
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: 10px;
+  width: 4px;
+  border-radius: 999px;
+  background: var(--accent);
+  opacity: 0.55;
+}
+
+.hdd-filter-section-core::before {
+  background: var(--accent-warm);
+  opacity: 0.6;
+}
+
+.hdd-filter-section-header {
+  margin-left: 14px;
+  margin-bottom: 10px;
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.hdd-filter-section-body {
+  display: grid;
+  gap: 10px;
+}
+
+.hdd-filter-bucket {
+  display: grid;
+  gap: 10px;
 }
 
 .hdd-actions {
@@ -605,6 +659,18 @@ body.dark .hdd-toggle-group button.is-active {
 
 .hdd-panel-left .hdd-filter-grid {
   grid-template-columns: minmax(0, 1fr);
+}
+
+.hdd-filter-section .hdd-filter-block {
+  background: var(--panel);
+}
+
+.hdd-filter-soon {
+  margin: 4px 0 2px;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 .hdd-filter-block {
