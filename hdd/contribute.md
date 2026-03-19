@@ -790,6 +790,7 @@ permalink: /hydrogen-diffusion-database/contribute/
         <select id="default-material-grade" name="default_material_grade" required title="Pick the closest grade. If not listed, choose Other and specify in Material notes.">
           <option value="">Select a grade</option>
           <option value="10G2 steel">10G2 steel</option>
+          <option value="10Cr9WVA">10Cr9WVA</option>
           <option value="15G2ANb">15G2ANb</option>
           <option value="17-4 PH">17-4 PH</option>
           <option value="17HMBVA">17HMBVA</option>
@@ -798,7 +799,7 @@ permalink: /hydrogen-diffusion-database/contribute/
           <option value="25Kh2NMFA steel">25Kh2NMFA steel</option>
           <option value="304 stainless steel">304 stainless steel</option>
           <option value="32MnB5">32MnB5</option>
-          <option value="3Cr-1Mo steel">3Cr-1Mo steel</option>
+          <option value="3Cr-1Mo-V steel">3Cr-1Mo-V steel</option>
           <option value="40Kh steel">40Kh steel</option>
           <option value="42CrMo4">42CrMo4</option>
           <option value="9Cr-1Mo steel">9Cr-1Mo steel</option>
@@ -860,6 +861,8 @@ permalink: /hydrogen-diffusion-database/contribute/
           <option value="St41">St41</option>
           <option value="T10">T10</option>
           <option value="T24">T24</option>
+          <option value="WDL690D">WDL690D</option>
+          <option value="10Ni5CrMoV">10Ni5CrMoV</option>
           <option value="Other">Other (specify in notes)</option>
         </select>
       </div>
@@ -1144,6 +1147,7 @@ permalink: /hydrogen-diffusion-database/contribute/
           <option value="wire">Wire</option>
           <option value="rod">Rod</option>
           <option value="cylinder">Cylinder</option>
+          <option value="sphere">Sphere</option>
           <option value="other">Other (specify in notes)</option>
         </select>
       </div>
@@ -1159,6 +1163,10 @@ permalink: /hydrogen-diffusion-database/contribute/
           <option value="h2so4">H2SO4</option>
           <option value="nacl">NaCl</option>
           <option value="borate">Borate</option>
+          <option value="ns4">NS4</option>
+          <option value="nahco3">NaHCO3</option>
+          <option value="acetate_buffer">Acetate buffer</option>
+          <option value="formation_water">Formation water</option>
           <option value="other">Other (specify in notes)</option>
         </select>
       </div>
@@ -1170,6 +1178,10 @@ permalink: /hydrogen-diffusion-database/contribute/
           <option value="h2so4">H2SO4</option>
           <option value="nacl">NaCl</option>
           <option value="borate">Borate</option>
+          <option value="ns4">NS4</option>
+          <option value="nahco3">NaHCO3</option>
+          <option value="acetate_buffer">Acetate buffer</option>
+          <option value="formation_water">Formation water</option>
           <option value="other">Other (specify in notes)</option>
         </select>
       </div>
@@ -1184,6 +1196,11 @@ permalink: /hydrogen-diffusion-database/contribute/
           <option value="none">None</option>
           <option value="thiourea">Thiourea</option>
           <option value="as2o3">As2O3</option>
+          <option value="na2s">Na2S</option>
+          <option value="na4p2o7">Na4P2O7</option>
+          <option value="nh4scn">NH4SCN</option>
+          <option value="naaso2">NaAsO2</option>
+          <option value="kcn">KCN</option>
           <option value="other">Other (specify in notes)</option>
         </select>
       </div>
@@ -1203,6 +1220,12 @@ permalink: /hydrogen-diffusion-database/contribute/
           <option value="h2so4">H2SO4</option>
           <option value="nacl">NaCl</option>
           <option value="borate">Borate</option>
+          <option value="ns4">NS4</option>
+          <option value="nahco3">NaHCO3</option>
+          <option value="acetate_buffer">Acetate buffer</option>
+          <option value="formation_water">Formation water</option>
+          <option value="NACE TM-0177">NACE TM-0177</option>
+          <option value="NACE TM0284">NACE TM0284</option>
           <option value="other">Other (specify in notes)</option>
         </select>
       </div>
@@ -1217,6 +1240,11 @@ permalink: /hydrogen-diffusion-database/contribute/
           <option value="none">None</option>
           <option value="thiourea">Thiourea</option>
           <option value="as2o3">As2O3</option>
+          <option value="na2s">Na2S</option>
+          <option value="na4p2o7">Na4P2O7</option>
+          <option value="nh4scn">NH4SCN</option>
+          <option value="naaso2">NaAsO2</option>
+          <option value="kcn">KCN</option>
           <option value="other">Other (specify in notes)</option>
         </select>
       </div>
@@ -1228,6 +1256,12 @@ permalink: /hydrogen-diffusion-database/contribute/
           <option value="h2so4">H2SO4</option>
           <option value="nacl">NaCl</option>
           <option value="borate">Borate</option>
+          <option value="ns4">NS4</option>
+          <option value="nahco3">NaHCO3</option>
+          <option value="acetate_buffer">Acetate buffer</option>
+          <option value="formation_water">Formation water</option>
+          <option value="NACE TM-0177">NACE TM-0177</option>
+          <option value="NACE TM0284">NACE TM0284</option>
           <option value="other">Other (specify in notes)</option>
         </select>
       </div>
@@ -1255,6 +1289,11 @@ permalink: /hydrogen-diffusion-database/contribute/
           <option value="none">None</option>
           <option value="thiourea">Thiourea</option>
           <option value="as2o3">As2O3</option>
+          <option value="na2s">Na2S</option>
+          <option value="na4p2o7">Na4P2O7</option>
+          <option value="nh4scn">NH4SCN</option>
+          <option value="naaso2">NaAsO2</option>
+          <option value="kcn">KCN</option>
           <option value="other">Other (specify in notes)</option>
         </select>
       </div>
@@ -1355,8 +1394,11 @@ permalink: /hydrogen-diffusion-database/contribute/
         <select id="default-surface-finish" name="default_surface_finish_detail">
           <option value="">Select finish</option>
           <option value="grit_240">Grit 240</option>
+          <option value="grit_360">Grit 360</option>
           <option value="grit_600">Grit 600</option>
+          <option value="grit_1000">Grit 1000</option>
           <option value="grit_1200">Grit 1200</option>
+          <option value="grit_2000">Grit 2000</option>
           <option value="mirror_polished">Mirror polished</option>
           <option value="other">Other (specify in notes)</option>
         </select>
@@ -1374,6 +1416,7 @@ permalink: /hydrogen-diffusion-database/contribute/
           <option value="">Select coating</option>
           <option value="zinc">Zinc</option>
           <option value="nickel">Nickel</option>
+          <option value="palladium">Palladium</option>
           <option value="chromium">Chromium</option>
           <option value="copper">Copper</option>
           <option value="aluminum">Aluminum</option>

@@ -14,7 +14,7 @@ permalink: /hydrogen-diffusion-database/
 
 <link rel="stylesheet" href="/hdd/hdd-explorer.css">
 
-<div id="hydrogen-explorer-app" data-endpoint="/hdd/hdd-groups-public.json">
+<div id="hydrogen-explorer-app" data-endpoint="/hdd/public_hdd_database.json">
   <div class="hdd-explorer-shell" data-state="loading">
     <aside class="hdd-panel hdd-panel-left">
       <div class="hdd-panel-header"></div>
@@ -80,6 +80,12 @@ permalink: /hydrogen-diffusion-database/
       <div class="hdd-toggle-group">
         <input type="number" id="hdd-temp-min" placeholder="min" />
         <input type="number" id="hdd-temp-max" placeholder="max" />
+      </div>
+      <div class="hdd-range-dual" title="Drag handles to set a temperature range" data-range="temp">
+        <div class="hdd-range-track"></div>
+        <div class="hdd-range-fill" id="hdd-temp-range-fill"></div>
+        <button type="button" class="hdd-range-handle hdd-range-handle-min" id="hdd-temp-handle-min" aria-label="Temperature minimum"></button>
+        <button type="button" class="hdd-range-handle hdd-range-handle-max" id="hdd-temp-handle-max" aria-label="Temperature maximum"></button>
       </div>
     </details>
     <details class="hdd-filter-block">

@@ -18,7 +18,7 @@
   const mount = document.getElementById("hydrogen-explorer-app");
   if (!mount) return;
 
-  const endpoint = mount.getAttribute("data-endpoint") || "/hdd/hdd-groups-public.json";
+  const endpoint = mount.getAttribute("data-endpoint") || "/hdd/public_hdd_database.json";
 
   const dom = {
     shell: mount.querySelector(".hdd-explorer-shell"),
@@ -57,6 +57,10 @@
     axisYMax: document.getElementById("hdd-axis-y-max"),
     tempMin: document.getElementById("hdd-temp-min"),
     tempMax: document.getElementById("hdd-temp-max"),
+    tempRange: document.querySelector("[data-range='temp']"),
+    tempRangeFill: document.getElementById("hdd-temp-range-fill"),
+    tempHandleMin: document.getElementById("hdd-temp-handle-min"),
+    tempHandleMax: document.getElementById("hdd-temp-handle-max"),
     yearMin: document.getElementById("hdd-year-min"),
     yearMax: document.getElementById("hdd-year-max"),
     yearRange: document.querySelector("[data-range='year']"),
@@ -102,6 +106,7 @@
     gridY: true,
     tempMin: null,
     tempMax: null,
+    tempDomain: null,
     yearMin: null,
     yearMax: null,
     yearDomain: null,
@@ -134,7 +139,7 @@
     setStatus(`Loading dataset from ${endpoint}...`, "info");
 
     const payload = await fetchDataset(endpoint);
-    if (!payload || !Array.isArray(payload.groups)) {
+    if (!payload || !Array.isArray(payload.lines)) {
       setStatus("Dataset missing or invalid.", "error");
       renderEmptyChart("Dataset missing. Export a new bundle and publish it.");
       return;
@@ -151,8 +156,9 @@
     setSelectionMode("filtered");
     updateCitationPanel(payload);
 
+    const sourceCount = Object.keys(payload.sources || {}).length;
     setStatus(
-      `Loaded ${payload.group_count || payload.groups.length} groups · ${payload.series_count || seriesList.length} series`,
+      `Loaded ${payload.line_count || payload.lines.length} lines · ${sourceCount} sources · ${seriesList.length} series`,
       "ok"
     );
 
@@ -169,6 +175,7 @@
     updateLineThicknessLabel();
     initializeFilterModes();
     populateFilters(payload);
+    initializeTempFilter(state.seriesList);
     initializeYearFilter(payload);
     applyFilters({ replot: false });
     plotSelectedSeries(true);
@@ -195,103 +202,178 @@
     const seriesList = [];
     const seriesById = new Map();
 
-    payload.groups.forEach((group) => {
-      const source = sources[group.source_id] || {};
+    (payload.lines || []).forEach((line, index) => {
+      if (!line || typeof line !== "object") return;
+      const source = sources[line.source_id] || {};
       const sourceTitle =
-        source.clear_name || source.title || group.source_id || "Unknown source";
+        source.clear_name || source.title || line.source_id || "Unknown source";
       const sourceYear = Number.isFinite(Number(source.year)) ? Number(source.year) : null;
 
-      (group.series || []).forEach((series, index) => {
-        const seriesKeyPart = series.series_id ?? index;
-        const seriesId = `${group.group_id}::${seriesKeyPart}::${index}`;
-        const segments = series.segments || [];
-        const meta = collectSeriesMeta(segments);
-        const compositionRanges = computeCompositionRanges(segments);
-        const materialLabel = deriveMaterialLabel(meta);
-        const seriesLabel = series.series_value ? String(series.series_value) : "Series";
+      const segments = normalizeLineModels(line);
+      const meta = collectSeriesMeta(segments);
+      const compositionRanges = computeCompositionRanges(segments);
+      const materialLabel = deriveMaterialLabel(meta);
+      const temperatureRange = deriveLineTemperatureRange(segments);
+      const entryId = normalizeLineId(line, index);
 
-        const entry = {
-          id: seriesId,
-          groupId: group.group_id,
-          seriesId: series.series_id,
-          label: group.label || group.group_id,
-          seriesLabel,
-          sourceId: group.source_id,
-          sourceTitle,
-          sourceYear,
-          seriesKey: group.series_key,
-          variantKey: group.variant_key,
-          variantUnit: group.variant_unit,
-          temperatureRange: group.temperature_range_K,
-          segments,
-          meta,
-          compositionRanges,
-          materialLabel,
-        };
+      const entry = {
+        id: entryId,
+        groupId: line.entry_id || entryId,
+        seriesId: null,
+        label: line.label || line.entry_id || "Line",
+        seriesLabel: null,
+        sourceId: line.source_id,
+        sourceTitle,
+        sourceYear,
+        seriesKey: null,
+        variantKey: null,
+        variantUnit: null,
+        temperatureRange,
+        segments,
+        meta,
+        compositionRanges,
+        materialLabel,
+      };
 
-        seriesList.push(entry);
-        seriesById.set(seriesId, entry);
-      });
+      seriesList.push(entry);
+      seriesById.set(entryId, entry);
     });
 
     return { seriesList, seriesById };
   }
 
+  function normalizeLineId(line, index) {
+    const entryId = typeof line?.entry_id === "string" ? line.entry_id.trim() : "";
+    if (entryId) return entryId;
+    const base = line?.source_id || "line";
+    return `${base}::${index}`;
+  }
+
+  function normalizeLineModels(line) {
+    const models = Array.isArray(line.models) ? line.models : [];
+    const segments = [];
+    const base = {
+      entry_id: line.entry_id,
+      source_id: line.source_id,
+      plotting: line.plotting,
+      material: line.material,
+      conditions: line.conditions,
+      metadata: line.metadata,
+      reported_as: line.conditions?.reported_as,
+    };
+
+    models.forEach((model) => {
+      if (!model || typeof model !== "object") return;
+      const segment = { ...base, model };
+      const range = getModelTemperatureRange(model);
+      if (range) {
+        segment.temperature_validity_K = range;
+      }
+      segments.push(segment);
+    });
+
+    return segments;
+  }
+
+  function deriveLineTemperatureRange(segments) {
+    let min = null;
+    let max = null;
+    segments.forEach((segment) => {
+      const range = segment.temperature_validity_K;
+      if (!Array.isArray(range) || range.length !== 2) return;
+      const lo = Number(range[0]);
+      const hi = Number(range[1]);
+      if (!Number.isFinite(lo) || !Number.isFinite(hi)) return;
+      min = min == null ? lo : Math.min(min, lo);
+      max = max == null ? hi : Math.max(max, hi);
+    });
+    if (min == null || max == null) return [null, null];
+    return [min, max];
+  }
+
+  function getModelTemperatureRange(model) {
+    if (!model || typeof model !== "object") return null;
+    if (model.type === "single_point") {
+      const temp = Number(model.temperature_K);
+      return Number.isFinite(temp) ? [temp, temp] : null;
+    }
+    if (model.type === "table_points") {
+      const points = Array.isArray(model.points) ? model.points : [];
+      const temps = points
+        .map((point) => Number(point?.temperature_K))
+        .filter((value) => Number.isFinite(value));
+      if (!temps.length) return null;
+      return [Math.min(...temps), Math.max(...temps)];
+    }
+    const range = model.temperature_validity_K;
+    if (!Array.isArray(range) || range.length !== 2) return null;
+    const Tmin = Number(range[0]);
+    const Tmax = Number(range[1]);
+    if (!Number.isFinite(Tmin) || !Number.isFinite(Tmax)) return null;
+    return [Tmin, Tmax];
+  }
+
   function validateDataset(payload) {
     const issues = [];
-    (payload.groups || []).forEach((group) => {
-      (group.series || []).forEach((series) => {
-        (series.segments || []).forEach((segment) => {
-          const model = segment.model || {};
-          const range = segment.temperature_validity_K;
-          if (!Array.isArray(range) || range.length !== 2) {
-            issues.push(
-              `Entry ${segment.entry_id} missing temperature_validity_K [Tmin, Tmax].`
-            );
-            return;
-          }
-          const Tmin = range[0];
-          const Tmax = range[1];
-          if (!isFiniteNumber(Tmin) || !isFiniteNumber(Tmax)) {
-            issues.push(
-              `Entry ${segment.entry_id} has invalid temperature_validity_K values.`
-            );
-            return;
-          }
+    (payload.lines || []).forEach((line) => {
+      const entryId = line.entry_id || "unknown_entry";
+      const models = Array.isArray(line.models) ? line.models : [];
+      if (!models.length) {
+        issues.push(`Entry ${entryId} missing models.`);
+        return;
+      }
 
-          if (model.type === "single_point") {
-            if (Tmin !== Tmax) {
-              issues.push(
-                `Single-point entry ${segment.entry_id} has a temperature range (${Tmin}–${Tmax} K). Expected [T, T].`
-              );
-            }
-            if (!isFiniteNumber(model.diffusivity_mm2_per_s)) {
-              issues.push(
-                `Single-point entry ${segment.entry_id} missing diffusivity_mm2_per_s.`
-              );
-            }
-          } else {
-            if (!(Tmax > Tmin)) {
-              issues.push(
-                `Entry ${segment.entry_id} has a non-positive temperature range (${Tmin}–${Tmax} K).`
-              );
-            }
-            if (model.type === "arrhenius") {
-              if (!isFiniteNumber(model.D0_mm2_per_s) || !isFiniteNumber(model.Q_J_per_mol)) {
-                issues.push(
-                  `Arrhenius entry ${segment.entry_id} missing D0_mm2_per_s or Q_J_per_mol.`
-                );
-              }
-            }
-            if (model.type === "power") {
-              if (!isFiniteNumber(model.A_mm2_per_s) || !isFiniteNumber(model.n)) {
-                issues.push(
-                  `Power entry ${segment.entry_id} missing A_mm2_per_s or n.`
-                );
-              }
-            }
+      models.forEach((model) => {
+        const range = getModelTemperatureRange(model);
+        if (!range) {
+          issues.push(
+            `Entry ${entryId} model ${model?.type || "unknown"} missing temperature range.`
+          );
+          return;
+        }
+        const Tmin = range[0];
+        const Tmax = range[1];
+        if (!isFiniteNumber(Tmin) || !isFiniteNumber(Tmax)) {
+          issues.push(`Entry ${entryId} has invalid temperature values.`);
+          return;
+        }
+
+        if (model.type === "single_point") {
+          if (Tmin !== Tmax) {
+            issues.push(
+              `Single-point entry ${entryId} has a temperature range (${Tmin}–${Tmax} K). Expected [T, T].`
+            );
           }
-        });
+          if (!isFiniteNumber(model.diffusivity_mm2_per_s)) {
+            issues.push(`Single-point entry ${entryId} missing diffusivity_mm2_per_s.`);
+          }
+          return;
+        }
+
+        if (model.type === "table_points") {
+          const points = Array.isArray(model.points) ? model.points : [];
+          if (!points.length) {
+            issues.push(`Table-points entry ${entryId} missing points.`);
+          }
+          return;
+        }
+
+        if (!(Tmax > Tmin)) {
+          issues.push(
+            `Entry ${entryId} has a non-positive temperature range (${Tmin}–${Tmax} K).`
+          );
+        }
+        if (model.type === "arrhenius") {
+          if (!isFiniteNumber(model.D0_mm2_per_s) || !isFiniteNumber(model.Q_J_per_mol)) {
+            issues.push(`Arrhenius entry ${entryId} missing D0_mm2_per_s or Q_J_per_mol.`);
+          }
+        }
+        if (model.type === "power") {
+          const A = model.A_mm2_per_s != null ? model.A_mm2_per_s : model.A;
+          if (!isFiniteNumber(A) || !isFiniteNumber(model.n)) {
+            issues.push(`Power entry ${entryId} missing A or n.`);
+          }
+        }
       });
     });
     return issues;
@@ -387,7 +469,7 @@
       if (!isLineStyle) {
         labels.add("Single Points");
       }
-    } else if (modelType === "power") {
+    } else if (modelType === "power" || modelType === "table_points") {
       labels.add("Digitized/Series");
     } else if (modelType) {
       labels.add(String(modelType));
@@ -485,11 +567,7 @@
     });
     [dom.tempMin, dom.tempMax].forEach((input) =>
       input?.addEventListener("input", () => {
-        const minC = parseNumber(dom.tempMin?.value);
-        const maxC = parseNumber(dom.tempMax?.value);
-        state.tempMin = Number.isFinite(minC) ? minC + 273.15 : null;
-        state.tempMax = Number.isFinite(maxC) ? maxC + 273.15 : null;
-        applyFilters();
+        updateTempFromInputs();
       })
     );
     [dom.yearMin, dom.yearMax].forEach((input) =>
@@ -497,6 +575,7 @@
         updateYearFromInputs();
       })
     );
+    bindTempRange();
     bindYearRange();
     dom.plotButton?.addEventListener("click", () => {
       setZoomFromInputs();
@@ -626,6 +705,138 @@
       if (checkbox) checkbox.checked = true;
     });
     state.materialClassDefaultsApplied = true;
+  }
+
+  function initializeTempFilter(seriesList) {
+    if (!dom.tempMin || !dom.tempMax || !dom.tempRange || !dom.tempHandleMin || !dom.tempHandleMax) return;
+    const ranges = (seriesList || [])
+      .map((entry) => entry.temperatureRange || [])
+      .filter((range) => Array.isArray(range) && range.length === 2)
+      .map((range) => [Number(range[0]), Number(range[1])])
+      .filter(([min, max]) => Number.isFinite(min) && Number.isFinite(max));
+    if (!ranges.length) {
+      [dom.tempMin, dom.tempMax, dom.tempHandleMin, dom.tempHandleMax].forEach((el) => {
+        if (el) el.disabled = true;
+      });
+      return;
+    }
+    const minK = Math.min(...ranges.map((range) => range[0]));
+    const maxK = Math.max(...ranges.map((range) => range[1]));
+    const minC = Math.floor(minK - 273.15);
+    const maxC = Math.ceil(maxK - 273.15);
+    state.tempDomain = { min: minC, max: maxC };
+    dom.tempMin.placeholder = String(minC);
+    dom.tempMax.placeholder = String(maxC);
+    dom.tempMin.value = "";
+    dom.tempMax.value = "";
+    setTempFilter(null, null, true);
+  }
+
+  function clampTempC(value) {
+    if (!state.tempDomain || !Number.isFinite(value)) return value;
+    return Math.min(state.tempDomain.max, Math.max(state.tempDomain.min, value));
+  }
+
+  function setTempFilter(minC, maxC, syncInputs = true) {
+    let minValue = minC;
+    let maxValue = maxC;
+    if (minValue != null) minValue = clampTempC(minValue);
+    if (maxValue != null) maxValue = clampTempC(maxValue);
+    if (minValue != null && maxValue != null && minValue > maxValue) {
+      const swap = minValue;
+      minValue = maxValue;
+      maxValue = swap;
+    }
+    state.tempMin = minValue != null ? minValue + 273.15 : null;
+    state.tempMax = maxValue != null ? maxValue + 273.15 : null;
+    if (!state.tempDomain) return;
+    const rangeMin = minValue != null ? minValue : state.tempDomain.min;
+    const rangeMax = maxValue != null ? maxValue : state.tempDomain.max;
+    updateTempHandles(rangeMin, rangeMax);
+    if (syncInputs) {
+      dom.tempMin.value = minValue != null ? String(minValue) : "";
+      dom.tempMax.value = maxValue != null ? String(maxValue) : "";
+    }
+  }
+
+  function updateTempFromInputs() {
+    const rawMin = dom.tempMin?.value;
+    const rawMax = dom.tempMax?.value;
+    let min = rawMin === "" ? null : clampTempC(parseNumber(rawMin));
+    let max = rawMax === "" ? null : clampTempC(parseNumber(rawMax));
+    if (Number.isNaN(min)) min = null;
+    if (Number.isNaN(max)) max = null;
+    setTempFilter(min, max, false);
+    applyFilters();
+  }
+
+  function updateTempRangeFill(minValue, maxValue) {
+    if (!state.tempDomain || !dom.tempRangeFill) return;
+    const span = state.tempDomain.max - state.tempDomain.min || 1;
+    const left = ((minValue - state.tempDomain.min) / span) * 100;
+    const right = ((maxValue - state.tempDomain.min) / span) * 100;
+    dom.tempRangeFill.style.left = `${Math.min(left, right)}%`;
+    dom.tempRangeFill.style.right = `${100 - Math.max(left, right)}%`;
+  }
+
+  function updateTempHandles(minValue, maxValue) {
+    if (!state.tempDomain || !dom.tempHandleMin || !dom.tempHandleMax || !dom.tempRangeFill) return;
+    updateTempRangeFill(minValue, maxValue);
+    const span = state.tempDomain.max - state.tempDomain.min || 1;
+    const minPct = ((minValue - state.tempDomain.min) / span) * 100;
+    const maxPct = ((maxValue - state.tempDomain.min) / span) * 100;
+    dom.tempHandleMin.style.left = `${minPct}%`;
+    dom.tempHandleMax.style.left = `${maxPct}%`;
+  }
+
+  function bindTempRange() {
+    if (!dom.tempRange || !dom.tempHandleMin || !dom.tempHandleMax) return;
+    const onPointer = (event, handle) => {
+      if (!state.tempDomain) return;
+      const rect = dom.tempRange.getBoundingClientRect();
+      const percent = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+      const value = Math.round(state.tempDomain.min + percent * (state.tempDomain.max - state.tempDomain.min));
+      let minValue = state.tempMin != null ? Math.round(state.tempMin - 273.15) : state.tempDomain.min;
+      let maxValue = state.tempMax != null ? Math.round(state.tempMax - 273.15) : state.tempDomain.max;
+      if (handle === "min") {
+        minValue = Math.min(value, maxValue);
+      } else {
+        maxValue = Math.max(value, minValue);
+      }
+      setTempFilter(minValue, maxValue, true);
+      applyFilters();
+    };
+
+    const startDrag = (handle) => (event) => {
+      event.preventDefault();
+      dom.tempHandleMin.classList.toggle("is-active", handle === "min");
+      dom.tempHandleMax.classList.toggle("is-active", handle === "max");
+      const move = (moveEvent) => onPointer(moveEvent, handle);
+      const up = () => {
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerup", up);
+      };
+      window.addEventListener("pointermove", move);
+      window.addEventListener("pointerup", up);
+      onPointer(event, handle);
+    };
+
+    dom.tempHandleMin.addEventListener("pointerdown", startDrag("min"));
+    dom.tempHandleMax.addEventListener("pointerdown", startDrag("max"));
+    dom.tempRange.addEventListener("pointerdown", (event) => {
+      const minValue = state.tempMin != null ? Math.round(state.tempMin - 273.15) : state.tempDomain.min;
+      const maxValue = state.tempMax != null ? Math.round(state.tempMax - 273.15) : state.tempDomain.max;
+      const rect = dom.tempRange.getBoundingClientRect();
+      const percent = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+      const value = Math.round(state.tempDomain.min + percent * (state.tempDomain.max - state.tempDomain.min));
+      const distToMin = Math.abs(value - minValue);
+      const distToMax = Math.abs(value - maxValue);
+      if (distToMin <= distToMax) {
+        startDrag("min")(event);
+      } else {
+        startDrag("max")(event);
+      }
+    });
   }
 
   function initializeYearFilter(payload) {
@@ -1015,6 +1226,9 @@
     if (dom.tempMax) dom.tempMax.value = "";
     state.tempMin = null;
     state.tempMax = null;
+    if (state.tempDomain) {
+      updateTempHandles(state.tempDomain.min, state.tempDomain.max);
+    }
     if (dom.yearMin) dom.yearMin.value = "";
     if (dom.yearMax) dom.yearMax.value = "";
     state.yearMin = null;
@@ -1499,18 +1713,22 @@
     const previewItems = orderedItems.slice(0, maxPreview);
     const allItemLines = previewItems.map((item) => {
       const series = item.series;
-      const range = formatRangeValue(series.temperatureRange) || "range unknown";
+      const range = formatRangeValueForUnits(series.temperatureRange, state.units) || "range unknown";
       const ordinal = orderMap.has(series.id) ? orderMap.get(series.id) + 1 : item.fallbackIndex + 1;
       const sourceMeta = state.dataset?.sources?.[series.sourceId] || null;
       const citation = buildCitation(sourceMeta, series);
-      const groupLabel = series.groupId || series.label || "Series";
+      const groupLabel = series.label || series.groupId || "Series";
+      const titleSource = series.sourceTitle || "Source";
+      const titleLabel = series.label || groupLabel;
+      const titleText = `${titleSource} - ${titleLabel}`;
+      const metaText = range;
       return `
         <li class="hdd-summary-item">
           <div class="hdd-summary-title">
             <span class="hdd-ordinal">${ordinal}.</span>
-            <strong>${escapeHtml(groupLabel)}</strong>
+            <strong>${escapeHtml(titleText)}</strong>
           </div>
-          <div class="hdd-summary-meta">${escapeHtml(series.seriesLabel)} - ${escapeHtml(range)}</div>
+          <div class="hdd-summary-meta">${escapeHtml(metaText)}</div>
           <div class="hdd-summary-cite">${escapeHtml(cleanCsvField(citation))}</div>
         </li>
       `;
@@ -1646,7 +1864,7 @@
       const color = state.monochrome ? "#111111" : COLORS[legendIndex % COLORS.length];
       const legendLabel = state.legendBySource
         ? entry.sourceTitle || entry.label || entry.groupId || "Source"
-        : `${seriesDisplayLabel(entry)} - ${entry.seriesLabel}`;
+        : buildSourceLabel(entry);
       result.push({
         id: entry.id,
         label: entry.label,
@@ -1683,6 +1901,16 @@
         }
         const target = plottingStyle === "line" ? linePoints : points;
         target.push({ temperature_K: temperature, diffusivity: model.diffusivity_mm2_per_s });
+        return;
+      }
+      if (model.type === "table_points") {
+        const tablePoints = normalizeTablePoints(model.points, clampMin, clampMax);
+        if (!tablePoints.length) return;
+        if (plottingStyle === "line") {
+          lineSegments.push(tablePoints);
+        } else {
+          points.push(...tablePoints);
+        }
         return;
       }
 
@@ -1725,8 +1953,27 @@
       );
       return null;
     }
-    failLoudly(`Single-point entry ${segment.entry_id} is missing temperature_validity_K.`);
+    const modelTemp = segment.model?.temperature_K;
+    if (isFiniteNumber(modelTemp)) return Number(modelTemp);
+    failLoudly(`Single-point entry ${segment.entry_id} is missing temperature information.`);
     return null;
+  }
+
+  function normalizeTablePoints(points, clampMin, clampMax) {
+    if (!Array.isArray(points)) return [];
+    return points
+      .map((point) => ({
+        temperature_K: Number(point?.temperature_K),
+        diffusivity: Number(point?.diffusivity_mm2_per_s),
+      }))
+      .filter(
+        (point) =>
+          isFiniteNumber(point.temperature_K) &&
+          isFiniteNumber(point.diffusivity) &&
+          point.diffusivity > 0 &&
+          isWithinClamp(point.temperature_K, clampMin, clampMax)
+      )
+      .sort((a, b) => a.temperature_K - b.temperature_K);
   }
 
   function evaluateModel(model, temperature_K) {
@@ -1740,7 +1987,9 @@
     if (model.type === "power") {
       if (model.input !== "theta_C") return null;
       const theta_C = temperature_K - 273.15;
-      return model.A_mm2_per_s * Math.pow(theta_C, model.n);
+      const A = model.A_mm2_per_s != null ? model.A_mm2_per_s : model.A;
+      if (!isFiniteNumber(A) || !isFiniteNumber(model.n)) return null;
+      return A * Math.pow(theta_C, model.n);
     }
     return null;
   }
@@ -2345,12 +2594,21 @@
   function inferBand(descriptor) {
     const band = descriptor.segments?.[0]?.metadata?.band;
     if (band) return band;
-    const match = descriptor.groupId.match(/_(mean|min|max)$/);
-    return match ? match[1] : null;
+    const candidate = String(descriptor.groupId || descriptor.label || descriptor.id || "");
+    if (!candidate) return null;
+    const match = candidate.match(/(?:^|_)(mean|avg|min|max)(?:_|$)/i);
+    if (!match) return null;
+    const token = match[1].toLowerCase();
+    if (token === "avg") return "mean";
+    return token;
   }
 
   function stripBand(groupId) {
-    return groupId.replace(/_(mean|min|max)$/, "");
+    if (!groupId) return "";
+    return String(groupId)
+      .replace(/_(mean|avg|min|max)(?=_|$)/gi, "")
+      .replace(/__+/g, "_")
+      .replace(/^_+|_+$/g, "");
   }
 
   function drawXTicks(
@@ -2566,8 +2824,10 @@
       const ordinal = Number.isFinite(target.series.legendIndex) ? target.series.legendIndex + 1 : "";
       const prefix = ordinal ? `${ordinal}. ` : "";
       const header = `<strong>${escapeHtml(prefix + label)}</strong>`;
-      const range = formatRangeValue(target.series.descriptor.temperatureRange) || "";
-      const meta = seriesLabel ? `<div>${escapeHtml(seriesLabel)}${range ? ` - ${escapeHtml(range)}` : ""}</div>` : range ? `<div>${escapeHtml(range)}</div>` : "";
+      const range = formatRangeValueForUnits(target.series.descriptor.temperatureRange, state.units) || "";
+      const sourceTitle = target.series.descriptor.sourceTitle || "Source";
+      const metaText = range ? `${sourceTitle} - ${range}` : sourceTitle;
+      const meta = `<div>${escapeHtml(metaText)}</div>`;
       let details = "";
       if (pinned) {
         const sourceMeta = state.dataset?.sources?.[target.series.descriptor.sourceId] || null;
@@ -3499,6 +3759,24 @@
     return ` - ${value}`;
   }
 
+  function formatRangeValueForUnits(range, units) {
+    if (!range || range.length !== 2) return "";
+    if (range[0] == null || range[1] == null) return "";
+    const minK = Number(range[0]);
+    const maxK = Number(range[1]);
+    if (!Number.isFinite(minK) || !Number.isFinite(maxK)) return "";
+    const useC = units === "C";
+    const unitLabel = useC ? "°C" : "K";
+    const min = useC ? minK - 273.15 : minK;
+    const max = useC ? maxK - 273.15 : maxK;
+    const minLabel = min.toFixed(0);
+    const maxLabel = max.toFixed(0);
+    if (minLabel === maxLabel) {
+      return `${minLabel} ${unitLabel}`;
+    }
+    return `${minLabel}-${maxLabel} ${unitLabel}`;
+  }
+
   function formatRangeValue(range) {
     if (!range || range.length !== 2) return "";
     if (range[0] == null || range[1] == null) return "";
@@ -3514,7 +3792,13 @@
   }
 
   function seriesDisplayLabel(entry) {
-    return entry?.sourceTitle || entry?.label || entry?.groupId || "Series";
+    return entry?.label || entry?.sourceTitle || entry?.groupId || "Series";
+  }
+
+  function buildSourceLabel(entry) {
+    const source = entry?.sourceTitle || entry?.groupId || "Source";
+    const label = entry?.label || "Line";
+    return `${source} - ${label}`;
   }
 
   function isFiniteNumber(value) {
