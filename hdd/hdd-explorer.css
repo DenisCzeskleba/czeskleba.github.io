@@ -308,10 +308,10 @@ main > h1 {
 }
 
 .hdd-section-title {
-  font-size: 0.95rem;
+  font-size: 1.1rem;
   text-transform: uppercase;
-  letter-spacing: 0.18em;
-  color: var(--muted);
+  letter-spacing: 0.1em;
+  color: var(--font-display);
 }
 
 .hdd-section-title-row {
@@ -373,7 +373,7 @@ main > h1 {
   font-size: 0.80rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--font-display);
   font-weight: 600;
   border-bottom: 1px solid color-mix(in srgb, var(--line) 95%, transparent);
   padding-bottom: 2px;
