@@ -625,6 +625,10 @@ body.dark .hdd-toggle-group button.is-active {
   font-weight: 500;
 }
 
+.hdd-inline-checkbox.is-disabled {
+  opacity: 0.55;
+}
+
 .hdd-inline-select {
   display: flex;
   align-items: center;
@@ -691,6 +695,10 @@ body.dark .hdd-toggle-group button.is-active {
 .hdd-axis-group {
   display: grid;
   gap: 6px;
+}
+
+.hdd-axis-group.is-disabled {
+  opacity: 0.55;
 }
 
 .hdd-axis-label {
@@ -814,6 +822,35 @@ body.dark .hdd-toggle-group button.is-active {
   justify-content: flex-end;
 }
 
+.hdd-axis-filter-button {
+  justify-self: start;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--accent) 12%, var(--panel));
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.hdd-axis-filter-button:hover {
+  background: color-mix(in srgb, var(--accent) 20%, var(--panel));
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+}
+
+.hdd-axis-filter-button.is-active {
+  background: var(--accent);
+  color: #ffffff;
+  border-color: var(--accent);
+}
+
+.hdd-axis-filter-button-block {
+  margin-top: 8px;
+}
+
 .hdd-filter-note {
   margin-top: 6px;
   font-size: 0.8rem;
@@ -926,7 +963,7 @@ body.dark .hdd-toggle-group button.is-active {
 
 .hdd-comp-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: minmax(50px, 1fr) minmax(64px, 1fr) minmax(64px, 1fr) auto;
   gap: 8px;
   align-items: center;
   padding: 6px 8px;
@@ -946,6 +983,10 @@ body.dark .hdd-toggle-group button.is-active {
   background: var(--panel-strong);
   color: var(--ink);
   box-sizing: border-box;
+}
+
+.hdd-axis-filter-button-comp {
+  margin-left: auto;
 }
 
 .hdd-filter-item {
@@ -1191,6 +1232,20 @@ body.dark .hdd-toggle-group button.is-active {
 
   .hdd-filter-block summary {
     padding-right: 0;
+  }
+
+  .hdd-comp-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hdd-comp-row label {
+    grid-column: 1 / -1;
+  }
+
+  .hdd-axis-filter-button-comp {
+    grid-column: 1 / -1;
+    justify-self: start;
+    margin-left: 0;
   }
 
   .hdd-controls-middle {
@@ -1461,6 +1516,59 @@ body.dark .hdd-toggle-group button.is-active {
 .hdd-plot-option-note {
   font-size: 0.8rem;
   color: var(--muted);
+}
+
+.hdd-axis-mode-panel {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 8px;
+  background: color-mix(in srgb, var(--panel) 85%, var(--panel-strong));
+}
+
+.hdd-axis-mode-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+#hdd-axis-mode-status {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+#hdd-axis-reset {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#hdd-axis-reset:hover {
+  background: var(--panel-strong);
+}
+
+.hdd-axis-temp-legend {
+  display: grid;
+  grid-template-columns: auto minmax(70px, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.hdd-axis-temp-legend-bar {
+  height: 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--line) 85%, transparent);
+  background: linear-gradient(90deg, #1e5eff 0%, #d7191c 100%);
 }
 
 .hdd-export-row {

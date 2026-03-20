@@ -2,6 +2,9 @@
 (function () {
   const R_DEFAULT = 8.314462618;
   const SAMPLES_PER_SEGMENT = 70;
+  const AXIS_DISTRIBUTION_SAMPLES = 30;
+  const AXIS_SINGLE_POINT_EPSILON_K = 1e-6;
+  const AXIS_BUCKET_JITTER_SPAN = 0.62;
   const FILTER_LIST_DEFAULT_HEIGHT = 280;
   const FILTER_LIST_MIN_HEIGHT = 75;
   const COLORS = [
@@ -14,6 +17,251 @@
     "#008080",
     "#595959",
   ];
+  const AXIS_MODE_TEMPERATURE = "temperature";
+  const AXIS_MODE_FILTER = "filter";
+  const AXIS_TEMP_BEHAVIOR_DISTRIBUTION = "distribution";
+  const AXIS_TEMP_BEHAVIOR_SLICE = "slice";
+  const AXIS_DISABLED_BLOCK_IDS = new Set([
+    "hdd-filter-block-source",
+    "hdd-filter-block-temp",
+    "hdd-filter-block-literature",
+  ]);
+  const AXIS_CATEGORICAL_DEFS = {
+    "hdd-filter-class": {
+      axisKey: "material_class",
+      label: "Material Class",
+      filterKey: "materialClass",
+      modeKey: "materialClass",
+      metaKey: "material_class",
+    },
+    "hdd-filter-grade": {
+      axisKey: "material_grade",
+      label: "Material Grade",
+      filterKey: "materialGrade",
+      modeKey: "materialGrade",
+      metaKey: "material_grade",
+    },
+    "hdd-filter-microstructure": {
+      axisKey: "material_microstructure",
+      label: "Microstructure",
+      filterKey: "materialMicrostructure",
+      modeKey: "materialMicrostructure",
+      metaKey: "material_microstructure",
+    },
+    "hdd-filter-phase": {
+      axisKey: "material_phase",
+      label: "Phase",
+      filterKey: "materialPhase",
+      modeKey: "materialPhase",
+      metaKey: "material_phase",
+    },
+    "hdd-filter-processing": {
+      axisKey: "material_processing",
+      label: "Processing",
+      filterKey: "materialProcessing",
+      modeKey: "materialProcessing",
+      metaKey: "material_processing",
+    },
+    "hdd-filter-tags": {
+      axisKey: "material_tags",
+      label: "Material Tags",
+      filterKey: "materialTags",
+      modeKey: "materialTags",
+      metaKey: "material_tags",
+    },
+    "hdd-filter-weld-process": {
+      axisKey: "welded_process",
+      label: "Welding Process",
+      filterKey: "weldedProcess",
+      modeKey: "weldedProcess",
+      metaKey: "welded_process",
+    },
+    "hdd-filter-weld-layer": {
+      axisKey: "welded_layer",
+      label: "Welding Layer / Pass",
+      filterKey: "weldedLayer",
+      modeKey: "weldedLayer",
+      metaKey: "welded_layer",
+    },
+    "hdd-filter-charging-method": {
+      axisKey: "charging_method",
+      label: "Charging Method",
+      filterKey: "chargingMethod",
+      modeKey: "chargingMethod",
+      metaKey: "charging_method",
+    },
+    "hdd-filter-calculation-model": {
+      axisKey: "calculation_model",
+      label: "Calculation Model",
+      filterKey: "calculationModel",
+      modeKey: "calculationModel",
+      metaKey: "calculation_model",
+    },
+    "hdd-filter-sample-geometry": {
+      axisKey: "sample_geometry",
+      label: "Sample Geometry",
+      filterKey: "sampleGeometry",
+      modeKey: "sampleGeometry",
+      metaKey: "sample_geometry",
+    },
+    "hdd-filter-surface-condition": {
+      axisKey: "surface_condition",
+      label: "Surface Condition",
+      filterKey: "surfaceCondition",
+      modeKey: "surfaceCondition",
+      metaKey: "surface_condition",
+    },
+    "hdd-filter-surface-finish-detail": {
+      axisKey: "surface_finish_detail",
+      label: "Surface Finish Detail",
+      filterKey: "surfaceFinishDetail",
+      modeKey: "surfaceFinishDetail",
+      metaKey: "surface_finish_detail",
+    },
+    "hdd-filter-coated": {
+      axisKey: "coated",
+      label: "Coated",
+      filterKey: "coated",
+      modeKey: "coated",
+      metaKey: "coated",
+    },
+    "hdd-filter-coating-type": {
+      axisKey: "coating_type",
+      label: "Coating Type",
+      filterKey: "coatingType",
+      modeKey: "coatingType",
+      metaKey: "coating_type",
+    },
+    "hdd-filter-deformation-history": {
+      axisKey: "deformation_history",
+      label: "Deformation History",
+      filterKey: "deformationHistory",
+      modeKey: "deformationHistory",
+      metaKey: "deformation_history",
+    },
+    "hdd-filter-mechanical-loading": {
+      axisKey: "mechanical_loading_during_test",
+      label: "Mechanical Loading During Test",
+      filterKey: "mechanicalLoading",
+      modeKey: "mechanicalLoading",
+      metaKey: "mechanical_loading",
+    },
+    "hdd-filter-loading-regime": {
+      axisKey: "loading_regime",
+      label: "Loading Regime",
+      filterKey: "loadingRegime",
+      modeKey: "loadingRegime",
+      metaKey: "loading_regime",
+    },
+    "hdd-filter-electrolyte": {
+      axisKey: "electrolyte",
+      label: "Electrolyte",
+      filterKey: "electrolyte",
+      modeKey: "electrolyte",
+      metaKey: "electrolyte",
+    },
+    "hdd-filter-control-mode": {
+      axisKey: "control_mode",
+      label: "Control Mode",
+      filterKey: "controlMode",
+      modeKey: "controlMode",
+      metaKey: "control_mode",
+    },
+    "hdd-filter-poison-additive": {
+      axisKey: "poison_additive",
+      label: "Poison Additive",
+      filterKey: "poisonAdditive",
+      modeKey: "poisonAdditive",
+      metaKey: "poison_additive",
+    },
+    "hdd-filter-gas-composition": {
+      axisKey: "gas_composition",
+      label: "Gas Composition",
+      filterKey: "gasComposition",
+      modeKey: "gasComposition",
+      metaKey: "gas_composition",
+    },
+    "hdd-filter-gas-purity": {
+      axisKey: "gas_purity",
+      label: "Gas Purity",
+      filterKey: "gasPurity",
+      modeKey: "gasPurity",
+      metaKey: "gas_purity",
+    },
+    "hdd-filter-tda-peak": {
+      axisKey: "tda_peak_analysis",
+      label: "TDA Peak Analysis",
+      filterKey: "tdaPeakAnalysis",
+      modeKey: "tdaPeakAnalysis",
+      metaKey: "tda_peak_analysis",
+    },
+    "hdd-filter-sims-type": {
+      axisKey: "sims_type",
+      label: "SIMS Type",
+      filterKey: "simsType",
+      modeKey: "simsType",
+      metaKey: "sims_type",
+    },
+    "hdd-filter-dev-entry-electrolyte": {
+      axisKey: "devanathan_entry_electrolyte",
+      label: "Devanathan Entry Electrolyte",
+      filterKey: "devEntryElectrolyte",
+      modeKey: "devEntryElectrolyte",
+      metaKey: "dev_entry_electrolyte",
+    },
+    "hdd-filter-dev-exit-electrolyte": {
+      axisKey: "devanathan_exit_electrolyte",
+      label: "Devanathan Exit Electrolyte",
+      filterKey: "devExitElectrolyte",
+      modeKey: "devExitElectrolyte",
+      metaKey: "dev_exit_electrolyte",
+    },
+    "hdd-filter-reported": {
+      axisKey: "reported_as",
+      label: "Reported As",
+      filterKey: "reportedAs",
+      modeKey: "reportedAs",
+      metaKey: "reported_as",
+    },
+    "hdd-filter-effect": {
+      axisKey: "studied_effects",
+      label: "Studied Effect",
+      filterKey: "studiedEffects",
+      modeKey: "studiedEffects",
+      metaKey: "studied_effects",
+    },
+    "hdd-filter-method": {
+      axisKey: "measurement_method",
+      label: "Measurement Method",
+      filterKey: "measurementMethod",
+      modeKey: "measurementMethod",
+      metaKey: "measurement_method",
+    },
+    "hdd-filter-model": {
+      axisKey: "model_type",
+      label: "Model Type",
+      filterKey: "modelType",
+      modeKey: "modelType",
+      metaKey: "model_type",
+    },
+  };
+  const AXIS_NUMERIC_LABELS = {
+    year: "Year",
+    welding_t85: "Welding t8/5",
+    charging_temperature_c: "Charging Temperature [C]",
+    charging_duration_h: "Charging Duration [h]",
+    characteristic_length_mm: "Characteristic Length [mm]",
+    coating_thickness_um: "Coating Thickness [um]",
+    pre_strain_percent: "Pre-strain [%]",
+    cold_reduction_percent: "Cold Reduction [%]",
+    applied_stress_mpa: "Applied Stress [MPa]",
+    applied_strain_percent: "Applied Strain [%]",
+    current_density_mA_per_cm2: "Current Density [mA/cm2]",
+    applied_potential_v: "Applied Potential [V]",
+    gas_pressure_bar: "Gas Pressure [bar]",
+    heating_rate_k_per_min: "Heating Rate [K/min]",
+    extraction_temperature_c: "Extraction Temperature [C]",
+  };
 
   const mount = document.getElementById("hydrogen-explorer-app");
   if (!mount) return;
@@ -54,8 +302,19 @@
     gridY: document.getElementById("hdd-grid-y"),
     axisXMin: document.getElementById("hdd-axis-x-min"),
     axisXMax: document.getElementById("hdd-axis-x-max"),
+    axisXGroup: document.getElementById("hdd-axis-x-group"),
     axisYMin: document.getElementById("hdd-axis-y-min"),
     axisYMax: document.getElementById("hdd-axis-y-max"),
+    axisModeStatus: document.getElementById("hdd-axis-mode-status"),
+    axisReset: document.getElementById("hdd-axis-reset"),
+    axisTempBehaviorButtons: document.querySelectorAll("[data-axis-temp-behavior]"),
+    axisSliceGroup: document.getElementById("hdd-axis-slice-group"),
+    axisSliceTemp: document.getElementById("hdd-axis-slice-temp"),
+    axisTempLegend: document.getElementById("hdd-axis-temp-legend"),
+    axisTempLegendMin: document.getElementById("hdd-axis-temp-legend-min"),
+    axisTempLegendMax: document.getElementById("hdd-axis-temp-legend-max"),
+    envelopeRow: document.getElementById("hdd-envelope-row"),
+    forceScatterbandRow: document.getElementById("hdd-force-scatterband-row"),
     tempMin: document.getElementById("hdd-temp-min"),
     tempMax: document.getElementById("hdd-temp-max"),
     tempRange: document.querySelector("[data-range='temp']"),
@@ -176,6 +435,12 @@
     materialClassDefaultsApplied: false,
     excludedSeries: new Set(),
     tooltipPinned: null,
+    axisMode: AXIS_MODE_TEMPERATURE,
+    axisConfig: null,
+    axisTempBehavior: AXIS_TEMP_BEHAVIOR_DISTRIBUTION,
+    axisSliceTempK: null,
+    axisTempExtent: null,
+    axisColorScale: "blue-red",
   };
 
   let currentSeries = [];
@@ -235,8 +500,11 @@
     initializeFilterModes();
     populateFilters(payload);
     initializeTempFilter(state.seriesList);
+    state.axisSliceTempK = getDefaultAxisSliceTemperature();
     initializeYearFilter(payload);
+    setupAxisButtons();
     applyFilters({ replot: false });
+    syncAxisModeUi();
     plotSelectedSeries(true);
     updateSummary();
     if (!validationIssues.length && !state.selected.size) {
@@ -562,6 +830,21 @@
 
   function computeCompositionRanges(segments) {
     const ranges = {};
+    const mergeRange = (element, parsed) => {
+      if (!parsed) return;
+      const min = Number(parsed.min);
+      const max = Number(parsed.max);
+      if (!Number.isFinite(min) || !Number.isFinite(max)) return;
+      if (!ranges[element]) {
+        ranges[element] = { min, max, kind: parsed.kind || "exact" };
+        return;
+      }
+      ranges[element].min = Math.min(ranges[element].min, min);
+      ranges[element].max = Math.max(ranges[element].max, max);
+      if (ranges[element].kind !== parsed.kind) {
+        ranges[element].kind = "interval";
+      }
+    };
     segments.forEach((segment) => {
       const composition = segment.material?.chemical_composition;
       if (!composition || composition.basis !== "wt_pct") return;
@@ -569,18 +852,43 @@
       Object.keys(values).forEach((key) => {
         const element = normalizeElementSymbol(key);
         if (!element) return;
-        const raw = values[key];
-        const num = Number(raw);
-        if (!Number.isFinite(num)) return;
-        if (!ranges[element]) {
-          ranges[element] = { min: num, max: num };
-        } else {
-          ranges[element].min = Math.min(ranges[element].min, num);
-          ranges[element].max = Math.max(ranges[element].max, num);
-        }
+        const parsed = parseCompositionValue(values[key]);
+        mergeRange(element, parsed);
       });
     });
     return Object.keys(ranges).length ? ranges : null;
+  }
+
+  function parseCompositionValue(rawValue) {
+    if (rawValue == null) return null;
+    const asNumber = Number(rawValue);
+    if (Number.isFinite(asNumber)) {
+      return { min: asNumber, max: asNumber, kind: "exact" };
+    }
+    const text = String(rawValue).trim().replace(",", ".");
+    if (!text) return null;
+    const upper = text.match(/^<=?\s*([0-9]+(?:\.[0-9]+)?)$/);
+    if (upper) {
+      const max = Number(upper[1]);
+      if (!Number.isFinite(max)) return null;
+      return { min: 0, max, kind: "upper_bound" };
+    }
+    const lower = text.match(/^>=?\s*([0-9]+(?:\.[0-9]+)?)$/);
+    if (lower) {
+      const min = Number(lower[1]);
+      if (!Number.isFinite(min)) return null;
+      return { min, max: min, kind: "lower_bound" };
+    }
+    const interval = text.match(
+      /^([0-9]+(?:\.[0-9]+)?)\s*(?:-|to)\s*([0-9]+(?:\.[0-9]+)?)$/i
+    );
+    if (interval) {
+      const min = Number(interval[1]);
+      const max = Number(interval[2]);
+      if (!Number.isFinite(min) || !Number.isFinite(max)) return null;
+      return { min: Math.min(min, max), max: Math.max(min, max), kind: "interval" };
+    }
+    return null;
   }
 
   function computeNumericRanges(segments) {
@@ -677,6 +985,34 @@
     dom.unitButtons?.forEach((btn) =>
       btn.addEventListener("click", () => toggleUnits(btn))
     );
+    dom.axisTempBehaviorButtons?.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const behavior = btn.dataset.axisTempBehavior;
+        state.axisTempBehavior =
+          behavior === AXIS_TEMP_BEHAVIOR_SLICE
+            ? AXIS_TEMP_BEHAVIOR_SLICE
+            : AXIS_TEMP_BEHAVIOR_DISTRIBUTION;
+        dom.axisTempBehaviorButtons.forEach((other) =>
+          other.classList.toggle("is-active", other === btn)
+        );
+        syncAxisModeUi();
+        plotSelectedSeries(true);
+      });
+    });
+    dom.axisSliceTemp?.addEventListener("input", () => {
+      if (!dom.axisSliceTemp) return;
+      if (dom.axisSliceTemp.value && dom.axisSliceTemp.value.includes(",")) {
+        dom.axisSliceTemp.value = dom.axisSliceTemp.value.replace(/,/g, ".");
+      }
+      const value = parseNumber(dom.axisSliceTemp.value);
+      if (value == null) return;
+      state.axisSliceTempK = toKelvinForUnits(value);
+      plotSelectedSeries(true);
+    });
+    dom.axisReset?.addEventListener("click", () => {
+      resetAxisMode();
+      applyFilters({ preserveManual: true, replot: true });
+    });
     dom.scaleButtons?.forEach((btn) =>
       btn.addEventListener("click", () => toggleScale(btn))
     );
@@ -809,6 +1145,7 @@
     dom.selectAll?.addEventListener("click", selectAllVisible);
     dom.deselectAll?.addEventListener("click", deselectAllVisible);
     dom.showAll?.addEventListener("click", showAllSeriesList);
+    mount.addEventListener("click", handleAxisButtonClick);
     bindHeroLightbox();
     dom.sectionHeaders?.forEach((header) => {
       header.addEventListener("click", (event) => {
@@ -840,7 +1177,11 @@
         if (resizeFrame) return;
         resizeFrame = window.requestAnimationFrame(() => {
           resizeFrame = null;
-          renderChart(currentSeries);
+          if (state.axisMode === AXIS_MODE_FILTER && state.axisConfig) {
+            renderAxisChart(currentSeries);
+          } else {
+            renderChart(currentSeries);
+          }
         });
       });
 
@@ -1431,10 +1772,314 @@
         <label>${escapeHtml(element)}</label>
         <input type="number" lang="en" data-comp-element="${escapeHtml(element)}" data-comp-bound="min" placeholder="min" step="0.01" min="0" />
         <input type="number" lang="en" data-comp-element="${escapeHtml(element)}" data-comp-bound="max" placeholder="max" step="0.01" min="0" />
+        <button type="button" class="hdd-axis-filter-button hdd-axis-filter-button-comp" data-axis-trigger-kind="composition" data-axis-element="${escapeHtml(element)}" data-axis-label="${escapeHtml(
+        `${element} [wt%]`
+      )}" title="Use this composition element as the X-axis.">Use as Axis</button>
       `;
       dom.filterComposition.appendChild(row);
     });
     state.compositionFilters = {};
+  }
+
+  function setupAxisButtons() {
+    mount.querySelectorAll(".hdd-axis-filter-button-block").forEach((button) => button.remove());
+    const blocks = mount.querySelectorAll(".hdd-filter-block");
+    blocks.forEach((block) => {
+      if (!(block instanceof HTMLElement)) return;
+      if (AXIS_DISABLED_BLOCK_IDS.has(block.id)) return;
+      const summary = block.querySelector(":scope > summary");
+      if (!summary) return;
+      const listbox = block.querySelector(":scope > .hdd-filter-list");
+      if (listbox?.id) {
+        const def = AXIS_CATEGORICAL_DEFS[listbox.id];
+        if (!def) return;
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "hdd-axis-filter-button hdd-axis-filter-button-block";
+        button.textContent = "Use as Axis";
+        button.title = "Use this filter as the X-axis.";
+        button.dataset.axisTriggerKind = "categorical";
+        button.dataset.axisListboxId = listbox.id;
+        button.dataset.axisLabel = def.label;
+        block.insertBefore(button, listbox);
+        return;
+      }
+      if (block.id === "hdd-filter-block-year") {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "hdd-axis-filter-button hdd-axis-filter-button-block";
+        button.textContent = "Use as Axis";
+        button.title = "Use year as the X-axis.";
+        button.dataset.axisTriggerKind = "numeric";
+        button.dataset.axisRangeKey = "year";
+        button.dataset.axisLabel = AXIS_NUMERIC_LABELS.year;
+        const anchor = block.querySelector(".hdd-range-dual") || summary;
+        if (anchor?.parentNode) {
+          anchor.parentNode.insertBefore(button, anchor);
+        } else {
+          block.appendChild(button);
+        }
+        return;
+      }
+      const rangeInput = block.querySelector("input[data-range-key]");
+      if (!rangeInput) return;
+      const rangeKey = rangeInput.dataset.rangeKey;
+      if (!rangeKey) return;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "hdd-axis-filter-button hdd-axis-filter-button-block";
+      button.textContent = "Use as Axis";
+      button.title = "Use this numeric filter as the X-axis.";
+      button.dataset.axisTriggerKind = "numeric";
+      button.dataset.axisRangeKey = rangeKey;
+      button.dataset.axisLabel = AXIS_NUMERIC_LABELS[rangeKey] || summary.textContent?.trim() || rangeKey;
+      const toggleGroup = block.querySelector(".hdd-toggle-group");
+      if (toggleGroup?.parentNode) {
+        toggleGroup.parentNode.insertBefore(button, toggleGroup);
+      } else {
+        block.appendChild(button);
+      }
+    });
+    syncAxisButtonsState();
+  }
+
+  function handleAxisButtonClick(event) {
+    const button = event.target?.closest?.(".hdd-axis-filter-button");
+    if (!button) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const kind = button.dataset.axisTriggerKind;
+    if (kind === "categorical") {
+      const listboxId = button.dataset.axisListboxId;
+      if (!listboxId) return;
+      activateCategoricalAxis(listboxId);
+      return;
+    }
+    if (kind === "numeric") {
+      const rangeKey = button.dataset.axisRangeKey;
+      if (!rangeKey) return;
+      activateNumericAxis(rangeKey, button.dataset.axisLabel || AXIS_NUMERIC_LABELS[rangeKey] || rangeKey);
+      return;
+    }
+    if (kind === "composition") {
+      const element = button.dataset.axisElement;
+      if (!element) return;
+      activateCompositionAxis(element, button.dataset.axisLabel || `${element} [wt%]`);
+    }
+  }
+
+  function activateCategoricalAxis(listboxId) {
+    const def = AXIS_CATEGORICAL_DEFS[listboxId];
+    const listbox = document.getElementById(listboxId);
+    if (!def || !listbox) return;
+    let selected = selectedValues(listbox);
+    if (!selected.length) {
+      const available = getAvailableListboxValues(listbox);
+      listbox.querySelectorAll("input[type='checkbox']").forEach((input) => {
+        input.checked = available.includes(input.value);
+      });
+      selected = available;
+    }
+    forceFilterModeInclude(def.modeKey);
+    state.axisMode = AXIS_MODE_FILTER;
+    state.axisConfig = {
+      kind: "categorical",
+      axisKey: def.axisKey,
+      label: def.label,
+      listboxId,
+      filterKey: def.filterKey,
+      modeKey: def.modeKey,
+      metaKey: def.metaKey,
+    };
+    state.zoom = null;
+    syncAxisModeUi();
+    applyFilters({ preserveManual: true, replot: true });
+  }
+
+  function activateNumericAxis(rangeKey, label) {
+    state.axisMode = AXIS_MODE_FILTER;
+    state.axisConfig = {
+      kind: "numeric",
+      axisKey: rangeKey,
+      label: label || AXIS_NUMERIC_LABELS[rangeKey] || rangeKey,
+      rangeKey,
+    };
+    state.zoom = null;
+    syncAxisModeUi();
+    applyFilters({ preserveManual: true, replot: true });
+  }
+
+  function activateCompositionAxis(element, label) {
+    const normalized = normalizeElementSymbol(element);
+    if (!normalized) return;
+    state.axisMode = AXIS_MODE_FILTER;
+    state.axisConfig = {
+      kind: "composition",
+      axisKey: `composition_${normalized.toLowerCase()}`,
+      label: label || `${normalized} [wt%]`,
+      element: normalized,
+    };
+    state.zoom = null;
+    syncAxisModeUi();
+    applyFilters({ preserveManual: true, replot: true });
+  }
+
+  function resetAxisMode() {
+    state.axisMode = AXIS_MODE_TEMPERATURE;
+    state.axisConfig = null;
+    state.axisTempExtent = null;
+    state.axisSliceTempK = getDefaultAxisSliceTemperature();
+    state.zoom = null;
+    syncAxisModeUi();
+  }
+
+  function forceFilterModeInclude(modeKey) {
+    if (!modeKey) return;
+    state.filterMode[modeKey] = "include";
+    dom.filterModeToggles?.forEach((toggle) => {
+      if (toggle.dataset.filterMode === modeKey) {
+        toggle.checked = false;
+      }
+    });
+  }
+
+  function getAvailableListboxValues(listbox) {
+    if (!listbox) return [];
+    return Array.from(listbox.querySelectorAll(".hdd-filter-item"))
+      .map((item) => {
+        const input = item.querySelector("input[type='checkbox']");
+        if (!input) return null;
+        if (input.disabled && !input.checked) return null;
+        if (item.classList.contains("is-hidden") && !input.checked) return null;
+        return input.value;
+      })
+      .filter(Boolean);
+  }
+
+  function getDefaultAxisSliceTemperature() {
+    const min = state.tempMin != null ? state.tempMin : state.tempDomain?.min;
+    const max = state.tempMax != null ? state.tempMax : state.tempDomain?.max;
+    if (Number.isFinite(min) && Number.isFinite(max) && max >= min) {
+      return min + (max - min) * 0.5;
+    }
+    return 293.15;
+  }
+
+  function toDisplayTemperature(tempK) {
+    if (!Number.isFinite(tempK)) return null;
+    return state.units === "C" ? tempK - 273.15 : tempK;
+  }
+
+  function toKelvinForUnits(value) {
+    if (!Number.isFinite(value)) return null;
+    return state.units === "C" ? value + 273.15 : value;
+  }
+
+  function formatTemperatureForUnits(tempK, decimals = 1) {
+    const value = toDisplayTemperature(tempK);
+    if (!Number.isFinite(value)) return "";
+    const suffix = state.units === "C" ? "C" : "K";
+    return `${value.toFixed(decimals)} ${suffix}`;
+  }
+
+  function syncAxisButtonsState() {
+    const active = state.axisMode === AXIS_MODE_FILTER ? state.axisConfig : null;
+    mount.querySelectorAll(".hdd-axis-filter-button").forEach((button) => {
+      button.classList.remove("is-active");
+      if (!active) return;
+      const kind = button.dataset.axisTriggerKind;
+      if (kind === "categorical" && active.kind === "categorical") {
+        if (button.dataset.axisListboxId === active.listboxId) {
+          button.classList.add("is-active");
+        }
+        return;
+      }
+      if (kind === "numeric" && active.kind === "numeric") {
+        if (button.dataset.axisRangeKey === active.rangeKey) {
+          button.classList.add("is-active");
+        }
+        return;
+      }
+      if (kind === "composition" && active.kind === "composition") {
+        if ((button.dataset.axisElement || "").toLowerCase() === (active.element || "").toLowerCase()) {
+          button.classList.add("is-active");
+        }
+      }
+    });
+  }
+
+  function syncAxisModeUi() {
+    const axisActive = state.axisMode === AXIS_MODE_FILTER && state.axisConfig;
+    if (dom.axisModeStatus) {
+      dom.axisModeStatus.textContent = axisActive
+        ? `X-axis: ${state.axisConfig.label}`
+        : "X-axis: Temperature";
+    }
+    if (dom.axisReset) {
+      dom.axisReset.hidden = !axisActive;
+    }
+    if (dom.axisSliceGroup) {
+      const showSlice = axisActive && state.axisTempBehavior === AXIS_TEMP_BEHAVIOR_SLICE;
+      dom.axisSliceGroup.hidden = !showSlice;
+    }
+    if (dom.axisSliceTemp) {
+      const temp = Number.isFinite(state.axisSliceTempK)
+        ? state.axisSliceTempK
+        : getDefaultAxisSliceTemperature();
+      if (!Number.isFinite(state.axisSliceTempK)) {
+        state.axisSliceTempK = temp;
+      }
+      const display = toDisplayTemperature(temp);
+      dom.axisSliceTemp.value = Number.isFinite(display) ? display.toFixed(1) : "";
+      dom.axisSliceTemp.disabled = !axisActive;
+    }
+    if (dom.axisTempBehaviorButtons) {
+      dom.axisTempBehaviorButtons.forEach((button) => {
+        const isActive =
+          (button.dataset.axisTempBehavior || AXIS_TEMP_BEHAVIOR_DISTRIBUTION) ===
+          state.axisTempBehavior;
+        button.classList.toggle("is-active", isActive);
+        button.disabled = !axisActive;
+      });
+    }
+    const isCategoricalAxis = axisActive && state.axisConfig.kind === "categorical";
+    if (dom.axisXGroup) {
+      dom.axisXGroup.classList.toggle("is-disabled", isCategoricalAxis);
+      dom.axisXGroup.setAttribute("aria-disabled", isCategoricalAxis ? "true" : "false");
+      dom.axisXGroup.hidden = isCategoricalAxis;
+    }
+    if (isCategoricalAxis && dom.axisXMin && dom.axisXMax && !state.zoom) {
+      dom.axisXMin.value = "";
+      dom.axisXMax.value = "";
+    }
+    if (dom.envelope) {
+      dom.envelope.disabled = !!axisActive;
+    }
+    if (dom.forceScatterband) {
+      dom.forceScatterband.disabled = !!axisActive;
+    }
+    if (dom.envelopeRow) {
+      dom.envelopeRow.classList.toggle("is-disabled", !!axisActive);
+    }
+    if (dom.forceScatterbandRow) {
+      dom.forceScatterbandRow.classList.toggle("is-disabled", !!axisActive);
+    }
+    syncAxisButtonsState();
+    updateAxisTemperatureLegend();
+  }
+
+  function updateAxisTemperatureLegend() {
+    if (!dom.axisTempLegend || !dom.axisTempLegendMin || !dom.axisTempLegendMax) return;
+    const show =
+      state.axisMode === AXIS_MODE_FILTER &&
+      state.axisTempBehavior === AXIS_TEMP_BEHAVIOR_DISTRIBUTION &&
+      state.axisTempExtent &&
+      Number.isFinite(state.axisTempExtent.min) &&
+      Number.isFinite(state.axisTempExtent.max);
+    dom.axisTempLegend.hidden = !show;
+    if (!show) return;
+    dom.axisTempLegendMin.textContent = formatTemperatureForUnits(state.axisTempExtent.min, 0);
+    dom.axisTempLegendMax.textContent = formatTemperatureForUnits(state.axisTempExtent.max, 0);
   }
 
   function initializeFilterModes() {
@@ -1573,6 +2218,7 @@
     if (state.yearDomain) {
       updateYearHandles(state.yearDomain.min, state.yearDomain.max);
     }
+    resetAxisMode();
     requestAnimationFrame(() => {
       applyDefaultMaterialClassExclusions(true);
       applyFilters();
@@ -1651,6 +2297,7 @@
     syncSelectionToVisible(filtered);
     renderSeriesList(visible);
     updateFilterAvailability(filters, "");
+    syncAxisButtonsState();
     updateSummary(currentSeries);
     if (replot) {
       plotSelectedSeries(true);
@@ -2108,7 +2755,7 @@
     });
 
     const applyAvailabilityIfVisible = (listbox, values) => {
-      if (!listbox || listbox.offsetParent === null) return;
+      if (!listbox) return;
       updateSelectAvailability(listbox, values);
     };
 
@@ -2474,6 +3121,7 @@
     dom.unitButtons.forEach((btn) =>
       btn.classList.toggle("is-active", btn === button)
     );
+    syncAxisModeUi();
     state.zoom = null;
     plotSelectedSeries();
   }
@@ -2492,12 +3140,13 @@
   }
 
   function plotSelectedSeries(force = false) {
+    const axisFilterMode = state.axisMode === AXIS_MODE_FILTER && state.axisConfig;
     const useManual = state.selectionMode === "manual";
     const baseIds = useManual
       ? Array.from(state.selected)
       : (state.filteredList || []).map((entry) => entry.id);
     const scatterbandIds =
-      state.forceScatterband && Array.isArray(state.scatterbandIds)
+      !axisFilterMode && state.forceScatterband && Array.isArray(state.scatterbandIds)
         ? state.scatterbandIds
         : [];
     const ids = Array.from(new Set(baseIds.concat(scatterbandIds)));
@@ -2511,8 +3160,9 @@
       updateSummary();
       return;
     }
-    state.preserveAxis = state.forceScatterband && !state.zoom && !!lastPlotContext;
-    const series = prepareSeries(ids);
+    state.preserveAxis =
+      !axisFilterMode && state.forceScatterband && !state.zoom && !!lastPlotContext;
+    const series = axisFilterMode ? prepareAxisSeries(ids) : prepareSeries(ids);
     if (!series.length) {
       renderEmptyChart("No valid samples within the requested range.");
       currentSeries = [];
@@ -2520,7 +3170,11 @@
       return;
     }
     currentSeries = series;
-    renderChart(series);
+    if (axisFilterMode) {
+      renderAxisChart(series);
+    } else {
+      renderChart(series);
+    }
     updateSummary(series);
     if (force) setStatus("Plot refreshed.", "ok");
   }
@@ -2552,6 +3206,7 @@
         segment.map((sample) => ({
           temperature_K: sample.temperature_K,
           temperature_axis: state.units === "C" ? sample.temperature_K - 273.15 : sample.temperature_K,
+          x_axis: state.units === "C" ? sample.temperature_K - 273.15 : sample.temperature_K,
           diffusivity: sample.diffusivity,
         }))
       );
@@ -2561,6 +3216,7 @@
       const axisPoints = pointSamples.map((sample) => ({
         temperature_K: sample.temperature_K,
         temperature_axis: state.units === "C" ? sample.temperature_K - 273.15 : sample.temperature_K,
+        x_axis: state.units === "C" ? sample.temperature_K - 273.15 : sample.temperature_K,
         diffusivity: sample.diffusivity,
       }));
 
@@ -2584,6 +3240,309 @@
     });
 
     return result;
+  }
+
+  function prepareAxisSeries(seriesIds) {
+    const axisConfig = state.axisConfig;
+    if (!axisConfig) return [];
+    const clampMin = state.tempMin;
+    const clampMax = state.tempMax;
+    const result = [];
+    const legendOrder = new Map();
+    let legendCount = 0;
+    const bucketInfo =
+      axisConfig.kind === "categorical" ? resolveCategoricalAxisBuckets(axisConfig) : null;
+    const behavior = state.axisTempBehavior || AXIS_TEMP_BEHAVIOR_DISTRIBUTION;
+
+    seriesIds.forEach((seriesId) => {
+      const entry = state.seriesById.get(seriesId);
+      if (!entry) return;
+      const assignments = resolveAxisAssignments(entry, axisConfig, bucketInfo);
+      if (!assignments.length) return;
+      const sourceKey = entry.sourceId || entry.sourceTitle || entry.groupId || entry.id;
+      const legendKey = state.legendBySource ? sourceKey : entry.id;
+      let legendIndex = legendOrder.get(legendKey);
+      if (legendIndex == null) {
+        legendIndex = legendCount;
+        legendOrder.set(legendKey, legendCount);
+        legendCount += 1;
+      }
+      const color = state.monochrome ? "#111111" : COLORS[legendIndex % COLORS.length];
+      const legendLabel = state.legendBySource
+        ? entry.sourceTitle || entry.label || entry.groupId || "Source"
+        : buildSourceLabel(entry);
+
+      assignments.forEach((assignment, idx) => {
+        const samples =
+          behavior === AXIS_TEMP_BEHAVIOR_SLICE
+            ? sampleAxisSlice(entry, state.axisSliceTempK)
+            : sampleAxisDistribution(entry, clampMin, clampMax);
+        if (!samples.length) return;
+        const mapped = samples
+          .map((sample) => {
+            const xBase = assignment.xValue;
+            if (!Number.isFinite(xBase)) return null;
+            return {
+              x_axis: xBase,
+              temperature_axis: xBase,
+              temperature_K: sample.temperature_K,
+              diffusivity: sample.diffusivity,
+              axis_value: assignment.label,
+              axis_value_numeric: assignment.xValue,
+              axis_range_min: assignment.xMin,
+              axis_range_max: assignment.xMax,
+            };
+          })
+          .filter(Boolean)
+          .sort((a, b) => a.temperature_K - b.temperature_K);
+        if (!mapped.length) return;
+        const traceId = `${entry.id}::${assignment.key || assignment.label || idx}`;
+        const axisLineSegments =
+          behavior === AXIS_TEMP_BEHAVIOR_DISTRIBUTION && mapped.length > 1
+            ? [mapped]
+            : [];
+        result.push({
+          id: entry.id,
+          traceId,
+          label: entry.label,
+          seriesLabel: entry.seriesLabel,
+          color,
+          legendKey,
+          legendLabel,
+          legendIndex,
+          axisLine: mapped,
+          axisLineSegments,
+          axisPoints: mapped,
+          descriptor: entry,
+          axisBucket: assignment.bucket,
+          axisBase: assignment.xValue,
+        });
+      });
+    });
+
+    if (axisConfig.kind === "categorical") {
+      applyCategoricalAxisJitter(result, bucketInfo);
+    }
+
+    return result;
+  }
+
+  function resolveCategoricalAxisBuckets(axisConfig) {
+    const listbox = document.getElementById(axisConfig.listboxId);
+    const allValues = getAvailableListboxValues(listbox);
+    const selected = selectedValues(listbox);
+    const mode = state.filterMode?.[axisConfig.modeKey] || "include";
+    let buckets;
+    if (mode === "exclude") {
+      if (!selected.length) {
+        buckets = allValues.slice();
+      } else {
+        const selectedSet = new Set(selected);
+        buckets = allValues.filter((value) => !selectedSet.has(value));
+      }
+    } else {
+      buckets = selected.length ? selected.slice() : allValues.slice();
+    }
+    const normalized = Array.from(new Set(buckets.filter(Boolean)));
+    return {
+      values: normalized,
+      indexByValue: new Map(normalized.map((value, index) => [value, index])),
+    };
+  }
+
+  function resolveAxisAssignments(entry, axisConfig, bucketInfo) {
+    if (axisConfig.kind === "categorical") {
+      const values = valuesFromMetaSet(entry.meta?.[axisConfig.metaKey]);
+      if (!values.length || !bucketInfo?.values?.length) return [];
+      const assignments = [];
+      values.forEach((value) => {
+        const bucketIndex = bucketInfo.indexByValue.get(value);
+        if (!Number.isFinite(bucketIndex)) return;
+        assignments.push({
+          key: value,
+          label: value,
+          bucket: value,
+          xValue: bucketIndex,
+          xMin: bucketIndex,
+          xMax: bucketIndex,
+        });
+      });
+      return assignments;
+    }
+    if (axisConfig.kind === "numeric") {
+      const range = resolveNumericAxisRange(entry, axisConfig.rangeKey);
+      if (!range) return [];
+      const scalar = rangeToAxisScalar(range, range.kind);
+      const hasVisualRange = range.kind === "interval";
+      return [
+        {
+          key: axisConfig.rangeKey,
+          label: formatAxisNumericValue(scalar, axisConfig.label),
+          bucket: null,
+          xValue: scalar,
+          xMin: hasVisualRange ? range.min : scalar,
+          xMax: hasVisualRange ? range.max : scalar,
+        },
+      ];
+    }
+    if (axisConfig.kind === "composition") {
+      const range = resolveCompositionAxisRange(entry, axisConfig.element);
+      if (!range) return [];
+      const scalar = rangeToAxisScalar(range, range.kind);
+      const hasVisualRange = range.kind === "interval";
+      return [
+        {
+          key: axisConfig.element,
+          label: formatAxisNumericValue(scalar, axisConfig.label),
+          bucket: null,
+          xValue: scalar,
+          xMin: hasVisualRange ? range.min : scalar,
+          xMax: hasVisualRange ? range.max : scalar,
+        },
+      ];
+    }
+    return [];
+  }
+
+  function valuesFromMetaSet(set) {
+    if (!set || !set.size) return [];
+    return Array.from(set).map((value) => String(value));
+  }
+
+  function resolveNumericAxisRange(entry, rangeKey) {
+    if (rangeKey === "year") {
+      if (!Number.isFinite(entry.sourceYear)) return null;
+      const year = Number(entry.sourceYear);
+      return { min: year, max: year, kind: "exact" };
+    }
+    const range = entry.numericRanges?.[rangeKey];
+    if (!range) return null;
+    const min = Number(range.min);
+    const max = Number(range.max);
+    if (!Number.isFinite(min) || !Number.isFinite(max)) return null;
+    return { min, max, kind: min !== max ? "interval" : "exact" };
+  }
+
+  function resolveCompositionAxisRange(entry, element) {
+    if (!entry.compositionRanges || !element) return null;
+    const key = Object.keys(entry.compositionRanges).find(
+      (name) => normalizeElementSymbol(name) === normalizeElementSymbol(element)
+    );
+    if (!key) return null;
+    const range = entry.compositionRanges[key];
+    if (!range) return null;
+    const min = Number(range.min);
+    const max = Number(range.max);
+    if (!Number.isFinite(min) || !Number.isFinite(max)) return null;
+    return {
+      min,
+      max,
+      kind: range.kind || (min !== max ? "interval" : "exact"),
+    };
+  }
+
+  function rangeToAxisScalar(range, kind = "exact") {
+    if (!range) return null;
+    if (kind === "upper_bound") return range.max;
+    if (kind === "lower_bound") return range.min;
+    if (range.min === range.max) return range.min;
+    return (range.min + range.max) * 0.5;
+  }
+
+  function formatAxisNumericValue(value, label) {
+    if (!Number.isFinite(value)) return label || "";
+    const abs = Math.abs(value);
+    if (abs >= 100) return value.toFixed(1);
+    if (abs >= 10) return value.toFixed(2);
+    if (abs >= 1) return value.toFixed(3);
+    return value.toFixed(4);
+  }
+
+  function sampleAxisDistribution(entry, clampMin, clampMax) {
+    const samples = [];
+    entry.segments.forEach((segment) => {
+      const model = segment.model || {};
+      if (model.type === "single_point") {
+        const temperature = resolveSinglePointTemperature(segment);
+        const diffusivity = Number(model.diffusivity_mm2_per_s);
+        if (!Number.isFinite(temperature) || !Number.isFinite(diffusivity) || diffusivity <= 0) return;
+        if (!isWithinClamp(temperature, clampMin, clampMax)) return;
+        samples.push({ temperature_K: temperature, diffusivity });
+        return;
+      }
+      if (model.type === "table_points") {
+        normalizeTablePoints(model.points, clampMin, clampMax).forEach((point) => {
+          samples.push({ temperature_K: point.temperature_K, diffusivity: point.diffusivity });
+        });
+        return;
+      }
+      const segMin = clampTemperature(segment.temperature_validity_K?.[0], clampMin);
+      const segMax = clampTemperature(segment.temperature_validity_K?.[1], clampMax, true);
+      if (!(segMax > segMin)) return;
+      const steps = Math.max(2, AXIS_DISTRIBUTION_SAMPLES);
+      for (let i = 0; i < steps; i++) {
+        const ratio = i / (steps - 1);
+        const temperature = segMin + (segMax - segMin) * ratio;
+        const diffusivity = evaluateModel(model, temperature);
+        if (diffusivity && diffusivity > 0) {
+          samples.push({ temperature_K: temperature, diffusivity });
+        }
+      }
+    });
+    return samples.sort((a, b) => a.temperature_K - b.temperature_K);
+  }
+
+  function sampleAxisSlice(entry, requestedTempK) {
+    const temperature =
+      Number.isFinite(requestedTempK) ? requestedTempK : getDefaultAxisSliceTemperature();
+    let best = null;
+    entry.segments.forEach((segment) => {
+      if (best) return;
+      const model = segment.model || {};
+      if (model.type === "single_point") {
+        const pointTemp = resolveSinglePointTemperature(segment);
+        const diffusivity = Number(model.diffusivity_mm2_per_s);
+        if (!Number.isFinite(pointTemp) || !Number.isFinite(diffusivity) || diffusivity <= 0) return;
+        if (Math.abs(pointTemp - temperature) > AXIS_SINGLE_POINT_EPSILON_K) return;
+        best = { temperature_K: pointTemp, diffusivity };
+        return;
+      }
+      const range = segment.temperature_validity_K || [];
+      if (range.length !== 2) return;
+      if (!(temperature >= range[0] && temperature <= range[1])) return;
+      const diffusivity = evaluateModel(model, temperature);
+      if (!Number.isFinite(diffusivity) || diffusivity <= 0) return;
+      best = { temperature_K: temperature, diffusivity };
+    });
+    return best ? [best] : [];
+  }
+
+  function applyCategoricalAxisJitter(series, bucketInfo) {
+    if (!Array.isArray(series) || !series.length || !bucketInfo?.values?.length) return;
+    const grouped = new Map();
+    series.forEach((item) => {
+      if (!item.axisBucket) return;
+      if (!grouped.has(item.axisBucket)) grouped.set(item.axisBucket, []);
+      grouped.get(item.axisBucket).push(item);
+    });
+    grouped.forEach((items) => {
+      items.sort((a, b) => {
+        const keyA = `${a.legendIndex}:${a.id}:${a.traceId || ""}`;
+        const keyB = `${b.legendIndex}:${b.id}:${b.traceId || ""}`;
+        return keyA.localeCompare(keyB);
+      });
+      const count = items.length;
+      items.forEach((item, index) => {
+        const offset =
+          count <= 1
+            ? 0
+            : ((index / (count - 1)) * 2 - 1) * (AXIS_BUCKET_JITTER_SPAN * 0.5);
+        item.axisLine.forEach((sample) => {
+          sample.x_axis = sample.x_axis + offset;
+          sample.temperature_axis = sample.x_axis;
+        });
+      });
+    });
   }
 
   function sampleSeries(entry, clampMin, clampMax) {
@@ -2733,6 +3692,9 @@
     if (!dom.chart) return;
     dom.chart.innerHTML = `<div>${message}</div>`;
     currentCanvas = null;
+    hoverCache = null;
+    state.axisTempExtent = null;
+    updateAxisTemperatureLegend();
   }
 
   function renderChart(series) {
@@ -3074,6 +4036,507 @@
     setupHoverTooltip(canvas);
   }
 
+  function renderAxisChart(series) {
+    if (!dom.chart) return;
+    const axisConfig = state.axisConfig;
+    if (!axisConfig) {
+      renderEmptyChart("Axis mode is not configured.");
+      return;
+    }
+    const points = series.flatMap((item) => item.axisPoints || []);
+    const xs = points.map((point) => Number(point.x_axis)).filter((value) => Number.isFinite(value));
+    const values = points
+      .map((point) => Number(point.diffusivity))
+      .filter((value) => Number.isFinite(value) && value > 0);
+
+    if (!xs.length || !values.length) {
+      renderEmptyChart("No samples available for the selected axis.");
+      return;
+    }
+
+    const canvas = document.createElement("canvas");
+    const chartStyles = getComputedStyle(dom.chart);
+    const paddingX =
+      (parseFloat(chartStyles.paddingLeft) || 0) +
+      (parseFloat(chartStyles.paddingRight) || 0);
+    const paddingY =
+      (parseFloat(chartStyles.paddingTop) || 0) +
+      (parseFloat(chartStyles.paddingBottom) || 0);
+    const containerWidth = dom.chart.clientWidth || 960;
+    const width = Math.max(320, Math.round(containerWidth - paddingX));
+    const isNarrow = window.matchMedia && window.matchMedia("(max-width: 720px)").matches;
+    const layoutScale = Math.max(0.85, Math.min(1, width / 860));
+    const baseRatio = isNarrow ? 0.75 : 0.5;
+    let height = Math.round(width * baseRatio);
+    const minHeight = isNarrow ? 300 : 240;
+    height = Math.max(minHeight, height);
+    if (isNarrow) {
+      const containerHeight = dom.chart.clientHeight || 0;
+      const available = Math.max(0, Math.round(containerHeight - paddingY));
+      if (available > height) height = available;
+    }
+    const ratio = window.devicePixelRatio || 1;
+    canvas.width = width * ratio;
+    canvas.height = height * ratio;
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+    dom.chart.innerHTML = "";
+    dom.chart.appendChild(canvas);
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    currentCanvas = canvas;
+    const theme = getThemeColors();
+
+    const dataMinX = Math.min(...xs);
+    const dataMaxX = Math.max(...xs);
+    const dataMinY = Math.min(...values);
+    const dataMaxY = Math.max(...values);
+    const categoricalBuckets =
+      axisConfig.kind === "categorical" ? resolveCategoricalAxisBuckets(axisConfig).values : [];
+    const preferred = getAxisPreferredBounds(axisConfig);
+
+    let axisMinX = dataMinX;
+    let axisMaxX = dataMaxX;
+    if (axisConfig.kind === "categorical") {
+      axisMinX = -0.6;
+      axisMaxX = Math.max(0.6, categoricalBuckets.length - 0.4);
+    } else if (!state.zoom && preferred) {
+      if (Number.isFinite(preferred.min)) axisMinX = preferred.min;
+      if (Number.isFinite(preferred.max)) axisMaxX = preferred.max;
+      if (!(axisMaxX > axisMinX)) {
+        axisMinX = dataMinX;
+        axisMaxX = dataMaxX;
+      }
+    }
+    let axisMinY = dataMinY;
+    let axisMaxY = dataMaxY;
+
+    if (state.zoom) {
+      axisMinX = Number.isFinite(state.zoom.xMin) ? state.zoom.xMin : axisMinX;
+      axisMaxX = Number.isFinite(state.zoom.xMax) ? state.zoom.xMax : axisMaxX;
+      axisMinY = Number.isFinite(state.zoom.yMin) ? state.zoom.yMin : axisMinY;
+      axisMaxY = Number.isFinite(state.zoom.yMax) ? state.zoom.yMax : axisMaxY;
+      if (!(axisMaxX > axisMinX) || !(axisMaxY > axisMinY)) {
+        state.zoom = null;
+        axisMinX = dataMinX;
+        axisMaxX = dataMaxX;
+        axisMinY = dataMinY;
+        axisMaxY = dataMaxY;
+      }
+    } else if (state.preserveAxis && lastPlotContext) {
+      axisMinX = lastPlotContext.axisMinX;
+      axisMaxX = lastPlotContext.axisMaxX;
+      axisMinY = lastPlotContext.axisMinY;
+      axisMaxY = lastPlotContext.axisMaxY;
+    }
+
+    const logMin = Math.log10(axisMinY);
+    const logMax = Math.log10(axisMaxY);
+    const labelScale = Math.max(0.85, Math.min(1.25, width / 760));
+    const fontAxis = Math.round(16 * labelScale);
+    const fontTick = Math.round(12 * layoutScale);
+    const fontLegend = Math.round(11 * layoutScale);
+    const fontLabel = Math.round(11 * layoutScale);
+    const legendMaxLines = isNarrow ? 3 : null;
+    const legendLineHeight = Math.round(16 * layoutScale);
+    const legendHeight =
+      legendMaxLines != null ? legendLineHeight * legendMaxLines + Math.round(12 * layoutScale) : 0;
+    const legendWidth = isNarrow ? 0 : estimateLegendWidth(ctx, series, width, theme, layoutScale);
+    const margin = {
+      top: Math.round(26 * layoutScale),
+      right: isNarrow ? Math.round(14 * layoutScale) : legendWidth,
+      bottom: Math.round(64 * layoutScale) + legendHeight,
+      left: Math.round(70 * layoutScale),
+    };
+    const plotWidth = width - margin.left - margin.right;
+    const plotHeight = height - margin.top - margin.bottom;
+
+    function xToPx(value) {
+      return margin.left + ((value - axisMinX) / (axisMaxX - axisMinX || 1)) * plotWidth;
+    }
+
+    function yToPx(value) {
+      if (state.scale === "linear") {
+        const ratio = (value - axisMinY) / (axisMaxY - axisMinY || 1);
+        return margin.top + (1 - ratio) * plotHeight;
+      }
+      const logValue = Math.log10(value);
+      const ratio = (logValue - logMin) / (logMax - logMin || 1);
+      return margin.top + (1 - ratio) * plotHeight;
+    }
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = theme.canvas;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.strokeStyle = theme.ink;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(margin.left, margin.top);
+    ctx.lineTo(margin.left, margin.top + plotHeight);
+    ctx.lineTo(margin.left + plotWidth, margin.top + plotHeight);
+    ctx.lineTo(margin.left + plotWidth, margin.top);
+    ctx.lineTo(margin.left, margin.top);
+    ctx.stroke();
+
+    const axisLabelOffset = Math.round(36 * labelScale);
+    const axisLabelXOffset = Math.round(15 * labelScale);
+    ctx.fillStyle = theme.ink;
+    ctx.font = `${fontAxis}px ${theme.font}`;
+    ctx.textAlign = "center";
+    ctx.fillText(axisConfig.label || "Axis", margin.left + plotWidth / 2, margin.top + plotHeight + axisLabelOffset);
+    ctx.save();
+    ctx.translate(axisLabelXOffset, margin.top + plotHeight / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText("Diffusivity [mm2/s]", 0, 0);
+    ctx.restore();
+
+    if (axisConfig.kind === "categorical") {
+      drawCategoricalXTicks(
+        ctx,
+        categoricalBuckets,
+        margin,
+        plotWidth,
+        plotHeight,
+        xToPx,
+        theme,
+        state.gridX,
+        fontTick,
+        layoutScale
+      );
+    } else {
+      drawXTicks(
+        ctx,
+        axisMinX,
+        axisMaxX,
+        margin,
+        plotWidth,
+        plotHeight,
+        xToPx,
+        theme,
+        state.gridX,
+        fontTick,
+        layoutScale
+      );
+    }
+    drawYTicks(
+      ctx,
+      axisMinY,
+      axisMaxY,
+      logMin,
+      logMax,
+      margin,
+      plotWidth,
+      plotHeight,
+      yToPx,
+      theme,
+      state.gridY,
+      fontTick,
+      layoutScale
+    );
+
+    ctx.strokeStyle = theme.ink;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.rect(margin.left, margin.top, plotWidth, plotHeight);
+    ctx.stroke();
+
+    const temperatureValues = points
+      .map((point) => Number(point.temperature_K))
+      .filter((value) => Number.isFinite(value));
+    const tempMin = temperatureValues.length ? Math.min(...temperatureValues) : null;
+    const tempMax = temperatureValues.length ? Math.max(...temperatureValues) : null;
+    state.axisTempExtent =
+      Number.isFinite(tempMin) && Number.isFinite(tempMax) ? { min: tempMin, max: tempMax } : null;
+    updateAxisTemperatureLegend();
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(margin.left, margin.top, plotWidth, plotHeight);
+    ctx.clip();
+
+    const thickness = clampValue(state.lineThickness || 1, 0.5, 2);
+    const pointRadius = Math.max(1.2, Math.round(3.6 * layoutScale * thickness));
+    const lineWidth = Math.max(0.75, 1.8 * layoutScale * thickness);
+
+    series.forEach((item, index) => {
+      if (state.axisTempBehavior === AXIS_TEMP_BEHAVIOR_DISTRIBUTION && item.axisLineSegments?.length) {
+        item.axisLineSegments.forEach((segment) => {
+          if (!Array.isArray(segment) || segment.length < 2) return;
+          for (let i = 0; i < segment.length - 1; i++) {
+            const a = segment[i];
+            const b = segment[i + 1];
+            const ta = Number(a.temperature_K);
+            const tb = Number(b.temperature_K);
+            const temperatureMid = Number.isFinite(ta) && Number.isFinite(tb) ? (ta + tb) * 0.5 : ta;
+            ctx.strokeStyle =
+              !state.monochrome && Number.isFinite(temperatureMid) && Number.isFinite(tempMin) && Number.isFinite(tempMax)
+                ? temperatureToColor(temperatureMid, tempMin, tempMax)
+                : item.color;
+            ctx.lineWidth = lineWidth;
+            ctx.beginPath();
+            ctx.moveTo(xToPx(a.x_axis), yToPx(a.diffusivity));
+            ctx.lineTo(xToPx(b.x_axis), yToPx(b.diffusivity));
+            ctx.stroke();
+          }
+        });
+      }
+
+      item.axisPoints.forEach((point) => {
+        const temperature = Number(point.temperature_K);
+        const pointColor =
+          state.axisTempBehavior === AXIS_TEMP_BEHAVIOR_DISTRIBUTION &&
+          !state.monochrome &&
+          Number.isFinite(temperature) &&
+          Number.isFinite(tempMin) &&
+          Number.isFinite(tempMax)
+            ? temperatureToColor(temperature, tempMin, tempMax)
+            : item.color;
+        const x = xToPx(point.x_axis);
+        const y = yToPx(point.diffusivity);
+        ctx.fillStyle = pointColor;
+        ctx.beginPath();
+        ctx.arc(x, y, pointRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        const minX = Number(point.axis_range_min);
+        const maxX = Number(point.axis_range_max);
+        if (
+          state.axisTempBehavior === AXIS_TEMP_BEHAVIOR_SLICE &&
+          axisConfig.kind !== "categorical" &&
+          Number.isFinite(minX) &&
+          Number.isFinite(maxX) &&
+          maxX > minX
+        ) {
+          ctx.strokeStyle = item.color;
+          ctx.lineWidth = Math.max(1, lineWidth * 0.8);
+          ctx.beginPath();
+          ctx.moveTo(xToPx(minX), y);
+          ctx.lineTo(xToPx(maxX), y);
+          ctx.stroke();
+        }
+      });
+
+      if (state.numbering) {
+        const lastPoint = item.axisLine[item.axisLine.length - 1] || item.axisPoints[item.axisPoints.length - 1];
+        if (lastPoint) {
+          const labelIndex = Number.isFinite(item.legendIndex) ? item.legendIndex + 1 : index + 1;
+          ctx.fillStyle = item.color;
+          ctx.font = `${fontLabel}px ${theme.font}`;
+          ctx.textAlign = "left";
+          ctx.fillText(`${labelIndex}`, xToPx(lastPoint.x_axis) + 4, yToPx(lastPoint.diffusivity));
+        }
+      }
+    });
+
+    if (
+      state.axisTempBehavior === AXIS_TEMP_BEHAVIOR_DISTRIBUTION &&
+      !state.monochrome &&
+      Number.isFinite(tempMin) &&
+      Number.isFinite(tempMax)
+    ) {
+      drawAxisTemperatureScale(ctx, margin, plotWidth, plotHeight, tempMin, tempMax, theme, layoutScale);
+    }
+
+    ctx.restore();
+
+    const legendInfo = drawLegend(
+      ctx,
+      series,
+      margin,
+      plotWidth,
+      theme,
+      plotHeight,
+      fontLegend,
+      layoutScale,
+      isNarrow ? "bottom" : "side",
+      legendMaxLines,
+      axisLabelOffset
+    );
+
+    hoverCache = {
+      mode: "axis",
+      axisLabel: axisConfig.label || "Axis",
+      axisMinX,
+      axisMaxX,
+      axisMinY,
+      axisMaxY,
+      logMin,
+      logMax,
+      margin,
+      plotWidth,
+      plotHeight,
+      scale: state.scale,
+      units: state.units,
+      series,
+      xToPx,
+      yToPx,
+      categoricalBuckets,
+      legendMoreRect: legendInfo?.moreRect || null,
+    };
+
+    lastPlotContext = {
+      mode: "axis",
+      width,
+      height,
+      margin,
+      plotWidth,
+      plotHeight,
+      axisMinX,
+      axisMaxX,
+      axisMinY,
+      axisMaxY,
+      logMin,
+      logMax,
+      theme,
+      fontAxis,
+      fontTick,
+      fontLegend,
+      fontLabel,
+      axisLabelOffset,
+      axisLabelXOffset,
+      lineWidth,
+      pointRadius,
+      units: state.units,
+      scale: state.scale,
+      gridX: state.gridX,
+      gridY: state.gridY,
+      numbering: state.numbering,
+      legendBySource: state.legendBySource,
+      envelope: false,
+      monochrome: state.monochrome,
+      series,
+      axisConfig: { ...axisConfig },
+      axisTempBehavior: state.axisTempBehavior,
+    };
+
+    state.preserveAxis = false;
+    if (dom.resetZoom) {
+      dom.resetZoom.disabled = !state.zoom;
+    }
+    syncZoomInputs();
+    populateAxisDefaults(axisMinX, axisMaxX, axisMinY, axisMaxY);
+
+    setupZoomSelection(canvas, ctx, {
+      axisMinX,
+      axisMaxX,
+      axisMinY,
+      axisMaxY,
+      logMin,
+      logMax,
+      margin,
+      plotWidth,
+      plotHeight,
+    });
+
+    setupHoverTooltip(canvas);
+  }
+
+  function drawCategoricalXTicks(
+    ctx,
+    labels,
+    margin,
+    width,
+    height,
+    xToPx,
+    theme,
+    drawGrid,
+    fontSize,
+    scale = 1
+  ) {
+    ctx.fillStyle = theme.ink;
+    ctx.textAlign = "center";
+    ctx.font = `${fontSize}px ${theme.font}`;
+    const tickLen = Math.max(4, Math.round(5 * scale));
+    const labelOffset = Math.max(12, Math.round(16 * scale));
+    const maxLabelChars = 20;
+    labels.forEach((label, index) => {
+      const x = xToPx(index);
+      if (drawGrid) {
+        ctx.save();
+        ctx.strokeStyle = theme.line;
+        ctx.globalAlpha = 0.7;
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.moveTo(x, margin.top);
+        ctx.lineTo(x, margin.top + height);
+        ctx.stroke();
+        ctx.restore();
+      }
+      ctx.strokeStyle = theme.ink;
+      ctx.beginPath();
+      ctx.moveTo(x, margin.top + height);
+      ctx.lineTo(x, margin.top + height + tickLen);
+      ctx.stroke();
+      const text = String(label || "");
+      const compact = text.length > maxLabelChars ? `${text.slice(0, maxLabelChars - 3)}...` : text;
+      ctx.save();
+      ctx.translate(x, margin.top + height + labelOffset);
+      ctx.rotate(-Math.PI / 7);
+      ctx.fillText(compact, 0, 0);
+      ctx.restore();
+    });
+  }
+
+  function drawAxisTemperatureScale(ctx, margin, plotWidth, plotHeight, minTemp, maxTemp, theme, scale = 1) {
+    const barWidth = Math.max(8, Math.round(10 * scale));
+    const barHeight = Math.max(90, Math.round(plotHeight * 0.45));
+    const x = margin.left + plotWidth - barWidth - Math.round(6 * scale);
+    const y = margin.top + Math.round(10 * scale);
+    const gradient = ctx.createLinearGradient(0, y + barHeight, 0, y);
+    gradient.addColorStop(0, "#1e5eff");
+    gradient.addColorStop(1, "#d7191c");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(x, y, barWidth, barHeight);
+    ctx.strokeStyle = theme.ink;
+    ctx.lineWidth = 0.8;
+    ctx.strokeRect(x, y, barWidth, barHeight);
+    ctx.fillStyle = theme.ink;
+    ctx.font = `${Math.max(10, Math.round(10 * scale))}px ${theme.font}`;
+    ctx.textAlign = "left";
+    ctx.fillText(formatTemperatureForUnits(maxTemp, 0), x + barWidth + 6, y + 9);
+    ctx.fillText(formatTemperatureForUnits(minTemp, 0), x + barWidth + 6, y + barHeight);
+  }
+
+  function temperatureToColor(tempK, minTempK, maxTempK) {
+    if (!Number.isFinite(tempK) || !Number.isFinite(minTempK) || !Number.isFinite(maxTempK)) {
+      return "#1e5eff";
+    }
+    if (maxTempK <= minTempK) return "#1e5eff";
+    const ratio = clampValue((tempK - minTempK) / (maxTempK - minTempK), 0, 1);
+    const r = Math.round(30 + ratio * (215 - 30));
+    const g = Math.round(94 + ratio * (25 - 94));
+    const b = Math.round(255 + ratio * (28 - 255));
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+
+  function getAxisPreferredBounds(axisConfig) {
+    if (!axisConfig) return null;
+    if (axisConfig.kind === "numeric") {
+      if (axisConfig.rangeKey === "year") {
+        return {
+          min: state.yearMin,
+          max: state.yearMax,
+        };
+      }
+      const range = state.numericFilters?.[axisConfig.rangeKey];
+      if (!range) return null;
+      return {
+        min: range.min,
+        max: range.max,
+      };
+    }
+    if (axisConfig.kind === "composition") {
+      const range = state.compositionFilters?.[axisConfig.element];
+      if (!range) return null;
+      return {
+        min: range.min,
+        max: range.max,
+      };
+    }
+    return null;
+  }
+
   function setupZoomSelection(canvas, ctx, config) {
     if (!canvas) return;
     const baseImage = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -3246,6 +4709,17 @@
     if (state.axisInputActive) return;
     if (!dom.axisXMin || !dom.axisXMax || !dom.axisYMin || !dom.axisYMax) return;
     if (state.zoom) return;
+    if (state.axisMode === AXIS_MODE_FILTER && state.axisConfig?.kind === "categorical") {
+      dom.axisXMin.value = "";
+      dom.axisXMax.value = "";
+      if (!dom.axisYMin.value && Number.isFinite(axisMinY)) {
+        dom.axisYMin.value = axisMinY.toExponential(3);
+      }
+      if (!dom.axisYMax.value && Number.isFinite(axisMaxY)) {
+        dom.axisYMax.value = axisMaxY.toExponential(3);
+      }
+      return;
+    }
     if (
       dom.axisXMin.value ||
       dom.axisXMax.value ||
@@ -3404,8 +4878,17 @@
       ctx.moveTo(x, margin.top + height);
       ctx.lineTo(x, margin.top + height + tickLen);
       ctx.stroke();
-      ctx.fillText(value.toFixed(0), x, margin.top + height + labelOffset);
+      ctx.fillText(formatXAxisTick(value, min, max), x, margin.top + height + labelOffset);
     }
+  }
+
+  function formatXAxisTick(value, min, max) {
+    if (!Number.isFinite(value)) return "";
+    const span = Math.abs(max - min);
+    if (span <= 1) return value.toFixed(3);
+    if (span <= 10) return value.toFixed(2);
+    if (span <= 100) return value.toFixed(1);
+    return value.toFixed(0);
   }
 
   function drawYTicks(
@@ -3516,9 +4999,10 @@
   function buildLegendItems(series) {
     const legendItems = [];
     const seen = new Set();
+    const dedupeByKey = state.axisMode === AXIS_MODE_FILTER || state.legendBySource;
     series.forEach((item, index) => {
       const key = item.legendKey || item.id || String(index);
-      if (state.legendBySource) {
+      if (dedupeByKey) {
         if (seen.has(key)) return;
         seen.add(key);
       }
@@ -3543,6 +5027,12 @@
     const radius = 6;
     const lineRadius = 5;
     const pinDistance = 120;
+    const useAxisMode = hoverCache?.mode === "axis";
+    const sampleX = (point) => {
+      if (!point) return null;
+      if (Number.isFinite(point.x_axis)) return point.x_axis;
+      return point.temperature_axis;
+    };
 
     function findNearest(x, y) {
       if (!hoverCache) return null;
@@ -3550,7 +5040,7 @@
       let bestDist = radius * radius;
       hoverCache.series.forEach((series) => {
         series.axisPoints.forEach((point) => {
-          const px = hoverCache.xToPx(point.temperature_axis);
+          const px = hoverCache.xToPx(sampleX(point));
           const py = hoverCache.yToPx(point.diffusivity);
           const dx = px - x;
           const dy = py - y;
@@ -3564,9 +5054,9 @@
           for (let i = 0; i < segment.length - 1; i++) {
             const a = segment[i];
             const b = segment[i + 1];
-            const ax = hoverCache.xToPx(a.temperature_axis);
+            const ax = hoverCache.xToPx(sampleX(a));
             const ay = hoverCache.yToPx(a.diffusivity);
-            const bx = hoverCache.xToPx(b.temperature_axis);
+            const bx = hoverCache.xToPx(sampleX(b));
             const by = hoverCache.yToPx(b.diffusivity);
             const dist = pointToSegmentDistanceSq(x, y, ax, ay, bx, by);
             if (dist <= lineRadius * lineRadius && dist <= bestDist) {
@@ -3581,14 +5071,24 @@
 
     function renderTooltipContent(target, pinned = false) {
       const label = seriesDisplayLabel(target.series.descriptor);
-      const seriesLabel = target.series.seriesLabel || "";
       const ordinal = Number.isFinite(target.series.legendIndex) ? target.series.legendIndex + 1 : "";
       const prefix = ordinal ? `${ordinal}. ` : "";
       const header = `<strong>${escapeHtml(prefix + label)}</strong>`;
-      const range = formatRangeValueForUnits(target.series.descriptor.temperatureRange, state.units) || "";
       const sourceTitle = target.series.descriptor.sourceTitle || "Source";
-      const metaText = range ? `${sourceTitle} - ${range}` : sourceTitle;
-      const meta = `<div>${escapeHtml(metaText)}</div>`;
+      let meta = "";
+      if (useAxisMode) {
+        const axisLabel = hoverCache?.axisLabel || state.axisConfig?.label || "Axis";
+        const axisValue = target.point?.axis_value ?? "";
+        const tempText = formatTemperatureForUnits(target.point?.temperature_K, 1);
+        const diffText = Number(target.point?.diffusivity).toExponential(3);
+        meta = `<div>${escapeHtml(`${sourceTitle} | ${axisLabel}: ${axisValue}`)}</div><div>${escapeHtml(
+          `${tempText} | D=${diffText} mm2/s`
+        )}</div>`;
+      } else {
+        const range = formatRangeValueForUnits(target.series.descriptor.temperatureRange, state.units) || "";
+        const metaText = range ? `${sourceTitle} - ${range}` : sourceTitle;
+        meta = `<div>${escapeHtml(metaText)}</div>`;
+      }
       let details = "";
       if (pinned) {
         const sourceMeta = state.dataset?.sources?.[target.series.descriptor.sourceId] || null;
@@ -3871,9 +5371,14 @@
         "group_id",
         "series_id",
         "series_label",
+        "axis_mode",
+        "axis_key",
+        "axis_label",
+        "axis_value",
         "temperature_axis",
         "temperature_K",
         "diffusivity_mm2_per_s",
+        "render_mode",
         "kind",
       ];
       const zoom = meta.zoom;
@@ -3882,6 +5387,9 @@
         `# schema_version: ${meta.schema_version || ""}`,
         `# exported_at: ${exportedAt}`,
         `# filters: ${formatFiltersSummary(meta.filters)}`,
+        `# axis_mode: ${state.axisMode}`,
+        `# axis_key: ${state.axisConfig?.axisKey || "temperature"}`,
+        `# axis_behavior: ${state.axisTempBehavior || ""}`,
         `# zoom_x_min: ${zoom ? zoom.xMin.toFixed(2) : ""}`,
         `# zoom_x_max: ${zoom ? zoom.xMax.toFixed(2) : ""}`,
         `# zoom_y_min: ${zoom ? zoom.yMin.toExponential(6) : ""}`,
@@ -3891,13 +5399,21 @@
       ];
       const withinZoom = (sample) => {
         if (!zoom) return true;
-        const x = sample.temperature_axis;
+        const x = Number.isFinite(sample.x_axis) ? sample.x_axis : sample.temperature_axis;
         const y = sample.diffusivity;
         return x >= zoom.xMin && x <= zoom.xMax && y >= zoom.yMin && y <= zoom.yMax;
       };
+      const axisMode = state.axisMode === AXIS_MODE_FILTER ? "filter" : "temperature";
+      const axisKey = state.axisConfig?.axisKey || "temperature";
+      const axisLabel = state.axisConfig?.label || "Temperature";
       currentSeries.forEach((series) => {
         const sourceMeta = state.dataset?.sources?.[series.descriptor.sourceId] || null;
         const citation = quote(cleanCsvField(buildCitation(sourceMeta, series.descriptor)));
+        const seriesAxisMode = axisMode;
+        const sampleList =
+          axisMode === "filter"
+            ? series.axisPoints
+            : [...series.axisLine.map((sample) => ({ ...sample, kind: "line" })), ...series.axisPoints.map((sample) => ({ ...sample, kind: "point" }))];
         const seriesBase = [
           citation,
           quote(series.descriptor.sourceId || ""),
@@ -3905,29 +5421,29 @@
           quote(series.descriptor.groupId),
           quote(series.descriptor.seriesId || ""),
           quote(series.seriesLabel || ""),
+          quote(seriesAxisMode),
+          quote(axisKey),
+          quote(axisLabel),
         ];
-        series.axisLine.forEach((sample) => {
+        sampleList.forEach((sample) => {
           if (!withinZoom(sample)) return;
+          const xAxis = Number.isFinite(sample.x_axis) ? sample.x_axis : sample.temperature_axis;
+          const temperatureAxis = axisMode === "temperature" ? sample.temperature_axis : xAxis;
+          const axisValue = sample.axis_value ?? xAxis;
+          const kind = sample.kind || (axisMode === "filter" ? "point" : "line");
+          const renderMode =
+            axisMode === "filter"
+              ? state.axisTempBehavior || AXIS_TEMP_BEHAVIOR_DISTRIBUTION
+              : "temperature";
           rows.push(
             seriesBase
               .concat([
-                sample.temperature_axis.toFixed(2),
+                quote(String(axisValue)),
+                temperatureAxis.toFixed(2),
                 sample.temperature_K.toFixed(2),
                 sample.diffusivity.toExponential(6),
-                "line",
-              ])
-              .join(",")
-          );
-        });
-        series.axisPoints.forEach((sample) => {
-          if (!withinZoom(sample)) return;
-          rows.push(
-            seriesBase
-              .concat([
-                sample.temperature_axis.toFixed(2),
-                sample.temperature_K.toFixed(2),
-                sample.diffusivity.toExponential(6),
-                "point",
+                quote(renderMode),
+                kind,
               ])
               .join(",")
           );
@@ -3949,6 +5465,22 @@
         if (blob) downloadBlob(blob, "hdd-selected.png");
       });
     } else if (type === "svg") {
+      if (state.axisMode === AXIS_MODE_FILTER) {
+        if (!currentCanvas) {
+          alert("Plot the dataset first to export an SVG.");
+          return;
+        }
+        const dataUrl = currentCanvas.toDataURL("image/png");
+        const width = Number(currentCanvas.style.width.replace("px", "")) || currentCanvas.width;
+        const height = Number(currentCanvas.style.height.replace("px", "")) || currentCanvas.height;
+        const svgRaster = [
+          `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`,
+          `<image href="${dataUrl}" width="${width}" height="${height}"/>`,
+          "</svg>",
+        ].join("");
+        downloadBlob(new Blob([svgRaster], { type: "image/svg+xml" }), "hdd-selected.svg");
+        return;
+      }
       if (!lastPlotContext) {
         alert("Plot the dataset first to export an SVG.");
         return;
@@ -4153,6 +5685,15 @@
       if (state.filterMode[key] === "exclude") excludeModes[key] = "exclude";
     });
     if (Object.keys(excludeModes).length) summary.filter_mode = excludeModes;
+    if (state.axisMode === AXIS_MODE_FILTER && state.axisConfig) {
+      summary.axis_mode = "filter";
+      summary.axis_key = state.axisConfig.axisKey;
+      summary.axis_label = state.axisConfig.label;
+      summary.axis_temp_behavior = state.axisTempBehavior;
+      if (state.axisTempBehavior === AXIS_TEMP_BEHAVIOR_SLICE && Number.isFinite(state.axisSliceTempK)) {
+        summary.axis_slice_temp_K = Number(state.axisSliceTempK.toFixed(3));
+      }
+    }
     return summary;
   }
 

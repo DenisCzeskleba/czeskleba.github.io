@@ -817,8 +817,29 @@
                   <button type="button" data-scale="log" class="is-active" title="Use a logarithmic Y-axis.">Log scale</button>
                   <button type="button" data-scale="linear" title="Use a linear Y-axis.">Linear</button>
                 </div>
+                <div class="hdd-axis-mode-panel">
+                  <div class="hdd-axis-mode-header">
+                    <span id="hdd-axis-mode-status">X-axis: Temperature</span>
+                    <button type="button" id="hdd-axis-reset" hidden>Reset to Temperature Axis</button>
+                  </div>
+                  <div class="hdd-toggle-group" role="group" aria-label="Axis temperature behavior">
+                    <button type="button" data-axis-temp-behavior="distribution" class="is-active" title="Color by temperature and sample each model range.">Distribution</button>
+                    <button type="button" data-axis-temp-behavior="slice" title="Evaluate all models at one selected temperature.">Slice</button>
+                  </div>
+                  <div class="hdd-axis-group" id="hdd-axis-slice-group" hidden>
+                    <div class="hdd-axis-label">Slice Temperature</div>
+                    <div class="hdd-axis-fields">
+                      <input id="hdd-axis-slice-temp" type="text" inputmode="decimal" placeholder="Temperature" aria-label="Slice temperature" />
+                    </div>
+                  </div>
+                  <div class="hdd-axis-temp-legend" id="hdd-axis-temp-legend" hidden>
+                    <span id="hdd-axis-temp-legend-min"></span>
+                    <span class="hdd-axis-temp-legend-bar" aria-hidden="true"></span>
+                    <span id="hdd-axis-temp-legend-max"></span>
+                  </div>
+                </div>
                 <div class="hdd-plot-axis">
-                  <div class="hdd-axis-group">
+                  <div class="hdd-axis-group" id="hdd-axis-x-group">
                     <div class="hdd-axis-label">X-Axis Limits</div>
                     <div class="hdd-axis-fields">
                       <input id="hdd-axis-x-min" type="text" inputmode="decimal" placeholder="Min" aria-label="X min" />
@@ -833,11 +854,11 @@
                     </div>
                   </div>
                 </div>
-                <label class="hdd-inline-checkbox" title="Shade the uncertainty or scatter band.">
+                <label class="hdd-inline-checkbox" id="hdd-envelope-row" title="Shade the uncertainty or scatter band.">
                   <input type="checkbox" id="hdd-envelope" checked />
                   <span>Envelope fill</span>
                 </label>
-                <label class="hdd-inline-checkbox" title="Force the Boellinghaus scatterband into the current plot view. This disables automatic scaling while active. Turn it off before further filtering.">
+                <label class="hdd-inline-checkbox" id="hdd-force-scatterband-row" title="Force the Boellinghaus scatterband into the current plot view. This disables automatic scaling while active. Turn it off before further filtering.">
                   <input type="checkbox" id="hdd-force-scatterband" />
                   <span>Force scatterband</span>
                 </label>
