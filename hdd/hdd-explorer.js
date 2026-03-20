@@ -3,7 +3,7 @@
   const R_DEFAULT = 8.314462618;
   const SAMPLES_PER_SEGMENT = 70;
   const FILTER_LIST_DEFAULT_HEIGHT = 280;
-  const FILTER_LIST_MIN_HEIGHT = 150;
+  const FILTER_LIST_MIN_HEIGHT = 75;
   const COLORS = [
     "#000000",
     "#426b9c",
@@ -44,6 +44,7 @@
     unitButtons: document.querySelectorAll("[data-unit]"),
     scaleButtons: document.querySelectorAll("[data-scale]"),
     envelope: document.getElementById("hdd-envelope"),
+    forceScatterband: document.getElementById("hdd-force-scatterband"),
     numbering: document.getElementById("hdd-numbering"),
     legendGroup: document.getElementById("hdd-legend-group"),
     monochrome: document.getElementById("hdd-monochrome"),
@@ -150,6 +151,8 @@
     lineThickness: 1,
     gridX: true,
     gridY: true,
+    forceScatterband: false,
+    preserveAxis: false,
     tempMin: null,
     tempMax: null,
     tempDomain: null,
@@ -164,6 +167,8 @@
     numericFilters: {},
     filterMode: {},
     summaryExpanded: false,
+    lastFilters: null,
+    lastQuery: "",
     zoom: null,
     axisInputActive: false,
     selectionMode: "filtered",
@@ -201,6 +206,9 @@
     const { seriesList, seriesById } = normalizeDataset(payload);
     state.seriesList = seriesList;
     state.seriesById = seriesById;
+    state.scatterbandIds = seriesList
+      .filter((entry) => entry.sourceId === "boellinghaus_1995_scatterband")
+      .map((entry) => entry.id);
     setSelectionMode("filtered");
     updateCitationPanel(payload);
 
@@ -527,6 +535,8 @@
 
       addIfPresent(meta.electrolyte, cathodic.electrolyte);
       addIfPresent(meta.electrolyte, electrochemical.electrolyte);
+      addIfPresent(meta.electrolyte, dev.electrolyte_entry_side);
+      addIfPresent(meta.electrolyte, dev.electrolyte_exit_side);
       addIfPresent(meta.control_mode, electrochemical.control_mode);
       addIfPresent(meta.poison_additive, cathodic.poison_additive);
       addIfPresent(meta.poison_additive, electrochemical.poison_additive);
@@ -675,6 +685,10 @@
       state.envelope = dom.envelope.checked;
       plotSelectedSeries();
     });
+    dom.forceScatterband?.addEventListener("change", () => {
+      state.forceScatterband = dom.forceScatterband.checked;
+      plotSelectedSeries(true);
+    });
     dom.numbering?.addEventListener("change", () => {
       state.numbering = dom.numbering.checked;
       plotSelectedSeries();
@@ -732,6 +746,19 @@
     dom.advancedToggle?.addEventListener("change", () => {
       const open = dom.advancedToggle.checked;
       setAdvancedFiltersVisible(open);
+    });
+    dom.sections?.forEach((section) => {
+      section.addEventListener("toggle", () => {
+        if (!section.open) return;
+        if (!dom.advancedToggle?.checked) return;
+        dom.sections.forEach((other) => {
+          if (other === section) return;
+          other.removeAttribute("open");
+        });
+        if (state.lastFilters) {
+          updateFilterAvailability(state.lastFilters, state.lastQuery || "");
+        }
+      });
     });
     dom.filterModeToggles?.forEach((toggle) => {
       toggle.addEventListener("click", (event) => event.stopPropagation());
@@ -1612,6 +1639,8 @@
       ? filtered.filter((entry) => entryMatchesFilters(entry, filters, query))
       : filtered;
     state.filteredList = filtered;
+    state.lastFilters = filters;
+    state.lastQuery = query;
     if (!preserveManual) {
       setSelectionMode("filtered");
     }
@@ -1652,7 +1681,7 @@
     if (!dom.bucketMaterial || !dom.bucketConditions || !dom.bucketMethod || !dom.bucketAnalysis) return;
     if (dom.filterBlockClass) dom.bucketMaterial.appendChild(dom.filterBlockClass);
     if (dom.filterBlockGrade) dom.bucketMaterial.appendChild(dom.filterBlockGrade);
-    if (dom.filterBlockMethod) dom.bucketMethod.appendChild(dom.filterBlockMethod);
+    if (dom.filterBlockMethod) dom.bucketConditions.appendChild(dom.filterBlockMethod);
     if (dom.filterBlockYear) dom.bucketAnalysis.appendChild(dom.filterBlockYear);
     if (dom.filterBlockSource) dom.bucketAnalysis.appendChild(dom.filterBlockSource);
   }
@@ -2078,56 +2107,75 @@
       }
     });
 
-    updateSelectAvailability(dom.filterSource, availability.source);
-    updateSelectAvailability(dom.filterClass, availability.materialClass);
-    updateSelectAvailability(dom.filterGrade, availability.materialGrade);
-    updateSelectAvailability(dom.filterMicrostructure, availability.materialMicrostructure);
-    updateSelectAvailability(dom.filterPhase, availability.materialPhase);
-    updateSelectAvailability(dom.filterProcessing, availability.materialProcessing);
-    updateSelectAvailability(dom.filterTags, availability.materialTags);
-    updateSelectAvailability(dom.filterWeldProcess, availability.weldedProcess);
-    updateSelectAvailability(dom.filterWeldLayer, availability.weldedLayer);
-    updateSelectAvailability(dom.filterChargingMethod, availability.chargingMethod);
-    updateSelectAvailability(dom.filterCalculationModel, availability.calculationModel);
-    updateSelectAvailability(dom.filterSampleGeometry, availability.sampleGeometry);
-    updateSelectAvailability(dom.filterSurfaceCondition, availability.surfaceCondition);
-    updateSelectAvailability(dom.filterSurfaceFinishDetail, availability.surfaceFinishDetail);
-    updateSelectAvailability(dom.filterCoated, availability.coated);
-    updateSelectAvailability(dom.filterCoatingType, availability.coatingType);
-    updateSelectAvailability(dom.filterDeformationHistory, availability.deformationHistory);
-    updateSelectAvailability(dom.filterMechanicalLoading, availability.mechanicalLoading);
-    updateSelectAvailability(dom.filterLoadingRegime, availability.loadingRegime);
-    updateSelectAvailability(dom.filterElectrolyte, availability.electrolyte);
-    updateSelectAvailability(dom.filterControlMode, availability.controlMode);
-    updateSelectAvailability(dom.filterPoisonAdditive, availability.poisonAdditive);
-    updateSelectAvailability(dom.filterGasComposition, availability.gasComposition);
-    updateSelectAvailability(dom.filterGasPurity, availability.gasPurity);
-    updateSelectAvailability(dom.filterTdaPeak, availability.tdaPeakAnalysis);
-    updateSelectAvailability(dom.filterSimsType, availability.simsType);
-    updateSelectAvailability(dom.filterDevEntryElectrolyte, availability.devEntryElectrolyte);
-    updateSelectAvailability(dom.filterDevExitElectrolyte, availability.devExitElectrolyte);
-    updateSelectAvailability(dom.filterReported, availability.reportedAs);
-    updateSelectAvailability(dom.filterEffect, availability.studiedEffects);
-    updateSelectAvailability(dom.filterMethod, availability.measurementMethod);
-    updateSelectAvailability(dom.filterModel, availability.modelType);
+    const applyAvailabilityIfVisible = (listbox, values) => {
+      if (!listbox || listbox.offsetParent === null) return;
+      updateSelectAvailability(listbox, values);
+    };
+
+    applyAvailabilityIfVisible(dom.filterSource, availability.source);
+    applyAvailabilityIfVisible(dom.filterClass, availability.materialClass);
+    applyAvailabilityIfVisible(dom.filterGrade, availability.materialGrade);
+    applyAvailabilityIfVisible(dom.filterMicrostructure, availability.materialMicrostructure);
+    applyAvailabilityIfVisible(dom.filterPhase, availability.materialPhase);
+    applyAvailabilityIfVisible(dom.filterProcessing, availability.materialProcessing);
+    applyAvailabilityIfVisible(dom.filterTags, availability.materialTags);
+    applyAvailabilityIfVisible(dom.filterWeldProcess, availability.weldedProcess);
+    applyAvailabilityIfVisible(dom.filterWeldLayer, availability.weldedLayer);
+    applyAvailabilityIfVisible(dom.filterChargingMethod, availability.chargingMethod);
+    applyAvailabilityIfVisible(dom.filterCalculationModel, availability.calculationModel);
+    applyAvailabilityIfVisible(dom.filterSampleGeometry, availability.sampleGeometry);
+    applyAvailabilityIfVisible(dom.filterSurfaceCondition, availability.surfaceCondition);
+    applyAvailabilityIfVisible(dom.filterSurfaceFinishDetail, availability.surfaceFinishDetail);
+    applyAvailabilityIfVisible(dom.filterCoated, availability.coated);
+    applyAvailabilityIfVisible(dom.filterCoatingType, availability.coatingType);
+    applyAvailabilityIfVisible(dom.filterDeformationHistory, availability.deformationHistory);
+    applyAvailabilityIfVisible(dom.filterMechanicalLoading, availability.mechanicalLoading);
+    applyAvailabilityIfVisible(dom.filterLoadingRegime, availability.loadingRegime);
+    applyAvailabilityIfVisible(dom.filterElectrolyte, availability.electrolyte);
+    applyAvailabilityIfVisible(dom.filterControlMode, availability.controlMode);
+    applyAvailabilityIfVisible(dom.filterPoisonAdditive, availability.poisonAdditive);
+    applyAvailabilityIfVisible(dom.filterGasComposition, availability.gasComposition);
+    applyAvailabilityIfVisible(dom.filterGasPurity, availability.gasPurity);
+    applyAvailabilityIfVisible(dom.filterTdaPeak, availability.tdaPeakAnalysis);
+    applyAvailabilityIfVisible(dom.filterSimsType, availability.simsType);
+    applyAvailabilityIfVisible(dom.filterDevEntryElectrolyte, availability.devEntryElectrolyte);
+    applyAvailabilityIfVisible(dom.filterDevExitElectrolyte, availability.devExitElectrolyte);
+    applyAvailabilityIfVisible(dom.filterReported, availability.reportedAs);
+    applyAvailabilityIfVisible(dom.filterEffect, availability.studiedEffects);
+    applyAvailabilityIfVisible(dom.filterMethod, availability.measurementMethod);
+    applyAvailabilityIfVisible(dom.filterModel, availability.modelType);
   }
 
   function updateSelectAvailability(listbox, available) {
     if (!listbox) return;
     const items = listbox.querySelectorAll(".hdd-filter-item");
+    let checkedCount = 0;
     items.forEach((item) => {
       const checkbox = item.querySelector("input");
       if (!checkbox) return;
       if (checkbox.checked) {
+        checkedCount += 1;
         checkbox.disabled = false;
         item.classList.remove("is-disabled", "is-hidden");
         return;
       }
-      const isAvailable = available.size ? available.has(checkbox.value) : true;
+      const isAvailable = available.size ? available.has(checkbox.value) : false;
       checkbox.disabled = !isAvailable;
       item.classList.toggle("is-disabled", !isAvailable);
       item.classList.toggle("is-hidden", !isAvailable);
     });
+    const emptyMessage = listbox.querySelector(".hdd-filter-empty");
+    const shouldShowEmpty = available.size === 0 && checkedCount === 0;
+    if (shouldShowEmpty) {
+      if (!emptyMessage) {
+        const message = document.createElement("div");
+        message.className = "hdd-filter-empty";
+        message.textContent = "No options match current filters.";
+        listbox.appendChild(message);
+      }
+    } else if (emptyMessage) {
+      emptyMessage.remove();
+    }
     adjustFilterListHeight(listbox);
   }
 
@@ -2185,7 +2233,11 @@
     if (input.value && input.value.includes(",")) {
       input.value = input.value.replace(/,/g, ".");
     }
-    const value = parseNumber(input.value);
+    let value = parseNumber(input.value);
+    if (value != null && NON_NEGATIVE_RANGE_KEYS.has(key) && value < 0) {
+      value = 0;
+      input.value = "0";
+    }
     if (!state.numericFilters[key]) {
       state.numericFilters[key] = { min: null, max: null };
     }
@@ -2441,9 +2493,14 @@
 
   function plotSelectedSeries(force = false) {
     const useManual = state.selectionMode === "manual";
-    const ids = useManual
+    const baseIds = useManual
       ? Array.from(state.selected)
       : (state.filteredList || []).map((entry) => entry.id);
+    const scatterbandIds =
+      state.forceScatterband && Array.isArray(state.scatterbandIds)
+        ? state.scatterbandIds
+        : [];
+    const ids = Array.from(new Set(baseIds.concat(scatterbandIds)));
     if (!ids.length) {
       renderEmptyChart(
         useManual
@@ -2454,6 +2511,7 @@
       updateSummary();
       return;
     }
+    state.preserveAxis = state.forceScatterband && !state.zoom && !!lastPlotContext;
     const series = prepareSeries(ids);
     if (!series.length) {
       renderEmptyChart("No valid samples within the requested range.");
@@ -2746,6 +2804,11 @@
         axisMinY = dataMinY;
         axisMaxY = dataMaxY;
       }
+    } else if (state.preserveAxis && lastPlotContext) {
+      axisMinX = lastPlotContext.axisMinX;
+      axisMaxX = lastPlotContext.axisMaxX;
+      axisMinY = lastPlotContext.axisMinY;
+      axisMaxY = lastPlotContext.axisMaxY;
     }
     const logMin = Math.log10(axisMinY);
     const logMax = Math.log10(axisMaxY);
@@ -2987,6 +3050,8 @@
       monochrome: state.monochrome,
       series,
     };
+
+    state.preserveAxis = false;
 
     if (dom.resetZoom) {
       dom.resetZoom.disabled = !state.zoom;
@@ -3943,6 +4008,23 @@
     const parsed = Number(trimmed);
     return Number.isFinite(parsed) ? parsed : null;
   }
+
+  const NON_NEGATIVE_RANGE_KEYS = new Set([
+    "welding_t85",
+    "charging_temperature_c",
+    "charging_duration_h",
+    "characteristic_length_mm",
+    "coating_thickness_um",
+    "pre_strain_percent",
+    "cold_reduction_percent",
+    "applied_stress_mpa",
+    "applied_strain_percent",
+    "current_density_mA_per_cm2",
+    "applied_potential_v",
+    "gas_pressure_bar",
+    "heating_rate_k_per_min",
+    "extraction_temperature_c",
+  ]);
 
   function updateLineThicknessLabel() {
     if (!dom.lineThicknessValue) return;

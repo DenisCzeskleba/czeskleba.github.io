@@ -209,9 +209,10 @@ permalink: /hydrogen-diffusion-database/
           </details>
           <details class="hdd-filter-block">
             <summary>Welding t8/5</summary>
+            <div class="hdd-filter-note">Unit: s (cooling time).</div>
             <div class="hdd-toggle-group">
-              <input type="number" placeholder="min" data-range-key="welding_t85" data-range-bound="min" />
-              <input type="number" placeholder="max" data-range-key="welding_t85" data-range-bound="max" />
+              <input type="number" min="0" placeholder="min" data-range-key="welding_t85" data-range-bound="min" />
+              <input type="number" min="0" placeholder="max" data-range-key="welding_t85" data-range-bound="max" />
             </div>
           </details>
           <details class="hdd-filter-block">
@@ -227,7 +228,7 @@ permalink: /hydrogen-diffusion-database/
         </div>
       </details>
       <details class="hdd-filter-section">
-        <summary class="hdd-filter-section-header">Conditions &amp; Charging</summary>
+        <summary class="hdd-filter-section-header">Measurement &amp; Charging</summary>
         <div class="hdd-filter-section-body">
           <div class="hdd-filter-bucket" id="hdd-bucket-conditions"></div>
           <details class="hdd-filter-block">
@@ -242,16 +243,18 @@ permalink: /hydrogen-diffusion-database/
           </details>
           <details class="hdd-filter-block">
             <summary>Charging Temperature</summary>
+            <div class="hdd-filter-note">Unit: °C.</div>
             <div class="hdd-toggle-group">
-              <input type="number" placeholder="min" data-range-key="charging_temperature_c" data-range-bound="min" />
-              <input type="number" placeholder="max" data-range-key="charging_temperature_c" data-range-bound="max" />
+              <input type="number" min="0" placeholder="min" data-range-key="charging_temperature_c" data-range-bound="min" />
+              <input type="number" min="0" placeholder="max" data-range-key="charging_temperature_c" data-range-bound="max" />
             </div>
           </details>
           <details class="hdd-filter-block">
             <summary>Charging Duration</summary>
+            <div class="hdd-filter-note">Unit: hours.</div>
             <div class="hdd-toggle-group">
-              <input type="number" placeholder="min" data-range-key="charging_duration_h" data-range-bound="min" />
-              <input type="number" placeholder="max" data-range-key="charging_duration_h" data-range-bound="max" />
+              <input type="number" min="0" placeholder="min" data-range-key="charging_duration_h" data-range-bound="min" />
+              <input type="number" min="0" placeholder="max" data-range-key="charging_duration_h" data-range-bound="max" />
             </div>
           </details>
           <details class="hdd-filter-block">
@@ -276,9 +279,10 @@ permalink: /hydrogen-diffusion-database/
           </details>
           <details class="hdd-filter-block">
             <summary>Characteristic Length</summary>
+            <div class="hdd-filter-note">Unit: mm.</div>
             <div class="hdd-toggle-group">
-              <input type="number" placeholder="min" data-range-key="characteristic_length_mm" data-range-bound="min" />
-              <input type="number" placeholder="max" data-range-key="characteristic_length_mm" data-range-bound="max" />
+              <input type="number" min="0" placeholder="min" data-range-key="characteristic_length_mm" data-range-bound="min" />
+              <input type="number" min="0" placeholder="max" data-range-key="characteristic_length_mm" data-range-bound="max" />
             </div>
           </details>
         </div>
@@ -328,9 +332,10 @@ permalink: /hydrogen-diffusion-database/
           </details>
           <details class="hdd-filter-block">
             <summary>Coating Thickness</summary>
+            <div class="hdd-filter-note">Unit: µm.</div>
             <div class="hdd-toggle-group">
-              <input type="number" placeholder="min" data-range-key="coating_thickness_um" data-range-bound="min" />
-              <input type="number" placeholder="max" data-range-key="coating_thickness_um" data-range-bound="max" />
+              <input type="number" min="0" placeholder="min" data-range-key="coating_thickness_um" data-range-bound="min" />
+              <input type="number" min="0" placeholder="max" data-range-key="coating_thickness_um" data-range-bound="max" />
             </div>
           </details>
         </div>
@@ -350,16 +355,18 @@ permalink: /hydrogen-diffusion-database/
           </details>
           <details class="hdd-filter-block">
             <summary>Pre-strain</summary>
+            <div class="hdd-filter-note">Unit: % (positive values).</div>
             <div class="hdd-toggle-group">
-              <input type="number" placeholder="min" data-range-key="pre_strain_percent" data-range-bound="min" />
-              <input type="number" placeholder="max" data-range-key="pre_strain_percent" data-range-bound="max" />
+              <input type="number" min="0" placeholder="min" data-range-key="pre_strain_percent" data-range-bound="min" />
+              <input type="number" min="0" placeholder="max" data-range-key="pre_strain_percent" data-range-bound="max" />
             </div>
           </details>
           <details class="hdd-filter-block">
             <summary>Cold Reduction</summary>
+            <div class="hdd-filter-note">Unit: %.</div>
             <div class="hdd-toggle-group">
-              <input type="number" placeholder="min" data-range-key="cold_reduction_percent" data-range-bound="min" />
-              <input type="number" placeholder="max" data-range-key="cold_reduction_percent" data-range-bound="max" />
+              <input type="number" min="0" placeholder="min" data-range-key="cold_reduction_percent" data-range-bound="min" />
+              <input type="number" min="0" placeholder="max" data-range-key="cold_reduction_percent" data-range-bound="max" />
             </div>
           </details>
           <details class="hdd-filter-block">
@@ -384,22 +391,24 @@ permalink: /hydrogen-diffusion-database/
           </details>
           <details class="hdd-filter-block">
             <summary>Applied Stress</summary>
+            <div class="hdd-filter-note">Unit: MPa.</div>
             <div class="hdd-toggle-group">
-              <input type="number" placeholder="min" data-range-key="applied_stress_mpa" data-range-bound="min" />
-              <input type="number" placeholder="max" data-range-key="applied_stress_mpa" data-range-bound="max" />
+              <input type="number" min="0" placeholder="min" data-range-key="applied_stress_mpa" data-range-bound="min" />
+              <input type="number" min="0" placeholder="max" data-range-key="applied_stress_mpa" data-range-bound="max" />
             </div>
           </details>
           <details class="hdd-filter-block">
             <summary>Applied Strain</summary>
+            <div class="hdd-filter-note">Unit: %.</div>
             <div class="hdd-toggle-group">
-              <input type="number" placeholder="min" data-range-key="applied_strain_percent" data-range-bound="min" />
-              <input type="number" placeholder="max" data-range-key="applied_strain_percent" data-range-bound="max" />
+              <input type="number" min="0" placeholder="min" data-range-key="applied_strain_percent" data-range-bound="min" />
+              <input type="number" min="0" placeholder="max" data-range-key="applied_strain_percent" data-range-bound="max" />
             </div>
           </details>
         </div>
       </details>
       <details class="hdd-filter-section">
-        <summary class="hdd-filter-section-header">Method Details</summary>
+        <summary class="hdd-filter-section-header">Methodology</summary>
         <div class="hdd-filter-section-body">
           <div class="hdd-filter-bucket" id="hdd-bucket-method"></div>
           <details class="hdd-filter-block">
@@ -413,10 +422,21 @@ permalink: /hydrogen-diffusion-database/
             <div id="hdd-filter-electrolyte" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-electrolyte-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
+            <summary>Poison Additive</summary>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="poisonAdditive" checked />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
+            </label>
+            <span id="hdd-filter-poison-additive-label" class="hdd-sr-only">Poison Additive</span>
+            <div id="hdd-filter-poison-additive" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-poison-additive-label" aria-multiselectable="true"></div>
+          </details>
+          <details class="hdd-filter-block">
             <summary>Current Density</summary>
+            <div class="hdd-filter-note">Unit: mA/cm².</div>
             <div class="hdd-toggle-group">
-              <input type="number" placeholder="min" data-range-key="current_density_mA_per_cm2" data-range-bound="min" />
-              <input type="number" placeholder="max" data-range-key="current_density_mA_per_cm2" data-range-bound="max" />
+              <input type="number" min="0" placeholder="min" data-range-key="current_density_mA_per_cm2" data-range-bound="min" />
+              <input type="number" min="0" placeholder="max" data-range-key="current_density_mA_per_cm2" data-range-bound="max" />
             </div>
           </details>
           <details class="hdd-filter-block">
@@ -431,20 +451,11 @@ permalink: /hydrogen-diffusion-database/
           </details>
           <details class="hdd-filter-block">
             <summary>Applied Potential</summary>
+            <div class="hdd-filter-note">Unit: V.</div>
             <div class="hdd-toggle-group">
-              <input type="number" placeholder="min" data-range-key="applied_potential_v" data-range-bound="min" />
-              <input type="number" placeholder="max" data-range-key="applied_potential_v" data-range-bound="max" />
+              <input type="number" min="0" placeholder="min" data-range-key="applied_potential_v" data-range-bound="min" />
+              <input type="number" min="0" placeholder="max" data-range-key="applied_potential_v" data-range-bound="max" />
             </div>
-          </details>
-          <details class="hdd-filter-block">
-            <summary>Poison Additive</summary>
-            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
-              <input type="checkbox" data-filter-mode="poisonAdditive" checked />
-              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
-              <span class="hdd-toggle-label">Exclude selected</span>
-            </label>
-            <span id="hdd-filter-poison-additive-label" class="hdd-sr-only">Poison Additive</span>
-            <div id="hdd-filter-poison-additive" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-poison-additive-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Gas Composition</summary>
@@ -458,9 +469,10 @@ permalink: /hydrogen-diffusion-database/
           </details>
           <details class="hdd-filter-block">
             <summary>Gas Pressure</summary>
+            <div class="hdd-filter-note">Unit: bar.</div>
             <div class="hdd-toggle-group">
-              <input type="number" placeholder="min" data-range-key="gas_pressure_bar" data-range-bound="min" />
-              <input type="number" placeholder="max" data-range-key="gas_pressure_bar" data-range-bound="max" />
+              <input type="number" min="0" placeholder="min" data-range-key="gas_pressure_bar" data-range-bound="min" />
+              <input type="number" min="0" placeholder="max" data-range-key="gas_pressure_bar" data-range-bound="max" />
             </div>
           </details>
           <details class="hdd-filter-block">
@@ -475,9 +487,10 @@ permalink: /hydrogen-diffusion-database/
           </details>
           <details class="hdd-filter-block">
             <summary>TDA Heating Rate</summary>
+            <div class="hdd-filter-note">Unit: K/min.</div>
             <div class="hdd-toggle-group">
-              <input type="number" placeholder="min" data-range-key="heating_rate_k_per_min" data-range-bound="min" />
-              <input type="number" placeholder="max" data-range-key="heating_rate_k_per_min" data-range-bound="max" />
+              <input type="number" min="0" placeholder="min" data-range-key="heating_rate_k_per_min" data-range-bound="min" />
+              <input type="number" min="0" placeholder="max" data-range-key="heating_rate_k_per_min" data-range-bound="max" />
             </div>
           </details>
           <details class="hdd-filter-block">
@@ -502,9 +515,10 @@ permalink: /hydrogen-diffusion-database/
           </details>
           <details class="hdd-filter-block">
             <summary>Extraction / Degassing Temperature</summary>
+            <div class="hdd-filter-note">Unit: °C.</div>
             <div class="hdd-toggle-group">
-              <input type="number" placeholder="min" data-range-key="extraction_temperature_c" data-range-bound="min" />
-              <input type="number" placeholder="max" data-range-key="extraction_temperature_c" data-range-bound="max" />
+              <input type="number" min="0" placeholder="min" data-range-key="extraction_temperature_c" data-range-bound="min" />
+              <input type="number" min="0" placeholder="max" data-range-key="extraction_temperature_c" data-range-bound="max" />
             </div>
           </details>
           <details class="hdd-filter-block">
@@ -614,6 +628,10 @@ permalink: /hydrogen-diffusion-database/
                 <label class="hdd-inline-checkbox" title="Shade the uncertainty or scatter band.">
                   <input type="checkbox" id="hdd-envelope" checked />
                   <span>Envelope fill</span>
+                </label>
+                <label class="hdd-inline-checkbox" title="Force the Boellinghaus scatterband into the current plot view. This disables automatic scaling while active. Turn it off before further filtering.">
+                  <input type="checkbox" id="hdd-force-scatterband" />
+                  <span>Force scatterband</span>
                 </label>
                 <label class="hdd-inline-checkbox" title="Number curves to match the legend list.">
                   <input type="checkbox" id="hdd-numbering" checked />
@@ -741,6 +759,7 @@ permalink: /hydrogen-diffusion-database/
 </div>
 
 <script src="/hdd/hdd-explorer.js" defer></script>
+
 
 
 
