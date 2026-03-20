@@ -148,27 +148,23 @@ permalink: /hydrogen-diffusion-database/
           </details>
           <details class="hdd-filter-block">
             <summary>Phase</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
-            <label class="hdd-inline-select" for="hdd-dummy-phase">
-              <select id="hdd-dummy-phase">
-                <option selected>Any phase</option>
-                <option>Ferrite</option>
-                <option>Martensite</option>
-                <option>Austenite</option>
-              </select>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="materialPhase" checked />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
             </label>
+            <span id="hdd-filter-phase-label" class="hdd-sr-only">Phase</span>
+            <div id="hdd-filter-phase" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-phase-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Processing</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
-            <label class="hdd-inline-select" for="hdd-dummy-processing">
-              <select id="hdd-dummy-processing">
-                <option selected>Any processing</option>
-                <option>Annealed</option>
-                <option>Quenched</option>
-                <option>Tempered</option>
-              </select>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="materialProcessing" checked />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
             </label>
+            <span id="hdd-filter-processing-label" class="hdd-sr-only">Processing</span>
+            <div id="hdd-filter-processing" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-processing-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Chemical Composition</summary>
@@ -193,44 +189,40 @@ permalink: /hydrogen-diffusion-database/
           </details>
           <details class="hdd-filter-block">
             <summary>Welding Process</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
-            <label class="hdd-inline-select" for="hdd-dummy-welding-process">
-              <select id="hdd-dummy-welding-process">
-                <option selected>Any process</option>
-                <option>GMAW</option>
-                <option>GTAW</option>
-                <option>SAW</option>
-              </select>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="weldedProcess" checked />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
             </label>
+            <span id="hdd-filter-weld-process-label" class="hdd-sr-only">Welding Process</span>
+            <div id="hdd-filter-weld-process" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-weld-process-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Welding Layer / Pass</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
-            <label class="hdd-inline-select" for="hdd-dummy-welding-layer">
-              <select id="hdd-dummy-welding-layer">
-                <option selected>Any layer</option>
-                <option>Root</option>
-                <option>Fill</option>
-                <option>Cap</option>
-              </select>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="weldedLayer" checked />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
             </label>
+            <span id="hdd-filter-weld-layer-label" class="hdd-sr-only">Welding Layer / Pass</span>
+            <div id="hdd-filter-weld-layer" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-weld-layer-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Welding t8/5</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
             <div class="hdd-toggle-group">
-              <input type="number" placeholder="min" />
-              <input type="number" placeholder="max" />
+              <input type="number" placeholder="min" data-range-key="welding_t85" data-range-bound="min" />
+              <input type="number" placeholder="max" data-range-key="welding_t85" data-range-bound="max" />
             </div>
           </details>
           <details class="hdd-filter-block">
             <summary>Material Tags</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
-            <div class="hdd-filter-list hdd-filter-list-dummy" role="listbox" aria-multiselectable="true">
-              <label class="hdd-filter-item"><input type="checkbox" />Hot-rolled</label>
-              <label class="hdd-filter-item"><input type="checkbox" />Cast</label>
-              <label class="hdd-filter-item"><input type="checkbox" />Forged</label>
-            </div>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="materialTags" checked />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
+            </label>
+            <span id="hdd-filter-tags-label" class="hdd-sr-only">Material Tags</span>
+            <div id="hdd-filter-tags" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-tags-label" aria-multiselectable="true"></div>
           </details>
         </div>
       </details>
@@ -240,62 +232,53 @@ permalink: /hydrogen-diffusion-database/
           <div class="hdd-filter-bucket" id="hdd-bucket-conditions"></div>
           <details class="hdd-filter-block">
             <summary>Charging Method</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
-            <label class="hdd-inline-select" for="hdd-dummy-charging-method">
-              <select id="hdd-dummy-charging-method">
-                <option selected>Any method</option>
-                <option>Electrochemical</option>
-                <option>Gas</option>
-                <option>Cathodic</option>
-              </select>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="chargingMethod" checked />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
             </label>
+            <span id="hdd-filter-charging-method-label" class="hdd-sr-only">Charging Method</span>
+            <div id="hdd-filter-charging-method" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-charging-method-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Charging Temperature</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
             <div class="hdd-toggle-group">
-              <input type="number" placeholder="min" />
-              <input type="number" placeholder="max" />
+              <input type="number" placeholder="min" data-range-key="charging_temperature_c" data-range-bound="min" />
+              <input type="number" placeholder="max" data-range-key="charging_temperature_c" data-range-bound="max" />
             </div>
           </details>
           <details class="hdd-filter-block">
             <summary>Charging Duration</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
             <div class="hdd-toggle-group">
-              <input type="number" placeholder="min" />
-              <input type="number" placeholder="max" />
+              <input type="number" placeholder="min" data-range-key="charging_duration_h" data-range-bound="min" />
+              <input type="number" placeholder="max" data-range-key="charging_duration_h" data-range-bound="max" />
             </div>
           </details>
           <details class="hdd-filter-block">
             <summary>Calculation Model</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
-            <label class="hdd-inline-select" for="hdd-dummy-calculation-model">
-              <select id="hdd-dummy-calculation-model">
-                <option selected>Any model</option>
-                <option>Fickian</option>
-                <option>Trap-limited</option>
-                <option>Coupled</option>
-              </select>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="calculationModel" checked />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
             </label>
+            <span id="hdd-filter-calculation-model-label" class="hdd-sr-only">Calculation Model</span>
+            <div id="hdd-filter-calculation-model" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-calculation-model-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Sample Geometry</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
-            <label class="hdd-inline-select" for="hdd-dummy-geometry">
-              <select id="hdd-dummy-geometry">
-                <option selected>Any geometry</option>
-                <option>Plate</option>
-                <option>Pipe</option>
-                <option>Wire</option>
-              </select>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="sampleGeometry" checked />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
             </label>
+            <span id="hdd-filter-sample-geometry-label" class="hdd-sr-only">Sample Geometry</span>
+            <div id="hdd-filter-sample-geometry" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-sample-geometry-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Characteristic Length</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
             <div class="hdd-toggle-group">
-              <input type="number" placeholder="min" />
-              <input type="number" placeholder="max" />
+              <input type="number" placeholder="min" data-range-key="characteristic_length_mm" data-range-bound="min" />
+              <input type="number" placeholder="max" data-range-key="characteristic_length_mm" data-range-bound="max" />
             </div>
           </details>
         </div>
@@ -305,69 +288,49 @@ permalink: /hydrogen-diffusion-database/
         <div class="hdd-filter-section-body">
           <details class="hdd-filter-block">
             <summary>Surface Condition</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
-            <label class="hdd-inline-select" for="hdd-dummy-surface-condition">
-              <select id="hdd-dummy-surface-condition">
-                <option selected>Any condition</option>
-                <option>Polished</option>
-                <option>Machined</option>
-                <option>As-received</option>
-              </select>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="surfaceCondition" checked />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
             </label>
-          </details>
-          <details class="hdd-filter-block">
-            <summary>Surface Finish</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
-            <label class="hdd-inline-select" for="hdd-dummy-surface-finish">
-              <select id="hdd-dummy-surface-finish">
-                <option selected>Any finish</option>
-                <option>Grit 120</option>
-                <option>Grit 400</option>
-                <option>Grit 500</option>
-              </select>
-            </label>
+            <span id="hdd-filter-surface-condition-label" class="hdd-sr-only">Surface Condition</span>
+            <div id="hdd-filter-surface-condition" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-surface-condition-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Surface Finish Detail</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
-            <label class="hdd-inline-select" for="hdd-dummy-surface-detail">
-              <select id="hdd-dummy-surface-detail">
-                <option selected>Any detail</option>
-                <option>Ra &lt; 0.2</option>
-                <option>Ra 0.2-0.8</option>
-                <option>Ra &gt; 0.8</option>
-              </select>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="surfaceFinishDetail" checked />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
             </label>
+            <span id="hdd-filter-surface-finish-detail-label" class="hdd-sr-only">Surface Finish Detail</span>
+            <div id="hdd-filter-surface-finish-detail" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-surface-finish-detail-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Coated</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
-            <label class="hdd-inline-select" for="hdd-dummy-coated">
-              <select id="hdd-dummy-coated">
-                <option selected>Include</option>
-                <option>Only coated</option>
-                <option>Exclude coated</option>
-              </select>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="coated" checked />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
             </label>
+            <span id="hdd-filter-coated-label" class="hdd-sr-only">Coated</span>
+            <div id="hdd-filter-coated" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-coated-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Coating Type</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
-            <label class="hdd-inline-select" for="hdd-dummy-coating-type">
-              <select id="hdd-dummy-coating-type">
-                <option selected>Any coating</option>
-                <option>Zn</option>
-                <option>Ni</option>
-                <option>Al</option>
-              </select>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="coatingType" checked />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
             </label>
+            <span id="hdd-filter-coating-type-label" class="hdd-sr-only">Coating Type</span>
+            <div id="hdd-filter-coating-type" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-coating-type-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Coating Thickness</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
             <div class="hdd-toggle-group">
-              <input type="number" placeholder="min" />
-              <input type="number" placeholder="max" />
+              <input type="number" placeholder="min" data-range-key="coating_thickness_um" data-range-bound="min" />
+              <input type="number" placeholder="max" data-range-key="coating_thickness_um" data-range-bound="max" />
             </div>
           </details>
         </div>
@@ -377,70 +340,60 @@ permalink: /hydrogen-diffusion-database/
         <div class="hdd-filter-section-body">
           <details class="hdd-filter-block">
             <summary>Deformation History</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
-            <label class="hdd-inline-select" for="hdd-dummy-deformation">
-              <select id="hdd-dummy-deformation">
-                <option selected>Any history</option>
-                <option>Cold-worked</option>
-                <option>Heat-treated</option>
-                <option>Normalized</option>
-              </select>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="deformationHistory" checked />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
             </label>
+            <span id="hdd-filter-deformation-history-label" class="hdd-sr-only">Deformation History</span>
+            <div id="hdd-filter-deformation-history" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-deformation-history-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Pre-strain</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
             <div class="hdd-toggle-group">
-              <input type="number" placeholder="min" />
-              <input type="number" placeholder="max" />
+              <input type="number" placeholder="min" data-range-key="pre_strain_percent" data-range-bound="min" />
+              <input type="number" placeholder="max" data-range-key="pre_strain_percent" data-range-bound="max" />
             </div>
           </details>
           <details class="hdd-filter-block">
             <summary>Cold Reduction</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
             <div class="hdd-toggle-group">
-              <input type="number" placeholder="min" />
-              <input type="number" placeholder="max" />
+              <input type="number" placeholder="min" data-range-key="cold_reduction_percent" data-range-bound="min" />
+              <input type="number" placeholder="max" data-range-key="cold_reduction_percent" data-range-bound="max" />
             </div>
           </details>
           <details class="hdd-filter-block">
             <summary>Mechanical Loading During Test</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
-            <label class="hdd-inline-select" for="hdd-dummy-loading-test">
-              <select id="hdd-dummy-loading-test">
-                <option selected>Any loading</option>
-                <option>Static</option>
-                <option>Cyclic</option>
-                <option>None</option>
-              </select>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="mechanicalLoading" checked />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
             </label>
+            <span id="hdd-filter-mechanical-loading-label" class="hdd-sr-only">Mechanical Loading During Test</span>
+            <div id="hdd-filter-mechanical-loading" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-mechanical-loading-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Loading Regime</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
-            <label class="hdd-inline-select" for="hdd-dummy-loading-regime">
-              <select id="hdd-dummy-loading-regime">
-                <option selected>Any regime</option>
-                <option>Constant load</option>
-                <option>SSRT</option>
-                <option>Fatigue</option>
-              </select>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="loadingRegime" checked />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
             </label>
+            <span id="hdd-filter-loading-regime-label" class="hdd-sr-only">Loading Regime</span>
+            <div id="hdd-filter-loading-regime" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-loading-regime-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Applied Stress</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
             <div class="hdd-toggle-group">
-              <input type="number" placeholder="min" />
-              <input type="number" placeholder="max" />
+              <input type="number" placeholder="min" data-range-key="applied_stress_mpa" data-range-bound="min" />
+              <input type="number" placeholder="max" data-range-key="applied_stress_mpa" data-range-bound="max" />
             </div>
           </details>
           <details class="hdd-filter-block">
             <summary>Applied Strain</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
             <div class="hdd-toggle-group">
-              <input type="number" placeholder="min" />
-              <input type="number" placeholder="max" />
+              <input type="number" placeholder="min" data-range-key="applied_strain_percent" data-range-bound="min" />
+              <input type="number" placeholder="max" data-range-key="applied_strain_percent" data-range-bound="max" />
             </div>
           </details>
         </div>
@@ -451,151 +404,128 @@ permalink: /hydrogen-diffusion-database/
           <div class="hdd-filter-bucket" id="hdd-bucket-method"></div>
           <details class="hdd-filter-block">
             <summary>Electrolyte</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
-            <label class="hdd-inline-select" for="hdd-dummy-electrolyte">
-              <select id="hdd-dummy-electrolyte">
-                <option selected>Any electrolyte</option>
-                <option>NaOH</option>
-                <option>H2SO4</option>
-                <option>NaCl</option>
-              </select>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="electrolyte" checked />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
             </label>
+            <span id="hdd-filter-electrolyte-label" class="hdd-sr-only">Electrolyte</span>
+            <div id="hdd-filter-electrolyte" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-electrolyte-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Current Density</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
             <div class="hdd-toggle-group">
-              <input type="number" placeholder="min" />
-              <input type="number" placeholder="max" />
+              <input type="number" placeholder="min" data-range-key="current_density_mA_per_cm2" data-range-bound="min" />
+              <input type="number" placeholder="max" data-range-key="current_density_mA_per_cm2" data-range-bound="max" />
             </div>
           </details>
           <details class="hdd-filter-block">
             <summary>Control Mode</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
-            <label class="hdd-inline-select" for="hdd-dummy-control-mode">
-              <select id="hdd-dummy-control-mode">
-                <option selected>Any mode</option>
-                <option>Potentiostatic</option>
-                <option>Galvanostatic</option>
-                <option>Pulsed</option>
-              </select>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="controlMode" checked />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
             </label>
+            <span id="hdd-filter-control-mode-label" class="hdd-sr-only">Control Mode</span>
+            <div id="hdd-filter-control-mode" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-control-mode-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Applied Potential</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
             <div class="hdd-toggle-group">
-              <input type="number" placeholder="min" />
-              <input type="number" placeholder="max" />
+              <input type="number" placeholder="min" data-range-key="applied_potential_v" data-range-bound="min" />
+              <input type="number" placeholder="max" data-range-key="applied_potential_v" data-range-bound="max" />
             </div>
           </details>
           <details class="hdd-filter-block">
             <summary>Poison Additive</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
-            <label class="hdd-inline-select" for="hdd-dummy-poison">
-              <select id="hdd-dummy-poison">
-                <option selected>Any additive</option>
-                <option>As2O3</option>
-                <option>CS2</option>
-                <option>Thiourea</option>
-              </select>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="poisonAdditive" checked />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
             </label>
+            <span id="hdd-filter-poison-additive-label" class="hdd-sr-only">Poison Additive</span>
+            <div id="hdd-filter-poison-additive" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-poison-additive-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Gas Composition</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
-            <label class="hdd-inline-select" for="hdd-dummy-gas-composition">
-              <select id="hdd-dummy-gas-composition">
-                <option selected>Any composition</option>
-                <option>H2</option>
-                <option>H2 + N2</option>
-                <option>H2 + Ar</option>
-              </select>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="gasComposition" checked />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
             </label>
+            <span id="hdd-filter-gas-composition-label" class="hdd-sr-only">Gas Composition</span>
+            <div id="hdd-filter-gas-composition" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-gas-composition-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Gas Pressure</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
             <div class="hdd-toggle-group">
-              <input type="number" placeholder="min" />
-              <input type="number" placeholder="max" />
+              <input type="number" placeholder="min" data-range-key="gas_pressure_bar" data-range-bound="min" />
+              <input type="number" placeholder="max" data-range-key="gas_pressure_bar" data-range-bound="max" />
             </div>
           </details>
           <details class="hdd-filter-block">
             <summary>Gas Purity</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
-            <label class="hdd-inline-select" for="hdd-dummy-gas-purity">
-              <select id="hdd-dummy-gas-purity">
-                <option selected>Any purity</option>
-                <option>99.9%</option>
-                <option>99.99%</option>
-                <option>99.999%</option>
-              </select>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="gasPurity" checked />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
             </label>
+            <span id="hdd-filter-gas-purity-label" class="hdd-sr-only">Gas Purity</span>
+            <div id="hdd-filter-gas-purity" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-gas-purity-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>TDA Heating Rate</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
             <div class="hdd-toggle-group">
-              <input type="number" placeholder="min" />
-              <input type="number" placeholder="max" />
+              <input type="number" placeholder="min" data-range-key="heating_rate_k_per_min" data-range-bound="min" />
+              <input type="number" placeholder="max" data-range-key="heating_rate_k_per_min" data-range-bound="max" />
             </div>
           </details>
           <details class="hdd-filter-block">
             <summary>TDA Peak Analysis</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
-            <label class="hdd-inline-select" for="hdd-dummy-tda-peak">
-              <select id="hdd-dummy-tda-peak">
-                <option selected>Any analysis</option>
-                <option>Peak temp</option>
-                <option>Peak area</option>
-                <option>Deconvolution</option>
-              </select>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="tdaPeakAnalysis" checked />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
             </label>
+            <span id="hdd-filter-tda-peak-label" class="hdd-sr-only">TDA Peak Analysis</span>
+            <div id="hdd-filter-tda-peak" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-tda-peak-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>SIMS Type</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
-            <label class="hdd-inline-select" for="hdd-dummy-sims">
-              <select id="hdd-dummy-sims">
-                <option selected>Any SIMS</option>
-                <option>Static</option>
-                <option>Dynamic</option>
-                <option>ToF-SIMS</option>
-              </select>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="simsType" checked />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
             </label>
+            <span id="hdd-filter-sims-type-label" class="hdd-sr-only">SIMS Type</span>
+            <div id="hdd-filter-sims-type" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-sims-type-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Extraction / Degassing Temperature</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
             <div class="hdd-toggle-group">
-              <input type="number" placeholder="min" />
-              <input type="number" placeholder="max" />
+              <input type="number" placeholder="min" data-range-key="extraction_temperature_c" data-range-bound="min" />
+              <input type="number" placeholder="max" data-range-key="extraction_temperature_c" data-range-bound="max" />
             </div>
           </details>
           <details class="hdd-filter-block">
             <summary>Devanathan Entry Electrolyte</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
-            <label class="hdd-inline-select" for="hdd-dummy-entry-electrolyte">
-              <select id="hdd-dummy-entry-electrolyte">
-                <option selected>Any entry electrolyte</option>
-                <option>NaOH</option>
-                <option>H2SO4</option>
-                <option>NaCl</option>
-              </select>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="devEntryElectrolyte" checked />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
             </label>
+            <span id="hdd-filter-dev-entry-electrolyte-label" class="hdd-sr-only">Devanathan Entry Electrolyte</span>
+            <div id="hdd-filter-dev-entry-electrolyte" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-dev-entry-electrolyte-label" aria-multiselectable="true"></div>
           </details>
           <details class="hdd-filter-block">
             <summary>Devanathan Exit Electrolyte</summary>
-            <div class="hdd-filter-soon">Coming soon</div>
-            <label class="hdd-inline-select" for="hdd-dummy-exit-electrolyte">
-              <select id="hdd-dummy-exit-electrolyte">
-                <option selected>Any exit electrolyte</option>
-                <option>NaOH</option>
-                <option>H2SO4</option>
-                <option>NaCl</option>
-              </select>
+            <label class="hdd-filter-toggle is-inline hdd-toggle-switch hdd-filter-toggle-header">
+              <input type="checkbox" data-filter-mode="devExitElectrolyte" checked />
+              <span class="hdd-toggle-track"><span class="hdd-toggle-thumb"></span></span>
+              <span class="hdd-toggle-label">Exclude selected</span>
             </label>
+            <span id="hdd-filter-dev-exit-electrolyte-label" class="hdd-sr-only">Devanathan Exit Electrolyte</span>
+            <div id="hdd-filter-dev-exit-electrolyte" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-dev-exit-electrolyte-label" aria-multiselectable="true"></div>
           </details>
         </div>
       </details>

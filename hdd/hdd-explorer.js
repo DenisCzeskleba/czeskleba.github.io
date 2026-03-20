@@ -78,7 +78,31 @@
     filterClass: document.getElementById("hdd-filter-class"),
     filterGrade: document.getElementById("hdd-filter-grade"),
     filterMicrostructure: document.getElementById("hdd-filter-microstructure"),
+    filterPhase: document.getElementById("hdd-filter-phase"),
+    filterProcessing: document.getElementById("hdd-filter-processing"),
+    filterTags: document.getElementById("hdd-filter-tags"),
+    filterWeldProcess: document.getElementById("hdd-filter-weld-process"),
+    filterWeldLayer: document.getElementById("hdd-filter-weld-layer"),
     filterComposition: document.getElementById("hdd-filter-composition"),
+    filterChargingMethod: document.getElementById("hdd-filter-charging-method"),
+    filterCalculationModel: document.getElementById("hdd-filter-calculation-model"),
+    filterSampleGeometry: document.getElementById("hdd-filter-sample-geometry"),
+    filterSurfaceCondition: document.getElementById("hdd-filter-surface-condition"),
+    filterSurfaceFinishDetail: document.getElementById("hdd-filter-surface-finish-detail"),
+    filterCoated: document.getElementById("hdd-filter-coated"),
+    filterCoatingType: document.getElementById("hdd-filter-coating-type"),
+    filterDeformationHistory: document.getElementById("hdd-filter-deformation-history"),
+    filterMechanicalLoading: document.getElementById("hdd-filter-mechanical-loading"),
+    filterLoadingRegime: document.getElementById("hdd-filter-loading-regime"),
+    filterElectrolyte: document.getElementById("hdd-filter-electrolyte"),
+    filterControlMode: document.getElementById("hdd-filter-control-mode"),
+    filterPoisonAdditive: document.getElementById("hdd-filter-poison-additive"),
+    filterGasComposition: document.getElementById("hdd-filter-gas-composition"),
+    filterGasPurity: document.getElementById("hdd-filter-gas-purity"),
+    filterTdaPeak: document.getElementById("hdd-filter-tda-peak"),
+    filterSimsType: document.getElementById("hdd-filter-sims-type"),
+    filterDevEntryElectrolyte: document.getElementById("hdd-filter-dev-entry-electrolyte"),
+    filterDevExitElectrolyte: document.getElementById("hdd-filter-dev-exit-electrolyte"),
     filterReported: document.getElementById("hdd-filter-reported"),
     filterEffect: document.getElementById("hdd-filter-effect"),
     filterMethod: document.getElementById("hdd-filter-method"),
@@ -101,6 +125,7 @@
     filterModeToggles: document.querySelectorAll("[data-filter-mode]"),
     filterMicrostructureMode: document.querySelector("[data-filter-mode='materialMicrostructure']"),
     filterUnknownComposition: document.querySelector("[data-filter-unknown='chemicalComposition']"),
+    numericRangeInputs: mount.querySelectorAll("[data-range-key]"),
     resetZoom: document.getElementById("hdd-reset-zoom"),
     plotOptionPanels: mount.querySelectorAll(".hdd-plot-options"),
     heroLogo: document.querySelector(".hdd-hero-logo"),
@@ -136,6 +161,7 @@
     weldedMode: "include",
     includeUnknownComposition: false,
     compositionFilters: {},
+    numericFilters: {},
     filterMode: {},
     summaryExpanded: false,
     zoom: null,
@@ -237,6 +263,7 @@
       const segments = normalizeLineModels(line);
       const meta = collectSeriesMeta(segments);
       const compositionRanges = computeCompositionRanges(segments);
+      const numericRanges = computeNumericRanges(segments);
       const materialLabel = deriveMaterialLabel(meta);
       const temperatureRange = deriveLineTemperatureRange(segments);
       const entryId = normalizeLineId(line, index);
@@ -257,6 +284,7 @@
         segments,
         meta,
         compositionRanges,
+        numericRanges,
         materialLabel,
       };
 
@@ -428,6 +456,8 @@
       material_phase: new Set(),
       material_processing: new Set(),
       material_tags: new Set(),
+      welded_process: new Set(),
+      welded_layer: new Set(),
       chemical_composition: new Set(),
       reported_as: new Set(),
       studied_effects: new Set(),
@@ -435,6 +465,25 @@
       model_type: new Set(),
       plotting_status: new Set(),
       welded_enabled: new Set(),
+      charging_method: new Set(),
+      calculation_model: new Set(),
+      sample_geometry: new Set(),
+      surface_condition: new Set(),
+      surface_finish_detail: new Set(),
+      coated: new Set(),
+      coating_type: new Set(),
+      deformation_history: new Set(),
+      mechanical_loading: new Set(),
+      loading_regime: new Set(),
+      electrolyte: new Set(),
+      control_mode: new Set(),
+      poison_additive: new Set(),
+      gas_composition: new Set(),
+      gas_purity: new Set(),
+      sims_type: new Set(),
+      tda_peak_analysis: new Set(),
+      dev_entry_electrolyte: new Set(),
+      dev_exit_electrolyte: new Set(),
     };
 
     segments.forEach((segment) => {
@@ -445,6 +494,8 @@
       addIfPresent(meta.material_phase, material.phase);
       (material.processing || []).forEach((value) => addIfPresent(meta.material_processing, value));
       (material.tags || []).forEach((value) => addIfPresent(meta.material_tags, value));
+      addIfPresent(meta.welded_process, material.welded?.process);
+      addIfPresent(meta.welded_layer, material.welded?.layer);
       addIfPresent(meta.chemical_composition, formatChemicalComposition(material.chemical_composition));
 
       addIfPresent(meta.reported_as, segment.reported_as);
@@ -453,6 +504,41 @@
 
       const conditions = segment.conditions || {};
       addIfPresent(meta.measurement_method, conditions.measurement_method);
+      addIfPresent(meta.charging_method, conditions.charging_method);
+      addIfPresent(meta.calculation_model, conditions.calculation_model);
+      addIfPresent(meta.sample_geometry, conditions.sample_geometry);
+      addIfPresent(meta.surface_condition, conditions.surface_condition);
+      addIfPresent(meta.surface_finish_detail, conditions.surface_finish_detail);
+      addIfPresent(meta.coated, conditions.coated);
+      addIfPresent(meta.coating_type, conditions.coating_type);
+      addIfPresent(meta.deformation_history, conditions.deformation_history);
+      addIfPresent(meta.mechanical_loading, conditions.mechanical_loading_during_test);
+      addIfPresent(meta.loading_regime, conditions.loading_regime);
+
+      const conditional = conditions.conditional_fields || {};
+      const cathodic = conditional.cathodic || {};
+      const electrochemical = conditional.electrochemical || {};
+      const dev = conditional.electrochemical_devanathan_stachursky_cell || {};
+      const gasPhase = conditional.gas_phase || {};
+      const gasHigh = conditional.high_pressure_hydrogen || {};
+      const gasLow = conditional.low_pressure_hydrogen || {};
+      const tda = conditional.thermal_desorption_tda_tds || {};
+      const sims = conditional.sims || {};
+
+      addIfPresent(meta.electrolyte, cathodic.electrolyte);
+      addIfPresent(meta.electrolyte, electrochemical.electrolyte);
+      addIfPresent(meta.control_mode, electrochemical.control_mode);
+      addIfPresent(meta.poison_additive, cathodic.poison_additive);
+      addIfPresent(meta.poison_additive, electrochemical.poison_additive);
+      addIfPresent(meta.poison_additive, dev.poison_additive);
+      addIfPresent(meta.gas_composition, gasPhase.gas_composition);
+      addIfPresent(meta.gas_composition, gasHigh.gas_composition);
+      addIfPresent(meta.gas_composition, gasLow.gas_composition);
+      addIfPresent(meta.gas_purity, gasPhase.gas_purity);
+      addIfPresent(meta.sims_type, sims.sims_type);
+      addIfPresent(meta.tda_peak_analysis, tda.peak_analysis_method);
+      addIfPresent(meta.dev_entry_electrolyte, dev.electrolyte_entry_side);
+      addIfPresent(meta.dev_exit_electrolyte, dev.electrolyte_exit_side);
 
       const welded = segment.material?.welded?.enabled;
       addIfPresent(meta.welded_enabled, welded);
@@ -484,6 +570,60 @@
         }
       });
     });
+    return Object.keys(ranges).length ? ranges : null;
+  }
+
+  function computeNumericRanges(segments) {
+    const ranges = {};
+    const addRange = (key, raw, factor = 1) => {
+      const value = parseNumber(raw);
+      if (!Number.isFinite(value)) return;
+      const scaled = value * factor;
+      if (!ranges[key]) {
+        ranges[key] = { min: scaled, max: scaled };
+      } else {
+        ranges[key].min = Math.min(ranges[key].min, scaled);
+        ranges[key].max = Math.max(ranges[key].max, scaled);
+      }
+    };
+
+    segments.forEach((segment) => {
+      const material = segment.material || {};
+      addRange("welding_t85", material.welded?.t85);
+
+      const conditions = segment.conditions || {};
+      addRange("charging_temperature_c", conditions.charging_temperature_c);
+      addRange("charging_duration_h", conditions.charging_duration_h);
+      addRange("characteristic_length_mm", conditions.characteristic_length_mm);
+      addRange("coating_thickness_um", conditions.coating_thickness_um);
+      addRange("pre_strain_percent", conditions.pre_strain_percent);
+      addRange("cold_reduction_percent", conditions.cold_reduction_percent);
+      addRange("applied_stress_mpa", conditions.applied_stress_mpa);
+      addRange("applied_strain_percent", conditions.applied_strain_percent);
+
+      const conditional = conditions.conditional_fields || {};
+      const cathodic = conditional.cathodic || {};
+      const electrochemical = conditional.electrochemical || {};
+      const dev = conditional.electrochemical_devanathan_stachursky_cell || {};
+      const gasPhase = conditional.gas_phase || {};
+      const gasHigh = conditional.high_pressure_hydrogen || {};
+      const gasLow = conditional.low_pressure_hydrogen || {};
+      const tda = conditional.thermal_desorption_tda_tds || {};
+      const hotExtraction = conditional.hot_extraction_cghe_gc || {};
+      const isothermal = conditional.isothermal_effusion_degassing || {};
+
+      addRange("current_density_mA_per_cm2", cathodic.current_density_mA_per_cm2);
+      addRange("current_density_mA_per_cm2", electrochemical.current_density_mA_per_cm2);
+      addRange("current_density_mA_per_cm2", dev.current_density_mA_per_mm2, 100);
+      addRange("applied_potential_v", electrochemical.applied_potential_v);
+      addRange("gas_pressure_bar", gasPhase.pressure_bar);
+      addRange("gas_pressure_bar", gasHigh.pressure_bar);
+      addRange("gas_pressure_bar", gasLow.pressure_bar);
+      addRange("heating_rate_k_per_min", tda.heating_rate_k_per_min);
+      addRange("extraction_temperature_c", hotExtraction.extraction_temperature_c);
+      addRange("extraction_temperature_c", isothermal.degassing_temperature_c);
+    });
+
     return Object.keys(ranges).length ? ranges : null;
   }
 
@@ -682,7 +822,31 @@
       dom.filterClass,
       dom.filterGrade,
       dom.filterMicrostructure,
+      dom.filterPhase,
+      dom.filterProcessing,
+      dom.filterTags,
+      dom.filterWeldProcess,
+      dom.filterWeldLayer,
       dom.filterComposition,
+      dom.filterChargingMethod,
+      dom.filterCalculationModel,
+      dom.filterSampleGeometry,
+      dom.filterSurfaceCondition,
+      dom.filterSurfaceFinishDetail,
+      dom.filterCoated,
+      dom.filterCoatingType,
+      dom.filterDeformationHistory,
+      dom.filterMechanicalLoading,
+      dom.filterLoadingRegime,
+      dom.filterElectrolyte,
+      dom.filterControlMode,
+      dom.filterPoisonAdditive,
+      dom.filterGasComposition,
+      dom.filterGasPurity,
+      dom.filterTdaPeak,
+      dom.filterSimsType,
+      dom.filterDevEntryElectrolyte,
+      dom.filterDevExitElectrolyte,
       dom.filterReported,
       dom.filterEffect,
       dom.filterMethod,
@@ -690,6 +854,11 @@
     ].forEach((listbox) => {
       if (!listbox) return;
       listbox.addEventListener("change", () => applyFilters());
+    });
+
+    dom.numericRangeInputs?.forEach((input) => {
+      input.addEventListener("input", handleNumericFilterInput);
+      input.addEventListener("change", handleNumericFilterInput);
     });
 
     if (dom.seriesDrawer) {
@@ -747,7 +916,31 @@
       dom.filterMicrostructure,
       toOptions(collectMetaValues(state.seriesList, "material_microstructure"))
     );
+    setSelectOptions(dom.filterPhase, toOptions(collectMetaValues(state.seriesList, "material_phase")));
+    setSelectOptions(dom.filterProcessing, toOptions(collectMetaValues(state.seriesList, "material_processing")));
+    setSelectOptions(dom.filterTags, toOptions(collectMetaValues(state.seriesList, "material_tags")));
+    setSelectOptions(dom.filterWeldProcess, toOptions(collectMetaValues(state.seriesList, "welded_process")));
+    setSelectOptions(dom.filterWeldLayer, toOptions(collectMetaValues(state.seriesList, "welded_layer")));
     populateCompositionFilters(state.seriesList);
+    setSelectOptions(dom.filterChargingMethod, toOptions(collectMetaValues(state.seriesList, "charging_method")));
+    setSelectOptions(dom.filterCalculationModel, toOptions(collectMetaValues(state.seriesList, "calculation_model")));
+    setSelectOptions(dom.filterSampleGeometry, toOptions(collectMetaValues(state.seriesList, "sample_geometry")));
+    setSelectOptions(dom.filterSurfaceCondition, toOptions(collectMetaValues(state.seriesList, "surface_condition")));
+    setSelectOptions(dom.filterSurfaceFinishDetail, toOptions(collectMetaValues(state.seriesList, "surface_finish_detail")));
+    setSelectOptions(dom.filterCoated, toOptions(collectMetaValues(state.seriesList, "coated")));
+    setSelectOptions(dom.filterCoatingType, toOptions(collectMetaValues(state.seriesList, "coating_type")));
+    setSelectOptions(dom.filterDeformationHistory, toOptions(collectMetaValues(state.seriesList, "deformation_history")));
+    setSelectOptions(dom.filterMechanicalLoading, toOptions(collectMetaValues(state.seriesList, "mechanical_loading")));
+    setSelectOptions(dom.filterLoadingRegime, toOptions(collectMetaValues(state.seriesList, "loading_regime")));
+    setSelectOptions(dom.filterElectrolyte, toOptions(collectMetaValues(state.seriesList, "electrolyte")));
+    setSelectOptions(dom.filterControlMode, toOptions(collectMetaValues(state.seriesList, "control_mode")));
+    setSelectOptions(dom.filterPoisonAdditive, toOptions(collectMetaValues(state.seriesList, "poison_additive")));
+    setSelectOptions(dom.filterGasComposition, toOptions(collectMetaValues(state.seriesList, "gas_composition")));
+    setSelectOptions(dom.filterGasPurity, toOptions(collectMetaValues(state.seriesList, "gas_purity")));
+    setSelectOptions(dom.filterTdaPeak, toOptions(collectMetaValues(state.seriesList, "tda_peak_analysis")));
+    setSelectOptions(dom.filterSimsType, toOptions(collectMetaValues(state.seriesList, "sims_type")));
+    setSelectOptions(dom.filterDevEntryElectrolyte, toOptions(collectMetaValues(state.seriesList, "dev_entry_electrolyte")));
+    setSelectOptions(dom.filterDevExitElectrolyte, toOptions(collectMetaValues(state.seriesList, "dev_exit_electrolyte")));
     setSelectOptions(dom.filterReported, toOptions(payload.filters?.reported_as));
     setSelectOptions(dom.filterEffect, toOptions(payload.filters?.studied_effects));
     setSelectOptions(dom.filterMethod, toOptions(payload.filters?.measurement_method));
@@ -1268,7 +1461,41 @@
   }
 
   function clearFilters() {
-    [dom.filterSource, dom.filterClass, dom.filterGrade, dom.filterMicrostructure, dom.filterComposition, dom.filterReported, dom.filterEffect, dom.filterMethod, dom.filterModel]
+    [
+      dom.filterSource,
+      dom.filterClass,
+      dom.filterGrade,
+      dom.filterMicrostructure,
+      dom.filterPhase,
+      dom.filterProcessing,
+      dom.filterTags,
+      dom.filterWeldProcess,
+      dom.filterWeldLayer,
+      dom.filterComposition,
+      dom.filterChargingMethod,
+      dom.filterCalculationModel,
+      dom.filterSampleGeometry,
+      dom.filterSurfaceCondition,
+      dom.filterSurfaceFinishDetail,
+      dom.filterCoated,
+      dom.filterCoatingType,
+      dom.filterDeformationHistory,
+      dom.filterMechanicalLoading,
+      dom.filterLoadingRegime,
+      dom.filterElectrolyte,
+      dom.filterControlMode,
+      dom.filterPoisonAdditive,
+      dom.filterGasComposition,
+      dom.filterGasPurity,
+      dom.filterTdaPeak,
+      dom.filterSimsType,
+      dom.filterDevEntryElectrolyte,
+      dom.filterDevExitElectrolyte,
+      dom.filterReported,
+      dom.filterEffect,
+      dom.filterMethod,
+      dom.filterModel,
+    ]
       .forEach((listbox) => {
         if (!listbox) return;
         listbox.querySelectorAll("input[type='checkbox']").forEach((checkbox) => {
@@ -1297,7 +1524,13 @@
         input.value = "";
       });
     }
+    if (dom.numericRangeInputs) {
+      dom.numericRangeInputs.forEach((input) => {
+        input.value = "";
+      });
+    }
     state.compositionFilters = {};
+    state.numericFilters = {};
     if (dom.search) dom.search.value = "";
     if (dom.tempMin) dom.tempMin.value = "";
     if (dom.tempMax) dom.tempMax.value = "";
@@ -1331,7 +1564,31 @@
       materialClass: selectedValues(dom.filterClass),
       materialGrade: selectedValues(dom.filterGrade),
       materialMicrostructure: selectedValues(dom.filterMicrostructure),
+      materialPhase: selectedValues(dom.filterPhase),
+      materialProcessing: selectedValues(dom.filterProcessing),
+      materialTags: selectedValues(dom.filterTags),
+      weldedProcess: selectedValues(dom.filterWeldProcess),
+      weldedLayer: selectedValues(dom.filterWeldLayer),
       chemicalComposition: state.compositionFilters,
+      chargingMethod: selectedValues(dom.filterChargingMethod),
+      calculationModel: selectedValues(dom.filterCalculationModel),
+      sampleGeometry: selectedValues(dom.filterSampleGeometry),
+      surfaceCondition: selectedValues(dom.filterSurfaceCondition),
+      surfaceFinishDetail: selectedValues(dom.filterSurfaceFinishDetail),
+      coated: selectedValues(dom.filterCoated),
+      coatingType: selectedValues(dom.filterCoatingType),
+      deformationHistory: selectedValues(dom.filterDeformationHistory),
+      mechanicalLoading: selectedValues(dom.filterMechanicalLoading),
+      loadingRegime: selectedValues(dom.filterLoadingRegime),
+      electrolyte: selectedValues(dom.filterElectrolyte),
+      controlMode: selectedValues(dom.filterControlMode),
+      poisonAdditive: selectedValues(dom.filterPoisonAdditive),
+      gasComposition: selectedValues(dom.filterGasComposition),
+      gasPurity: selectedValues(dom.filterGasPurity),
+      tdaPeakAnalysis: selectedValues(dom.filterTdaPeak),
+      simsType: selectedValues(dom.filterSimsType),
+      devEntryElectrolyte: selectedValues(dom.filterDevEntryElectrolyte),
+      devExitElectrolyte: selectedValues(dom.filterDevExitElectrolyte),
       reportedAs: selectedValues(dom.filterReported),
       studiedEffects: selectedValues(dom.filterEffect),
       measurementMethod: selectedValues(dom.filterMethod),
@@ -1344,6 +1601,7 @@
       literatureMode: state.literatureMode,
       weldedMode: state.weldedMode,
       includeUnknownComposition: state.includeUnknownComposition,
+      numeric: state.numericFilters,
       mode: state.filterMode,
     };
 
@@ -1438,7 +1696,31 @@
       dom.filterClass,
       dom.filterGrade,
       dom.filterMicrostructure,
+      dom.filterPhase,
+      dom.filterProcessing,
+      dom.filterTags,
+      dom.filterWeldProcess,
+      dom.filterWeldLayer,
       dom.filterComposition,
+      dom.filterChargingMethod,
+      dom.filterCalculationModel,
+      dom.filterSampleGeometry,
+      dom.filterSurfaceCondition,
+      dom.filterSurfaceFinishDetail,
+      dom.filterCoated,
+      dom.filterCoatingType,
+      dom.filterDeformationHistory,
+      dom.filterMechanicalLoading,
+      dom.filterLoadingRegime,
+      dom.filterElectrolyte,
+      dom.filterControlMode,
+      dom.filterPoisonAdditive,
+      dom.filterGasComposition,
+      dom.filterGasPurity,
+      dom.filterTdaPeak,
+      dom.filterSimsType,
+      dom.filterDevEntryElectrolyte,
+      dom.filterDevExitElectrolyte,
       dom.filterReported,
       dom.filterEffect,
       dom.filterMethod,
@@ -1498,13 +1780,51 @@
     if (ignoreKey !== "materialClass" && !matchesSet(filters.materialClass, entry.meta.material_class, mode.materialClass)) return false;
     if (ignoreKey !== "materialGrade" && !matchesSet(filters.materialGrade, entry.meta.material_grade, mode.materialGrade)) return false;
     if (ignoreKey !== "materialMicrostructure" && !matchesSet(filters.materialMicrostructure, entry.meta.material_microstructure, microMode)) return false;
+    if (ignoreKey !== "materialPhase" && !matchesSet(filters.materialPhase, entry.meta.material_phase, mode.materialPhase)) return false;
+    if (ignoreKey !== "materialProcessing" && !matchesSet(filters.materialProcessing, entry.meta.material_processing, mode.materialProcessing)) return false;
+    if (ignoreKey !== "materialTags" && !matchesSet(filters.materialTags, entry.meta.material_tags, mode.materialTags)) return false;
+    if (ignoreKey !== "weldedProcess" && !matchesSet(filters.weldedProcess, entry.meta.welded_process, mode.weldedProcess)) return false;
+    if (ignoreKey !== "weldedLayer" && !matchesSet(filters.weldedLayer, entry.meta.welded_layer, mode.weldedLayer)) return false;
     if (ignoreKey !== "chemicalComposition" && !matchesComposition(filters.chemicalComposition, entry.compositionRanges, filters.includeUnknownComposition)) return false;
+    if (ignoreKey !== "chargingMethod" && !matchesSet(filters.chargingMethod, entry.meta.charging_method, mode.chargingMethod)) return false;
+    if (ignoreKey !== "calculationModel" && !matchesSet(filters.calculationModel, entry.meta.calculation_model, mode.calculationModel)) return false;
+    if (ignoreKey !== "sampleGeometry" && !matchesSet(filters.sampleGeometry, entry.meta.sample_geometry, mode.sampleGeometry)) return false;
+    if (ignoreKey !== "surfaceCondition" && !matchesSet(filters.surfaceCondition, entry.meta.surface_condition, mode.surfaceCondition)) return false;
+    if (ignoreKey !== "surfaceFinishDetail" && !matchesSet(filters.surfaceFinishDetail, entry.meta.surface_finish_detail, mode.surfaceFinishDetail)) return false;
+    if (ignoreKey !== "coated" && !matchesSet(filters.coated, entry.meta.coated, mode.coated)) return false;
+    if (ignoreKey !== "coatingType" && !matchesSet(filters.coatingType, entry.meta.coating_type, mode.coatingType)) return false;
+    if (ignoreKey !== "deformationHistory" && !matchesSet(filters.deformationHistory, entry.meta.deformation_history, mode.deformationHistory)) return false;
+    if (ignoreKey !== "mechanicalLoading" && !matchesSet(filters.mechanicalLoading, entry.meta.mechanical_loading, mode.mechanicalLoading)) return false;
+    if (ignoreKey !== "loadingRegime" && !matchesSet(filters.loadingRegime, entry.meta.loading_regime, mode.loadingRegime)) return false;
+    if (ignoreKey !== "electrolyte" && !matchesSet(filters.electrolyte, entry.meta.electrolyte, mode.electrolyte)) return false;
+    if (ignoreKey !== "controlMode" && !matchesSet(filters.controlMode, entry.meta.control_mode, mode.controlMode)) return false;
+    if (ignoreKey !== "poisonAdditive" && !matchesSet(filters.poisonAdditive, entry.meta.poison_additive, mode.poisonAdditive)) return false;
+    if (ignoreKey !== "gasComposition" && !matchesSet(filters.gasComposition, entry.meta.gas_composition, mode.gasComposition)) return false;
+    if (ignoreKey !== "gasPurity" && !matchesSet(filters.gasPurity, entry.meta.gas_purity, mode.gasPurity)) return false;
+    if (ignoreKey !== "tdaPeakAnalysis" && !matchesSet(filters.tdaPeakAnalysis, entry.meta.tda_peak_analysis, mode.tdaPeakAnalysis)) return false;
+    if (ignoreKey !== "simsType" && !matchesSet(filters.simsType, entry.meta.sims_type, mode.simsType)) return false;
+    if (ignoreKey !== "devEntryElectrolyte" && !matchesSet(filters.devEntryElectrolyte, entry.meta.dev_entry_electrolyte, mode.devEntryElectrolyte)) return false;
+    if (ignoreKey !== "devExitElectrolyte" && !matchesSet(filters.devExitElectrolyte, entry.meta.dev_exit_electrolyte, mode.devExitElectrolyte)) return false;
     if (ignoreKey !== "reportedAs" && !matchesSet(filters.reportedAs, entry.meta.reported_as, mode.reportedAs)) return false;
     if (ignoreKey !== "studiedEffects" && !matchesSet(filters.studiedEffects, entry.meta.studied_effects, mode.studiedEffects)) return false;
     if (ignoreKey !== "measurementMethod" && !matchesSet(filters.measurementMethod, entry.meta.measurement_method, mode.measurementMethod)) return false;
     if (ignoreKey !== "modelType" && !matchesSet(filters.modelType, entry.meta.model_type, mode.modelType)) return false;
     if (ignoreKey !== "tempRange" && !matchesTemperatureRange(entry, filters.tempMin, filters.tempMax)) return false;
     if (ignoreKey !== "yearRange" && !matchesYearRange(entry, filters.yearMin, filters.yearMax)) return false;
+    if (ignoreKey !== "chargingTemperature" && !matchesNumericRange(entry.numericRanges?.charging_temperature_c, filters.numeric?.charging_temperature_c?.min, filters.numeric?.charging_temperature_c?.max)) return false;
+    if (ignoreKey !== "chargingDuration" && !matchesNumericRange(entry.numericRanges?.charging_duration_h, filters.numeric?.charging_duration_h?.min, filters.numeric?.charging_duration_h?.max)) return false;
+    if (ignoreKey !== "characteristicLength" && !matchesNumericRange(entry.numericRanges?.characteristic_length_mm, filters.numeric?.characteristic_length_mm?.min, filters.numeric?.characteristic_length_mm?.max)) return false;
+    if (ignoreKey !== "coatingThickness" && !matchesNumericRange(entry.numericRanges?.coating_thickness_um, filters.numeric?.coating_thickness_um?.min, filters.numeric?.coating_thickness_um?.max)) return false;
+    if (ignoreKey !== "preStrain" && !matchesNumericRange(entry.numericRanges?.pre_strain_percent, filters.numeric?.pre_strain_percent?.min, filters.numeric?.pre_strain_percent?.max)) return false;
+    if (ignoreKey !== "coldReduction" && !matchesNumericRange(entry.numericRanges?.cold_reduction_percent, filters.numeric?.cold_reduction_percent?.min, filters.numeric?.cold_reduction_percent?.max)) return false;
+    if (ignoreKey !== "appliedStress" && !matchesNumericRange(entry.numericRanges?.applied_stress_mpa, filters.numeric?.applied_stress_mpa?.min, filters.numeric?.applied_stress_mpa?.max)) return false;
+    if (ignoreKey !== "appliedStrain" && !matchesNumericRange(entry.numericRanges?.applied_strain_percent, filters.numeric?.applied_strain_percent?.min, filters.numeric?.applied_strain_percent?.max)) return false;
+    if (ignoreKey !== "weldingT85" && !matchesNumericRange(entry.numericRanges?.welding_t85, filters.numeric?.welding_t85?.min, filters.numeric?.welding_t85?.max)) return false;
+    if (ignoreKey !== "currentDensity" && !matchesNumericRange(entry.numericRanges?.current_density_mA_per_cm2, filters.numeric?.current_density_mA_per_cm2?.min, filters.numeric?.current_density_mA_per_cm2?.max)) return false;
+    if (ignoreKey !== "appliedPotential" && !matchesNumericRange(entry.numericRanges?.applied_potential_v, filters.numeric?.applied_potential_v?.min, filters.numeric?.applied_potential_v?.max)) return false;
+    if (ignoreKey !== "gasPressure" && !matchesNumericRange(entry.numericRanges?.gas_pressure_bar, filters.numeric?.gas_pressure_bar?.min, filters.numeric?.gas_pressure_bar?.max)) return false;
+    if (ignoreKey !== "heatingRate" && !matchesNumericRange(entry.numericRanges?.heating_rate_k_per_min, filters.numeric?.heating_rate_k_per_min?.min, filters.numeric?.heating_rate_k_per_min?.max)) return false;
+    if (ignoreKey !== "extractionTemperature" && !matchesNumericRange(entry.numericRanges?.extraction_temperature_c, filters.numeric?.extraction_temperature_c?.min, filters.numeric?.extraction_temperature_c?.max)) return false;
 
     if (query) {
       const haystack = [
@@ -1559,74 +1879,233 @@
     return true;
   }
 
+  function matchesNumericRange(range, min, max) {
+    if (min == null && max == null) return true;
+    if (!range) return false;
+    if (min != null && range.max < min) return false;
+    if (max != null && range.min > max) return false;
+    return true;
+  }
+
+  function evaluateEntryFilterFailures(entry, filters, query) {
+    const failedKeys = [];
+    const mode = filters.mode || {};
+    const microMode =
+      mode.materialMicrostructure ||
+      (dom.filterMicrostructureMode?.checked ? "exclude" : "include");
+
+    if (!isPlottingAllowed(entry, filters.includeUnconfirmed)) {
+      return { globalOk: false, failedKeys };
+    }
+    if (filters.literatureMode === "exclude" && hasLiteratureCompilation(entry)) {
+      return { globalOk: false, failedKeys };
+    }
+    if (filters.literatureMode === "only" && !hasLiteratureCompilation(entry)) {
+      return { globalOk: false, failedKeys };
+    }
+    if (filters.weldedMode === "exclude" && hasWeldedMaterial(entry)) {
+      return { globalOk: false, failedKeys };
+    }
+    if (filters.weldedMode === "only" && !hasWeldedMaterial(entry)) {
+      return { globalOk: false, failedKeys };
+    }
+
+    if (!matchesValue(filters.source, entry.sourceId, mode.source)) failedKeys.push("source");
+    if (!matchesSet(filters.materialClass, entry.meta.material_class, mode.materialClass)) failedKeys.push("materialClass");
+    if (!matchesSet(filters.materialGrade, entry.meta.material_grade, mode.materialGrade)) failedKeys.push("materialGrade");
+    if (!matchesSet(filters.materialMicrostructure, entry.meta.material_microstructure, microMode)) failedKeys.push("materialMicrostructure");
+    if (!matchesSet(filters.materialPhase, entry.meta.material_phase, mode.materialPhase)) failedKeys.push("materialPhase");
+    if (!matchesSet(filters.materialProcessing, entry.meta.material_processing, mode.materialProcessing)) failedKeys.push("materialProcessing");
+    if (!matchesSet(filters.materialTags, entry.meta.material_tags, mode.materialTags)) failedKeys.push("materialTags");
+    if (!matchesSet(filters.weldedProcess, entry.meta.welded_process, mode.weldedProcess)) failedKeys.push("weldedProcess");
+    if (!matchesSet(filters.weldedLayer, entry.meta.welded_layer, mode.weldedLayer)) failedKeys.push("weldedLayer");
+    if (!matchesComposition(filters.chemicalComposition, entry.compositionRanges, filters.includeUnknownComposition)) failedKeys.push("chemicalComposition");
+    if (!matchesSet(filters.chargingMethod, entry.meta.charging_method, mode.chargingMethod)) failedKeys.push("chargingMethod");
+    if (!matchesSet(filters.calculationModel, entry.meta.calculation_model, mode.calculationModel)) failedKeys.push("calculationModel");
+    if (!matchesSet(filters.sampleGeometry, entry.meta.sample_geometry, mode.sampleGeometry)) failedKeys.push("sampleGeometry");
+    if (!matchesSet(filters.surfaceCondition, entry.meta.surface_condition, mode.surfaceCondition)) failedKeys.push("surfaceCondition");
+    if (!matchesSet(filters.surfaceFinishDetail, entry.meta.surface_finish_detail, mode.surfaceFinishDetail)) failedKeys.push("surfaceFinishDetail");
+    if (!matchesSet(filters.coated, entry.meta.coated, mode.coated)) failedKeys.push("coated");
+    if (!matchesSet(filters.coatingType, entry.meta.coating_type, mode.coatingType)) failedKeys.push("coatingType");
+    if (!matchesSet(filters.deformationHistory, entry.meta.deformation_history, mode.deformationHistory)) failedKeys.push("deformationHistory");
+    if (!matchesSet(filters.mechanicalLoading, entry.meta.mechanical_loading, mode.mechanicalLoading)) failedKeys.push("mechanicalLoading");
+    if (!matchesSet(filters.loadingRegime, entry.meta.loading_regime, mode.loadingRegime)) failedKeys.push("loadingRegime");
+    if (!matchesSet(filters.electrolyte, entry.meta.electrolyte, mode.electrolyte)) failedKeys.push("electrolyte");
+    if (!matchesSet(filters.controlMode, entry.meta.control_mode, mode.controlMode)) failedKeys.push("controlMode");
+    if (!matchesSet(filters.poisonAdditive, entry.meta.poison_additive, mode.poisonAdditive)) failedKeys.push("poisonAdditive");
+    if (!matchesSet(filters.gasComposition, entry.meta.gas_composition, mode.gasComposition)) failedKeys.push("gasComposition");
+    if (!matchesSet(filters.gasPurity, entry.meta.gas_purity, mode.gasPurity)) failedKeys.push("gasPurity");
+    if (!matchesSet(filters.tdaPeakAnalysis, entry.meta.tda_peak_analysis, mode.tdaPeakAnalysis)) failedKeys.push("tdaPeakAnalysis");
+    if (!matchesSet(filters.simsType, entry.meta.sims_type, mode.simsType)) failedKeys.push("simsType");
+    if (!matchesSet(filters.devEntryElectrolyte, entry.meta.dev_entry_electrolyte, mode.devEntryElectrolyte)) failedKeys.push("devEntryElectrolyte");
+    if (!matchesSet(filters.devExitElectrolyte, entry.meta.dev_exit_electrolyte, mode.devExitElectrolyte)) failedKeys.push("devExitElectrolyte");
+    if (!matchesSet(filters.reportedAs, entry.meta.reported_as, mode.reportedAs)) failedKeys.push("reportedAs");
+    if (!matchesSet(filters.studiedEffects, entry.meta.studied_effects, mode.studiedEffects)) failedKeys.push("studiedEffects");
+    if (!matchesSet(filters.measurementMethod, entry.meta.measurement_method, mode.measurementMethod)) failedKeys.push("measurementMethod");
+    if (!matchesSet(filters.modelType, entry.meta.model_type, mode.modelType)) failedKeys.push("modelType");
+
+    if (!matchesTemperatureRange(entry, filters.tempMin, filters.tempMax)) return { globalOk: false, failedKeys };
+    if (!matchesYearRange(entry, filters.yearMin, filters.yearMax)) return { globalOk: false, failedKeys };
+    if (!matchesNumericRange(entry.numericRanges?.charging_temperature_c, filters.numeric?.charging_temperature_c?.min, filters.numeric?.charging_temperature_c?.max)) return { globalOk: false, failedKeys };
+    if (!matchesNumericRange(entry.numericRanges?.charging_duration_h, filters.numeric?.charging_duration_h?.min, filters.numeric?.charging_duration_h?.max)) return { globalOk: false, failedKeys };
+    if (!matchesNumericRange(entry.numericRanges?.characteristic_length_mm, filters.numeric?.characteristic_length_mm?.min, filters.numeric?.characteristic_length_mm?.max)) return { globalOk: false, failedKeys };
+    if (!matchesNumericRange(entry.numericRanges?.coating_thickness_um, filters.numeric?.coating_thickness_um?.min, filters.numeric?.coating_thickness_um?.max)) return { globalOk: false, failedKeys };
+    if (!matchesNumericRange(entry.numericRanges?.pre_strain_percent, filters.numeric?.pre_strain_percent?.min, filters.numeric?.pre_strain_percent?.max)) return { globalOk: false, failedKeys };
+    if (!matchesNumericRange(entry.numericRanges?.cold_reduction_percent, filters.numeric?.cold_reduction_percent?.min, filters.numeric?.cold_reduction_percent?.max)) return { globalOk: false, failedKeys };
+    if (!matchesNumericRange(entry.numericRanges?.applied_stress_mpa, filters.numeric?.applied_stress_mpa?.min, filters.numeric?.applied_stress_mpa?.max)) return { globalOk: false, failedKeys };
+    if (!matchesNumericRange(entry.numericRanges?.applied_strain_percent, filters.numeric?.applied_strain_percent?.min, filters.numeric?.applied_strain_percent?.max)) return { globalOk: false, failedKeys };
+    if (!matchesNumericRange(entry.numericRanges?.welding_t85, filters.numeric?.welding_t85?.min, filters.numeric?.welding_t85?.max)) return { globalOk: false, failedKeys };
+    if (!matchesNumericRange(entry.numericRanges?.current_density_mA_per_cm2, filters.numeric?.current_density_mA_per_cm2?.min, filters.numeric?.current_density_mA_per_cm2?.max)) return { globalOk: false, failedKeys };
+    if (!matchesNumericRange(entry.numericRanges?.applied_potential_v, filters.numeric?.applied_potential_v?.min, filters.numeric?.applied_potential_v?.max)) return { globalOk: false, failedKeys };
+    if (!matchesNumericRange(entry.numericRanges?.gas_pressure_bar, filters.numeric?.gas_pressure_bar?.min, filters.numeric?.gas_pressure_bar?.max)) return { globalOk: false, failedKeys };
+    if (!matchesNumericRange(entry.numericRanges?.heating_rate_k_per_min, filters.numeric?.heating_rate_k_per_min?.min, filters.numeric?.heating_rate_k_per_min?.max)) return { globalOk: false, failedKeys };
+    if (!matchesNumericRange(entry.numericRanges?.extraction_temperature_c, filters.numeric?.extraction_temperature_c?.min, filters.numeric?.extraction_temperature_c?.max)) return { globalOk: false, failedKeys };
+
+    if (query) {
+      const haystack = [
+        entry.label,
+        entry.groupId,
+        entry.seriesLabel,
+        entry.seriesKey,
+        entry.sourceTitle,
+        entry.materialLabel,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      if (!haystack.includes(query)) return { globalOk: false, failedKeys };
+    }
+
+    return { globalOk: true, failedKeys };
+  }
+
   function updateFilterAvailability(filters, query) {
     const availability = {
       source: new Set(),
       materialClass: new Set(),
       materialGrade: new Set(),
       materialMicrostructure: new Set(),
+      materialPhase: new Set(),
+      materialProcessing: new Set(),
+      materialTags: new Set(),
+      weldedProcess: new Set(),
+      weldedLayer: new Set(),
       chemicalComposition: new Set(),
+      chargingMethod: new Set(),
+      calculationModel: new Set(),
+      sampleGeometry: new Set(),
+      surfaceCondition: new Set(),
+      surfaceFinishDetail: new Set(),
+      coated: new Set(),
+      coatingType: new Set(),
+      deformationHistory: new Set(),
+      mechanicalLoading: new Set(),
+      loadingRegime: new Set(),
+      electrolyte: new Set(),
+      controlMode: new Set(),
+      poisonAdditive: new Set(),
+      gasComposition: new Set(),
+      gasPurity: new Set(),
+      tdaPeakAnalysis: new Set(),
+      simsType: new Set(),
+      devEntryElectrolyte: new Set(),
+      devExitElectrolyte: new Set(),
       reportedAs: new Set(),
       studiedEffects: new Set(),
       measurementMethod: new Set(),
       modelType: new Set(),
     };
 
-    state.seriesList.forEach((entry) => {
-      if (!entryMatchesFilters(entry, filters, query, "source")) return;
-      if (entry.sourceId) availability.source.add(String(entry.sourceId));
+    const addValues = (key, values) => {
+      if (!values || !values.length) return;
+      const bucket = availability[key];
+      if (!bucket) return;
+      values.forEach((value) => bucket.add(String(value)));
+    };
+
+    const valuesFromSet = (set) => {
+      if (!set || !set.size) return [];
+      return Array.from(set).map((value) => String(value));
+    };
+
+    const buildEntryValues = (entry) => ({
+      source: entry.sourceId ? [String(entry.sourceId)] : [],
+      materialClass: valuesFromSet(entry.meta.material_class),
+      materialGrade: valuesFromSet(entry.meta.material_grade),
+      materialMicrostructure: valuesFromSet(entry.meta.material_microstructure),
+      materialPhase: valuesFromSet(entry.meta.material_phase),
+      materialProcessing: valuesFromSet(entry.meta.material_processing),
+      materialTags: valuesFromSet(entry.meta.material_tags),
+      weldedProcess: valuesFromSet(entry.meta.welded_process),
+      weldedLayer: valuesFromSet(entry.meta.welded_layer),
+      chemicalComposition: valuesFromSet(entry.meta.chemical_composition),
+      chargingMethod: valuesFromSet(entry.meta.charging_method),
+      calculationModel: valuesFromSet(entry.meta.calculation_model),
+      sampleGeometry: valuesFromSet(entry.meta.sample_geometry),
+      surfaceCondition: valuesFromSet(entry.meta.surface_condition),
+      surfaceFinishDetail: valuesFromSet(entry.meta.surface_finish_detail),
+      coated: valuesFromSet(entry.meta.coated),
+      coatingType: valuesFromSet(entry.meta.coating_type),
+      deformationHistory: valuesFromSet(entry.meta.deformation_history),
+      mechanicalLoading: valuesFromSet(entry.meta.mechanical_loading),
+      loadingRegime: valuesFromSet(entry.meta.loading_regime),
+      electrolyte: valuesFromSet(entry.meta.electrolyte),
+      controlMode: valuesFromSet(entry.meta.control_mode),
+      poisonAdditive: valuesFromSet(entry.meta.poison_additive),
+      gasComposition: valuesFromSet(entry.meta.gas_composition),
+      gasPurity: valuesFromSet(entry.meta.gas_purity),
+      tdaPeakAnalysis: valuesFromSet(entry.meta.tda_peak_analysis),
+      simsType: valuesFromSet(entry.meta.sims_type),
+      devEntryElectrolyte: valuesFromSet(entry.meta.dev_entry_electrolyte),
+      devExitElectrolyte: valuesFromSet(entry.meta.dev_exit_electrolyte),
+      reportedAs: valuesFromSet(entry.meta.reported_as),
+      studiedEffects: valuesFromSet(entry.meta.studied_effects),
+      measurementMethod: valuesFromSet(entry.meta.measurement_method),
+      modelType: valuesFromSet(entry.meta.model_type),
     });
 
     state.seriesList.forEach((entry) => {
-      if (!entryMatchesFilters(entry, filters, query, "materialClass")) return;
-      entry.meta.material_class?.forEach((value) => availability.materialClass.add(String(value)));
-    });
-
-    state.seriesList.forEach((entry) => {
-      if (!entryMatchesFilters(entry, filters, query, "materialGrade")) return;
-      entry.meta.material_grade?.forEach((value) => availability.materialGrade.add(String(value)));
-    });
-
-    state.seriesList.forEach((entry) => {
-      if (!entryMatchesFilters(entry, filters, query, "materialMicrostructure")) return;
-      entry.meta.material_microstructure?.forEach((value) =>
-        availability.materialMicrostructure.add(String(value))
-      );
-    });
-
-    state.seriesList.forEach((entry) => {
-      if (!entryMatchesFilters(entry, filters, query, "chemicalComposition")) return;
-      entry.meta.chemical_composition?.forEach((value) =>
-        availability.chemicalComposition.add(String(value))
-      );
-    });
-
-    state.seriesList.forEach((entry) => {
-      if (!entryMatchesFilters(entry, filters, query, "reportedAs")) return;
-      entry.meta.reported_as?.forEach((value) => availability.reportedAs.add(String(value)));
-    });
-
-    state.seriesList.forEach((entry) => {
-      if (!entryMatchesFilters(entry, filters, query, "studiedEffects")) return;
-      entry.meta.studied_effects?.forEach((value) => availability.studiedEffects.add(String(value)));
-    });
-
-    state.seriesList.forEach((entry) => {
-      if (!entryMatchesFilters(entry, filters, query, "measurementMethod")) return;
-      entry.meta.measurement_method?.forEach((value) =>
-        availability.measurementMethod.add(String(value))
-      );
-    });
-
-    state.seriesList.forEach((entry) => {
-      if (!entryMatchesFilters(entry, filters, query, "modelType")) return;
-      entry.meta.model_type?.forEach((value) => availability.modelType.add(String(value)));
+      const check = evaluateEntryFilterFailures(entry, filters, query);
+      if (!check.globalOk) return;
+      const values = buildEntryValues(entry);
+      if (!check.failedKeys.length) {
+        Object.keys(values).forEach((key) => addValues(key, values[key]));
+        return;
+      }
+      if (check.failedKeys.length === 1) {
+        const key = check.failedKeys[0];
+        addValues(key, values[key]);
+      }
     });
 
     updateSelectAvailability(dom.filterSource, availability.source);
     updateSelectAvailability(dom.filterClass, availability.materialClass);
     updateSelectAvailability(dom.filterGrade, availability.materialGrade);
     updateSelectAvailability(dom.filterMicrostructure, availability.materialMicrostructure);
+    updateSelectAvailability(dom.filterPhase, availability.materialPhase);
+    updateSelectAvailability(dom.filterProcessing, availability.materialProcessing);
+    updateSelectAvailability(dom.filterTags, availability.materialTags);
+    updateSelectAvailability(dom.filterWeldProcess, availability.weldedProcess);
+    updateSelectAvailability(dom.filterWeldLayer, availability.weldedLayer);
+    updateSelectAvailability(dom.filterChargingMethod, availability.chargingMethod);
+    updateSelectAvailability(dom.filterCalculationModel, availability.calculationModel);
+    updateSelectAvailability(dom.filterSampleGeometry, availability.sampleGeometry);
+    updateSelectAvailability(dom.filterSurfaceCondition, availability.surfaceCondition);
+    updateSelectAvailability(dom.filterSurfaceFinishDetail, availability.surfaceFinishDetail);
+    updateSelectAvailability(dom.filterCoated, availability.coated);
+    updateSelectAvailability(dom.filterCoatingType, availability.coatingType);
+    updateSelectAvailability(dom.filterDeformationHistory, availability.deformationHistory);
+    updateSelectAvailability(dom.filterMechanicalLoading, availability.mechanicalLoading);
+    updateSelectAvailability(dom.filterLoadingRegime, availability.loadingRegime);
+    updateSelectAvailability(dom.filterElectrolyte, availability.electrolyte);
+    updateSelectAvailability(dom.filterControlMode, availability.controlMode);
+    updateSelectAvailability(dom.filterPoisonAdditive, availability.poisonAdditive);
+    updateSelectAvailability(dom.filterGasComposition, availability.gasComposition);
+    updateSelectAvailability(dom.filterGasPurity, availability.gasPurity);
+    updateSelectAvailability(dom.filterTdaPeak, availability.tdaPeakAnalysis);
+    updateSelectAvailability(dom.filterSimsType, availability.simsType);
+    updateSelectAvailability(dom.filterDevEntryElectrolyte, availability.devEntryElectrolyte);
+    updateSelectAvailability(dom.filterDevExitElectrolyte, availability.devExitElectrolyte);
     updateSelectAvailability(dom.filterReported, availability.reportedAs);
     updateSelectAvailability(dom.filterEffect, availability.studiedEffects);
     updateSelectAvailability(dom.filterMethod, availability.measurementMethod);
@@ -1693,6 +2172,41 @@
       delete state.compositionFilters[element];
     } else {
       state.compositionFilters[element] = { min: minVal, max: maxVal };
+    }
+    applyFilters();
+  }
+
+  function handleNumericFilterInput(event) {
+    const input = event.target;
+    if (!(input instanceof HTMLInputElement)) return;
+    const key = input.dataset.rangeKey;
+    const bound = input.dataset.rangeBound;
+    if (!key || !bound) return;
+    if (input.value && input.value.includes(",")) {
+      input.value = input.value.replace(/,/g, ".");
+    }
+    const value = parseNumber(input.value);
+    if (!state.numericFilters[key]) {
+      state.numericFilters[key] = { min: null, max: null };
+    }
+    state.numericFilters[key][bound] = value;
+    const current = state.numericFilters[key];
+    if (current.min != null && current.max != null && current.min > current.max) {
+      const swap = current.min;
+      current.min = current.max;
+      current.max = swap;
+      const minInput = dom.numericRangeInputs
+        ? Array.from(dom.numericRangeInputs).find(
+            (el) => el.dataset.rangeKey === key && el.dataset.rangeBound === "min"
+          )
+        : null;
+      const maxInput = dom.numericRangeInputs
+        ? Array.from(dom.numericRangeInputs).find(
+            (el) => el.dataset.rangeKey === key && el.dataset.rangeBound === "max"
+          )
+        : null;
+      if (minInput) minInput.value = current.min;
+      if (maxInput) maxInput.value = current.max;
     }
     applyFilters();
   }
@@ -3500,9 +4014,33 @@
     addList("material_class", selectedValues(dom.filterClass));
     addList("material_grade", selectedValues(dom.filterGrade));
     addList("material_microstructure", selectedValues(dom.filterMicrostructure));
+    addList("material_phase", selectedValues(dom.filterPhase));
+    addList("material_processing", selectedValues(dom.filterProcessing));
+    addList("material_tags", selectedValues(dom.filterTags));
+    addList("welded_process", selectedValues(dom.filterWeldProcess));
+    addList("welded_layer", selectedValues(dom.filterWeldLayer));
     const compositionFilters = formatCompositionFilters(state.compositionFilters);
     if (compositionFilters.length) summary.chemical_composition = compositionFilters;
     if (state.includeUnknownComposition) summary.chemical_composition_unknown = true;
+    addList("charging_method", selectedValues(dom.filterChargingMethod));
+    addList("calculation_model", selectedValues(dom.filterCalculationModel));
+    addList("sample_geometry", selectedValues(dom.filterSampleGeometry));
+    addList("surface_condition", selectedValues(dom.filterSurfaceCondition));
+    addList("surface_finish_detail", selectedValues(dom.filterSurfaceFinishDetail));
+    addList("coated", selectedValues(dom.filterCoated));
+    addList("coating_type", selectedValues(dom.filterCoatingType));
+    addList("deformation_history", selectedValues(dom.filterDeformationHistory));
+    addList("mechanical_loading_during_test", selectedValues(dom.filterMechanicalLoading));
+    addList("loading_regime", selectedValues(dom.filterLoadingRegime));
+    addList("electrolyte", selectedValues(dom.filterElectrolyte));
+    addList("control_mode", selectedValues(dom.filterControlMode));
+    addList("poison_additive", selectedValues(dom.filterPoisonAdditive));
+    addList("gas_composition", selectedValues(dom.filterGasComposition));
+    addList("gas_purity", selectedValues(dom.filterGasPurity));
+    addList("tda_peak_analysis", selectedValues(dom.filterTdaPeak));
+    addList("sims_type", selectedValues(dom.filterSimsType));
+    addList("devanathan_entry_electrolyte", selectedValues(dom.filterDevEntryElectrolyte));
+    addList("devanathan_exit_electrolyte", selectedValues(dom.filterDevExitElectrolyte));
     addList("reported_as", selectedValues(dom.filterReported));
     addList("studied_effects", selectedValues(dom.filterEffect));
     addList("measurement_method", selectedValues(dom.filterMethod));
@@ -3513,6 +4051,14 @@
     if (state.tempMax != null) summary.temp_max = state.tempMax;
     if (state.yearMin != null) summary.year_min = state.yearMin;
     if (state.yearMax != null) summary.year_max = state.yearMax;
+    const numericSummary = {};
+    Object.keys(state.numericFilters || {}).forEach((key) => {
+      const range = state.numericFilters[key];
+      if (!range) return;
+      if (range.min == null && range.max == null) return;
+      numericSummary[key] = { min: range.min, max: range.max };
+    });
+    if (Object.keys(numericSummary).length) summary.numeric_ranges = numericSummary;
     if (state.includeUnconfirmed) summary.include_unconfirmed = true;
     if (state.literatureMode && state.literatureMode !== "include") {
       summary.literature_compilations = state.literatureMode;
@@ -3537,7 +4083,15 @@
       if (value == null) return;
       if (typeof value === "object" && !Array.isArray(value)) {
         const inner = Object.keys(value)
-          .map((innerKey) => `${innerKey}=${value[innerKey]}`)
+          .map((innerKey) => {
+            const innerValue = value[innerKey];
+            if (innerValue && typeof innerValue === "object" && !Array.isArray(innerValue)) {
+              const min = innerValue.min ?? "";
+              const max = innerValue.max ?? "";
+              return `${innerKey}=${min}-${max}`;
+            }
+            return `${innerKey}=${innerValue}`;
+          })
           .join(" | ");
         if (inner) parts.push(`${key}: ${inner}`);
         return;
