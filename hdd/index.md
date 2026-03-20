@@ -11,6 +11,13 @@ permalink: /hydrogen-diffusion-database/
     <p>A curated database of hydrogen diffusivity datasets for structural steels and related materials. Filter by material or source, plot series directly in the browser, export images or data, and <a class="hdd-inline-link" href="/hydrogen-diffusion-database/contribute/">contribute</a> peer-reviewed open-access datasets to expand the database.</p>
   </div>
 </div>
+<div id="hdd-hero-lightbox" class="hdd-hero-lightbox" hidden>
+  <div class="hdd-hero-lightbox-backdrop" data-action="close-hero"></div>
+  <div class="hdd-hero-lightbox-card" role="dialog" aria-modal="true" aria-label="HDD.B logo preview">
+    <button type="button" class="hdd-hero-lightbox-close" data-action="close-hero" aria-label="Close preview">&times;</button>
+    <img class="hdd-hero-lightbox-image" src="/assets/HDD.B%20Logo.png" alt="HDD.B logo" />
+  </div>
+</div>
 
 <link rel="stylesheet" href="/hdd/hdd-explorer.css">
 
@@ -39,8 +46,8 @@ permalink: /hydrogen-diffusion-database/
     </label>
   </div>
   <div class="hdd-control hdd-filter-grid hdd-filter-scroll">
-    <div class="hdd-filter-section hdd-filter-section-core" id="hdd-core-filters">
-      <div class="hdd-filter-section-header">Core Filters</div>
+    <details class="hdd-filter-section hdd-filter-section-core" id="hdd-core-filters" open>
+      <summary class="hdd-filter-section-header">Core</summary>
       <div class="hdd-filter-section-body" id="hdd-core-filters-body">
         <details class="hdd-filter-block" id="hdd-filter-block-class">
           <summary>Material Class</summary>
@@ -123,10 +130,10 @@ permalink: /hydrogen-diffusion-database/
           <div id="hdd-filter-source" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-source-label" aria-multiselectable="true"></div>
         </details>
       </div>
-    </div>
+    </details>
     <div id="hdd-advanced-filters" class="hdd-advanced-filters" hidden>
-      <div class="hdd-filter-section">
-        <div class="hdd-filter-section-header">Material Detail</div>
+      <details class="hdd-filter-section">
+        <summary class="hdd-filter-section-header">Material</summary>
         <div class="hdd-filter-section-body">
           <div class="hdd-filter-bucket" id="hdd-bucket-material"></div>
           <details class="hdd-filter-block">
@@ -226,9 +233,9 @@ permalink: /hydrogen-diffusion-database/
             </div>
           </details>
         </div>
-      </div>
-      <div class="hdd-filter-section">
-        <div class="hdd-filter-section-header">Conditions &amp; Charging</div>
+      </details>
+      <details class="hdd-filter-section">
+        <summary class="hdd-filter-section-header">Conditions &amp; Charging</summary>
         <div class="hdd-filter-section-body">
           <div class="hdd-filter-bucket" id="hdd-bucket-conditions"></div>
           <details class="hdd-filter-block">
@@ -292,9 +299,9 @@ permalink: /hydrogen-diffusion-database/
             </div>
           </details>
         </div>
-      </div>
-      <div class="hdd-filter-section">
-        <div class="hdd-filter-section-header">Surface &amp; Coating</div>
+      </details>
+      <details class="hdd-filter-section">
+        <summary class="hdd-filter-section-header">Surface &amp; Coating</summary>
         <div class="hdd-filter-section-body">
           <details class="hdd-filter-block">
             <summary>Surface Condition</summary>
@@ -364,9 +371,9 @@ permalink: /hydrogen-diffusion-database/
             </div>
           </details>
         </div>
-      </div>
-      <div class="hdd-filter-section">
-        <div class="hdd-filter-section-header">Mechanical &amp; Loading</div>
+      </details>
+      <details class="hdd-filter-section">
+        <summary class="hdd-filter-section-header">Mechanical &amp; Loading</summary>
         <div class="hdd-filter-section-body">
           <details class="hdd-filter-block">
             <summary>Deformation History</summary>
@@ -437,9 +444,9 @@ permalink: /hydrogen-diffusion-database/
             </div>
           </details>
         </div>
-      </div>
-      <div class="hdd-filter-section">
-        <div class="hdd-filter-section-header">Method Details</div>
+      </details>
+      <details class="hdd-filter-section">
+        <summary class="hdd-filter-section-header">Method Details</summary>
         <div class="hdd-filter-section-body">
           <div class="hdd-filter-bucket" id="hdd-bucket-method"></div>
           <details class="hdd-filter-block">
@@ -591,9 +598,9 @@ permalink: /hydrogen-diffusion-database/
             </label>
           </details>
         </div>
-      </div>
-      <div class="hdd-filter-section">
-        <div class="hdd-filter-section-header">Analysis &amp; Metadata</div>
+      </details>
+      <details class="hdd-filter-section">
+        <summary class="hdd-filter-section-header">Analysis &amp; Metadata</summary>
         <div class="hdd-filter-section-body">
           <div class="hdd-filter-bucket" id="hdd-bucket-analysis"></div>
           <details class="hdd-filter-block">
@@ -627,7 +634,7 @@ permalink: /hydrogen-diffusion-database/
             <div id="hdd-filter-model" class="hdd-filter-list" role="listbox" aria-labelledby="hdd-filter-model-label" aria-multiselectable="true"></div>
           </details>
         </div>
-      </div>
+      </details>
     </div>
   </div>
 </div></form>

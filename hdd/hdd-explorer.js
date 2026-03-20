@@ -103,6 +103,12 @@
     filterUnknownComposition: document.querySelector("[data-filter-unknown='chemicalComposition']"),
     resetZoom: document.getElementById("hdd-reset-zoom"),
     plotOptionPanels: mount.querySelectorAll(".hdd-plot-options"),
+    heroLogo: document.querySelector(".hdd-hero-logo"),
+    heroLightbox: document.getElementById("hdd-hero-lightbox"),
+    heroCloseButtons: document.querySelectorAll("[data-action='close-hero']"),
+    coreSection: document.getElementById("hdd-core-filters"),
+    sectionHeaders: document.querySelectorAll(".hdd-filter-section-header"),
+    sections: document.querySelectorAll(".hdd-filter-section"),
   };
 
   const state = {
@@ -187,6 +193,7 @@
     state.literatureMode = dom.literatureMode?.value || "include";
     state.weldedMode = dom.weldedMode?.value || "include";
     setAdvancedFiltersVisible(dom.advancedToggle?.checked ?? false);
+    setActiveSection(dom.coreSection);
     state.includeUnknownComposition = dom.filterUnknownComposition?.checked ?? false;
     const thickness = parseNumber(dom.lineThickness?.value);
     state.lineThickness = isFiniteNumber(thickness) ? clampValue(thickness, 0.5, 2) : 1;
@@ -635,6 +642,18 @@
     dom.selectAll?.addEventListener("click", selectAllVisible);
     dom.deselectAll?.addEventListener("click", deselectAllVisible);
     dom.showAll?.addEventListener("click", showAllSeriesList);
+    bindHeroLightbox();
+    dom.sectionHeaders?.forEach((header) => {
+      header.addEventListener("click", (event) => {
+        const section = event.currentTarget?.closest?.(".hdd-filter-section");
+        if (!section) return;
+        if (section === dom.coreSection && section?.dataset?.locked === "true") {
+          event.preventDefault();
+          return;
+        }
+        setActiveSection(section);
+      });
+    });
       dom.includeUnconfirmed?.addEventListener("change", () => {
         state.includeUnconfirmed = dom.includeUnconfirmed.checked;
         applyFilters();
@@ -682,6 +701,33 @@
         }
       });
     }
+  }
+
+  function bindHeroLightbox() {
+    if (!dom.heroLogo || !dom.heroLightbox) return;
+    dom.heroLogo.addEventListener("click", openHeroLightbox);
+    dom.heroCloseButtons.forEach((button) => {
+      button.addEventListener("click", closeHeroLightbox);
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeHeroLightbox();
+    });
+  }
+
+  function openHeroLightbox() {
+    if (!dom.heroLightbox) return;
+    dom.heroLightbox.removeAttribute("hidden");
+    requestAnimationFrame(() => {
+      dom.heroLightbox.classList.add("is-open");
+    });
+  }
+
+  function closeHeroLightbox() {
+    if (!dom.heroLightbox) return;
+    dom.heroLightbox.classList.remove("is-open");
+    window.setTimeout(() => {
+      dom.heroLightbox.setAttribute("hidden", "true");
+    }, 200);
   }
 
   function populateFilters(payload) {
@@ -1335,9 +1381,12 @@
     if (open) {
       moveCoreFiltersToBuckets();
       dom.advancedFilters.removeAttribute("hidden");
+      setCoreCollapsible(true);
     } else {
       dom.advancedFilters.setAttribute("hidden", "true");
       moveCoreFiltersToCore();
+      setCoreCollapsible(false);
+      setActiveSection(dom.coreSection);
     }
   }
 
@@ -1364,6 +1413,22 @@
     ordered.forEach((block) => {
       if (block) dom.coreFiltersBody.appendChild(block);
     });
+  }
+
+  function setCoreCollapsible(enabled) {
+    if (!dom.coreSection) return;
+    if (enabled) {
+      dom.coreSection.dataset.locked = "false";
+      return;
+    }
+    dom.coreSection.dataset.locked = "true";
+    dom.coreSection.setAttribute("open", "true");
+  }
+
+  function setActiveSection(section) {
+    if (!section || !dom.sections) return;
+    dom.sections.forEach((item) => item.classList.remove("is-active"));
+    section.classList.add("is-active");
   }
 
   function captureSelectScroll() {
