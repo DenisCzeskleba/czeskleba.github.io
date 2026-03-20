@@ -2057,6 +2057,38 @@
       if (!isFiniteNumber(A) || !isFiniteNumber(model.n)) return null;
       return A * Math.pow(theta_C, model.n);
     }
+    if (model.type === "table_points") {
+      const points = Array.isArray(model.points) ? model.points : [];
+      const normalized = points
+        .map((point) => ({
+          temperature_K: Number(point?.temperature_K),
+          diffusivity: Number(point?.diffusivity_mm2_per_s),
+        }))
+        .filter(
+          (point) =>
+            isFiniteNumber(point.temperature_K) &&
+            isFiniteNumber(point.diffusivity) &&
+            point.diffusivity > 0
+        )
+        .sort((a, b) => a.temperature_K - b.temperature_K);
+      if (normalized.length < 2) return null;
+      const minT = normalized[0].temperature_K;
+      const maxT = normalized[normalized.length - 1].temperature_K;
+      if (temperature_K < minT || temperature_K > maxT) return null;
+      for (let i = 0; i < normalized.length - 1; i++) {
+        const a = normalized[i];
+        const b = normalized[i + 1];
+        if (temperature_K === a.temperature_K) return a.diffusivity;
+        if (temperature_K === b.temperature_K) return b.diffusivity;
+        if (temperature_K > a.temperature_K && temperature_K < b.temperature_K) {
+          const t = (temperature_K - a.temperature_K) / (b.temperature_K - a.temperature_K);
+          const logA = Math.log10(a.diffusivity);
+          const logB = Math.log10(b.diffusivity);
+          return Math.pow(10, logA + t * (logB - logA));
+        }
+      }
+      return null;
+    }
     return null;
   }
 
@@ -2685,7 +2717,7 @@
   function stripBand(groupId) {
     if (!groupId) return "";
     return String(groupId)
-      .replace(/_(mean|avg|min|max)(?=_|$)/gi, "")
+      .replace(/_(mean|avg|min|max|lower_envelope|upper_envelope|lower|upper)(?=_|$)/gi, "")
       .replace(/__+/g, "_")
       .replace(/^_+|_+$/g, "");
   }
