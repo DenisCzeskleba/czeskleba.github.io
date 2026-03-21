@@ -303,11 +303,11 @@ permalink: /hydrogen-diffusion-database/docs/
     </p>
     <p>
       The public database archive is available on Zenodo under CC BY 4.0:
-      <a class="hdd-docs-inline-link" href="https://doi.org/10.5281/zenodo.18980188">https://doi.org/10.5281/zenodo.18980188</a>
+      <a class="hdd-docs-inline-link" href="https://doi.org/10.5281/zenodo.18980187">https://doi.org/10.5281/zenodo.18980187</a>
     </p>
     <p>
       If you spot an error, missing context, or a citation issue, please contact
-      <a class="hdd-docs-inline-link" href="mailto:Denis@Czeskleba.com">Denis@Czeskleba.com</a>.
+      <a class="hdd-docs-inline-link" href="mailto:Denis@Czeskleba.com">Denis@Czeskleba.com</a>. I am also activly looking for collaborators to review and audit already included papers. 
     </p>
   </section>
 </div>
