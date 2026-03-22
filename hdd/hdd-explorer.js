@@ -21,6 +21,16 @@
   const AXIS_MODE_FILTER = "filter";
   const AXIS_TEMP_BEHAVIOR_DISTRIBUTION = "distribution";
   const AXIS_TEMP_BEHAVIOR_SLICE = "slice";
+  const MARKER_STYLE_FILLED = "filled-circle";
+  const MARKER_STYLE_HOLLOW = "hollow-circle";
+  const MARKER_STYLE_X = "x";
+  const MARKER_STYLE_TRIANGLE = "triangle";
+  const MARKER_STYLES = new Set([
+    MARKER_STYLE_FILLED,
+    MARKER_STYLE_HOLLOW,
+    MARKER_STYLE_X,
+    MARKER_STYLE_TRIANGLE,
+  ]);
   const AXIS_COLOR_SCALES = {
     "blue-red": {
       label: "Blue-Red",
@@ -358,6 +368,7 @@
     monochrome: document.getElementById("hdd-monochrome"),
     lineThickness: document.getElementById("hdd-line-thickness"),
     lineThicknessValue: document.getElementById("hdd-line-thickness-value"),
+    markerStyleButtons: document.querySelectorAll("[data-marker-style]"),
     gridX: document.getElementById("hdd-grid-x"),
     gridY: document.getElementById("hdd-grid-y"),
     axisXMin: document.getElementById("hdd-axis-x-min"),
@@ -365,10 +376,12 @@
     axisXGroup: document.getElementById("hdd-axis-x-group"),
     axisYMin: document.getElementById("hdd-axis-y-min"),
     axisYMax: document.getElementById("hdd-axis-y-max"),
+    axisModePanel: mount.querySelector(".hdd-axis-mode-panel"),
     axisModeStatus: document.getElementById("hdd-axis-mode-status"),
     axisReset: document.getElementById("hdd-axis-reset"),
     axisTempBehaviorButtons: document.querySelectorAll("[data-axis-temp-behavior]"),
     axisSliceGroup: document.getElementById("hdd-axis-slice-group"),
+    axisSliceTitle: document.getElementById("hdd-axis-slice-title"),
     axisSliceTemp: document.getElementById("hdd-axis-slice-temp"),
     axisTempLegend: document.getElementById("hdd-axis-temp-legend"),
     axisTempLegendTitle: document.getElementById("hdd-axis-temp-legend-title"),
@@ -472,6 +485,7 @@
     legendBySource: true,
     monochrome: false,
     lineThickness: 1,
+    markerStyle: MARKER_STYLE_FILLED,
     gridX: true,
     gridY: true,
     forceScatterband: false,
@@ -560,7 +574,12 @@
     state.includeUnknownComposition = dom.filterUnknownComposition?.checked ?? false;
     const thickness = parseNumber(dom.lineThickness?.value);
     state.lineThickness = isFiniteNumber(thickness) ? clampValue(thickness, 0.5, 2) : 1;
+    const activeMarkerButton = Array.from(dom.markerStyleButtons || []).find((btn) =>
+      btn.classList.contains("is-active")
+    );
+    state.markerStyle = normalizeMarkerStyle(activeMarkerButton?.dataset?.markerStyle);
     updateLineThicknessLabel();
+    syncMarkerStyleUi();
     initializeFilterModes();
     populateFilters(payload);
     initializeTempFilter(state.seriesList);
@@ -1080,6 +1099,8 @@
     dom.axisTempLegendBar?.addEventListener("click", () => {
       cycleAxisColorScale();
     });
+    bindAxisLegendBoundEditor(dom.axisTempLegendMin, "min");
+    bindAxisLegendBoundEditor(dom.axisTempLegendMax, "max");
     dom.axisTempPaletteButtons?.forEach((btn) => {
       btn.addEventListener("click", () => {
         const scale = btn.dataset.axisPalette;
@@ -1124,6 +1145,13 @@
       state.lineThickness = isFiniteNumber(value) ? clampValue(value, 0.5, 2) : 1;
       updateLineThicknessLabel();
       plotSelectedSeries();
+    });
+    dom.markerStyleButtons?.forEach((button) => {
+      button.addEventListener("click", () => {
+        state.markerStyle = normalizeMarkerStyle(button.dataset.markerStyle);
+        syncMarkerStyleUi();
+        plotSelectedSeries(true);
+      });
     });
     [dom.axisXMin, dom.axisXMax, dom.axisYMin, dom.axisYMax].forEach((input) => {
       input?.addEventListener("focus", () => {
@@ -2098,6 +2126,80 @@
     return value.toFixed(decimals);
   }
 
+  function formatTemperatureValueC(tempK, decimals = 0) {
+    if (!Number.isFinite(tempK)) return "";
+    return (tempK - 273.15).toFixed(decimals);
+  }
+
+  function getActiveTempBoundsC() {
+    const domain = state.tempDomain || null;
+    const minC =
+      state.tempMin != null
+        ? state.tempMin - 273.15
+        : domain && Number.isFinite(domain.min)
+          ? domain.min
+          : null;
+    const maxC =
+      state.tempMax != null
+        ? state.tempMax - 273.15
+        : domain && Number.isFinite(domain.max)
+          ? domain.max
+          : null;
+    return { minC, maxC };
+  }
+
+  function parseAxisLegendTempC(rawValue) {
+    if (rawValue == null) return null;
+    const normalized = String(rawValue)
+      .trim()
+      .replace(/,/g, ".")
+      .replace(/[^\d.+\-eE]/g, "");
+    if (!normalized) return null;
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  function commitAxisLegendBoundEdit(which) {
+    const target = which === "min" ? dom.axisTempLegendMin : dom.axisTempLegendMax;
+    if (!target) return;
+    const parsed = parseAxisLegendTempC(target.textContent);
+    if (parsed == null) {
+      updateAxisTemperatureLegend();
+      return;
+    }
+    const bounds = getActiveTempBoundsC();
+    const nextMin = which === "min" ? parsed : bounds.minC;
+    const nextMax = which === "max" ? parsed : bounds.maxC;
+    setTempFilter(nextMin, nextMax, true);
+    applyFilters();
+  }
+
+  function bindAxisLegendBoundEditor(element, which) {
+    if (!element) return;
+    element.setAttribute("contenteditable", "plaintext-only");
+    element.setAttribute("spellcheck", "false");
+    element.classList.add("is-editable");
+    let beforeEdit = "";
+    element.addEventListener("focus", () => {
+      beforeEdit = element.textContent || "";
+    });
+    element.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        element.blur();
+        return;
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        element.textContent = beforeEdit;
+        element.blur();
+      }
+    });
+    element.addEventListener("blur", () => {
+      commitAxisLegendBoundEdit(which);
+    });
+  }
+
   function syncAxisButtonsState() {
     const active = state.axisMode === AXIS_MODE_FILTER ? state.axisConfig : null;
     mount.querySelectorAll(".hdd-axis-filter-button").forEach((button) => {
@@ -2126,6 +2228,9 @@
 
   function syncAxisModeUi() {
     const axisActive = state.axisMode === AXIS_MODE_FILTER && state.axisConfig;
+    if (dom.axisModePanel) {
+      dom.axisModePanel.hidden = !axisActive;
+    }
     if (dom.axisModeStatus) {
       dom.axisModeStatus.textContent = axisActive
         ? `X-axis: ${state.axisConfig.label}`
@@ -2149,6 +2254,9 @@
       dom.axisSliceTemp.value = Number.isFinite(display) ? display.toFixed(1) : "";
       dom.axisSliceTemp.disabled = !axisActive;
     }
+    if (dom.axisSliceTitle) {
+      dom.axisSliceTitle.textContent = `Slice Temperature [${state.units === "C" ? "°C" : "K"}]`;
+    }
     if (dom.axisTempBehaviorButtons) {
       dom.axisTempBehaviorButtons.forEach((button) => {
         const isActive =
@@ -2157,6 +2265,10 @@
         button.classList.toggle("is-active", isActive);
         button.disabled = !axisActive;
       });
+    }
+    if (dom.axisTempBehaviorButtons?.length) {
+      const behaviorGroup = dom.axisTempBehaviorButtons[0]?.closest(".hdd-toggle-group");
+      if (behaviorGroup) behaviorGroup.hidden = !axisActive;
     }
     const isCategoricalAxis = axisActive && state.axisConfig.kind === "categorical";
     if (dom.axisXGroup) {
@@ -2176,9 +2288,11 @@
     }
     if (dom.envelopeRow) {
       dom.envelopeRow.classList.toggle("is-disabled", !!axisActive);
+      dom.envelopeRow.hidden = !!axisActive;
     }
     if (dom.forceScatterbandRow) {
       dom.forceScatterbandRow.classList.toggle("is-disabled", !!axisActive);
+      dom.forceScatterbandRow.hidden = !!axisActive;
     }
     const showTempMapControls =
       !!axisActive && state.axisTempBehavior === AXIS_TEMP_BEHAVIOR_DISTRIBUTION;
@@ -2247,10 +2361,10 @@
     dom.axisTempLegend.hidden = !show;
     if (!show) return;
     if (dom.axisTempLegendTitle) {
-      dom.axisTempLegendTitle.textContent = `Temperature [${state.units === "C" ? "°C" : "K"}]`;
+      dom.axisTempLegendTitle.textContent = "Temperature [°C]";
     }
-    dom.axisTempLegendMin.textContent = formatTemperatureForUnits(state.axisTempExtent.min, 0);
-    dom.axisTempLegendMax.textContent = formatTemperatureForUnits(state.axisTempExtent.max, 0);
+    dom.axisTempLegendMin.textContent = formatTemperatureValueC(state.axisTempExtent.min, 0);
+    dom.axisTempLegendMax.textContent = formatTemperatureValueC(state.axisTempExtent.max, 0);
     syncAxisPaletteUi(true);
   }
 
@@ -4088,18 +4202,16 @@
       }
 
       if (item.axisPoints.length) {
-        ctx.fillStyle = item.color;
         const pointRadiusValue = pointRadius;
         item.axisPoints.forEach((point) => {
-          ctx.beginPath();
-          ctx.arc(
+          drawMarker(
+            ctx,
             xToPx(point.temperature_axis),
             yToPx(point.diffusivity),
             pointRadiusValue,
-            0,
-            Math.PI * 2
+            item.color,
+            state.markerStyle
           );
-          ctx.fill();
         });
       }
 
@@ -4176,6 +4288,7 @@
       axisLabelXOffset,
       lineWidth: seriesLineWidth,
       pointRadius,
+      markerStyle: state.markerStyle,
       units: state.units,
       scale: state.scale,
       gridX: state.gridX,
@@ -4475,10 +4588,7 @@
             : item.color;
         const x = xToPx(point.x_axis);
         const y = yToPx(point.diffusivity);
-        ctx.fillStyle = pointColor;
-        ctx.beginPath();
-        ctx.arc(x, y, pointRadius, 0, Math.PI * 2);
-        ctx.fill();
+        drawMarker(ctx, x, y, pointRadius, pointColor, state.markerStyle);
 
         const minX = Number(point.axis_range_min);
         const maxX = Number(point.axis_range_max);
@@ -4526,13 +4636,14 @@
       axisLabelOffset
     );
 
+    let axisTempScaleRect = null;
     if (
       state.axisTempBehavior === AXIS_TEMP_BEHAVIOR_DISTRIBUTION &&
       !state.monochrome &&
       Number.isFinite(tempMin) &&
       Number.isFinite(tempMax)
     ) {
-      drawAxisTemperatureScale(
+      axisTempScaleRect = drawAxisTemperatureScale(
         ctx,
         margin,
         plotWidth,
@@ -4565,6 +4676,7 @@
       yToPx,
       categoricalBuckets,
       legendMoreRect: legendInfo?.moreRect || null,
+      axisTempScaleRect,
     };
 
     lastPlotContext = {
@@ -4590,6 +4702,7 @@
       axisLabelXOffset,
       lineWidth,
       pointRadius,
+      markerStyle: state.markerStyle,
       units: state.units,
       scale: state.scale,
       gridX: state.gridX,
@@ -4736,13 +4849,19 @@
     ctx.font = `${metrics.titleFont}px ${theme.font}`;
     ctx.textAlign = "center";
     ctx.fillText(formatTemperatureValueForUnits(maxTemp, 0), x + barWidth * 0.5, y - 4);
-    ctx.fillText(formatTemperatureValueForUnits(minTemp, 0), x + barWidth * 0.5, y + barHeight + 12);
+    ctx.fillText(formatTemperatureValueForUnits(minTemp, 0), x + barWidth * 0.5, y + barHeight + 15);
     ctx.save();
     ctx.translate(x + barWidth + metrics.titleGap, y + barHeight * 0.5);
     ctx.rotate(Math.PI / 2);
     const unitLabel = state.units === "C" ? "\u00B0C" : "K";
     ctx.fillText(`Temperature [${unitLabel}]`, 0, 0);
     ctx.restore();
+    return {
+      x,
+      y,
+      width: barWidth,
+      height: barHeight,
+    };
   }
 
   function getAxisTempScaleMetrics(scale = 1) {
@@ -5441,6 +5560,21 @@
           return;
         }
       }
+      const scaleRect = hoverCache.axisTempScaleRect;
+      if (
+        useAxisMode &&
+        scaleRect &&
+        x >= scaleRect.x &&
+        x <= scaleRect.x + scaleRect.width &&
+        y >= scaleRect.y &&
+        y <= scaleRect.y + scaleRect.height
+      ) {
+        canvas.style.cursor = "pointer";
+        if (!state.tooltipPinned) {
+          tooltip.style.opacity = "0";
+        }
+        return;
+      }
       const plotLeft = hoverCache.margin.left;
       const plotTop = hoverCache.margin.top;
       const plotRight = plotLeft + hoverCache.plotWidth;
@@ -5471,18 +5605,31 @@
     }
 
     function handleClick(event) {
-      if (!hoverCache?.legendMoreRect) return;
+      if (!hoverCache) return;
       const rect = canvas.getBoundingClientRect();
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
       const legendRect = hoverCache.legendMoreRect;
       const insideLegend =
+        !!legendRect &&
         x >= legendRect.x &&
         x <= legendRect.x + legendRect.width &&
         y >= legendRect.y &&
         y <= legendRect.y + legendRect.height;
       if (insideLegend) {
         openSummaryModal();
+        return;
+      }
+      const scaleRect = hoverCache.axisTempScaleRect;
+      const insideAxisTempScale =
+        hoverCache.mode === "axis" &&
+        !!scaleRect &&
+        x >= scaleRect.x &&
+        x <= scaleRect.x + scaleRect.width &&
+        y >= scaleRect.y &&
+        y <= scaleRect.y + scaleRect.height;
+      if (insideAxisTempScale) {
+        cycleAxisColorScale();
         return;
       }
       if (isZoomDragging || Date.now() - lastZoomDragAt < 200) return;
@@ -5673,13 +5820,18 @@
         "source",
         "source_id",
         "source_title",
+        "doi_url",
         "group_id",
         "series_id",
         "series_label",
         "axis_mode",
         "axis_key",
         "axis_label",
+        "x_axis",
         "axis_value",
+        "axis_value_numeric",
+        "axis_range_min",
+        "axis_range_max",
         "temperature_axis",
         "temperature_K",
         "diffusivity_mm2_per_s",
@@ -5714,6 +5866,7 @@
       currentSeries.forEach((series) => {
         const sourceMeta = state.dataset?.sources?.[series.descriptor.sourceId] || null;
         const citation = quote(cleanCsvField(buildCitation(sourceMeta, series.descriptor)));
+        const doiUrl = quote(toDoiUrl(sourceMeta?.doi) || "");
         const seriesAxisMode = axisMode;
         const sampleList =
           axisMode === "filter"
@@ -5723,6 +5876,7 @@
           citation,
           quote(series.descriptor.sourceId || ""),
           quote(series.descriptor.sourceTitle || ""),
+          doiUrl,
           quote(series.descriptor.groupId),
           quote(series.descriptor.seriesId || ""),
           quote(series.seriesLabel || ""),
@@ -5733,8 +5887,16 @@
         sampleList.forEach((sample) => {
           if (!withinZoom(sample)) return;
           const xAxis = Number.isFinite(sample.x_axis) ? sample.x_axis : sample.temperature_axis;
-          const temperatureAxis = axisMode === "temperature" ? sample.temperature_axis : xAxis;
+          const temperatureAxis =
+            state.units === "C" ? sample.temperature_K - 273.15 : sample.temperature_K;
           const axisValue = sample.axis_value ?? xAxis;
+          const axisValueNumeric = Number.isFinite(sample.axis_value_numeric)
+            ? sample.axis_value_numeric
+            : Number.isFinite(xAxis)
+              ? xAxis
+              : null;
+          const axisRangeMin = Number.isFinite(sample.axis_range_min) ? sample.axis_range_min : null;
+          const axisRangeMax = Number.isFinite(sample.axis_range_max) ? sample.axis_range_max : null;
           const kind = sample.kind || (axisMode === "filter" ? "point" : "line");
           const renderMode =
             axisMode === "filter"
@@ -5743,7 +5905,11 @@
           rows.push(
             seriesBase
               .concat([
+                xAxis.toFixed(6),
                 quote(String(axisValue)),
+                axisValueNumeric == null ? "" : axisValueNumeric.toFixed(6),
+                axisRangeMin == null ? "" : axisRangeMin.toFixed(6),
+                axisRangeMax == null ? "" : axisRangeMax.toFixed(6),
                 temperatureAxis.toFixed(2),
                 sample.temperature_K.toFixed(2),
                 sample.diffusivity.toExponential(6),
@@ -5851,6 +6017,63 @@
     if (!dom.lineThicknessValue) return;
     const value = clampValue(state.lineThickness || 1, 0.5, 2);
     dom.lineThicknessValue.textContent = `${value.toFixed(2)}×`;
+  }
+
+  function normalizeMarkerStyle(value) {
+    return MARKER_STYLES.has(value) ? value : MARKER_STYLE_FILLED;
+  }
+
+  function syncMarkerStyleUi() {
+    const active = normalizeMarkerStyle(state.markerStyle);
+    dom.markerStyleButtons?.forEach((button) => {
+      const style = normalizeMarkerStyle(button.dataset.markerStyle);
+      const isActive = style === active;
+      button.classList.toggle("is-active", isActive);
+      button.setAttribute("aria-pressed", isActive ? "true" : "false");
+    });
+  }
+
+  function drawMarker(ctx, x, y, radius, color, styleName) {
+    const style = normalizeMarkerStyle(styleName);
+    const size = Math.max(1.2, radius);
+    const strokeWidth = Math.max(1, size * 0.45);
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = strokeWidth;
+    if (style === MARKER_STYLE_HOLLOW) {
+      ctx.beginPath();
+      ctx.arc(x, y, size, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
+    if (style === MARKER_STYLE_X) {
+      const arm = size * 0.9;
+      ctx.beginPath();
+      ctx.moveTo(x - arm, y - arm);
+      ctx.lineTo(x + arm, y + arm);
+      ctx.moveTo(x + arm, y - arm);
+      ctx.lineTo(x - arm, y + arm);
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
+    if (style === MARKER_STYLE_TRIANGLE) {
+      const h = size * 1.2;
+      ctx.beginPath();
+      ctx.moveTo(x, y - h);
+      ctx.lineTo(x + size, y + size * 0.7);
+      ctx.lineTo(x - size, y + size * 0.7);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+      return;
+    }
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
   }
 
   function selectedValues(listbox) {
@@ -6091,7 +6314,31 @@
     return text.replace(/\s+/g, " ").trim();
   }
 
+  function buildSvgMarker(x, y, radius, color, styleName) {
+    const style = normalizeMarkerStyle(styleName);
+    const r = Math.max(1.2, radius);
+    const strokeWidth = Math.max(1, r * 0.45);
+    if (style === MARKER_STYLE_HOLLOW) {
+      return `<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="${color}" stroke-width="${strokeWidth}"/>`;
+    }
+    if (style === MARKER_STYLE_X) {
+      const arm = r * 0.9;
+      return `<path d="M${x - arm} ${y - arm} L${x + arm} ${y + arm} M${x + arm} ${y - arm} L${x - arm} ${y + arm}" fill="none" stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round"/>`;
+    }
+    if (style === MARKER_STYLE_TRIANGLE) {
+      const h = r * 1.2;
+      const p1 = `${x} ${y - h}`;
+      const p2 = `${x + r} ${y + r * 0.7}`;
+      const p3 = `${x - r} ${y + r * 0.7}`;
+      return `<polygon points="${p1} ${p2} ${p3}" fill="${color}"/>`;
+    }
+    return `<circle cx="${x}" cy="${y}" r="${r}" fill="${color}"/>`;
+  }
+
   function buildSvgExport(context) {
+    if (context?.mode === "axis") {
+      return buildAxisSvgExport(context);
+    }
     const {
       width,
       height,
@@ -6113,6 +6360,7 @@
       axisLabelXOffset = 15,
       lineWidth = 1.6,
       pointRadius = 2.4,
+      markerStyle = MARKER_STYLE_FILLED,
       units,
       scale,
       gridX,
@@ -6318,9 +6566,7 @@
         item.axisPoints.forEach((point) => {
           const x = xToPx(point.temperature_axis);
           const y = yToPx(point.diffusivity);
-          parts.push(
-            `<circle cx="${x}" cy="${y}" r="${pointRadius}" fill="${item.color}"/>`
-          );
+          parts.push(buildSvgMarker(x, y, pointRadius, item.color, markerStyle));
         });
       }
       if (numbering) {
@@ -6390,6 +6636,379 @@
       parts.push(`</svg>`);
       return parts.join("");
     }
+
+  function buildAxisSvgExport(context) {
+    const {
+      width,
+      height,
+      margin,
+      plotWidth,
+      plotDataWidth = plotWidth,
+      plotHeight,
+      axisMinX,
+      axisMaxX,
+      axisMinY,
+      axisMaxY,
+      logMin,
+      logMax,
+      theme,
+      fontAxis = 16,
+      fontTick = 12,
+      fontLegend = 11,
+      fontLabel = 11,
+      axisLabelOffset = 36,
+      axisLabelXOffset = 15,
+      lineWidth = 1.6,
+      pointRadius = 2.4,
+      markerStyle = MARKER_STYLE_FILLED,
+      units,
+      scale,
+      gridX,
+      gridY,
+      numbering,
+      monochrome,
+      series,
+      axisConfig = null,
+      axisLabel = "Axis",
+      axisTempBehavior = AXIS_TEMP_BEHAVIOR_DISTRIBUTION,
+      axisColorScale = "blue-red",
+      axisTempExtent = null,
+      categoricalBuckets = [],
+    } = context;
+
+    const isCategorical = axisConfig?.kind === "categorical";
+    const xToPx = (value) =>
+      margin.left + ((value - axisMinX) / (axisMaxX - axisMinX || 1)) * plotDataWidth;
+    const yToPx = (value) => {
+      if (scale === "linear") {
+        const ratio = (value - axisMinY) / (axisMaxY - axisMinY || 1);
+        return margin.top + (1 - ratio) * plotHeight;
+      }
+      const logValue = Math.log10(value);
+      const ratio = (logValue - logMin) / (logMax - logMin || 1);
+      return margin.top + (1 - ratio) * plotHeight;
+    };
+
+    const parts = [];
+    const svgFont = String(theme.font || "Calibri, Times New Roman, Arial, sans-serif").replace(/["']/g, "");
+    parts.push(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="font-family:${svgFont};">`
+    );
+    parts.push(`<rect width="100%" height="100%" fill="${theme.canvas}"/>`);
+    parts.push(
+      `<clipPath id="plot-clip"><rect x="${margin.left}" y="${margin.top}" width="${plotWidth}" height="${plotHeight}"/></clipPath>`
+    );
+    if (
+      axisTempBehavior === AXIS_TEMP_BEHAVIOR_DISTRIBUTION &&
+      !monochrome &&
+      Number.isFinite(axisTempExtent?.min) &&
+      Number.isFinite(axisTempExtent?.max)
+    ) {
+      parts.push(`<linearGradient id="axis-temp-grad" x1="0%" y1="100%" x2="0%" y2="0%">`);
+      getAxisColorStops(axisColorScale).forEach((stop) => {
+        parts.push(`<stop offset="${(stop.t * 100).toFixed(1)}%" stop-color="${stop.color}"/>`);
+      });
+      parts.push(`</linearGradient>`);
+    }
+
+    if (gridX) {
+      if (isCategorical) {
+        const count = categoricalBuckets.length;
+        for (let i = 1; i < count; i++) {
+          const x = xToPx(i - 0.5);
+          parts.push(
+            `<line x1="${x}" y1="${margin.top}" x2="${x}" y2="${margin.top + plotHeight}" stroke="${theme.line}" stroke-width="0.8" opacity="0.7"/>`
+          );
+        }
+        const rightDelim = xToPx(Math.max(0, count - 0.5));
+        parts.push(
+          `<line x1="${rightDelim}" y1="${margin.top}" x2="${rightDelim}" y2="${margin.top + plotHeight}" stroke="${theme.line}" stroke-width="0.8" opacity="0.7"/>`
+        );
+      } else {
+        const steps = 6;
+        for (let i = 0; i <= steps; i++) {
+          const value = axisMinX + ((axisMaxX - axisMinX) / steps) * i;
+          const x = xToPx(value);
+          parts.push(
+            `<line x1="${x}" y1="${margin.top}" x2="${x}" y2="${
+              margin.top + plotHeight
+            }" stroke="${theme.line}" stroke-width="0.8" opacity="0.7"/>`
+          );
+        }
+      }
+    }
+
+    if (gridY) {
+      if (scale === "linear") {
+        const steps = 6;
+        for (let i = 0; i <= steps; i++) {
+          const value = axisMinY + ((axisMaxY - axisMinY) / steps) * i;
+          const y = yToPx(value);
+          parts.push(
+            `<line x1="${margin.left}" y1="${y}" x2="${
+              margin.left + plotWidth
+            }" y2="${y}" stroke="${theme.line}" stroke-width="0.8" opacity="0.7"/>`
+          );
+        }
+      } else {
+        const decadeMin = Math.floor(logMin);
+        const decadeMax = Math.ceil(logMax);
+        const factors = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        for (let decade = decadeMin; decade <= decadeMax; decade++) {
+          for (const factor of factors) {
+            const value = factor * Math.pow(10, decade);
+            if (value < axisMinY || value > axisMaxY) continue;
+            const y = yToPx(value);
+            const major = factor === 1;
+            parts.push(
+              `<line x1="${margin.left}" y1="${y}" x2="${
+                margin.left + plotWidth
+              }" y2="${y}" stroke="${theme.line}" stroke-width="${
+                major ? 1 : 0.8
+              }" opacity="${major ? 0.85 : 0.6}"/>`
+            );
+          }
+        }
+      }
+    }
+
+    parts.push(
+      `<rect x="${margin.left}" y="${margin.top}" width="${plotWidth}" height="${plotHeight}" fill="none" stroke="${theme.ink}" stroke-width="1.2"/>`
+    );
+    parts.push(
+      `<text x="${margin.left + plotWidth / 2}" y="${
+        margin.top + plotHeight + axisLabelOffset
+      }" fill="${theme.ink}" font-size="${fontAxis}" text-anchor="middle">${escapeHtml(axisLabel)}</text>`
+    );
+    parts.push(
+      `<text x="${axisLabelXOffset}" y="${margin.top + plotHeight / 2}" fill="${theme.ink}" font-size="${fontAxis}" text-anchor="middle" transform="rotate(-90 ${axisLabelXOffset} ${
+        margin.top + plotHeight / 2
+      })">Diffusivity [mm²/s]</text>`
+    );
+
+    if (isCategorical) {
+      const count = categoricalBuckets.length;
+      for (let i = 0; i <= count; i++) {
+        const x = xToPx(i - 0.5);
+        parts.push(
+          `<line x1="${x}" y1="${margin.top + plotHeight}" x2="${x}" y2="${
+            margin.top + plotHeight + 6
+          }" stroke="${theme.ink}" stroke-width="1"/>`
+        );
+      }
+      const maxLabelChars = 16;
+      categoricalBuckets.forEach((label, idx) => {
+        const text = String(label || "");
+        const compact = text.length > maxLabelChars ? `${text.slice(0, maxLabelChars - 3)}...` : text;
+        const x = xToPx(idx);
+        const y = margin.top + plotHeight + Math.round(fontTick + 12);
+        parts.push(
+          `<text x="${x}" y="${y}" fill="${theme.ink}" font-size="${fontTick}" text-anchor="middle" transform="rotate(-25 ${x} ${y})">${escapeHtml(
+            compact
+          )}</text>`
+        );
+      });
+    } else {
+      const xticks = 6;
+      for (let i = 0; i <= xticks; i++) {
+        const value = axisMinX + ((axisMaxX - axisMinX) / xticks) * i;
+        const x = xToPx(value);
+        parts.push(
+          `<line x1="${x}" y1="${margin.top + plotHeight}" x2="${x}" y2="${
+            margin.top + plotHeight + 6
+          }" stroke="${theme.ink}" stroke-width="1"/>`
+        );
+        parts.push(
+          `<text x="${x}" y="${margin.top + plotHeight + Math.round(fontTick + 10)}" fill="${theme.ink}" font-size="${fontTick}" text-anchor="middle">${Math.round(
+            value
+          )}</text>`
+        );
+      }
+    }
+
+    if (scale === "linear") {
+      const steps = 6;
+      for (let i = 0; i <= steps; i++) {
+        const value = axisMinY + ((axisMaxY - axisMinY) / steps) * i;
+        const y = yToPx(value);
+        parts.push(
+          `<line x1="${margin.left - 6}" y1="${y}" x2="${margin.left}" y2="${y}" stroke="${theme.ink}" stroke-width="1"/>`
+        );
+        parts.push(
+          `<text x="${margin.left - 10}" y="${y + 3}" fill="${theme.ink}" font-size="${fontTick}" text-anchor="end">${value.toExponential(
+            1
+          )}</text>`
+        );
+      }
+    } else {
+      const decadeMin = Math.floor(logMin);
+      const decadeMax = Math.ceil(logMax);
+      const factors = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+      for (let decade = decadeMin; decade <= decadeMax; decade++) {
+        for (const factor of factors) {
+          const value = factor * Math.pow(10, decade);
+          if (value < axisMinY || value > axisMaxY) continue;
+          const y = yToPx(value);
+          const tickLen = factor === 1 ? 6 : 3;
+          parts.push(
+            `<line x1="${margin.left - tickLen}" y1="${y}" x2="${margin.left}" y2="${y}" stroke="${theme.ink}" stroke-width="${factor === 1 ? 1 : 0.8}"/>`
+          );
+          if (factor === 1) {
+            parts.push(
+              `<text x="${margin.left - 10}" y="${y + 3}" fill="${theme.ink}" font-size="${fontTick}" text-anchor="end">${value.toExponential(
+                1
+              )}</text>`
+            );
+          }
+        }
+      }
+    }
+
+    parts.push(`<g clip-path="url(#plot-clip)">`);
+    series.forEach((item, index) => {
+      if (axisTempBehavior === AXIS_TEMP_BEHAVIOR_DISTRIBUTION && item.axisLineSegments?.length) {
+        item.axisLineSegments.forEach((segment) => {
+          if (!Array.isArray(segment) || segment.length < 2) return;
+          for (let i = 0; i < segment.length - 1; i++) {
+            const a = segment[i];
+            const b = segment[i + 1];
+            const ta = Number(a.temperature_K);
+            const tb = Number(b.temperature_K);
+            const tempMid = Number.isFinite(ta) && Number.isFinite(tb) ? (ta + tb) * 0.5 : ta;
+            const segColor =
+              axisTempBehavior === AXIS_TEMP_BEHAVIOR_DISTRIBUTION &&
+              !monochrome &&
+              Number.isFinite(tempMid) &&
+              Number.isFinite(axisTempExtent?.min) &&
+              Number.isFinite(axisTempExtent?.max)
+                ? temperatureToColor(tempMid, axisTempExtent.min, axisTempExtent.max, axisColorScale)
+                : item.color;
+            parts.push(
+              `<line x1="${xToPx(a.x_axis)}" y1="${yToPx(a.diffusivity)}" x2="${xToPx(b.x_axis)}" y2="${yToPx(
+                b.diffusivity
+              )}" stroke="${segColor}" stroke-width="${lineWidth}"/>`
+            );
+          }
+        });
+      }
+      item.axisPoints?.forEach((point) => {
+        const pointTemp = Number(point.temperature_K);
+        const pointColor =
+          axisTempBehavior === AXIS_TEMP_BEHAVIOR_DISTRIBUTION &&
+          !monochrome &&
+          Number.isFinite(pointTemp) &&
+          Number.isFinite(axisTempExtent?.min) &&
+          Number.isFinite(axisTempExtent?.max)
+            ? temperatureToColor(pointTemp, axisTempExtent.min, axisTempExtent.max, axisColorScale)
+            : item.color;
+        parts.push(
+          buildSvgMarker(
+            xToPx(point.x_axis),
+            yToPx(point.diffusivity),
+            pointRadius,
+            pointColor,
+            markerStyle
+          )
+        );
+      });
+      if (numbering) {
+        const lastPoint = item.axisLine?.[item.axisLine.length - 1] || item.axisPoints?.[item.axisPoints.length - 1];
+        if (lastPoint) {
+          const labelIndex = Number.isFinite(item.legendIndex) ? item.legendIndex + 1 : index + 1;
+          parts.push(
+            `<text x="${xToPx(lastPoint.x_axis) + 4}" y="${yToPx(lastPoint.diffusivity)}" fill="${
+              item.color
+            }" font-size="${fontLabel}" text-anchor="start">${labelIndex}</text>`
+          );
+        }
+      }
+    });
+    parts.push(`</g>`);
+
+    if (
+      axisTempBehavior === AXIS_TEMP_BEHAVIOR_DISTRIBUTION &&
+      !monochrome &&
+      Number.isFinite(axisTempExtent?.min) &&
+      Number.isFinite(axisTempExtent?.max)
+    ) {
+      const m = getAxisTempScaleMetrics(Math.max(0.8, fontTick / 12));
+      const barHeight = Math.max(90, Math.round(plotHeight * 0.45));
+      const stripStartX = margin.left + plotDataWidth;
+      const stripWidth = Math.max(0, plotWidth - plotDataWidth);
+      const laneOffset = stripWidth > m.inset ? (stripWidth - m.inset) * 0.5 : 0;
+      const barX =
+        stripWidth > m.barWidth
+          ? stripStartX + laneOffset + m.leftPad
+          : margin.left + plotWidth - m.barWidth - 16;
+      const barY = margin.top + 22;
+      const unitLabel = units === "C" ? "°C" : "K";
+      parts.push(
+        `<rect x="${barX}" y="${barY}" width="${m.barWidth}" height="${barHeight}" fill="url(#axis-temp-grad)" stroke="${theme.ink}" stroke-width="0.8"/>`
+      );
+      parts.push(
+        `<text x="${barX + m.barWidth * 0.5}" y="${barY - 3}" fill="${theme.ink}" font-size="${m.titleFont}" text-anchor="middle">${escapeHtml(
+          formatTemperatureValueForUnits(axisTempExtent.max, 0)
+        )}</text>`
+      );
+      parts.push(
+        `<text x="${barX + m.barWidth * 0.5}" y="${barY + barHeight + 15}" fill="${theme.ink}" font-size="${m.titleFont}" text-anchor="middle">${escapeHtml(
+          formatTemperatureValueForUnits(axisTempExtent.min, 0)
+        )}</text>`
+      );
+      parts.push(
+        `<text x="${barX + m.barWidth + m.titleGap}" y="${barY + barHeight * 0.5}" fill="${theme.ink}" font-size="${m.titleFont}" text-anchor="middle" transform="rotate(90 ${
+          barX + m.barWidth + m.titleGap
+        } ${barY + barHeight * 0.5})">Temperature [${unitLabel}]</text>`
+      );
+    }
+
+    const legendX = margin.left + plotWidth + 10;
+    let legendY = margin.top + 10;
+    const maxY = margin.top + plotHeight - 12;
+    const showSwatch = !monochrome;
+    const textX = legendX + (showSwatch ? 14 : 0);
+    const items = buildLegendItems(series);
+    const lineHeight = Math.round(16 * (fontLegend / 11));
+    const header = getLegendHeader();
+    if (header) {
+      parts.push(
+        `<text x="${textX}" y="${legendY}" fill="${theme.muted}" font-size="${fontLegend}" text-anchor="start">${escapeHtml(header)}</text>`
+      );
+      legendY += lineHeight;
+    }
+    const availableLines = Math.max(0, Math.floor((maxY - legendY) / lineHeight));
+    const needsMore = items.length > availableLines;
+    const displayCount = needsMore ? Math.max(0, availableLines - 1) : items.length;
+    let i = 0;
+    for (; i < items.length && i < displayCount; i++) {
+      const item = items[i];
+      if (showSwatch) {
+        parts.push(
+          `<rect x="${legendX}" y="${legendY - 8}" width="10" height="10" fill="${item.color}"/>`
+        );
+      }
+      parts.push(
+        `<text x="${textX}" y="${legendY}" fill="${theme.ink}" font-size="${fontLegend}" text-anchor="start">${item.index + 1}. ${
+          item.label
+        }</text>`
+      );
+      legendY += lineHeight;
+    }
+    const label = needsMore ? `Show all ${items.length}` : "Show full list";
+    parts.push(
+      `<text x="${textX}" y="${legendY}" fill="${theme.accent || theme.muted}" font-size="${fontLegend}" text-anchor="start">${label}</text>`
+    );
+    const footerLine = getDatabaseFooterLine();
+    if (footerLine) {
+      parts.push(
+        `<text x="12" y="${height - 12}" fill="${theme.muted}" font-size="${fontLegend}" text-anchor="start">${escapeHtml(
+          footerLine
+        )}</text>`
+      );
+    }
+    parts.push(`</svg>`);
+    return parts.join("");
+  }
 
   function matchesValue(selected, value, mode = "include") {
     if (!selected.length) return true;

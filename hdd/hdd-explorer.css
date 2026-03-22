@@ -6,6 +6,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 :root {
   color-scheme: light;
   --ink: #0f172a;
@@ -684,6 +688,50 @@ body.dark .hdd-toggle-group button.is-active {
   color: var(--muted);
   min-width: 3.1rem;
   text-align: right;
+}
+
+.hdd-marker-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.hdd-marker-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.hdd-marker-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hdd-marker-button {
+  min-width: 28px;
+  height: 24px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.hdd-marker-button:hover {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+}
+
+.hdd-marker-button.is-active {
+  border-color: color-mix(in srgb, var(--accent) 70%, var(--line));
+  background: color-mix(in srgb, var(--accent) 18%, var(--panel));
+  color: color-mix(in srgb, var(--accent) 85%, var(--ink));
 }
 
 .hdd-plot-axis {
@@ -1568,6 +1616,18 @@ body.dark .hdd-toggle-group button.is-active {
   grid-column: 1 / -1;
   font-size: 0.72rem;
   letter-spacing: 0.01em;
+  text-align: center;
+}
+
+.hdd-axis-slice-title {
+  font-size: 0.72rem;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  text-align: center;
+}
+
+.hdd-axis-slice-group .hdd-axis-fields {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .hdd-axis-temp-legend-bar {
@@ -1582,6 +1642,18 @@ body.dark .hdd-toggle-group button.is-active {
 .hdd-axis-temp-legend-bar:disabled {
   cursor: default;
   opacity: 0.8;
+}
+
+.hdd-axis-temp-legend .is-editable {
+  cursor: text;
+  min-width: 3ch;
+  text-align: center;
+  border-radius: 4px;
+}
+
+.hdd-axis-temp-legend .is-editable:focus {
+  outline: 1px solid color-mix(in srgb, var(--accent) 65%, transparent);
+  background: color-mix(in srgb, var(--panel-strong) 65%, transparent);
 }
 
 .hdd-axis-temp-palette {

@@ -609,7 +609,7 @@ permalink: /hydrogen-diffusion-database/
                   <button type="button" data-scale="log" class="is-active" title="Use a logarithmic Y-axis.">Log scale</button>
                   <button type="button" data-scale="linear" title="Use a linear Y-axis.">Linear</button>
                 </div>
-                <div class="hdd-axis-mode-panel">
+                <div class="hdd-axis-mode-panel" hidden>
                   <div class="hdd-axis-mode-header">
                     <span id="hdd-axis-mode-status">X-axis: Temperature</span>
                     <button type="button" id="hdd-axis-reset" hidden>Reset to Temperature Axis</button>
@@ -618,14 +618,14 @@ permalink: /hydrogen-diffusion-database/
                     <button type="button" data-axis-temp-behavior="distribution" class="is-active" title="Color by temperature and sample each model range.">Distribution</button>
                     <button type="button" data-axis-temp-behavior="slice" title="Evaluate all models at one selected temperature.">Slice</button>
                   </div>
-                  <div class="hdd-axis-group" id="hdd-axis-slice-group" hidden>
-                    <div class="hdd-axis-label">Slice Temperature</div>
+                  <div class="hdd-axis-group hdd-axis-slice-group" id="hdd-axis-slice-group" hidden>
+                    <div class="hdd-axis-label hdd-axis-slice-title" id="hdd-axis-slice-title">Slice Temperature [&deg;C]</div>
                     <div class="hdd-axis-fields">
                       <input id="hdd-axis-slice-temp" type="text" inputmode="decimal" placeholder="Temperature" aria-label="Slice temperature" />
                     </div>
                   </div>
                   <div class="hdd-axis-temp-legend" id="hdd-axis-temp-legend" hidden>
-                    <span class="hdd-axis-temp-legend-title" id="hdd-axis-temp-legend-title">Temperature</span>
+                    <span class="hdd-axis-temp-legend-title" id="hdd-axis-temp-legend-title">Temperature [&deg;C]</span>
                     <span id="hdd-axis-temp-legend-min"></span>
                     <button
                       type="button"
@@ -702,6 +702,15 @@ permalink: /hydrogen-diffusion-database/
                     aria-label="Line thickness multiplier"
                   />
                   <span class="hdd-slider-value" id="hdd-line-thickness-value">1.00×</span>
+                </div>
+                <div class="hdd-marker-row" role="group" aria-label="Marker style">
+                  <span class="hdd-marker-label">Marker style</span>
+                  <div class="hdd-marker-buttons">
+                    <button type="button" class="hdd-marker-button is-active" data-marker-style="filled-circle" title="Filled circle" aria-label="Filled circle">●</button>
+                    <button type="button" class="hdd-marker-button" data-marker-style="hollow-circle" title="Hollow circle" aria-label="Hollow circle">○</button>
+                    <button type="button" class="hdd-marker-button" data-marker-style="x" title="X marker" aria-label="X marker">✕</button>
+                    <button type="button" class="hdd-marker-button" data-marker-style="triangle" title="Triangle" aria-label="Triangle">△</button>
+                  </div>
                 </div>
                 <button type="button" id="hdd-reset-zoom">Reset zoom</button>
               </div>
