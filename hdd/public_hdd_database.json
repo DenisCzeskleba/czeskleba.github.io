@@ -41,7 +41,7 @@
     "email": "Denis@Czeskleba.com",
     "note": "Research inquiries welcome."
   },
-  "database_version": "2026-03-20-09-43",
+  "database_version": "2026-03-22-09-16",
   "schema_version": "2.0.0",
   "line_count": 1353,
   "lines": [
@@ -45568,7 +45568,11 @@
         {
           "type": "arrhenius",
           "D0_mm2_per_s": 0.0706,
-          "Q_J_per_mol": 16200.0
+          "Q_J_per_mol": 16200.0,
+          "temperature_validity_K": [
+            373.15,
+            673.15
+          ]
         }
       ],
       "metadata": {
@@ -45637,7 +45641,11 @@
         {
           "type": "arrhenius",
           "D0_mm2_per_s": 0.0291,
-          "Q_J_per_mol": 10400.0
+          "Q_J_per_mol": 10400.0,
+          "temperature_validity_K": [
+            373.15,
+            673.15
+          ]
         }
       ],
       "metadata": {
@@ -46528,7 +46536,11 @@
         {
           "type": "arrhenius",
           "D0_mm2_per_s": 0.0113,
-          "Q_J_per_mol": 4641.0
+          "Q_J_per_mol": 4641.0,
+          "temperature_validity_K": [
+            393.15,
+            673.15
+          ]
         }
       ],
       "metadata": {
@@ -59185,7 +59197,11 @@
         {
           "type": "arrhenius",
           "D0_mm2_per_s": 0.257,
-          "Q_J_per_mol": 17154.4
+          "Q_J_per_mol": 17154.4,
+          "temperature_validity_K": [
+            1673.15,
+            2273.15
+          ]
         }
       ],
       "metadata": {
@@ -69538,7 +69554,7 @@
       "models": [
         {
           "type": "table_points",
-          "table_points": [
+          "points": [
             {
               "temperature_K": 1.113897,
               "diffusivity_mm2_per_s": 0.07544036404463783
@@ -77395,7 +77411,11 @@
         {
           "type": "arrhenius",
           "D0_mm2_per_s": 1010000.0,
-          "Q_J_per_mol": 18500.0
+          "Q_J_per_mol": 18500.0,
+          "temperature_validity_K": [
+            298.0,
+            363.0
+          ]
         }
       ],
       "metadata": {

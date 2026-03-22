@@ -625,9 +625,23 @@ permalink: /hydrogen-diffusion-database/
                     </div>
                   </div>
                   <div class="hdd-axis-temp-legend" id="hdd-axis-temp-legend" hidden>
+                    <span class="hdd-axis-temp-legend-title" id="hdd-axis-temp-legend-title">Temperature</span>
                     <span id="hdd-axis-temp-legend-min"></span>
-                    <span class="hdd-axis-temp-legend-bar" aria-hidden="true"></span>
+                    <button
+                      type="button"
+                      class="hdd-axis-temp-legend-bar"
+                      id="hdd-axis-temp-legend-bar"
+                      title="Temperature colormap. Click to cycle."
+                    ></button>
                     <span id="hdd-axis-temp-legend-max"></span>
+                  </div>
+                  <div class="hdd-axis-temp-palette" id="hdd-axis-temp-palette" hidden>
+                    <button type="button" class="hdd-axis-palette-chip" data-axis-palette="blue-red" title="Blue-Red"></button>
+                    <button type="button" class="hdd-axis-palette-chip" data-axis-palette="viridis" title="Viridis"></button>
+                    <button type="button" class="hdd-axis-palette-chip" data-axis-palette="plasma" title="Plasma"></button>
+                    <button type="button" class="hdd-axis-palette-chip" data-axis-palette="inferno" title="Inferno"></button>
+                    <button type="button" class="hdd-axis-palette-chip" data-axis-palette="turbo" title="Turbo"></button>
+                    <button type="button" class="hdd-axis-palette-chip" data-axis-palette="cividis" title="Cividis"></button>
                   </div>
                 </div>
                 <div class="hdd-plot-axis">

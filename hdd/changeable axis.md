@@ -10,3 +10,6 @@ things to fix:
     plotting options lyaout and logic
     fin/fix bugs in actual filter logic (I cant seem to find any? wtf? is this the first time no bugs?)
     diffeerent heat maps and also nuber son the heatmap
+    SVG export?
+
+ oh and is it possible to make the color bar in the daigram (what should I call this?) clickable to 

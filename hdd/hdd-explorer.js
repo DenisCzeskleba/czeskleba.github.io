@@ -21,6 +21,66 @@
   const AXIS_MODE_FILTER = "filter";
   const AXIS_TEMP_BEHAVIOR_DISTRIBUTION = "distribution";
   const AXIS_TEMP_BEHAVIOR_SLICE = "slice";
+  const AXIS_COLOR_SCALES = {
+    "blue-red": {
+      label: "Blue-Red",
+      stops: [
+        { t: 0, color: "#1e5eff" },
+        { t: 1, color: "#d7191c" },
+      ],
+    },
+    viridis: {
+      label: "Viridis",
+      stops: [
+        { t: 0, color: "#440154" },
+        { t: 0.25, color: "#3b528b" },
+        { t: 0.5, color: "#21918c" },
+        { t: 0.75, color: "#5ec962" },
+        { t: 1, color: "#fde725" },
+      ],
+    },
+    plasma: {
+      label: "Plasma",
+      stops: [
+        { t: 0, color: "#0d0887" },
+        { t: 0.25, color: "#7e03a8" },
+        { t: 0.5, color: "#cc4778" },
+        { t: 0.75, color: "#f89441" },
+        { t: 1, color: "#f0f921" },
+      ],
+    },
+    inferno: {
+      label: "Inferno",
+      stops: [
+        { t: 0, color: "#2a0f54" },
+        { t: 0.25, color: "#6a176e" },
+        { t: 0.5, color: "#932667" },
+        { t: 0.75, color: "#dd513a" },
+        { t: 1, color: "#fff2a8" },
+      ],
+    },
+    turbo: {
+      label: "Turbo",
+      stops: [
+        { t: 0, color: "#30123b" },
+        { t: 0.2, color: "#4666ff" },
+        { t: 0.4, color: "#1ec8ff" },
+        { t: 0.6, color: "#5cf06b" },
+        { t: 0.8, color: "#f9c63a" },
+        { t: 1, color: "#b10f0f" },
+      ],
+    },
+    cividis: {
+      label: "Cividis",
+      stops: [
+        { t: 0, color: "#00204c" },
+        { t: 0.25, color: "#2d4f77" },
+        { t: 0.5, color: "#576d73" },
+        { t: 0.75, color: "#9a9b59" },
+        { t: 1, color: "#fee838" },
+      ],
+    },
+  };
   const AXIS_DISABLED_BLOCK_IDS = new Set([
     "hdd-filter-block-source",
     "hdd-filter-block-temp",
@@ -311,8 +371,12 @@
     axisSliceGroup: document.getElementById("hdd-axis-slice-group"),
     axisSliceTemp: document.getElementById("hdd-axis-slice-temp"),
     axisTempLegend: document.getElementById("hdd-axis-temp-legend"),
+    axisTempLegendTitle: document.getElementById("hdd-axis-temp-legend-title"),
+    axisTempLegendBar: document.getElementById("hdd-axis-temp-legend-bar"),
     axisTempLegendMin: document.getElementById("hdd-axis-temp-legend-min"),
     axisTempLegendMax: document.getElementById("hdd-axis-temp-legend-max"),
+    axisTempPalette: document.getElementById("hdd-axis-temp-palette"),
+    axisTempPaletteButtons: document.querySelectorAll("[data-axis-palette]"),
     envelopeRow: document.getElementById("hdd-envelope-row"),
     forceScatterbandRow: document.getElementById("hdd-force-scatterband-row"),
     tempMin: document.getElementById("hdd-temp-min"),
@@ -1012,6 +1076,16 @@
     dom.axisReset?.addEventListener("click", () => {
       resetAxisMode();
       applyFilters({ preserveManual: true, replot: true });
+    });
+    dom.axisTempLegendBar?.addEventListener("click", () => {
+      cycleAxisColorScale();
+    });
+    dom.axisTempPaletteButtons?.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const scale = btn.dataset.axisPalette;
+        if (!scale) return;
+        setAxisColorScale(scale);
+      });
     });
     dom.scaleButtons?.forEach((btn) =>
       btn.addEventListener("click", () => toggleScale(btn))
@@ -2018,6 +2092,12 @@
     return `${value.toFixed(decimals)} ${suffix}`;
   }
 
+  function formatTemperatureValueForUnits(tempK, decimals = 0) {
+    const value = toDisplayTemperature(tempK);
+    if (!Number.isFinite(value)) return "";
+    return value.toFixed(decimals);
+  }
+
   function syncAxisButtonsState() {
     const active = state.axisMode === AXIS_MODE_FILTER ? state.axisConfig : null;
     mount.querySelectorAll(".hdd-axis-filter-button").forEach((button) => {
@@ -2100,8 +2180,60 @@
     if (dom.forceScatterbandRow) {
       dom.forceScatterbandRow.classList.toggle("is-disabled", !!axisActive);
     }
+    const showTempMapControls =
+      !!axisActive && state.axisTempBehavior === AXIS_TEMP_BEHAVIOR_DISTRIBUTION;
+    if (dom.axisTempPalette) {
+      dom.axisTempPalette.hidden = !showTempMapControls;
+    }
+    syncAxisPaletteUi(showTempMapControls);
     syncAxisButtonsState();
     updateAxisTemperatureLegend();
+  }
+
+  function syncAxisPaletteUi(enabled = false) {
+    const scaleName = getAxisColorScaleName(state.axisColorScale);
+    dom.axisTempPaletteButtons?.forEach((button) => {
+      const name = button.dataset.axisPalette;
+      const isActive = name === scaleName;
+      button.classList.toggle("is-active", isActive);
+      button.disabled = !enabled;
+      if (name) {
+        button.style.setProperty("--hdd-palette-gradient", buildScaleGradient(name, "90deg"));
+      }
+    });
+    if (dom.axisTempLegendBar) {
+      dom.axisTempLegendBar.style.setProperty(
+        "--hdd-palette-gradient",
+        buildScaleGradient(scaleName, "90deg")
+      );
+      dom.axisTempLegendBar.disabled = !enabled;
+      const scaleLabel = AXIS_COLOR_SCALES[scaleName]?.label || scaleName;
+      dom.axisTempLegendBar.title = enabled
+        ? `Temperature colormap: ${scaleLabel}. Click to cycle.`
+        : `Temperature colormap: ${scaleLabel}`;
+    }
+  }
+
+  function setAxisColorScale(name) {
+    const normalized = getAxisColorScaleName(name);
+    if (state.axisColorScale === normalized) return;
+    state.axisColorScale = normalized;
+    syncAxisPaletteUi(
+      state.axisMode === AXIS_MODE_FILTER && state.axisTempBehavior === AXIS_TEMP_BEHAVIOR_DISTRIBUTION
+    );
+    updateAxisTemperatureLegend();
+    if (state.axisMode === AXIS_MODE_FILTER && state.axisTempBehavior === AXIS_TEMP_BEHAVIOR_DISTRIBUTION) {
+      plotSelectedSeries(true);
+    }
+  }
+
+  function cycleAxisColorScale() {
+    const keys = Object.keys(AXIS_COLOR_SCALES);
+    if (!keys.length) return;
+    const current = getAxisColorScaleName(state.axisColorScale);
+    const index = keys.indexOf(current);
+    const next = keys[(index + 1) % keys.length];
+    setAxisColorScale(next);
   }
 
   function updateAxisTemperatureLegend() {
@@ -2114,8 +2246,12 @@
       Number.isFinite(state.axisTempExtent.max);
     dom.axisTempLegend.hidden = !show;
     if (!show) return;
+    if (dom.axisTempLegendTitle) {
+      dom.axisTempLegendTitle.textContent = `Temperature [${state.units === "C" ? "°C" : "K"}]`;
+    }
     dom.axisTempLegendMin.textContent = formatTemperatureForUnits(state.axisTempExtent.min, 0);
     dom.axisTempLegendMax.textContent = formatTemperatureForUnits(state.axisTempExtent.max, 0);
+    syncAxisPaletteUi(true);
   }
 
   function initializeFilterModes() {
@@ -4008,6 +4144,7 @@
       logMax,
       margin,
       plotWidth,
+      plotDataWidth: plotWidth,
       plotHeight,
       scale: state.scale,
       units: state.units,
@@ -4022,6 +4159,7 @@
       height,
       margin,
       plotWidth,
+      plotDataWidth: plotWidth,
       plotHeight,
       axisMinX,
       axisMaxX,
@@ -4178,6 +4316,9 @@
     const legendHeight =
       legendMaxLines != null ? legendLineHeight * legendMaxLines + Math.round(12 * layoutScale) : 0;
     const legendWidth = isNarrow ? 0 : estimateLegendWidth(ctx, series, width, theme, layoutScale);
+    const showAxisTempScale =
+      state.axisTempBehavior === AXIS_TEMP_BEHAVIOR_DISTRIBUTION && !state.monochrome;
+    const tempScaleInset = showAxisTempScale ? getAxisTempScaleMetrics(layoutScale).inset : 0;
     const margin = {
       top: Math.round(26 * layoutScale),
       right: isNarrow ? Math.round(14 * layoutScale) : legendWidth,
@@ -4186,9 +4327,10 @@
     };
     const plotWidth = width - margin.left - margin.right;
     const plotHeight = height - margin.top - margin.bottom;
+    const plotDataWidth = Math.max(40, plotWidth - tempScaleInset);
 
     function xToPx(value) {
-      return margin.left + ((value - axisMinX) / (axisMaxX - axisMinX || 1)) * plotWidth;
+      return margin.left + ((value - axisMinX) / (axisMaxX - axisMinX || 1)) * plotDataWidth;
     }
 
     function yToPx(value) {
@@ -4215,7 +4357,10 @@
     ctx.lineTo(margin.left, margin.top);
     ctx.stroke();
 
-    const axisLabelOffset = Math.round(36 * labelScale);
+    const axisLabelOffset =
+      axisConfig.kind === "categorical"
+        ? Math.round(50 * labelScale)
+        : Math.round(36 * labelScale);
     const axisLabelXOffset = Math.round(15 * labelScale);
     ctx.fillStyle = theme.ink;
     ctx.font = `${fontAxis}px ${theme.font}`;
@@ -4232,7 +4377,7 @@
         ctx,
         categoricalBuckets,
         margin,
-        plotWidth,
+        plotDataWidth,
         plotHeight,
         xToPx,
         theme,
@@ -4246,7 +4391,7 @@
         axisMinX,
         axisMaxX,
         margin,
-        plotWidth,
+        plotDataWidth,
         plotHeight,
         xToPx,
         theme,
@@ -4307,7 +4452,7 @@
             const temperatureMid = Number.isFinite(ta) && Number.isFinite(tb) ? (ta + tb) * 0.5 : ta;
             ctx.strokeStyle =
               !state.monochrome && Number.isFinite(temperatureMid) && Number.isFinite(tempMin) && Number.isFinite(tempMax)
-                ? temperatureToColor(temperatureMid, tempMin, tempMax)
+                ? temperatureToColor(temperatureMid, tempMin, tempMax, state.axisColorScale)
                 : item.color;
             ctx.lineWidth = lineWidth;
             ctx.beginPath();
@@ -4326,7 +4471,7 @@
           Number.isFinite(temperature) &&
           Number.isFinite(tempMin) &&
           Number.isFinite(tempMax)
-            ? temperatureToColor(temperature, tempMin, tempMax)
+            ? temperatureToColor(temperature, tempMin, tempMax, state.axisColorScale)
             : item.color;
         const x = xToPx(point.x_axis);
         const y = yToPx(point.diffusivity);
@@ -4365,15 +4510,6 @@
       }
     });
 
-    if (
-      state.axisTempBehavior === AXIS_TEMP_BEHAVIOR_DISTRIBUTION &&
-      !state.monochrome &&
-      Number.isFinite(tempMin) &&
-      Number.isFinite(tempMax)
-    ) {
-      drawAxisTemperatureScale(ctx, margin, plotWidth, plotHeight, tempMin, tempMax, theme, layoutScale);
-    }
-
     ctx.restore();
 
     const legendInfo = drawLegend(
@@ -4389,6 +4525,26 @@
       legendMaxLines,
       axisLabelOffset
     );
+
+    if (
+      state.axisTempBehavior === AXIS_TEMP_BEHAVIOR_DISTRIBUTION &&
+      !state.monochrome &&
+      Number.isFinite(tempMin) &&
+      Number.isFinite(tempMax)
+    ) {
+      drawAxisTemperatureScale(
+        ctx,
+        margin,
+        plotWidth,
+        plotDataWidth,
+        plotHeight,
+        tempMin,
+        tempMax,
+        theme,
+        layoutScale,
+        state.axisColorScale
+      );
+    }
 
     hoverCache = {
       mode: "axis",
@@ -4417,6 +4573,7 @@
       height,
       margin,
       plotWidth,
+      plotDataWidth,
       plotHeight,
       axisMinX,
       axisMaxX,
@@ -4444,6 +4601,10 @@
       series,
       axisConfig: { ...axisConfig },
       axisTempBehavior: state.axisTempBehavior,
+      axisLabel: axisConfig.label || "Axis",
+      axisColorScale: state.axisColorScale,
+      axisTempExtent: state.axisTempExtent ? { ...state.axisTempExtent } : null,
+      categoricalBuckets: Array.isArray(categoricalBuckets) ? categoricalBuckets.slice() : [],
     };
 
     state.preserveAxis = false;
@@ -4461,7 +4622,7 @@
       logMin,
       logMax,
       margin,
-      plotWidth,
+      plotWidth: plotDataWidth,
       plotHeight,
     });
 
@@ -4482,12 +4643,20 @@
   ) {
     if (!Array.isArray(labels) || !labels.length) return;
     ctx.fillStyle = theme.ink;
-    ctx.textAlign = "center";
     ctx.font = `${fontSize}px ${theme.font}`;
     const tickLen = Math.max(4, Math.round(5 * scale));
-    const labelOffset = Math.max(12, Math.round(16 * scale));
+    const labelOffset = Math.max(16, Math.round(10 * scale));
     const boundaryCount = labels.length + 1;
-    const maxLabelChars = 20;
+    const maxLabelChars = 16;
+    const slotWidth = width / Math.max(1, labels.length);
+    const compactLabels = labels.map((label) => {
+      const text = String(label || "");
+      return text.length > maxLabelChars ? `${text.slice(0, maxLabelChars - 3)}...` : text;
+    });
+    const hasLongLabels = compactLabels.some((text) => text.length >= 14 || ctx.measureText(text).width > slotWidth * 0.95);
+    const rotation = hasLongLabels ? -Math.PI / 7.5 : -Math.PI / 7;
+    const labelY = margin.top + height + labelOffset;
+    const anchorNudgeX = 0;
 
     if (drawGrid) {
       ctx.save();
@@ -4501,6 +4670,11 @@
         ctx.lineTo(boundaryX, margin.top + height);
         ctx.stroke();
       }
+      const lastBoundaryX = xToPx(labels.length - 0.5);
+      ctx.beginPath();
+      ctx.moveTo(lastBoundaryX, margin.top);
+      ctx.lineTo(lastBoundaryX, margin.top + height);
+      ctx.stroke();
       ctx.restore();
     }
 
@@ -4515,46 +4689,130 @@
 
     labels.forEach((label, index) => {
       const x = xToPx(index);
-      const text = String(label || "");
-      const compact = text.length > maxLabelChars ? `${text.slice(0, maxLabelChars - 3)}...` : text;
+      const compact = compactLabels[index];
       ctx.save();
-      ctx.translate(x, margin.top + height + labelOffset);
-      ctx.rotate(-Math.PI / 7);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.translate(x + anchorNudgeX, labelY);
+      ctx.rotate(rotation);
       ctx.fillText(compact, 0, 0);
       ctx.restore();
     });
   }
 
-  function drawAxisTemperatureScale(ctx, margin, plotWidth, plotHeight, minTemp, maxTemp, theme, scale = 1) {
-    const barWidth = Math.max(8, Math.round(10 * scale));
+  function drawAxisTemperatureScale(
+    ctx,
+    margin,
+    plotWidth,
+    plotDataWidth,
+    plotHeight,
+    minTemp,
+    maxTemp,
+    theme,
+    scale = 1,
+    colorScaleName = "blue-red"
+  ) {
+    const metrics = getAxisTempScaleMetrics(scale);
+    const barWidth = metrics.barWidth;
     const barHeight = Math.max(90, Math.round(plotHeight * 0.45));
-    const x = margin.left + plotWidth - barWidth - Math.round(6 * scale);
-    const y = margin.top + Math.round(10 * scale);
+    const stripStartX = margin.left + (Number.isFinite(plotDataWidth) ? plotDataWidth : plotWidth);
+    const stripWidth = Math.max(0, plotWidth - (Number.isFinite(plotDataWidth) ? plotDataWidth : plotWidth));
+    const laneOffset = stripWidth > metrics.inset ? (stripWidth - metrics.inset) * 0.5 : 0;
+    const x =
+      stripWidth > barWidth
+        ? stripStartX + laneOffset + metrics.leftPad
+        : margin.left + plotWidth - barWidth - Math.round(16 * scale);
+    const y = margin.top + Math.round(22 * scale);
     const gradient = ctx.createLinearGradient(0, y + barHeight, 0, y);
-    gradient.addColorStop(0, "#1e5eff");
-    gradient.addColorStop(1, "#d7191c");
+    getAxisColorStops(colorScaleName).forEach((stop) => {
+      gradient.addColorStop(stop.t, stop.color);
+    });
     ctx.fillStyle = gradient;
     ctx.fillRect(x, y, barWidth, barHeight);
     ctx.strokeStyle = theme.ink;
     ctx.lineWidth = 0.8;
     ctx.strokeRect(x, y, barWidth, barHeight);
     ctx.fillStyle = theme.ink;
-    ctx.font = `${Math.max(10, Math.round(10 * scale))}px ${theme.font}`;
-    ctx.textAlign = "left";
-    ctx.fillText(formatTemperatureForUnits(maxTemp, 0), x + barWidth + 6, y + 9);
-    ctx.fillText(formatTemperatureForUnits(minTemp, 0), x + barWidth + 6, y + barHeight);
+    ctx.font = `${metrics.titleFont}px ${theme.font}`;
+    ctx.textAlign = "center";
+    ctx.fillText(formatTemperatureValueForUnits(maxTemp, 0), x + barWidth * 0.5, y - 4);
+    ctx.fillText(formatTemperatureValueForUnits(minTemp, 0), x + barWidth * 0.5, y + barHeight + 12);
+    ctx.save();
+    ctx.translate(x + barWidth + metrics.titleGap, y + barHeight * 0.5);
+    ctx.rotate(Math.PI / 2);
+    const unitLabel = state.units === "C" ? "\u00B0C" : "K";
+    ctx.fillText(`Temperature [${unitLabel}]`, 0, 0);
+    ctx.restore();
   }
 
-  function temperatureToColor(tempK, minTempK, maxTempK) {
+  function getAxisTempScaleMetrics(scale = 1) {
+    const barWidth = Math.max(8, Math.round(20 * scale));
+    const titleFont = Math.max(16, Math.round(4 * scale));
+    const titleGap = Math.max(10, Math.round(12 * scale));
+    const leftPad = Math.max(6, Math.round(6 * scale));
+    const rightPad = Math.max(8, Math.round(8 * scale));
+    const inset = leftPad + barWidth + titleGap + titleFont + rightPad;
+    return { barWidth, titleFont, titleGap, leftPad, rightPad, inset };
+  }
+
+  function getAxisColorScaleName(name) {
+    if (name && AXIS_COLOR_SCALES[name]) return name;
+    return "blue-red";
+  }
+
+  function getAxisColorStops(name) {
+    const key = getAxisColorScaleName(name);
+    return AXIS_COLOR_SCALES[key].stops;
+  }
+
+  function hexToRgb(hex) {
+    const value = String(hex || "").replace("#", "").trim();
+    if (value.length !== 6) return null;
+    const r = Number.parseInt(value.slice(0, 2), 16);
+    const g = Number.parseInt(value.slice(2, 4), 16);
+    const b = Number.parseInt(value.slice(4, 6), 16);
+    if (![r, g, b].every((channel) => Number.isFinite(channel))) return null;
+    return { r, g, b };
+  }
+
+  function interpolateScaleColor(stops, ratio) {
+    if (!Array.isArray(stops) || !stops.length) return "#1e5eff";
+    const clamped = clampValue(ratio, 0, 1);
+    let lower = stops[0];
+    let upper = stops[stops.length - 1];
+    for (let i = 0; i < stops.length - 1; i++) {
+      const a = stops[i];
+      const b = stops[i + 1];
+      if (clamped >= a.t && clamped <= b.t) {
+        lower = a;
+        upper = b;
+        break;
+      }
+    }
+    const lowRgb = hexToRgb(lower.color);
+    const highRgb = hexToRgb(upper.color);
+    if (!lowRgb || !highRgb) return lower.color || "#1e5eff";
+    const span = upper.t - lower.t || 1;
+    const local = clampValue((clamped - lower.t) / span, 0, 1);
+    const r = Math.round(lowRgb.r + (highRgb.r - lowRgb.r) * local);
+    const g = Math.round(lowRgb.g + (highRgb.g - lowRgb.g) * local);
+    const b = Math.round(lowRgb.b + (highRgb.b - lowRgb.b) * local);
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+
+  function buildScaleGradient(name, direction = "90deg") {
+    const stops = getAxisColorStops(name);
+    const parts = stops.map((stop) => `${stop.color} ${(stop.t * 100).toFixed(1)}%`);
+    return `linear-gradient(${direction}, ${parts.join(", ")})`;
+  }
+
+  function temperatureToColor(tempK, minTempK, maxTempK, colorScaleName = "blue-red") {
     if (!Number.isFinite(tempK) || !Number.isFinite(minTempK) || !Number.isFinite(maxTempK)) {
       return "#1e5eff";
     }
     if (maxTempK <= minTempK) return "#1e5eff";
     const ratio = clampValue((tempK - minTempK) / (maxTempK - minTempK), 0, 1);
-    const r = Math.round(30 + ratio * (215 - 30));
-    const g = Math.round(94 + ratio * (25 - 94));
-    const b = Math.round(255 + ratio * (28 - 255));
-    return `rgb(${r}, ${g}, ${b})`;
+    return interpolateScaleColor(getAxisColorStops(colorScaleName), ratio);
   }
 
   function getAxisPreferredBounds(axisConfig) {
@@ -5512,22 +5770,6 @@
         if (blob) downloadBlob(blob, "hdd-selected.png");
       });
     } else if (type === "svg") {
-      if (state.axisMode === AXIS_MODE_FILTER) {
-        if (!currentCanvas) {
-          alert("Plot the dataset first to export an SVG.");
-          return;
-        }
-        const dataUrl = currentCanvas.toDataURL("image/png");
-        const width = Number(currentCanvas.style.width.replace("px", "")) || currentCanvas.width;
-        const height = Number(currentCanvas.style.height.replace("px", "")) || currentCanvas.height;
-        const svgRaster = [
-          `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`,
-          `<image href="${dataUrl}" width="${width}" height="${height}"/>`,
-          "</svg>",
-        ].join("");
-        downloadBlob(new Blob([svgRaster], { type: "image/svg+xml" }), "hdd-selected.svg");
-        return;
-      }
       if (!lastPlotContext) {
         alert("Plot the dataset first to export an SVG.");
         return;
