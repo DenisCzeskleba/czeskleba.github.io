@@ -5,3 +5,8 @@ What I wanna do is for every filter where it makes sense, have a button or somet
 This is not really a filter action type of thing but it makes sense to attach this to the filter buttons cuz thats the only place where people mock about. the problem is arrhenious and stuff because that would now become a straight line and that might make stuff messy, so we would have to also give people an option to maybe set a specific temperature to display, which is awesome becaues we already need to change the Plot Options window for this mode. The "Axis Limits" in this mode would be set via the actual filter (for things like vanadium content) and dont even make sense for things with buckets like Material class. SO we could morph this into a temperature select.
 
 The way it should behave: I set some filters, then I go to some option, say Surface Conditions, this has a few entries left depending on filters set before. i click the button make x-axis and the then it uses those available options as the buckets on x axis. This assumes none of the options are selected in surface condition. if i do select some, then those now become the buckets
+
+things to fix:
+    plotting options lyaout and logic
+    fin/fix bugs in actual filter logic (I cant seem to find any? wtf? is this the first time no bugs?)
+    diffeerent heat maps and also nuber son the heatmap

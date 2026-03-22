@@ -1630,12 +1630,34 @@
     updateCitationDownloads(database);
   }
 
+  function normalizeDoiValue(value) {
+    if (typeof value !== "string") return "";
+    let doi = value.trim();
+    if (!doi) return "";
+    doi = doi.replace(/^doi:\s*/i, "");
+    doi = doi.replace(/^https?:\/\/(?:dx\.)?doi\.org\//i, "");
+    doi = doi.replace(/^doi\.org\//i, "");
+    return doi.trim();
+  }
+
+  function toDoiUrl(value) {
+    const normalized = normalizeDoiValue(value);
+    if (!normalized) return "";
+    return `https://doi.org/${normalized}`;
+  }
+
   function formatCitation(item) {
     if (!item || typeof item !== "object") return "Citation unavailable.";
     const lines = [];
+    const doiUrl = toDoiUrl(item.doi);
     if (item.authors && item.authors.length) lines.push(escapeHtml(item.authors.join(", ")));
     if (item.title) lines.push(escapeHtml(item.title));
-    if (item.doi) lines.push(`DOI: ${escapeHtml(item.doi)}`);
+    if (doiUrl) {
+      const safeUrl = escapeHtml(doiUrl);
+      lines.push(`DOI: <a class="hdd-inline-link" href="${safeUrl}" target="_blank" rel="noopener">${safeUrl}</a>`);
+    } else if (item.doi) {
+      lines.push(`DOI: ${escapeHtml(item.doi)}`);
+    }
     if (item.institution || item.year) {
       const tail = [item.institution, item.year].filter(Boolean).join(", ");
       if (tail) lines.push(escapeHtml(tail));
@@ -1652,22 +1674,26 @@
 
   function updateCitationDownloads(database) {
     if (!database || typeof database !== "object") return;
-    const doi = typeof database.doi === "string" ? database.doi.trim() : "";
+    const doiRaw = typeof database.doi === "string" ? database.doi.trim() : "";
+    const doi = normalizeDoiValue(doiRaw);
+    const doiUrl = toDoiUrl(doiRaw);
+    const doiExport = doiUrl || doi;
     const url = typeof database.url === "string" ? database.url.trim() : "";
+    const citationUrl = url || doiUrl || "https://czeskleba.com/hydrogen-diffusion-database/";
     const authors =
       Array.isArray(database.authors) && database.authors.length ? database.authors.join(" and ") : "";
     const title = typeof database.title === "string" ? database.title.trim() : "";
 
     const plainText = `D. Czeskleba, Hydrogen Diffusion Database (HDD.B), ${
-      doi || "[DOI]"
-    }, ${url || "https://czeskleba.com/hydrogen-diffusion-database/"}`;
+      doiExport || "[DOI]"
+    }, ${citationUrl}`;
 
     const bibtexLines = [
       "@misc{hdd_b,",
       authors ? `  author = {${authors}},` : null,
       title ? `  title = {${title}},` : null,
-      doi ? `  doi = {${doi}},` : null,
-      url ? `  url = {${url}},` : null,
+      doiExport ? `  doi = {${doiExport}},` : null,
+      citationUrl ? `  url = {${citationUrl}},` : null,
       "}",
     ].filter(Boolean);
     const bibtex = bibtexLines.join("\n");
@@ -1678,8 +1704,8 @@
         ? authors.split(" and ").map((author) => `AU  - ${author}`).join("\n")
         : null,
       title ? `TI  - ${title}` : null,
-      doi ? `DO  - ${doi}` : null,
-      url ? `UR  - ${url}` : null,
+      doiExport ? `DO  - ${doiExport}` : null,
+      citationUrl ? `UR  - ${citationUrl}` : null,
       "ER  -",
     ].filter(Boolean);
     const ris = risLines.join("\n");
@@ -1774,7 +1800,7 @@
         <input type="number" lang="en" data-comp-element="${escapeHtml(element)}" data-comp-bound="max" placeholder="max" step="0.01" min="0" />
         <button type="button" class="hdd-axis-filter-button hdd-axis-filter-button-comp" data-axis-trigger-kind="composition" data-axis-element="${escapeHtml(element)}" data-axis-label="${escapeHtml(
         `${element} [wt%]`
-      )}" title="Use this composition element as the X-axis.">Use as Axis</button>
+      )}" title="Make this composition element the X-axis.">Make X-Axis</button>
       `;
       dom.filterComposition.appendChild(row);
     });
@@ -1796,8 +1822,8 @@
         const button = document.createElement("button");
         button.type = "button";
         button.className = "hdd-axis-filter-button hdd-axis-filter-button-block";
-        button.textContent = "Use as Axis";
-        button.title = "Use this filter as the X-axis.";
+        button.textContent = "Make X-Axis";
+        button.title = "Make this filter the X-axis.";
         button.dataset.axisTriggerKind = "categorical";
         button.dataset.axisListboxId = listbox.id;
         button.dataset.axisLabel = def.label;
@@ -1808,8 +1834,8 @@
         const button = document.createElement("button");
         button.type = "button";
         button.className = "hdd-axis-filter-button hdd-axis-filter-button-block";
-        button.textContent = "Use as Axis";
-        button.title = "Use year as the X-axis.";
+        button.textContent = "Make X-Axis";
+        button.title = "Make year the X-axis.";
         button.dataset.axisTriggerKind = "numeric";
         button.dataset.axisRangeKey = "year";
         button.dataset.axisLabel = AXIS_NUMERIC_LABELS.year;
@@ -1828,8 +1854,8 @@
       const button = document.createElement("button");
       button.type = "button";
       button.className = "hdd-axis-filter-button hdd-axis-filter-button-block";
-      button.textContent = "Use as Axis";
-      button.title = "Use this numeric filter as the X-axis.";
+      button.textContent = "Make X-Axis";
+      button.title = "Make this numeric filter the X-axis.";
       button.dataset.axisTriggerKind = "numeric";
       button.dataset.axisRangeKey = rangeKey;
       button.dataset.axisLabel = AXIS_NUMERIC_LABELS[rangeKey] || summary.textContent?.trim() || rangeKey;
@@ -1848,6 +1874,11 @@
     if (!button) return;
     event.preventDefault();
     event.stopPropagation();
+    if (isAxisButtonActive(button)) {
+      resetAxisMode();
+      applyFilters({ preserveManual: true, replot: true });
+      return;
+    }
     const kind = button.dataset.axisTriggerKind;
     if (kind === "categorical") {
       const listboxId = button.dataset.axisListboxId;
@@ -1868,19 +1899,34 @@
     }
   }
 
+  function isAxisButtonActive(button) {
+    if (!button || state.axisMode !== AXIS_MODE_FILTER || !state.axisConfig) return false;
+    const active = state.axisConfig;
+    const kind = button.dataset.axisTriggerKind;
+    if (kind === "categorical" && active.kind === "categorical") {
+      return button.dataset.axisListboxId === active.listboxId;
+    }
+    if (kind === "numeric" && active.kind === "numeric") {
+      return button.dataset.axisRangeKey === active.rangeKey;
+    }
+    if (kind === "composition" && active.kind === "composition") {
+      return (button.dataset.axisElement || "").toLowerCase() === (active.element || "").toLowerCase();
+    }
+    return false;
+  }
+
   function activateCategoricalAxis(listboxId) {
     const def = AXIS_CATEGORICAL_DEFS[listboxId];
     const listbox = document.getElementById(listboxId);
     if (!def || !listbox) return;
-    let selected = selectedValues(listbox);
-    if (!selected.length) {
+    const mode = state.filterMode?.[def.modeKey] || "include";
+    const selected = selectedValues(listbox);
+    if (!selected.length && mode !== "exclude") {
       const available = getAvailableListboxValues(listbox);
       listbox.querySelectorAll("input[type='checkbox']").forEach((input) => {
         input.checked = available.includes(input.value);
       });
-      selected = available;
     }
-    forceFilterModeInclude(def.modeKey);
     state.axisMode = AXIS_MODE_FILTER;
     state.axisConfig = {
       kind: "categorical",
@@ -1931,16 +1977,6 @@
     state.axisSliceTempK = getDefaultAxisSliceTemperature();
     state.zoom = null;
     syncAxisModeUi();
-  }
-
-  function forceFilterModeInclude(modeKey) {
-    if (!modeKey) return;
-    state.filterMode[modeKey] = "include";
-    dom.filterModeToggles?.forEach((toggle) => {
-      if (toggle.dataset.filterMode === modeKey) {
-        toggle.checked = false;
-      }
-    });
   }
 
   function getAvailableListboxValues(listbox) {
@@ -4444,30 +4480,41 @@
     fontSize,
     scale = 1
   ) {
+    if (!Array.isArray(labels) || !labels.length) return;
     ctx.fillStyle = theme.ink;
     ctx.textAlign = "center";
     ctx.font = `${fontSize}px ${theme.font}`;
     const tickLen = Math.max(4, Math.round(5 * scale));
     const labelOffset = Math.max(12, Math.round(16 * scale));
+    const boundaryCount = labels.length + 1;
     const maxLabelChars = 20;
-    labels.forEach((label, index) => {
-      const x = xToPx(index);
-      if (drawGrid) {
-        ctx.save();
-        ctx.strokeStyle = theme.line;
-        ctx.globalAlpha = 0.7;
-        ctx.lineWidth = 0.8;
+
+    if (drawGrid) {
+      ctx.save();
+      ctx.strokeStyle = theme.line;
+      ctx.globalAlpha = 0.7;
+      ctx.lineWidth = 0.8;
+      for (let i = 1; i < boundaryCount - 1; i++) {
+        const boundaryX = xToPx(i - 0.5);
         ctx.beginPath();
-        ctx.moveTo(x, margin.top);
-        ctx.lineTo(x, margin.top + height);
+        ctx.moveTo(boundaryX, margin.top);
+        ctx.lineTo(boundaryX, margin.top + height);
         ctx.stroke();
-        ctx.restore();
       }
+      ctx.restore();
+    }
+
+    for (let i = 0; i < boundaryCount; i++) {
+      const boundaryX = xToPx(i - 0.5);
       ctx.strokeStyle = theme.ink;
       ctx.beginPath();
-      ctx.moveTo(x, margin.top + height);
-      ctx.lineTo(x, margin.top + height + tickLen);
+      ctx.moveTo(boundaryX, margin.top + height);
+      ctx.lineTo(boundaryX, margin.top + height + tickLen);
       ctx.stroke();
+    }
+
+    labels.forEach((label, index) => {
+      const x = xToPx(index);
       const text = String(label || "");
       const compact = text.length > maxLabelChars ? `${text.slice(0, maxLabelChars - 3)}...` : text;
       ctx.save();
