@@ -1,4 +1,4 @@
----
+﻿---
 layout: default
 title: Hydrogen Diffusion Database
 permalink: /hydrogen-diffusion-database/
@@ -243,7 +243,7 @@ permalink: /hydrogen-diffusion-database/
           </details>
           <details class="hdd-filter-block">
             <summary>Charging Temperature</summary>
-            <div class="hdd-filter-note">Unit: °C.</div>
+            <div class="hdd-filter-note">Unit: &deg;C.</div>
             <div class="hdd-toggle-group">
               <input type="number" min="0" placeholder="min" data-range-key="charging_temperature_c" data-range-bound="min" />
               <input type="number" min="0" placeholder="max" data-range-key="charging_temperature_c" data-range-bound="max" />
@@ -332,7 +332,7 @@ permalink: /hydrogen-diffusion-database/
           </details>
           <details class="hdd-filter-block">
             <summary>Coating Thickness</summary>
-            <div class="hdd-filter-note">Unit: µm.</div>
+            <div class="hdd-filter-note">Unit: &micro;m.</div>
             <div class="hdd-toggle-group">
               <input type="number" min="0" placeholder="min" data-range-key="coating_thickness_um" data-range-bound="min" />
               <input type="number" min="0" placeholder="max" data-range-key="coating_thickness_um" data-range-bound="max" />
@@ -433,7 +433,7 @@ permalink: /hydrogen-diffusion-database/
           </details>
           <details class="hdd-filter-block">
             <summary>Current Density</summary>
-            <div class="hdd-filter-note">Unit: mA/cm².</div>
+            <div class="hdd-filter-note">Unit: mA/cm&sup2;.</div>
             <div class="hdd-toggle-group">
               <input type="number" min="0" placeholder="min" data-range-key="current_density_mA_per_cm2" data-range-bound="min" />
               <input type="number" min="0" placeholder="max" data-range-key="current_density_mA_per_cm2" data-range-bound="max" />
@@ -515,7 +515,7 @@ permalink: /hydrogen-diffusion-database/
           </details>
           <details class="hdd-filter-block">
             <summary>Extraction / Degassing Temperature</summary>
-            <div class="hdd-filter-note">Unit: °C.</div>
+            <div class="hdd-filter-note">Unit: &deg;C.</div>
             <div class="hdd-toggle-group">
               <input type="number" min="0" placeholder="min" data-range-key="extraction_temperature_c" data-range-bound="min" />
               <input type="number" min="0" placeholder="max" data-range-key="extraction_temperature_c" data-range-bound="max" />
@@ -597,8 +597,8 @@ permalink: /hydrogen-diffusion-database/
         <div class="hdd-stage-header">
           <h3>Plot Preview</h3>
           <div class="hdd-stage-controls">
-            <button type="button" class="hdd-stage-button" id="hdd-refresh-plot">Refresh</button>
-            <details class="hdd-plot-options">
+            <button type="button" class="hdd-stage-button" id="hdd-refresh-plot">Reset</button>
+            <details class="hdd-plot-options hdd-plot-options-primary">
               <summary>Plot Options</summary>
               <div class="hdd-plot-options-body">
                 <div class="hdd-toggle-group" role="group" aria-label="Temperature units">
@@ -701,18 +701,17 @@ permalink: /hydrogen-diffusion-database/
                     value="1"
                     aria-label="Line thickness multiplier"
                   />
-                  <span class="hdd-slider-value" id="hdd-line-thickness-value">1.00×</span>
+                  <span class="hdd-slider-value" id="hdd-line-thickness-value">1.00&times;</span>
                 </div>
                 <div class="hdd-marker-row" role="group" aria-label="Marker style">
                   <span class="hdd-marker-label">Marker style</span>
                   <div class="hdd-marker-buttons">
-                    <button type="button" class="hdd-marker-button is-active" data-marker-style="filled-circle" title="Filled circle" aria-label="Filled circle">●</button>
-                    <button type="button" class="hdd-marker-button" data-marker-style="hollow-circle" title="Hollow circle" aria-label="Hollow circle">○</button>
-                    <button type="button" class="hdd-marker-button" data-marker-style="x" title="X marker" aria-label="X marker">✕</button>
-                    <button type="button" class="hdd-marker-button" data-marker-style="triangle" title="Triangle" aria-label="Triangle">△</button>
+                    <button type="button" class="hdd-marker-button is-active" data-marker-style="filled-circle" title="Filled circle" aria-label="Filled circle">â—</button>
+                    <button type="button" class="hdd-marker-button" data-marker-style="hollow-circle" title="Hollow circle" aria-label="Hollow circle">â—‹</button>
+                    <button type="button" class="hdd-marker-button" data-marker-style="x" title="X marker" aria-label="X marker">âœ•</button>
+                    <button type="button" class="hdd-marker-button" data-marker-style="triangle" title="Triangle" aria-label="Triangle">â–³</button>
                   </div>
                 </div>
-                <button type="button" id="hdd-reset-zoom">Reset zoom</button>
               </div>
             </details>
             <details class="hdd-plot-options hdd-citation-panel" id="hdd-citation" data-order="citation">

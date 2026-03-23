@@ -1220,10 +1220,7 @@
     bindTempRange();
     bindYearRange();
     dom.openSeries?.addEventListener("click", () => toggleSeriesDrawer(true));
-    dom.refreshPlot?.addEventListener("click", () => {
-      setZoomFromInputs();
-      plotSelectedSeries(true);
-    });
+    dom.refreshPlot?.addEventListener("click", resetZoom);
     dom.downloadButtons?.forEach((button) =>
       button.addEventListener("click", () => handleDownload(button))
     );
@@ -3375,10 +3372,9 @@
       ? `<button type="button" class="hdd-summary-toggle">${toggleLabel}</button>`
       : "";
     const modeLabel = state.selectionMode === "manual" ? "selection" : "filters";
-    const actionLabel = "Refresh";
     const statusLine =
       plottedCount && plottedCount !== selectedCount
-        ? `<p>${plottedCount} plotted from current ${modeLabel}. Click "${actionLabel}" to refresh.</p>`
+        ? `<p>${plottedCount} plotted from current ${modeLabel}.</p>`
         : `<p>${selectedCount} series ${
             state.selectionMode === "manual" ? "selected" : "match filters"
           }.</p>`;
@@ -4302,8 +4298,8 @@
 
     state.preserveAxis = false;
 
-    if (dom.resetZoom) {
-      dom.resetZoom.disabled = !state.zoom;
+    if (dom.refreshPlot) {
+      dom.refreshPlot.disabled = !state.zoom;
     }
     syncZoomInputs();
     populateAxisDefaults(axisMinX, axisMaxX, axisMinY, axisMaxY);
@@ -4721,8 +4717,8 @@
     };
 
     state.preserveAxis = false;
-    if (dom.resetZoom) {
-      dom.resetZoom.disabled = !state.zoom;
+    if (dom.refreshPlot) {
+      dom.refreshPlot.disabled = !state.zoom;
     }
     syncZoomInputs();
     populateAxisDefaults(axisMinX, axisMaxX, axisMinY, axisMaxY);

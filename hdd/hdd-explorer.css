@@ -586,7 +586,7 @@ main > h1 {
 }
 
 .hdd-toggle-group button {
-  padding: 10px 12px;
+  padding: 5px 12px;
   border-radius: 12px;
   border: 1px solid var(--line);
   background: var(--panel-strong);
@@ -698,8 +698,8 @@ body.dark .hdd-toggle-group button.is-active {
 }
 
 .hdd-marker-label {
-  font-size: 0.85rem;
-  color: var(--muted);
+  font: inherit;
+  color: inherit;
 }
 
 .hdd-marker-buttons {
@@ -896,12 +896,13 @@ body.dark .hdd-toggle-group button.is-active {
 }
 
 .hdd-axis-filter-button-block {
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .hdd-filter-note {
-  margin-top: 6px;
+  margin-top: 4px;
   font-size: 0.8rem;
+  line-height: 1.2;
   color: var(--muted);
 }
 
@@ -1494,19 +1495,39 @@ body.dark .hdd-toggle-group button.is-active {
   border-color: color-mix(in srgb, var(--line) 75%, var(--ink));
 }
 
-#hdd-refresh-plot {
+.hdd-plot-options-primary {
   background: var(--accent);
-  color: #fff;
   border: none;
 }
 
-#hdd-refresh-plot:hover {
+.hdd-plot-options-primary summary {
+  color: #fff;
+}
+
+.hdd-plot-options-primary:hover,
+.hdd-plot-options-primary[open] {
   background: color-mix(in srgb, var(--accent) 85%, #000);
+  border-color: color-mix(in srgb, var(--accent) 60%, #000);
+}
+
+#hdd-refresh-plot:disabled {
+  opacity: 0.55;
+  cursor: pointer;
+}
+
+#hdd-refresh-plot:disabled:hover {
+  background: var(--panel-strong);
+  border-color: var(--line);
 }
 
 .hdd-plot-options:hover {
   background: var(--panel);
   border-color: color-mix(in srgb, var(--line) 75%, var(--ink));
+}
+
+.hdd-plot-options.hdd-plot-options-primary:hover,
+.hdd-plot-options.hdd-plot-options-primary[open] {
+  background: color-mix(in srgb, var(--accent) 85%, #000);
 }
 
 .hdd-plot-options {
@@ -1529,6 +1550,15 @@ body.dark .hdd-toggle-group button.is-active {
   display: flex;
   align-items: center;
   padding: 5px 10px;
+}
+
+.hdd-plot-options.hdd-plot-options-primary {
+  background: var(--accent);
+  border: none;
+}
+
+.hdd-plot-options.hdd-plot-options-primary summary {
+  color: #fff;
 }
 
 .hdd-plot-options summary::-webkit-details-marker {
