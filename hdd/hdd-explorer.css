@@ -523,6 +523,10 @@ main > h1 {
   gap: 8px;
 }
 
+.hdd-settings-row button {
+  width: 100%;
+}
+
 .hdd-filter-block .hdd-inline-select {
   display: grid;
   gap: 6px;
@@ -2050,6 +2054,24 @@ body.dark .hdd-toggle-group button.is-active {
   color: var(--muted);
 }
 
+.hdd-legacy-db-button {
+  appearance: none;
+  border: none;
+  background: var(--panel-strong);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.hdd-legacy-db-button:hover {
+  background: color-mix(in srgb, var(--panel-strong) 88%, var(--panel));
+}
+
 .hdd-data-status.is-ok {
   background: rgba(14, 116, 144, 0.15);
   color: #0e7490;
@@ -2107,5 +2129,15 @@ body.dark .hdd-toggle-group button.is-active {
 
 .hdd-footer-toggle {
   font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.hdd-summary-report {
+  display: grid;
+  gap: 8px;
+}
+
+.hdd-summary-report p {
+  margin: 0;
   color: var(--muted);
 }

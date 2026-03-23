@@ -41,7 +41,7 @@
     "email": "Denis@Czeskleba.com",
     "note": "Research inquiries welcome."
   },
-  "database_version": "2026-03-23-08-30",
+  "database_version": "2026-03-23-09-53",
   "schema_version": "2.0.0",
   "line_count": 1353,
   "lines": [
@@ -69556,352 +69556,352 @@
           "type": "table_points",
           "points": [
             {
-              "temperature_K": 1.113897,
-              "diffusivity_mm2_per_s": 0.07544036404463783
-            },
-            {
-              "temperature_K": 1.094715,
-              "diffusivity_mm2_per_s": 0.08543280016349482
-            },
-            {
-              "temperature_K": 1.060733,
-              "diffusivity_mm2_per_s": 0.08487585174475112
-            },
-            {
-              "temperature_K": 1.028792,
-              "diffusivity_mm2_per_s": 0.0843614581483203
-            },
-            {
-              "temperature_K": 0.998715,
-              "diffusivity_mm2_per_s": 0.08387138159321111
-            },
-            {
-              "temperature_K": 0.970344,
-              "diffusivity_mm2_per_s": 0.08341778060008441
-            },
-            {
-              "temperature_K": 0.943551,
-              "diffusivity_mm2_per_s": 0.0828486736606799
-            },
-            {
-              "temperature_K": 0.918195,
-              "diffusivity_mm2_per_s": 0.08230996302292745
-            },
-            {
-              "temperature_K": 0.894166,
-              "diffusivity_mm2_per_s": 0.0817773316455054
-            },
-            {
-              "temperature_K": 0.871366,
-              "diffusivity_mm2_per_s": 0.08120214544577045
-            },
-            {
-              "temperature_K": 0.849691,
-              "diffusivity_mm2_per_s": 0.08073030667165251
-            },
-            {
-              "temperature_K": 0.829077,
-              "diffusivity_mm2_per_s": 0.0801551204719176
-            },
-            {
-              "temperature_K": 0.809436,
-              "diffusivity_mm2_per_s": 0.07962248909449555
-            },
-            {
-              "temperature_K": 0.790702,
-              "diffusivity_mm2_per_s": 0.07912025401872555
-            },
-            {
-              "temperature_K": 0.772818,
-              "diffusivity_mm2_per_s": 0.07856938486031226
-            },
-            {
-              "temperature_K": 0.755727,
-              "diffusivity_mm2_per_s": 0.07800635718123816
-            },
-            {
-              "temperature_K": 0.739373,
-              "diffusivity_mm2_per_s": 0.07747980506414653
-            },
-            {
-              "temperature_K": 0.723714,
-              "diffusivity_mm2_per_s": 0.07691069812474201
-            },
-            {
-              "temperature_K": 0.708702,
-              "diffusivity_mm2_per_s": 0.07638414600765037
-            },
-            {
-              "temperature_K": 0.694301,
-              "diffusivity_mm2_per_s": 0.07584543536989792
-            },
-            {
-              "temperature_K": 0.680475,
-              "diffusivity_mm2_per_s": 0.07528240769082381
-            },
-            {
-              "temperature_K": 0.667186,
-              "diffusivity_mm2_per_s": 0.07478625187538421
-            },
-            {
-              "temperature_K": 0.654409,
-              "diffusivity_mm2_per_s": 0.0742110656756493
-            },
-            {
-              "temperature_K": 0.64211,
-              "diffusivity_mm2_per_s": 0.07368451355855765
-            },
-            {
-              "temperature_K": 0.630264,
-              "diffusivity_mm2_per_s": 0.07318835774311808
-            },
-            {
-              "temperature_K": 0.61885,
-              "diffusivity_mm2_per_s": 0.07261925080371356
-            },
-            {
-              "temperature_K": 0.60784,
-              "diffusivity_mm2_per_s": 0.07210485720728274
-            },
-            {
-              "temperature_K": 0.597215,
-              "diffusivity_mm2_per_s": 0.07159654287118232
-            },
-            {
-              "temperature_K": 0.586956,
-              "diffusivity_mm2_per_s": 0.07104567371276907
-            },
-            {
-              "temperature_K": 0.577043,
-              "diffusivity_mm2_per_s": 0.07052520085600782
-            },
-            {
-              "temperature_K": 0.567459,
-              "diffusivity_mm2_per_s": 0.06998649021825536
-            },
-            {
-              "temperature_K": 0.558189,
-              "diffusivity_mm2_per_s": 0.06945385884083331
-            },
-            {
-              "temperature_K": 0.549217,
-              "diffusivity_mm2_per_s": 0.0688908311617592
-            },
-            {
-              "temperature_K": 0.54053,
-              "diffusivity_mm2_per_s": 0.0683217242223547
-            },
-            {
-              "temperature_K": 0.532111,
-              "diffusivity_mm2_per_s": 0.06780125136559347
-            },
-            {
-              "temperature_K": 0.523951,
-              "diffusivity_mm2_per_s": 0.06726861998817142
-            },
-            {
-              "temperature_K": 0.516038,
-              "diffusivity_mm2_per_s": 0.06674206787107978
-            },
-            {
-              "temperature_K": 0.50836,
-              "diffusivity_mm2_per_s": 0.06621551575398815
-            },
-            {
-              "temperature_K": 0.500908,
-              "diffusivity_mm2_per_s": 0.06565856733524444
-            },
-            {
-              "temperature_K": 0.493671,
-              "diffusivity_mm2_per_s": 0.06510769817683117
-            },
-            {
-              "temperature_K": 0.486643,
-              "diffusivity_mm2_per_s": 0.06445956085313131
-            },
-            {
-              "temperature_K": 0.479813,
-              "diffusivity_mm2_per_s": 0.06373239314513614
-            },
-            {
-              "temperature_K": 0.474792,
-              "diffusivity_mm2_per_s": 0.0633114524312
-            },
-            {
-              "temperature_K": 0.46672,
-              "diffusivity_mm2_per_s": 0.06205312509692055
-            },
-            {
-              "temperature_K": 0.46044,
-              "diffusivity_mm2_per_s": 0.06108886623603934
-            },
-            {
-              "temperature_K": 0.454329,
-              "diffusivity_mm2_per_s": 0.06004557699086279
-            },
-            {
-              "temperature_K": 0.44838,
-              "diffusivity_mm2_per_s": 0.05892933662172131
-            },
-            {
-              "temperature_K": 0.442585,
-              "diffusivity_mm2_per_s": 0.05777054143026696
-            },
-            {
-              "temperature_K": 0.436942,
-              "diffusivity_mm2_per_s": 0.05643544768923071
-            },
-            {
-              "temperature_K": 0.431439,
-              "diffusivity_mm2_per_s": 0.05517330507215938
-            },
-            {
-              "temperature_K": 0.426075,
-              "diffusivity_mm2_per_s": 0.0538260528104623
-            },
-            {
-              "temperature_K": 0.420842,
-              "diffusivity_mm2_per_s": 0.05250311759008686
-            },
-            {
-              "temperature_K": 0.415735,
-              "diffusivity_mm2_per_s": 0.051234895712685115
-            },
-            {
-              "temperature_K": 0.410754,
-              "diffusivity_mm2_per_s": 0.04979037528570146
-            },
-            {
-              "temperature_K": 0.405888,
-              "diffusivity_mm2_per_s": 0.04851607414796931
-            },
-            {
-              "temperature_K": 0.401134,
-              "diffusivity_mm2_per_s": 0.047296486353210855
-            },
-            {
-              "temperature_K": 0.396494,
-              "diffusivity_mm2_per_s": 0.04591883778986173
-            },
-            {
-              "temperature_K": 0.391957,
-              "diffusivity_mm2_per_s": 0.04466885369345122
-            },
-            {
-              "temperature_K": 0.387524,
-              "diffusivity_mm2_per_s": 0.04335199773340619
-            },
-            {
-              "temperature_K": 0.383191,
-              "diffusivity_mm2_per_s": 0.04202906251303075
-            },
-            {
-              "temperature_K": 0.378953,
-              "diffusivity_mm2_per_s": 0.040730444333976955
-            },
-            {
-              "temperature_K": 0.374808,
-              "diffusivity_mm2_per_s": 0.039383192072279874
-            },
-            {
-              "temperature_K": 0.370752,
-              "diffusivity_mm2_per_s": 0.038096732413886905
-            },
-            {
-              "temperature_K": 0.366784,
-              "diffusivity_mm2_per_s": 0.036785955714172286
-            },
-            {
-              "temperature_K": 0.362899,
-              "diffusivity_mm2_per_s": 0.03544478271280563
-            },
-            {
-              "temperature_K": 0.359096,
-              "diffusivity_mm2_per_s": 0.03415832305441263
-            },
-            {
-              "temperature_K": 0.355372,
-              "diffusivity_mm2_per_s": 0.032811070792715565
-            },
-            {
-              "temperature_K": 0.351724,
-              "diffusivity_mm2_per_s": 0.031475977051679316
-            },
-            {
-              "temperature_K": 0.348151,
-              "diffusivity_mm2_per_s": 0.0301712796122951
-            },
-            {
-              "temperature_K": 0.344649,
-              "diffusivity_mm2_per_s": 0.0288118688299372
-            },
-            {
-              "temperature_K": 0.341218,
-              "diffusivity_mm2_per_s": 0.027470695828570535
-            },
-            {
-              "temperature_K": 0.337853,
-              "diffusivity_mm2_per_s": 0.026141681347864685
-            },
-            {
-              "temperature_K": 0.334555,
-              "diffusivity_mm2_per_s": 0.02483698390848047
-            },
-            {
-              "temperature_K": 0.33132,
-              "diffusivity_mm2_per_s": 0.02348365238645299
-            },
-            {
-              "temperature_K": 0.328147,
-              "diffusivity_mm2_per_s": 0.02217287568673837
-            },
-            {
-              "temperature_K": 0.325035,
-              "diffusivity_mm2_per_s": 0.020849940466362932
-            },
-            {
-              "temperature_K": 0.321981,
-              "diffusivity_mm2_per_s": 0.01951484672532668
-            },
-            {
-              "temperature_K": 0.318983,
-              "diffusivity_mm2_per_s": 0.018179752984290407
-            },
-            {
-              "temperature_K": 0.316041,
-              "diffusivity_mm2_per_s": 0.016875055544906203
-            },
-            {
-              "temperature_K": 0.313153,
-              "diffusivity_mm2_per_s": 0.015509565502217902
-            },
-            {
-              "temperature_K": 0.310318,
-              "diffusivity_mm2_per_s": 0.014174471761181629
-            },
-            {
-              "temperature_K": 0.307532,
-              "diffusivity_mm2_per_s": 0.012875853582127839
-            },
-            {
-              "temperature_K": 0.304797,
-              "diffusivity_mm2_per_s": 0.011522522060100356
-            },
-            {
-              "temperature_K": 0.302109,
-              "diffusivity_mm2_per_s": 0.010242141662037806
-            },
-            {
-              "temperature_K": 0.299469,
-              "diffusivity_mm2_per_s": 0.008925285701992764
-            },
-            {
-              "temperature_K": 0.297108,
+              "temperature_K": 297.1082352228213,
               "diffusivity_mm2_per_s": 0.007763698382066042
             },
             {
-              "temperature_K": 0.471255,
+              "temperature_K": 299.4691406969502,
+              "diffusivity_mm2_per_s": 0.008925285701992764
+            },
+            {
+              "temperature_K": 302.1094739060704,
+              "diffusivity_mm2_per_s": 0.010242141662037806
+            },
+            {
+              "temperature_K": 304.79714155092125,
+              "diffusivity_mm2_per_s": 0.011522522060100356
+            },
+            {
+              "temperature_K": 307.5323218181087,
+              "diffusivity_mm2_per_s": 0.012875853582127839
+            },
+            {
+              "temperature_K": 310.3175994925182,
+              "diffusivity_mm2_per_s": 0.014174471761181629
+            },
+            {
+              "temperature_K": 313.1534077152842,
+              "diffusivity_mm2_per_s": 0.015509565502217902
+            },
+            {
+              "temperature_K": 316.0411989839704,
+              "diffusivity_mm2_per_s": 0.016875055544906203
+            },
+            {
+              "temperature_K": 318.9834075052321,
+              "diffusivity_mm2_per_s": 0.018179752984290407
+            },
+            {
+              "temperature_K": 321.98057541203343,
+              "diffusivity_mm2_per_s": 0.01951484672532668
+            },
+            {
+              "temperature_K": 325.0346003229434,
+              "diffusivity_mm2_per_s": 0.020849940466362932
+            },
+            {
+              "temperature_K": 328.14725554995755,
+              "diffusivity_mm2_per_s": 0.02217287568673837
+            },
+            {
+              "temperature_K": 331.3202457994935,
+              "diffusivity_mm2_per_s": 0.02348365238645299
+            },
+            {
+              "temperature_K": 334.55468798326484,
+              "diffusivity_mm2_per_s": 0.02483698390848047
+            },
+            {
+              "temperature_K": 337.8534971579162,
+              "diffusivity_mm2_per_s": 0.026141681347864685
+            },
+            {
+              "temperature_K": 341.2177060613959,
+              "diffusivity_mm2_per_s": 0.027470695828570535
+            },
+            {
+              "temperature_K": 344.64943333375663,
+              "diffusivity_mm2_per_s": 0.0288118688299372
+            },
+            {
+              "temperature_K": 348.1506534129092,
+              "diffusivity_mm2_per_s": 0.0301712796122951
+            },
+            {
+              "temperature_K": 351.7244632950789,
+              "diffusivity_mm2_per_s": 0.031475977051679316
+            },
+            {
+              "temperature_K": 355.3719950747142,
+              "diffusivity_mm2_per_s": 0.032811070792715565
+            },
+            {
+              "temperature_K": 359.09580495775765,
+              "diffusivity_mm2_per_s": 0.03415832305441263
+            },
+            {
+              "temperature_K": 362.899337777286,
+              "diffusivity_mm2_per_s": 0.03544478271280563
+            },
+            {
+              "temperature_K": 366.78352028870086,
+              "diffusivity_mm2_per_s": 0.036785955714172286
+            },
+            {
+              "temperature_K": 370.7521952564756,
+              "diffusivity_mm2_per_s": 0.038096732413886905
+            },
+            {
+              "temperature_K": 374.8080585825461,
+              "diffusivity_mm2_per_s": 0.039383192072279874
+            },
+            {
+              "temperature_K": 378.95270898479424,
+              "diffusivity_mm2_per_s": 0.040730444333976955
+            },
+            {
+              "temperature_K": 383.190811193201,
+              "diffusivity_mm2_per_s": 0.04202906251303075
+            },
+            {
+              "temperature_K": 387.5243907735531,
+              "diffusivity_mm2_per_s": 0.04335199773340619
+            },
+            {
+              "temperature_K": 391.95720995993344,
+              "diffusivity_mm2_per_s": 0.04466885369345122
+            },
+            {
+              "temperature_K": 396.4937385980199,
+              "diffusivity_mm2_per_s": 0.04591883778986173
+            },
+            {
+              "temperature_K": 401.1343132182727,
+              "diffusivity_mm2_per_s": 0.047296486353210855
+            },
+            {
+              "temperature_K": 405.887584241849,
+              "diffusivity_mm2_per_s": 0.04851607414796931
+            },
+            {
+              "temperature_K": 410.75386795151263,
+              "diffusivity_mm2_per_s": 0.04979037528570146
+            },
+            {
+              "temperature_K": 415.73510924588174,
+              "diffusivity_mm2_per_s": 0.051234895712685115
+            },
+            {
+              "temperature_K": 420.8419866106876,
+              "diffusivity_mm2_per_s": 0.05250311759008686
+            },
+            {
+              "temperature_K": 426.07482819451593,
+              "diffusivity_mm2_per_s": 0.0538260528104623
+            },
+            {
+              "temperature_K": 431.4389570667181,
+              "diffusivity_mm2_per_s": 0.05517330507215938
+            },
+            {
+              "temperature_K": 436.94160964221504,
+              "diffusivity_mm2_per_s": 0.05643544768923071
+            },
+            {
+              "temperature_K": 442.58491196702084,
+              "diffusivity_mm2_per_s": 0.05777054143026696
+            },
+            {
+              "temperature_K": 448.3796815736649,
+              "diffusivity_mm2_per_s": 0.05892933662172131
+            },
+            {
+              "temperature_K": 454.3291451097017,
+              "diffusivity_mm2_per_s": 0.06004557699086279
+            },
+            {
+              "temperature_K": 460.44026934223825,
+              "diffusivity_mm2_per_s": 0.06108886623603934
+            },
+            {
+              "temperature_K": 466.7198749216532,
+              "diffusivity_mm2_per_s": 0.06205312509692055
+            },
+            {
+              "temperature_K": 471.25532399523524,
               "diffusivity_mm2_per_s": 0.06270040064561737
+            },
+            {
+              "temperature_K": 474.7916891319796,
+              "diffusivity_mm2_per_s": 0.0633114524312
+            },
+            {
+              "temperature_K": 479.81348586108703,
+              "diffusivity_mm2_per_s": 0.06373239314513614
+            },
+            {
+              "temperature_K": 486.6425589483005,
+              "diffusivity_mm2_per_s": 0.06445956085313131
+            },
+            {
+              "temperature_K": 493.6708905133741,
+              "diffusivity_mm2_per_s": 0.06510769817683117
+            },
+            {
+              "temperature_K": 500.9078187759743,
+              "diffusivity_mm2_per_s": 0.06565856733524444
+            },
+            {
+              "temperature_K": 508.35991413038454,
+              "diffusivity_mm2_per_s": 0.06621551575398815
+            },
+            {
+              "temperature_K": 516.037955502793,
+              "diffusivity_mm2_per_s": 0.06674206787107978
+            },
+            {
+              "temperature_K": 523.951485006584,
+              "diffusivity_mm2_per_s": 0.06726861998817142
+            },
+            {
+              "temperature_K": 532.1113211439704,
+              "diffusivity_mm2_per_s": 0.06780125136559347
+            },
+            {
+              "temperature_K": 540.5297145661807,
+              "diffusivity_mm2_per_s": 0.0683217242223547
+            },
+            {
+              "temperature_K": 549.2171923454293,
+              "diffusivity_mm2_per_s": 0.0688908311617592
+            },
+            {
+              "temperature_K": 558.1886870757805,
+              "diffusivity_mm2_per_s": 0.06945385884083331
+            },
+            {
+              "temperature_K": 567.4591950295584,
+              "diffusivity_mm2_per_s": 0.06998649021825536
+            },
+            {
+              "temperature_K": 577.042620064249,
+              "diffusivity_mm2_per_s": 0.07052520085600782
+            },
+            {
+              "temperature_K": 586.9559728820303,
+              "diffusivity_mm2_per_s": 0.07104567371276907
+            },
+            {
+              "temperature_K": 597.2147354484921,
+              "diffusivity_mm2_per_s": 0.07159654287118232
+            },
+            {
+              "temperature_K": 607.8401610192693,
+              "diffusivity_mm2_per_s": 0.07210485720728274
+            },
+            {
+              "temperature_K": 618.8502737395409,
+              "diffusivity_mm2_per_s": 0.07261925080371356
+            },
+            {
+              "temperature_K": 630.264284951142,
+              "diffusivity_mm2_per_s": 0.07318835774311808
+            },
+            {
+              "temperature_K": 642.110460137797,
+              "diffusivity_mm2_per_s": 0.07368451355855765
+            },
+            {
+              "temperature_K": 654.4090854131119,
+              "diffusivity_mm2_per_s": 0.0742110656756493
+            },
+            {
+              "temperature_K": 667.1857186556305,
+              "diffusivity_mm2_per_s": 0.07478625187538421
+            },
+            {
+              "temperature_K": 680.4750976323971,
+              "diffusivity_mm2_per_s": 0.07528240769082381
+            },
+            {
+              "temperature_K": 694.301201195893,
+              "diffusivity_mm2_per_s": 0.07584543536989792
+            },
+            {
+              "temperature_K": 708.7021087632535,
+              "diffusivity_mm2_per_s": 0.07638414600765037
+            },
+            {
+              "temperature_K": 723.7137456466787,
+              "diffusivity_mm2_per_s": 0.07691069812474201
+            },
+            {
+              "temperature_K": 739.3726073165279,
+              "diffusivity_mm2_per_s": 0.07747980506414653
+            },
+            {
+              "temperature_K": 755.7266681466668,
+              "diffusivity_mm2_per_s": 0.07800635718123816
+            },
+            {
+              "temperature_K": 772.8182302970166,
+              "diffusivity_mm2_per_s": 0.07856938486031226
+            },
+            {
+              "temperature_K": 790.7015813906565,
+              "diffusivity_mm2_per_s": 0.07912025401872555
+            },
+            {
+              "temperature_K": 809.4356012982927,
+              "diffusivity_mm2_per_s": 0.07962248909449555
+            },
+            {
+              "temperature_K": 829.0766581656495,
+              "diffusivity_mm2_per_s": 0.0801551204719176
+            },
+            {
+              "temperature_K": 849.6913210549023,
+              "diffusivity_mm2_per_s": 0.08073030667165251
+            },
+            {
+              "temperature_K": 871.3656615419361,
+              "diffusivity_mm2_per_s": 0.08120214544577045
+            },
+            {
+              "temperature_K": 894.1658742789322,
+              "diffusivity_mm2_per_s": 0.0817773316455054
+            },
+            {
+              "temperature_K": 918.1951652093973,
+              "diffusivity_mm2_per_s": 0.08230996302292745
+            },
+            {
+              "temperature_K": 943.5510413198292,
+              "diffusivity_mm2_per_s": 0.0828486736606799
+            },
+            {
+              "temperature_K": 970.3440290839205,
+              "diffusivity_mm2_per_s": 0.08341778060008441
+            },
+            {
+              "temperature_K": 998.715423398621,
+              "diffusivity_mm2_per_s": 0.08387138159321111
+            },
+            {
+              "temperature_K": 1028.7917347430887,
+              "diffusivity_mm2_per_s": 0.0843614581483203
+            },
+            {
+              "temperature_K": 1060.7328648624934,
+              "diffusivity_mm2_per_s": 0.08487585174475112
+            },
+            {
+              "temperature_K": 1094.7154624062118,
+              "diffusivity_mm2_per_s": 0.08543280016349482
+            },
+            {
+              "temperature_K": 1113.8969821337055,
+              "diffusivity_mm2_per_s": 0.07544036404463783
             }
           ]
         }

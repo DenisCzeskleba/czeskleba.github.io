@@ -332,6 +332,77 @@
     heating_rate_k_per_min: "Heating Rate [K/min]",
     extraction_temperature_c: "Extraction Temperature [C]",
   };
+  const SETTINGS_HASH_KEY = "hdd-settings-v1";
+  const LEGACY_DB_MAX_BYTES = 15 * 1024 * 1024;
+  const DEFAULT_ZENODO_DOI = "10.5281/zenodo.19127023";
+  const FILTER_SELECTION_BINDINGS = [
+    { key: "source", domKey: "filterSource", label: "Source" },
+    { key: "materialClass", domKey: "filterClass", label: "Material Class" },
+    { key: "materialGrade", domKey: "filterGrade", label: "Material Grade" },
+    { key: "materialMicrostructure", domKey: "filterMicrostructure", label: "Microstructure" },
+    { key: "materialPhase", domKey: "filterPhase", label: "Phase" },
+    { key: "materialProcessing", domKey: "filterProcessing", label: "Processing" },
+    { key: "materialTags", domKey: "filterTags", label: "Material Tags" },
+    { key: "weldedProcess", domKey: "filterWeldProcess", label: "Welding Process" },
+    { key: "weldedLayer", domKey: "filterWeldLayer", label: "Welding Layer / Pass" },
+    { key: "chargingMethod", domKey: "filterChargingMethod", label: "Charging Method" },
+    { key: "calculationModel", domKey: "filterCalculationModel", label: "Calculation Model" },
+    { key: "sampleGeometry", domKey: "filterSampleGeometry", label: "Sample Geometry" },
+    { key: "surfaceCondition", domKey: "filterSurfaceCondition", label: "Surface Condition" },
+    { key: "surfaceFinishDetail", domKey: "filterSurfaceFinishDetail", label: "Surface Finish Detail" },
+    { key: "coated", domKey: "filterCoated", label: "Coated" },
+    { key: "coatingType", domKey: "filterCoatingType", label: "Coating Type" },
+    { key: "deformationHistory", domKey: "filterDeformationHistory", label: "Deformation History" },
+    { key: "mechanicalLoading", domKey: "filterMechanicalLoading", label: "Mechanical Loading During Test" },
+    { key: "loadingRegime", domKey: "filterLoadingRegime", label: "Loading Regime" },
+    { key: "electrolyte", domKey: "filterElectrolyte", label: "Electrolyte" },
+    { key: "controlMode", domKey: "filterControlMode", label: "Control Mode" },
+    { key: "poisonAdditive", domKey: "filterPoisonAdditive", label: "Poison Additive" },
+    { key: "gasComposition", domKey: "filterGasComposition", label: "Gas Composition" },
+    { key: "gasPurity", domKey: "filterGasPurity", label: "Gas Purity" },
+    { key: "tdaPeakAnalysis", domKey: "filterTdaPeak", label: "TDA Peak Analysis" },
+    { key: "simsType", domKey: "filterSimsType", label: "SIMS Type" },
+    { key: "devEntryElectrolyte", domKey: "filterDevEntryElectrolyte", label: "Devanathan Entry Electrolyte" },
+    { key: "devExitElectrolyte", domKey: "filterDevExitElectrolyte", label: "Devanathan Exit Electrolyte" },
+    { key: "reportedAs", domKey: "filterReported", label: "Reported As" },
+    { key: "studiedEffects", domKey: "filterEffect", label: "Studied Effect" },
+    { key: "measurementMethod", domKey: "filterMethod", label: "Measurement Method" },
+    { key: "modelType", domKey: "filterModel", label: "Model Type" },
+  ];
+  const FILTER_MODE_LABELS = {
+    source: "Source mode",
+    materialClass: "Material Class mode",
+    materialGrade: "Material Grade mode",
+    materialMicrostructure: "Microstructure mode",
+    materialPhase: "Phase mode",
+    materialProcessing: "Processing mode",
+    materialTags: "Material Tags mode",
+    weldedProcess: "Welding Process mode",
+    weldedLayer: "Welding Layer / Pass mode",
+    chargingMethod: "Charging Method mode",
+    calculationModel: "Calculation Model mode",
+    sampleGeometry: "Sample Geometry mode",
+    surfaceCondition: "Surface Condition mode",
+    surfaceFinishDetail: "Surface Finish Detail mode",
+    coated: "Coated mode",
+    coatingType: "Coating Type mode",
+    deformationHistory: "Deformation History mode",
+    mechanicalLoading: "Mechanical Loading mode",
+    loadingRegime: "Loading Regime mode",
+    electrolyte: "Electrolyte mode",
+    controlMode: "Control Mode mode",
+    poisonAdditive: "Poison Additive mode",
+    gasComposition: "Gas Composition mode",
+    gasPurity: "Gas Purity mode",
+    tdaPeakAnalysis: "TDA Peak Analysis mode",
+    simsType: "SIMS Type mode",
+    devEntryElectrolyte: "Devanathan Entry Electrolyte mode",
+    devExitElectrolyte: "Devanathan Exit Electrolyte mode",
+    reportedAs: "Reported As mode",
+    studiedEffects: "Studied Effect mode",
+    measurementMethod: "Measurement Method mode",
+    modelType: "Model Type mode",
+  };
 
   const mount = document.getElementById("hydrogen-explorer-app");
   if (!mount) return;
@@ -341,6 +412,8 @@
   const dom = {
     shell: mount.querySelector(".hdd-explorer-shell"),
     status: document.getElementById("hdd-data-status"),
+    legacyDbButton: document.getElementById("hdd-legacy-db-button"),
+    legacyDbFile: document.getElementById("hdd-legacy-db-file"),
     search: document.getElementById("hdd-search"),
     list: document.getElementById("hdd-series-list"),
     advancedToggle: document.getElementById("hdd-advanced-toggle"),
@@ -369,6 +442,7 @@
     lineThickness: document.getElementById("hdd-line-thickness"),
     lineThicknessValue: document.getElementById("hdd-line-thickness-value"),
     markerStyleButtons: document.querySelectorAll("[data-marker-style]"),
+    importSettings: document.getElementById("hdd-import-settings"),
     gridX: document.getElementById("hdd-grid-x"),
     gridY: document.getElementById("hdd-grid-y"),
     axisXMin: document.getElementById("hdd-axis-x-min"),
@@ -471,12 +545,14 @@
     coreSection: document.getElementById("hdd-core-filters"),
     sectionHeaders: document.querySelectorAll(".hdd-filter-section-header"),
     sections: document.querySelectorAll(".hdd-filter-section"),
+    summaryModalTitle: document.getElementById("hdd-summary-modal-title"),
   };
 
   const state = {
     dataset: null,
     seriesList: [],
     seriesById: new Map(),
+    seriesByEntryId: new Map(),
     selected: new Set(),
     units: "C",
     scale: "log",
@@ -519,6 +595,9 @@
     axisSliceTempK: null,
     axisTempExtent: null,
     axisColorScale: "blue-red",
+    additionalSelectionIds: new Set(),
+    additionalSelectionEntryIds: [],
+    summaryModalMode: "series",
   };
 
   let currentSeries = [];
@@ -533,35 +612,26 @@
   async function initialize() {
     setShellState("loading");
     setStatus(`Loading dataset from ${endpoint}...`, "info");
+    bindEvents();
+    hydrateUiStateFromControls();
 
     const payload = await fetchDataset(endpoint);
     if (!payload || !Array.isArray(payload.lines)) {
       setStatus("Dataset missing or invalid.", "error");
       renderEmptyChart("Dataset missing. Export a new bundle and publish it.");
+      showLegacyDatabaseErrorModal(
+        "Failed to load the default database bundle.",
+        ["Dataset missing or invalid at the configured endpoint."]
+      );
       return;
     }
 
-    state.dataset = payload;
-    const validationIssues = validateDataset(payload);
-    if (validationIssues.length) {
-      reportValidationIssues(validationIssues);
-    }
-    const { seriesList, seriesById } = normalizeDataset(payload);
-    state.seriesList = seriesList;
-    state.seriesById = seriesById;
-    state.scatterbandIds = seriesList
-      .filter((entry) => entry.sourceId === "boellinghaus_1995_scatterband")
-      .map((entry) => entry.id);
-    setSelectionMode("filtered");
-    updateCitationPanel(payload);
+    const loaded = loadDataset(payload, { sourceLabel: endpoint, replot: true });
+    if (!loaded) return;
+    setShellState("ready");
+  }
 
-    const sourceCount = Object.keys(payload.sources || {}).length;
-    setStatus(
-      `Loaded ${payload.line_count || payload.lines.length} lines · ${sourceCount} sources · ${seriesList.length} series`,
-      "ok"
-    );
-
-    bindEvents();
+  function hydrateUiStateFromControls() {
     state.monochrome = dom.monochrome?.checked ?? false;
     state.gridX = dom.gridX?.checked ?? true;
     state.gridY = dom.gridY?.checked ?? true;
@@ -581,19 +651,69 @@
     updateLineThicknessLabel();
     syncMarkerStyleUi();
     initializeFilterModes();
+    syncScaleButtonsUi();
+    syncUnitButtonsUi();
+  }
+
+  function loadDataset(payload, options = {}) {
+    const { sourceLabel = "dataset", replot = true } = options;
+    if (!payload || !Array.isArray(payload.lines)) {
+      setStatus("Dataset missing or invalid.", "error");
+      return false;
+    }
+
+    state.dataset = payload;
+    const validationIssues = validateDataset(payload);
+    if (validationIssues.length) {
+      reportValidationIssues(validationIssues);
+    }
+    const { seriesList, seriesById, seriesByEntryId } = normalizeDataset(payload);
+    state.seriesList = seriesList;
+    state.seriesById = seriesById;
+    state.seriesByEntryId = seriesByEntryId;
+    state.scatterbandIds = seriesList
+      .filter((entry) => entry.sourceId === "boellinghaus_1995_scatterband")
+      .map((entry) => entry.id);
+    state.additionalSelectionIds = new Set();
+    state.additionalSelectionEntryIds = [];
+    state.materialClassDefaultsApplied = false;
+    state.excludedSeries = new Set();
+    state.filteredList = [];
+    state.lastFilters = null;
+    state.lastQuery = "";
+    state.zoom = null;
+    state.axisTempExtent = null;
+    state.tooltipPinned = null;
+    state.summaryExpanded = false;
+    setSelectionMode("filtered");
+    state.selected = new Set();
+    updateCitationPanel(payload);
+
+    const sourceCount = Object.keys(payload.sources || {}).length;
+    setStatus(
+      `Loaded ${payload.line_count || payload.lines.length} lines - ${sourceCount} sources - ${seriesList.length} series`,
+      "ok"
+    );
+
     populateFilters(payload);
     initializeTempFilter(state.seriesList);
     state.axisSliceTempK = getDefaultAxisSliceTemperature();
     initializeYearFilter(payload);
+    resetAxisMode();
     setupAxisButtons();
-    applyFilters({ replot: false });
+    resetFiltersToDefaults({ replot: false, preserveManual: false });
     syncAxisModeUi();
-    plotSelectedSeries(true);
+    if (replot) {
+      plotSelectedSeries(true);
+    }
     updateSummary();
     if (!validationIssues.length && !state.selected.size) {
       renderEmptyChart("Select one or more series, then click Plot.");
     }
-    setShellState("ready");
+    setSummaryModalTitle("Filtered Series");
+    state.summaryModalMode = "series";
+    console.info(`HDD dataset loaded from ${sourceLabel}`);
+    return true;
   }
 
   async function fetchDataset(url) {
@@ -611,6 +731,8 @@
     const sources = payload.sources || {};
     const seriesList = [];
     const seriesById = new Map();
+    const seriesByEntryId = new Map();
+    const usedIds = new Map();
 
     (payload.lines || []).forEach((line, index) => {
       if (!line || typeof line !== "object") return;
@@ -625,11 +747,11 @@
       const numericRanges = computeNumericRanges(segments);
       const materialLabel = deriveMaterialLabel(meta);
       const temperatureRange = deriveLineTemperatureRange(segments);
-      const entryId = normalizeLineId(line, index);
+      const { id: entryId, groupId } = normalizeLineId(line, index, usedIds);
 
       const entry = {
         id: entryId,
-        groupId: line.entry_id || entryId,
+        groupId,
         seriesId: null,
         label: line.label || line.entry_id || "Line",
         seriesLabel: null,
@@ -649,16 +771,33 @@
 
       seriesList.push(entry);
       seriesById.set(entryId, entry);
+      registerSeriesByEntryKey(seriesByEntryId, groupId, entryId);
+      registerSeriesByEntryKey(seriesByEntryId, entryId, entryId);
     });
 
-    return { seriesList, seriesById };
+    return { seriesList, seriesById, seriesByEntryId };
   }
 
-  function normalizeLineId(line, index) {
-    const entryId = typeof line?.entry_id === "string" ? line.entry_id.trim() : "";
-    if (entryId) return entryId;
-    const base = line?.source_id || "line";
-    return `${base}::${index}`;
+  function registerSeriesByEntryKey(map, key, seriesId) {
+    if (!key) return;
+    const normalized = String(key).trim();
+    if (!normalized) return;
+    if (!map.has(normalized)) {
+      map.set(normalized, []);
+    }
+    map.get(normalized).push(seriesId);
+  }
+
+  function normalizeLineId(line, index, usedIds = new Map()) {
+    const rawEntryId = typeof line?.entry_id === "string" ? line.entry_id.trim() : "";
+    const base = rawEntryId || `${line?.source_id || "line"}::${index}`;
+    const currentCount = usedIds.get(base) || 0;
+    usedIds.set(base, currentCount + 1);
+    const uniqueId = currentCount === 0 ? base : `${base}::dup${currentCount + 1}`;
+    return {
+      id: uniqueId,
+      groupId: rawEntryId || base,
+    };
   }
 
   function normalizeLineModels(line) {
@@ -1221,6 +1360,13 @@
     bindYearRange();
     dom.openSeries?.addEventListener("click", () => toggleSeriesDrawer(true));
     dom.refreshPlot?.addEventListener("click", resetZoom);
+    dom.importSettings?.addEventListener("click", handleImportSettingsClick);
+    dom.legacyDbButton?.addEventListener("click", () => {
+      if (!dom.legacyDbFile) return;
+      dom.legacyDbFile.value = "";
+      dom.legacyDbFile.click();
+    });
+    dom.legacyDbFile?.addEventListener("change", handleLegacyDatabaseUpload);
     dom.downloadButtons?.forEach((button) =>
       button.addEventListener("click", () => handleDownload(button))
     );
@@ -2014,7 +2160,8 @@
     return false;
   }
 
-  function activateCategoricalAxis(listboxId) {
+  function activateCategoricalAxis(listboxId, options = {}) {
+    const { preserveManual = true, replot = true } = options;
     const def = AXIS_CATEGORICAL_DEFS[listboxId];
     const listbox = document.getElementById(listboxId);
     if (!def || !listbox) return;
@@ -2038,10 +2185,11 @@
     };
     state.zoom = null;
     syncAxisModeUi();
-    applyFilters({ preserveManual: true, replot: true });
+    applyFilters({ preserveManual, replot });
   }
 
-  function activateNumericAxis(rangeKey, label) {
+  function activateNumericAxis(rangeKey, label, options = {}) {
+    const { preserveManual = true, replot = true } = options;
     state.axisMode = AXIS_MODE_FILTER;
     state.axisConfig = {
       kind: "numeric",
@@ -2051,10 +2199,11 @@
     };
     state.zoom = null;
     syncAxisModeUi();
-    applyFilters({ preserveManual: true, replot: true });
+    applyFilters({ preserveManual, replot });
   }
 
-  function activateCompositionAxis(element, label) {
+  function activateCompositionAxis(element, label, options = {}) {
+    const { preserveManual = true, replot = true } = options;
     const normalized = normalizeElementSymbol(element);
     if (!normalized) return;
     state.axisMode = AXIS_MODE_FILTER;
@@ -2066,7 +2215,7 @@
     };
     state.zoom = null;
     syncAxisModeUi();
-    applyFilters({ preserveManual: true, replot: true });
+    applyFilters({ preserveManual, replot });
   }
 
   function resetAxisMode() {
@@ -2416,6 +2565,11 @@
   }
 
   function clearFilters() {
+    resetFiltersToDefaults({ replot: true, preserveManual: false });
+  }
+
+  function resetFiltersToDefaults(options = {}) {
+    const { replot = true, preserveManual = false } = options;
     [
       dom.filterSource,
       dom.filterClass,
@@ -2502,12 +2656,11 @@
       updateYearHandles(state.yearDomain.min, state.yearDomain.max);
     }
     resetAxisMode();
-    requestAnimationFrame(() => {
-      applyDefaultMaterialClassExclusions(true);
-      applyFilters();
-    });
     state.excludedSeries = new Set();
-    return;
+    state.additionalSelectionIds = new Set();
+    state.additionalSelectionEntryIds = [];
+    applyDefaultMaterialClassExclusions(true);
+    applyFilters({ preserveManual, replot });
   }
 
   function applyFilters(options = {}) {
@@ -2574,7 +2727,12 @@
       setSelectionMode("filtered");
     }
     if (state.selectionMode === "filtered") {
-      state.selected = new Set(filtered.map((entry) => entry.id));
+      const filteredIds = filtered.map((entry) => entry.id);
+      const additional = Array.from(state.additionalSelectionIds || []).filter((id) =>
+        state.seriesById.has(id)
+      );
+      state.additionalSelectionIds = new Set(additional);
+      state.selected = new Set(filteredIds.concat(additional));
     }
 
     syncSelectionToVisible(filtered);
@@ -2712,15 +2870,22 @@
 
   function syncSelectionToVisible(visibleList) {
     const visibleIds = new Set(visibleList.map((entry) => entry.id));
+    const keepIds =
+      state.selectionMode === "filtered"
+        ? new Set([...visibleIds, ...Array.from(state.additionalSelectionIds || [])])
+        : visibleIds;
     let changed = false;
     state.selected.forEach((id) => {
+      if (state.selectionMode === "filtered" && state.additionalSelectionIds?.has(id)) {
+        return;
+      }
       if (!visibleIds.has(id)) {
         state.selected.delete(id);
         changed = true;
       }
     });
     if (changed) {
-      currentSeries = currentSeries.filter((series) => visibleIds.has(series.id));
+      currentSeries = currentSeries.filter((series) => keepIds.has(series.id));
     }
   }
 
@@ -3258,6 +3423,8 @@
       checkbox.checked = true;
       state.selected.add(checkbox.value);
     });
+    state.additionalSelectionIds = new Set();
+    state.additionalSelectionEntryIds = [];
     setSelectionMode("manual");
     updateSummary();
     plotSelectedSeries(true);
@@ -3271,6 +3438,8 @@
         state.selected.delete(checkbox.value);
       });
     }
+    state.additionalSelectionIds = new Set();
+    state.additionalSelectionEntryIds = [];
     setSelectionMode("manual");
     plotSelectedSeries(true);
   }
@@ -3291,6 +3460,8 @@
     if (state.selectionMode !== "manual") {
       setSelectionMode("manual");
     }
+    state.additionalSelectionIds = new Set();
+    state.additionalSelectionEntryIds = [];
     updateSummary();
     plotSelectedSeries(true);
   }
@@ -3303,8 +3474,26 @@
     updateSummary();
   }
 
+  function getFilteredSelectionEntries() {
+    const map = new Map();
+    (state.filteredList || []).forEach((entry) => {
+      if (!entry?.id) return;
+      map.set(entry.id, entry);
+    });
+    (state.additionalSelectionIds || new Set()).forEach((id) => {
+      if (map.has(id)) return;
+      const entry = state.seriesById.get(id);
+      if (!entry) return;
+      map.set(id, entry);
+    });
+    return Array.from(map.values());
+  }
+
   function updateSummary(seriesList = null) {
     if (!dom.summary) return;
+    if (state.summaryModalMode === "report" && dom.summaryModal?.classList?.contains("is-open")) {
+      return;
+    }
     if (state.selectionMode === "manual") {
       if (!state.selected.size) {
         state.summaryExpanded = false;
@@ -3318,7 +3507,7 @@
         ? Array.from(state.selected)
             .map((id) => state.seriesById.get(id))
             .filter(Boolean)
-        : (state.filteredList || []);
+        : getFilteredSelectionEntries();
     if (!allItems.length) {
       state.summaryExpanded = false;
       dom.summary.innerHTML =
@@ -3371,12 +3560,23 @@
     const toggleButton = needsToggle
       ? `<button type="button" class="hdd-summary-toggle">${toggleLabel}</button>`
       : "";
-    const modeLabel = state.selectionMode === "manual" ? "selection" : "filters";
+    const hasAdditionalSelections =
+      state.selectionMode === "filtered" && (state.additionalSelectionIds?.size || 0) > 0;
+    const modeLabel =
+      state.selectionMode === "manual"
+        ? "selection"
+        : hasAdditionalSelections
+          ? "filters + additional selections"
+          : "filters";
     const statusLine =
       plottedCount && plottedCount !== selectedCount
         ? `<p>${plottedCount} plotted from current ${modeLabel}.</p>`
         : `<p>${selectedCount} series ${
-            state.selectionMode === "manual" ? "selected" : "match filters"
+            state.selectionMode === "manual"
+              ? "selected"
+              : hasAdditionalSelections
+                ? "match filters or imported additions"
+                : "match filters"
           }.</p>`;
 
     dom.summary.innerHTML = `
@@ -3387,25 +3587,38 @@
       ${statusLine}
       <ul>${allItemLines.join("")}</ul>
     `;
+    if (state.summaryModalMode === "series") {
+      setSummaryModalTitle(state.selectionMode === "manual" ? "Selected Series" : "Filtered Series");
+    }
   }
 
   function toggleScale(button) {
     state.scale = button.dataset.scale === "linear" ? "linear" : "log";
-    dom.scaleButtons.forEach((btn) =>
-      btn.classList.toggle("is-active", btn === button)
-    );
+    syncScaleButtonsUi();
     state.zoom = null;
     plotSelectedSeries();
   }
 
   function toggleUnits(button) {
     state.units = button.dataset.unit === "C" ? "C" : "K";
-    dom.unitButtons.forEach((btn) =>
-      btn.classList.toggle("is-active", btn === button)
-    );
+    syncUnitButtonsUi();
     syncAxisModeUi();
     state.zoom = null;
     plotSelectedSeries();
+  }
+
+  function syncScaleButtonsUi() {
+    dom.scaleButtons?.forEach((btn) => {
+      const scale = btn.dataset.scale === "linear" ? "linear" : "log";
+      btn.classList.toggle("is-active", scale === state.scale);
+    });
+  }
+
+  function syncUnitButtonsUi() {
+    dom.unitButtons?.forEach((btn) => {
+      const unit = btn.dataset.unit === "K" ? "K" : "C";
+      btn.classList.toggle("is-active", unit === state.units);
+    });
   }
 
   function setSelectionMode(mode) {
@@ -3426,7 +3639,13 @@
     const useManual = state.selectionMode === "manual";
     const baseIds = useManual
       ? Array.from(state.selected)
-      : (state.filteredList || []).map((entry) => entry.id);
+      : Array.from(
+          new Set(
+            (state.filteredList || [])
+              .map((entry) => entry.id)
+              .concat(Array.from(state.additionalSelectionIds || []))
+          )
+        );
     const scatterbandIds =
       !axisFilterMode && state.forceScatterband && Array.isArray(state.scatterbandIds)
         ? state.scatterbandIds
@@ -5613,6 +5832,8 @@
         y >= legendRect.y &&
         y <= legendRect.y + legendRect.height;
       if (insideLegend) {
+        setSummaryModalTitle(state.selectionMode === "manual" ? "Selected Series" : "Filtered Series");
+        state.summaryModalMode = "series";
         openSummaryModal();
         return;
       }
@@ -5778,11 +5999,12 @@
   }
 
   function handleDownload(button) {
-    if (!currentSeries.length) {
+    const type = (button.dataset.download || "").toLowerCase();
+    const requiresPlot = type === "csv" || type === "png" || type === "svg";
+    if (requiresPlot && !currentSeries.length) {
       alert("Select and plot at least one series before downloading.");
       return;
     }
-    const type = (button.dataset.download || "").toLowerCase();
     if (type === "json") {
       if (!state.dataset) {
         alert("Dataset not loaded yet.");
@@ -5790,25 +6012,14 @@
       }
       const version = state.dataset.database_version || "unknown";
       const filename = `hdd_public_database_${version}.json`;
-      try {
-        fetch(endpoint, { cache: "no-store" })
-          .then((response) => {
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            return response.blob();
-          })
-          .then((blob) => downloadBlob(blob, filename))
-          .catch(() => {
-            downloadBlob(
-              new Blob([JSON.stringify(state.dataset, null, 2)], { type: "application/json" }),
-              filename
-            );
-          });
-      } catch {
-        downloadBlob(
-          new Blob([JSON.stringify(state.dataset, null, 2)], { type: "application/json" }),
-          filename
-        );
-      }
+      downloadBlob(
+        new Blob([JSON.stringify(state.dataset, null, 2)], {
+          type: "application/json",
+        }),
+        filename
+      );
+    } else if (type === "settings") {
+      exportSettingsHashUrl();
     } else if (type === "csv") {
       const meta = getExportMetadata();
       const exportedAt = new Date().toISOString();
@@ -5959,11 +6170,22 @@
   }
 
   function setStatus(message, tone = "info") {
-    if (!dom.status) return;
-    dom.status.textContent = message;
-    dom.status.classList.remove("is-error", "is-ok");
-    if (tone === "error") dom.status.classList.add("is-error");
-    if (tone === "ok") dom.status.classList.add("is-ok");
+    if (dom.status) {
+      dom.status.textContent = message;
+      dom.status.classList.remove("is-error", "is-ok");
+      if (tone === "error") dom.status.classList.add("is-error");
+      if (tone === "ok") dom.status.classList.add("is-ok");
+    }
+  }
+
+  function setSummaryModalTitle(value) {
+    const title = String(value || "Filtered Series");
+    if (dom.summaryModalTitle) {
+      dom.summaryModalTitle.textContent = title;
+      return;
+    }
+    const fallback = dom.summaryModal?.querySelector?.(".hdd-summary-panel-header span");
+    if (fallback) fallback.textContent = title;
   }
 
   function openSummaryModal() {
@@ -5976,6 +6198,11 @@
     if (!dom.summaryModal) return;
     dom.summaryModal.classList.remove("is-open");
     dom.summaryModal.setAttribute("aria-hidden", "true");
+    if (state.summaryModalMode === "report") {
+      state.summaryModalMode = "series";
+      setSummaryModalTitle("Filtered Series");
+      updateSummary(currentSeries);
+    }
   }
 
   function setShellState(stateValue) {
@@ -6012,7 +6239,7 @@
   function updateLineThicknessLabel() {
     if (!dom.lineThicknessValue) return;
     const value = clampValue(state.lineThickness || 1, 0.5, 2);
-    dom.lineThicknessValue.textContent = `${value.toFixed(2)}×`;
+    dom.lineThicknessValue.textContent = `${value.toFixed(2)}x`;
   }
 
   function normalizeMarkerStyle(value) {
@@ -6203,6 +6430,822 @@
       }
     }
     return summary;
+  }
+
+  function getSettingsDoi() {
+    return (
+      state.dataset?.database_doi ||
+      state.dataset?.citations?.database?.doi ||
+      DEFAULT_ZENODO_DOI
+    );
+  }
+
+  function sanitizeRangeMap(mapLike) {
+    const result = {};
+    if (!mapLike || typeof mapLike !== "object") return result;
+    Object.keys(mapLike).forEach((key) => {
+      const range = mapLike[key];
+      if (!range || typeof range !== "object") return;
+      const min = parseNumber(range.min);
+      const max = parseNumber(range.max);
+      if (min == null && max == null) return;
+      result[key] = { min, max };
+    });
+    return result;
+  }
+
+  function getFilterSelectionsSnapshot() {
+    const selections = {};
+    FILTER_SELECTION_BINDINGS.forEach((binding) => {
+      const listbox = dom[binding.domKey];
+      if (!listbox) return;
+      selections[binding.key] = selectedValues(listbox);
+    });
+    return selections;
+  }
+
+  function getAdditionalSelectionEntryIdsForExport() {
+    const additional = new Set(state.additionalSelectionEntryIds || []);
+    const filteredIds = new Set((state.filteredList || []).map((entry) => entry.id));
+    state.selected.forEach((id) => {
+      if (filteredIds.has(id)) return;
+      const entry = state.seriesById.get(id);
+      const key = entry?.groupId || entry?.id || id;
+      if (key) additional.add(String(key));
+    });
+    return Array.from(additional);
+  }
+
+  function serializeAxisConfig(config) {
+    if (!config || typeof config !== "object") return null;
+    if (config.kind === "categorical") {
+      return {
+        kind: "categorical",
+        listbox_id: config.listboxId || null,
+        axis_key: config.axisKey || null,
+        label: config.label || null,
+      };
+    }
+    if (config.kind === "numeric") {
+      return {
+        kind: "numeric",
+        range_key: config.rangeKey || config.axisKey || null,
+        axis_key: config.axisKey || null,
+        label: config.label || null,
+      };
+    }
+    if (config.kind === "composition") {
+      return {
+        kind: "composition",
+        element: config.element || null,
+        axis_key: config.axisKey || null,
+        label: config.label || null,
+      };
+    }
+    return null;
+  }
+
+  function buildSettingsPayload() {
+    return {
+      settings_version: 1,
+      exported_at: new Date().toISOString(),
+      database_version: state.dataset?.database_version || "",
+      database_date: state.dataset?.database_date || "",
+      database_doi: getSettingsDoi(),
+      filters: {
+        selections: getFilterSelectionsSnapshot(),
+        modes: { ...(state.filterMode || {}) },
+        search: dom.search?.value?.trim() || "",
+        temperature_K: { min: state.tempMin, max: state.tempMax },
+        year: { min: state.yearMin, max: state.yearMax },
+        include_unconfirmed: !!state.includeUnconfirmed,
+        include_unknown_composition: !!state.includeUnknownComposition,
+        literature_mode: state.literatureMode || "include",
+        welded_mode: state.weldedMode || "include",
+        composition_ranges: sanitizeRangeMap(state.compositionFilters),
+        numeric_ranges: sanitizeRangeMap(state.numericFilters),
+      },
+      plot_options: {
+        units: state.units === "K" ? "K" : "C",
+        scale: state.scale === "linear" ? "linear" : "log",
+        envelope: !!state.envelope,
+        force_scatterband: !!state.forceScatterband,
+        numbering: !!state.numbering,
+        legend_by_source: !!state.legendBySource,
+        monochrome: !!state.monochrome,
+        grid_x: !!state.gridX,
+        grid_y: !!state.gridY,
+        line_thickness: Number(clampValue(state.lineThickness || 1, 0.5, 2).toFixed(3)),
+        marker_style: normalizeMarkerStyle(state.markerStyle),
+      },
+      axis: {
+        mode: state.axisMode === AXIS_MODE_FILTER ? AXIS_MODE_FILTER : AXIS_MODE_TEMPERATURE,
+        temp_behavior:
+          state.axisTempBehavior === AXIS_TEMP_BEHAVIOR_SLICE
+            ? AXIS_TEMP_BEHAVIOR_SLICE
+            : AXIS_TEMP_BEHAVIOR_DISTRIBUTION,
+        slice_temp_K: Number.isFinite(state.axisSliceTempK)
+          ? Number(state.axisSliceTempK.toFixed(4))
+          : null,
+        color_scale: getAxisColorScaleName(state.axisColorScale),
+        config: serializeAxisConfig(state.axisConfig),
+      },
+      zoom: state.zoom
+        ? {
+            xMin: Number.isFinite(state.zoom.xMin) ? state.zoom.xMin : null,
+            xMax: Number.isFinite(state.zoom.xMax) ? state.zoom.xMax : null,
+            yMin: Number.isFinite(state.zoom.yMin) ? state.zoom.yMin : null,
+            yMax: Number.isFinite(state.zoom.yMax) ? state.zoom.yMax : null,
+          }
+        : null,
+      additional_selection_entry_ids: getAdditionalSelectionEntryIdsForExport(),
+    };
+  }
+
+  function toBase64UrlUtf8(text) {
+    const input = String(text || "");
+    const bytes = new TextEncoder().encode(input);
+    let binary = "";
+    bytes.forEach((byte) => {
+      binary += String.fromCharCode(byte);
+    });
+    return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  }
+
+  function fromBase64UrlUtf8(value) {
+    const normalized = String(value || "").replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized + "=".repeat((4 - (normalized.length % 4 || 4)) % 4);
+    const binary = atob(padded);
+    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  }
+
+  function buildSettingsHash(payload) {
+    const json = JSON.stringify(payload);
+    return `${SETTINGS_HASH_KEY}=${toBase64UrlUtf8(json)}`;
+  }
+
+  function buildSettingsUrl(hashValue) {
+    const base =
+      window.location.origin + window.location.pathname + window.location.search;
+    return `${base}#${hashValue}`;
+  }
+
+  function exportSettingsHashUrl() {
+    const payload = buildSettingsPayload();
+    const hash = buildSettingsHash(payload);
+    const url = buildSettingsUrl(hash);
+    const onCopyFallback = () => {
+      window.prompt("Copy settings URL", url);
+      setStatus("Settings URL generated. Copy it from the prompt.", "ok");
+    };
+    if (!navigator.clipboard?.writeText) {
+      onCopyFallback();
+      return;
+    }
+    navigator.clipboard
+      .writeText(url)
+      .then(() => {
+        setStatus("Settings URL copied to clipboard.", "ok");
+      })
+      .catch(() => {
+        onCopyFallback();
+      });
+  }
+
+  function parseSettingsInput(rawInput) {
+    const input = String(rawInput || "").trim();
+    if (!input) {
+      throw new Error("No settings string provided.");
+    }
+
+    let candidate = input;
+    if (/^https?:\/\//i.test(candidate)) {
+      try {
+        const parsedUrl = new URL(candidate);
+        candidate = parsedUrl.hash || "";
+      } catch {
+        throw new Error("Invalid URL format.");
+      }
+    }
+    candidate = candidate.trim();
+    if (candidate.startsWith("#")) candidate = candidate.slice(1);
+    if (candidate.startsWith("!")) candidate = candidate.slice(1);
+    candidate = decodeURIComponent(candidate);
+    if (candidate.startsWith(`${SETTINGS_HASH_KEY}=`)) {
+      candidate = candidate.slice(SETTINGS_HASH_KEY.length + 1);
+    }
+    if (!candidate) {
+      throw new Error("Settings hash not found.");
+    }
+    if (candidate.startsWith("{")) {
+      return JSON.parse(candidate);
+    }
+    const decoded = fromBase64UrlUtf8(candidate);
+    return JSON.parse(decoded);
+  }
+
+  function buildImportReportSkeleton(payload = null) {
+    return {
+      applied: [],
+      unknownFilterValues: [],
+      missingSeriesIds: [],
+      unmatchedControls: [],
+      databaseMeta: {
+        version: payload?.database_version || "",
+        date: payload?.database_date || "",
+        doi: payload?.database_doi || "",
+      },
+    };
+  }
+
+  function pushUniqueReportItem(list, value) {
+    const text = String(value || "").trim();
+    if (!text || list.includes(text)) return;
+    list.push(text);
+  }
+
+  function handleImportSettingsClick() {
+    const raw = window.prompt("Paste settings URL or hash");
+    if (raw == null) return;
+    importSettingsFromInput(raw);
+  }
+
+  function importSettingsFromInput(rawInput) {
+    let payload = null;
+    let report = null;
+    try {
+      payload = parseSettingsInput(rawInput);
+      report = buildImportReportSkeleton(payload);
+      applyImportedSettings(payload, report);
+      showImportReportModal(report);
+    } catch (error) {
+      report = buildImportReportSkeleton(payload);
+      pushUniqueReportItem(report.unmatchedControls, `Import parse error: ${error.message}`);
+      showImportReportModal(report);
+    }
+  }
+
+  function applyImportedSettings(payload, report) {
+    if (!payload || typeof payload !== "object") {
+      throw new Error("Settings payload must be a JSON object.");
+    }
+    if (payload.settings_version != null && Number(payload.settings_version) !== 1) {
+      throw new Error(`Unsupported settings version: ${payload.settings_version}`);
+    }
+    resetFiltersToDefaults({ replot: false, preserveManual: false });
+    applyImportedFilterState(payload.filters, report);
+    applyImportedPlotOptions(payload.plot_options, report);
+    applyImportedAxisState(payload.axis, report);
+    applyImportedZoom(payload.zoom, report);
+    applyFilters({ preserveManual: true, replot: false });
+    applyImportedAdditionalSelections(payload.additional_selection_entry_ids, report);
+    setSelectionMode("filtered");
+    applyFilters({ preserveManual: true, replot: false });
+    plotSelectedSeries(true);
+    updateSummary(currentSeries);
+  }
+
+  function setCheckboxSelections(listbox, values, reportKeyLabel, report) {
+    if (!listbox) {
+      pushUniqueReportItem(report.unmatchedControls, `${reportKeyLabel}: control missing`);
+      return;
+    }
+    const requested = Array.isArray(values) ? values.map((value) => String(value)) : [];
+    const byValue = new Map();
+    listbox.querySelectorAll("input[type='checkbox']").forEach((input) => {
+      byValue.set(input.value, input);
+      input.checked = false;
+    });
+    requested.forEach((value) => {
+      const input = byValue.get(value);
+      if (!input) {
+        pushUniqueReportItem(report.unknownFilterValues, `${reportKeyLabel}: ${value}`);
+        return;
+      }
+      input.checked = true;
+    });
+  }
+
+  function applyImportedFilterState(filtersPayload, report) {
+    if (!filtersPayload || typeof filtersPayload !== "object") {
+      pushUniqueReportItem(report.unmatchedControls, "Filters payload missing");
+      return;
+    }
+    const selections = filtersPayload.selections || {};
+    const knownSelectionKeys = new Set(FILTER_SELECTION_BINDINGS.map((binding) => binding.key));
+    Object.keys(selections || {}).forEach((key) => {
+      if (knownSelectionKeys.has(key)) return;
+      pushUniqueReportItem(report.unmatchedControls, `Unknown filter selection key: ${key}`);
+    });
+    FILTER_SELECTION_BINDINGS.forEach((binding) => {
+      if (!Object.prototype.hasOwnProperty.call(selections, binding.key)) return;
+      const listbox = dom[binding.domKey];
+      setCheckboxSelections(listbox, selections[binding.key], binding.label, report);
+    });
+
+    const modes = filtersPayload.modes || {};
+    if (modes && typeof modes === "object") {
+      Object.keys(modes).forEach((key) => {
+        const mode = modes[key];
+        if (mode !== "include" && mode !== "exclude") {
+          pushUniqueReportItem(report.unmatchedControls, `${FILTER_MODE_LABELS[key] || key}: invalid mode`);
+          return;
+        }
+        const toggle = Array.from(dom.filterModeToggles || []).find(
+          (item) => item.dataset.filterMode === key
+        );
+        if (!toggle) {
+          pushUniqueReportItem(report.unmatchedControls, `${FILTER_MODE_LABELS[key] || key}: control missing`);
+          return;
+        }
+        toggle.checked = mode === "exclude";
+        state.filterMode[key] = mode;
+      });
+    }
+
+    if (typeof filtersPayload.search === "string" && dom.search) {
+      dom.search.value = filtersPayload.search;
+    }
+
+    const tempRange = filtersPayload.temperature_K;
+    if (tempRange && typeof tempRange === "object") {
+      const minK = parseNumber(tempRange.min);
+      const maxK = parseNumber(tempRange.max);
+      const minC = Number.isFinite(minK) ? minK - 273.15 : null;
+      const maxC = Number.isFinite(maxK) ? maxK - 273.15 : null;
+      setTempFilter(minC, maxC, true);
+    }
+
+    const yearRange = filtersPayload.year;
+    if (yearRange && typeof yearRange === "object") {
+      const minYear = parseNumber(yearRange.min);
+      const maxYear = parseNumber(yearRange.max);
+      setYearFilter(minYear, maxYear, true);
+    }
+
+    if (typeof filtersPayload.include_unconfirmed === "boolean") {
+      state.includeUnconfirmed = filtersPayload.include_unconfirmed;
+      if (dom.includeUnconfirmed) dom.includeUnconfirmed.checked = state.includeUnconfirmed;
+    }
+    if (typeof filtersPayload.include_unknown_composition === "boolean") {
+      state.includeUnknownComposition = filtersPayload.include_unknown_composition;
+      if (dom.filterUnknownComposition) {
+        dom.filterUnknownComposition.checked = state.includeUnknownComposition;
+      }
+    }
+    if (typeof filtersPayload.literature_mode === "string") {
+      if (["include", "only", "exclude"].includes(filtersPayload.literature_mode)) {
+        state.literatureMode = filtersPayload.literature_mode;
+        if (dom.literatureMode) dom.literatureMode.value = state.literatureMode;
+      } else {
+        pushUniqueReportItem(report.unmatchedControls, "Literature Compilations mode invalid");
+      }
+    }
+    if (typeof filtersPayload.welded_mode === "string") {
+      if (["include", "only", "exclude"].includes(filtersPayload.welded_mode)) {
+        state.weldedMode = filtersPayload.welded_mode;
+        if (dom.weldedMode) dom.weldedMode.value = state.weldedMode;
+      } else {
+        pushUniqueReportItem(report.unmatchedControls, "Welded mode invalid");
+      }
+    }
+
+    applyImportedCompositionRanges(filtersPayload.composition_ranges, report);
+    applyImportedNumericRanges(filtersPayload.numeric_ranges, report);
+    report.applied.push("Filters");
+  }
+
+  function applyImportedCompositionRanges(rangesPayload, report) {
+    if (!dom.filterComposition) {
+      if (rangesPayload && Object.keys(rangesPayload || {}).length) {
+        pushUniqueReportItem(report.unmatchedControls, "Chemical Composition controls missing");
+      }
+      state.compositionFilters = {};
+      return;
+    }
+
+    dom.filterComposition.querySelectorAll("input[type='number']").forEach((input) => {
+      input.value = "";
+    });
+    state.compositionFilters = {};
+
+    if (!rangesPayload || typeof rangesPayload !== "object") return;
+    Object.keys(rangesPayload).forEach((rawElement) => {
+      const normalized = normalizeElementSymbol(rawElement);
+      if (!normalized) return;
+      const range = rangesPayload[rawElement] || {};
+      const minVal = parseNumber(range.min);
+      const maxVal = parseNumber(range.max);
+      if (minVal == null && maxVal == null) return;
+      let minOut = minVal != null ? Math.max(0, minVal) : null;
+      let maxOut = maxVal != null ? Math.max(0, maxVal) : null;
+      if (minOut != null && maxOut != null && minOut > maxOut) {
+        const swap = minOut;
+        minOut = maxOut;
+        maxOut = swap;
+      }
+      const esc =
+        typeof CSS !== "undefined" && CSS.escape
+          ? CSS.escape(normalized)
+          : normalized.replace(/["\\]/g, "\\$&");
+      const minInput = dom.filterComposition.querySelector(
+        `input[data-comp-element="${esc}"][data-comp-bound="min"]`
+      );
+      const maxInput = dom.filterComposition.querySelector(
+        `input[data-comp-element="${esc}"][data-comp-bound="max"]`
+      );
+      if (!minInput && !maxInput) {
+        pushUniqueReportItem(report.unknownFilterValues, `Chemical Composition: ${normalized}`);
+        return;
+      }
+      if (minInput && minOut != null) minInput.value = String(minOut);
+      if (maxInput && maxOut != null) maxInput.value = String(maxOut);
+      state.compositionFilters[normalized] = {
+        min: minOut,
+        max: maxOut,
+      };
+    });
+  }
+
+  function applyImportedNumericRanges(rangesPayload, report) {
+    if (dom.numericRangeInputs) {
+      dom.numericRangeInputs.forEach((input) => {
+        input.value = "";
+      });
+    }
+    state.numericFilters = {};
+    if (!rangesPayload || typeof rangesPayload !== "object") return;
+    Object.keys(rangesPayload).forEach((key) => {
+      const range = rangesPayload[key] || {};
+      const minVal = parseNumber(range.min);
+      const maxVal = parseNumber(range.max);
+      if (minVal == null && maxVal == null) return;
+      const minInput = dom.numericRangeInputs
+        ? Array.from(dom.numericRangeInputs).find(
+            (input) => input.dataset.rangeKey === key && input.dataset.rangeBound === "min"
+          )
+        : null;
+      const maxInput = dom.numericRangeInputs
+        ? Array.from(dom.numericRangeInputs).find(
+            (input) => input.dataset.rangeKey === key && input.dataset.rangeBound === "max"
+          )
+        : null;
+      if (!minInput && !maxInput) {
+        pushUniqueReportItem(report.unmatchedControls, `Numeric range: ${key}`);
+        return;
+      }
+      const normalizedMin =
+        minVal != null && NON_NEGATIVE_RANGE_KEYS.has(key) ? Math.max(0, minVal) : minVal;
+      const normalizedMax =
+        maxVal != null && NON_NEGATIVE_RANGE_KEYS.has(key) ? Math.max(0, maxVal) : maxVal;
+      let minOut = normalizedMin;
+      let maxOut = normalizedMax;
+      if (minOut != null && maxOut != null && minOut > maxOut) {
+        const swap = minOut;
+        minOut = maxOut;
+        maxOut = swap;
+      }
+      state.numericFilters[key] = { min: minOut, max: maxOut };
+      if (minInput && minOut != null) minInput.value = String(minOut);
+      if (maxInput && maxOut != null) maxInput.value = String(maxOut);
+    });
+  }
+
+  function applyImportedPlotOptions(plotPayload, report) {
+    if (!plotPayload || typeof plotPayload !== "object") {
+      pushUniqueReportItem(report.unmatchedControls, "Plot options payload missing");
+      return;
+    }
+    if (plotPayload.units === "K" || plotPayload.units === "C") {
+      state.units = plotPayload.units;
+      syncUnitButtonsUi();
+    }
+    if (plotPayload.scale === "linear" || plotPayload.scale === "log") {
+      state.scale = plotPayload.scale;
+      syncScaleButtonsUi();
+    }
+    if (typeof plotPayload.envelope === "boolean") {
+      state.envelope = plotPayload.envelope;
+      if (dom.envelope) dom.envelope.checked = state.envelope;
+    }
+    if (typeof plotPayload.force_scatterband === "boolean") {
+      state.forceScatterband = plotPayload.force_scatterband;
+      if (dom.forceScatterband) dom.forceScatterband.checked = state.forceScatterband;
+    }
+    if (typeof plotPayload.numbering === "boolean") {
+      state.numbering = plotPayload.numbering;
+      if (dom.numbering) dom.numbering.checked = state.numbering;
+    }
+    if (typeof plotPayload.legend_by_source === "boolean") {
+      state.legendBySource = plotPayload.legend_by_source;
+      if (dom.legendGroup) dom.legendGroup.checked = state.legendBySource;
+    }
+    if (typeof plotPayload.monochrome === "boolean") {
+      state.monochrome = plotPayload.monochrome;
+      if (dom.monochrome) dom.monochrome.checked = state.monochrome;
+    }
+    if (typeof plotPayload.grid_x === "boolean") {
+      state.gridX = plotPayload.grid_x;
+      if (dom.gridX) dom.gridX.checked = state.gridX;
+    }
+    if (typeof plotPayload.grid_y === "boolean") {
+      state.gridY = plotPayload.grid_y;
+      if (dom.gridY) dom.gridY.checked = state.gridY;
+    }
+    if (plotPayload.line_thickness != null) {
+      const value = clampValue(parseNumber(plotPayload.line_thickness) || 1, 0.5, 2);
+      state.lineThickness = value;
+      if (dom.lineThickness) dom.lineThickness.value = String(value);
+      updateLineThicknessLabel();
+    }
+    if (plotPayload.marker_style != null) {
+      state.markerStyle = normalizeMarkerStyle(plotPayload.marker_style);
+      syncMarkerStyleUi();
+    }
+    report.applied.push("Plot options");
+  }
+
+  function findCategoricalListboxByAxisKey(axisKey) {
+    if (!axisKey) return null;
+    const target = String(axisKey).toLowerCase();
+    return (
+      Object.keys(AXIS_CATEGORICAL_DEFS).find((listboxId) => {
+        const def = AXIS_CATEGORICAL_DEFS[listboxId];
+        return String(def.axisKey || "").toLowerCase() === target;
+      }) || null
+    );
+  }
+
+  function applyImportedAxisState(axisPayload, report) {
+    resetAxisMode();
+    if (!axisPayload || typeof axisPayload !== "object") {
+      syncAxisModeUi();
+      return;
+    }
+
+    const mode =
+      axisPayload.mode === AXIS_MODE_FILTER ? AXIS_MODE_FILTER : AXIS_MODE_TEMPERATURE;
+    state.axisTempBehavior =
+      axisPayload.temp_behavior === AXIS_TEMP_BEHAVIOR_SLICE
+        ? AXIS_TEMP_BEHAVIOR_SLICE
+        : AXIS_TEMP_BEHAVIOR_DISTRIBUTION;
+    if (Number.isFinite(parseNumber(axisPayload.slice_temp_K))) {
+      state.axisSliceTempK = parseNumber(axisPayload.slice_temp_K);
+    }
+    if (typeof axisPayload.color_scale === "string") {
+      state.axisColorScale = getAxisColorScaleName(axisPayload.color_scale);
+    }
+
+    if (mode === AXIS_MODE_FILTER) {
+      const config = axisPayload.config || {};
+      const kind = config.kind;
+      let activated = false;
+      if (kind === "categorical") {
+        const listboxId =
+          config.listbox_id ||
+          findCategoricalListboxByAxisKey(config.axis_key) ||
+          null;
+        if (listboxId && document.getElementById(listboxId)) {
+          activateCategoricalAxis(listboxId, { preserveManual: true, replot: false });
+          activated = true;
+        }
+      } else if (kind === "numeric") {
+        const rangeKey = config.range_key || config.axis_key;
+        const hasRangeControl =
+          rangeKey === "year" ||
+          !!Array.from(dom.numericRangeInputs || []).find(
+            (input) => input.dataset.rangeKey === rangeKey
+          );
+        if (rangeKey && hasRangeControl) {
+          activateNumericAxis(
+            rangeKey,
+            config.label || AXIS_NUMERIC_LABELS[rangeKey] || rangeKey,
+            { preserveManual: true, replot: false }
+          );
+          activated = true;
+        }
+      } else if (kind === "composition") {
+        const element = config.element || config.axis_key;
+        const normalizedElement = normalizeElementSymbol(element);
+        const hasElementControl = !!dom.filterComposition?.querySelector(
+          `input[data-comp-element="${
+            typeof CSS !== "undefined" && CSS.escape
+              ? CSS.escape(normalizedElement)
+              : normalizedElement.replace(/["\\]/g, "\\$&")
+          }"][data-comp-bound="min"]`
+        );
+        if (element && hasElementControl) {
+          activateCompositionAxis(element, config.label || `${element} [wt%]`, {
+            preserveManual: true,
+            replot: false,
+          });
+          activated = true;
+        }
+      }
+      if (!activated) {
+        pushUniqueReportItem(report.unmatchedControls, "Axis configuration could not be restored");
+        resetAxisMode();
+      }
+    }
+    syncAxisModeUi();
+    report.applied.push("Axis settings");
+  }
+
+  function applyImportedZoom(zoomPayload, report) {
+    if (!zoomPayload || typeof zoomPayload !== "object") {
+      state.zoom = null;
+      syncZoomInputs();
+      return;
+    }
+    const xMin = parseNumber(zoomPayload.xMin);
+    const xMax = parseNumber(zoomPayload.xMax);
+    const yMin = parseNumber(zoomPayload.yMin);
+    const yMax = parseNumber(zoomPayload.yMax);
+    const hasAny =
+      Number.isFinite(xMin) ||
+      Number.isFinite(xMax) ||
+      Number.isFinite(yMin) ||
+      Number.isFinite(yMax);
+    if (!hasAny) {
+      state.zoom = null;
+      syncZoomInputs();
+      return;
+    }
+    if ((xMin != null && xMax != null && !(xMax > xMin)) || (yMin != null && yMax != null && !(yMax > yMin))) {
+      pushUniqueReportItem(report.unmatchedControls, "Zoom range invalid and was ignored");
+      state.zoom = null;
+      syncZoomInputs();
+      return;
+    }
+    state.zoom = { xMin, xMax, yMin, yMax };
+    syncZoomInputs();
+    report.applied.push("Zoom");
+  }
+
+  function resolveSeriesIdsForEntryId(entryId) {
+    const normalized = String(entryId || "").trim();
+    if (!normalized) return [];
+    const direct = state.seriesByEntryId?.get(normalized) || [];
+    if (direct.length) return direct.slice();
+    const byId = state.seriesById.get(normalized);
+    return byId ? [byId.id] : [];
+  }
+
+  function applyImportedAdditionalSelections(entryIdsPayload, report) {
+    state.additionalSelectionIds = new Set();
+    state.additionalSelectionEntryIds = [];
+    if (!Array.isArray(entryIdsPayload)) return;
+    const validEntryIds = [];
+    entryIdsPayload.forEach((rawId) => {
+      const entryId = String(rawId || "").trim();
+      if (!entryId) return;
+      const seriesIds = resolveSeriesIdsForEntryId(entryId);
+      if (!seriesIds.length) {
+        pushUniqueReportItem(report.missingSeriesIds, entryId);
+        return;
+      }
+      validEntryIds.push(entryId);
+      seriesIds.forEach((id) => {
+        state.additionalSelectionIds.add(id);
+      });
+    });
+    state.additionalSelectionEntryIds = Array.from(new Set(validEntryIds));
+    if (state.additionalSelectionEntryIds.length) {
+      report.applied.push(
+        `Additional selections (${state.additionalSelectionEntryIds.length})`
+      );
+    }
+  }
+
+  function escapeHtmlList(items) {
+    if (!items || !items.length) return "<p>None.</p>";
+    const lines = items
+      .map((item) => `<li>${escapeHtml(item)}</li>`)
+      .join("");
+    return `<ul>${lines}</ul>`;
+  }
+
+  function showImportReportModal(report) {
+    if (!dom.summary) return;
+    const dbMeta = report.databaseMeta || {};
+    const doi = dbMeta.doi || "";
+    const doiUrl = toDoiUrl(doi);
+    const doiHtml = doiUrl
+      ? `<a class="hdd-inline-link" href="${escapeHtml(doiUrl)}" target="_blank" rel="noopener">${escapeHtml(doiUrl)}</a>`
+      : escapeHtml(doi || "Not provided");
+    const guidance =
+      report.unknownFilterValues.length ||
+      report.missingSeriesIds.length ||
+      report.unmatchedControls.length
+        ? "Some settings could not be restored. If this is due to database mismatch, upload the referenced version via Upload Database."
+        : "All imported settings were applied successfully.";
+    dom.summary.innerHTML = `
+      <div class="hdd-summary-report">
+        <strong>Applied</strong>
+        ${escapeHtmlList(report.applied)}
+        <strong>Unknown Filter Values</strong>
+        ${escapeHtmlList(report.unknownFilterValues)}
+        <strong>Missing Series IDs</strong>
+        ${escapeHtmlList(report.missingSeriesIds)}
+        <strong>Unmatched Controls</strong>
+        ${escapeHtmlList(report.unmatchedControls)}
+        <strong>Hash Database Metadata</strong>
+        <p>Version: ${escapeHtml(dbMeta.version || "Not provided")}<br/>Date: ${escapeHtml(
+          dbMeta.date || "Not provided"
+        )}<br/>DOI: ${doiHtml}</p>
+        <p>${escapeHtml(guidance)}</p>
+      </div>
+    `;
+    setSummaryModalTitle("Import Settings Report");
+    state.summaryModalMode = "report";
+    openSummaryModal();
+  }
+
+  function validateLegacyDatasetShape(payload) {
+    const errors = [];
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+      errors.push("Top-level payload must be a JSON object.");
+      return errors;
+    }
+    if (!Array.isArray(payload.lines)) {
+      errors.push("Missing required top-level field: lines[]");
+    }
+    if (!payload.sources || typeof payload.sources !== "object" || Array.isArray(payload.sources)) {
+      errors.push("Missing required top-level field: sources{}");
+    }
+    return errors;
+  }
+
+  function showLegacyDatabaseErrorModal(title, errors = []) {
+    if (!dom.summary) {
+      alert(`${title}\n${errors.join("\n")}`);
+      return;
+    }
+    const doiUrl = toDoiUrl(getSettingsDoi());
+    const doiHtml = doiUrl
+      ? `<a class="hdd-inline-link" href="${escapeHtml(doiUrl)}" target="_blank" rel="noopener">${escapeHtml(doiUrl)}</a>`
+      : escapeHtml(getSettingsDoi());
+    dom.summary.innerHTML = `
+      <div class="hdd-summary-report">
+        <strong>${escapeHtml(title)}</strong>
+        ${escapeHtmlList(errors)}
+        <p>Use a valid HDD public database JSON from Zenodo (${doiHtml}) or contact us if the problem persists.</p>
+      </div>
+    `;
+    setSummaryModalTitle("Upload Database Failed");
+    state.summaryModalMode = "report";
+    openSummaryModal();
+  }
+
+  async function handleLegacyDatabaseUpload(event) {
+    const input = event?.target;
+    if (!(input instanceof HTMLInputElement)) return;
+    const file = input.files?.[0];
+    if (!file) return;
+    if (file.size > LEGACY_DB_MAX_BYTES) {
+      showLegacyDatabaseErrorModal("Legacy database upload failed.", [
+        `File is too large (${(file.size / (1024 * 1024)).toFixed(2)} MB). Maximum is 15 MB.`,
+      ]);
+      input.value = "";
+      return;
+    }
+
+    try {
+      const text = await file.text();
+      let payload = null;
+      try {
+        payload = JSON.parse(text);
+      } catch {
+        showLegacyDatabaseErrorModal("Legacy database upload failed.", [
+          "File is not valid JSON.",
+        ]);
+        input.value = "";
+        return;
+      }
+      const shapeErrors = validateLegacyDatasetShape(payload);
+      if (shapeErrors.length) {
+        showLegacyDatabaseErrorModal("Legacy database upload failed.", shapeErrors);
+        input.value = "";
+        return;
+      }
+      const loaded = loadDataset(payload, { sourceLabel: file.name, replot: true });
+      if (!loaded) {
+        showLegacyDatabaseErrorModal("Legacy database upload failed.", [
+          "Could not initialize explorer from uploaded payload.",
+        ]);
+        input.value = "";
+        return;
+      }
+      setShellState("ready");
+      setStatus(`Loaded uploaded database: ${file.name}`, "ok");
+    } catch (error) {
+      showLegacyDatabaseErrorModal("Legacy database upload failed.", [
+        error?.message || "Unexpected error while reading file.",
+      ]);
+    } finally {
+      input.value = "";
+    }
   }
 
   function formatFiltersSummary(filters) {

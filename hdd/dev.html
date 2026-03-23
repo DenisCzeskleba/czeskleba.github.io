@@ -796,7 +796,15 @@
           <input type="checkbox" id="hdd-include-unconfirmed" />
           <span>Include Outliers / Unconfirmed</span>
         </label>
-        <span id="hdd-data-status" class="hdd-data-status">Waiting for dataset...</span>
+        <button
+          type="button"
+          id="hdd-legacy-db-button"
+          class="hdd-data-status hdd-legacy-db-button"
+          title="Experimental feature: upload a custom or legacy database JSON. Use Ctrl+F5 (or F5) to reload the default database."
+        >
+          Upload Database
+        </button>
+        <input id="hdd-legacy-db-file" type="file" accept=".json,application/json" hidden />
       </div>
     </aside>
 
@@ -810,7 +818,7 @@
               <summary>Plot Options</summary>
               <div class="hdd-plot-options-body">
                 <div class="hdd-toggle-group" role="group" aria-label="Temperature units">
-                  <button type="button" data-unit="K" title="Show temperature in Kelvin.">Kelvin</button>
+                  <button type="button" data-unit="K" title="Show temperature in Kelvin.">&deg;K</button>
                   <button type="button" data-unit="C" class="is-active" title="Show temperature in Celsius.">&deg;C</button>
                 </div>
                 <div class="hdd-toggle-group" role="group" aria-label="Y-axis scale">
@@ -914,11 +922,20 @@
                 <div class="hdd-marker-row" role="group" aria-label="Marker style">
                   <span class="hdd-marker-label">Marker style</span>
                   <div class="hdd-marker-buttons">
-                    <button type="button" class="hdd-marker-button is-active" data-marker-style="filled-circle" title="Filled circle" aria-label="Filled circle">●</button>
-                    <button type="button" class="hdd-marker-button" data-marker-style="hollow-circle" title="Hollow circle" aria-label="Hollow circle">○</button>
-                    <button type="button" class="hdd-marker-button" data-marker-style="x" title="X marker" aria-label="X marker">✕</button>
-                    <button type="button" class="hdd-marker-button" data-marker-style="triangle" title="Triangle" aria-label="Triangle">△</button>
+                    <button type="button" class="hdd-marker-button is-active" data-marker-style="filled-circle" title="Filled circle" aria-label="Filled circle">&#9679;</button>
+                    <button type="button" class="hdd-marker-button" data-marker-style="hollow-circle" title="Hollow circle" aria-label="Hollow circle">&#9675;</button>
+                    <button type="button" class="hdd-marker-button" data-marker-style="x" title="X marker" aria-label="X marker">&#10005;</button>
+                    <button type="button" class="hdd-marker-button" data-marker-style="triangle" title="Triangle" aria-label="Triangle">&#9651;</button>
                   </div>
+                </div>
+                <div class="hdd-axis-label">Import/Export Settings</div>
+                <div class="hdd-toggle-group hdd-settings-row">
+                  <button type="button" id="hdd-import-settings" title="Import saved settings. After clicking, paste a full settings URL or raw hash into the popup input field. Applies filters, plot options, axis settings, and zoom.">
+                    Import
+                  </button>
+                  <button type="button" data-download="settings" title="Export current settings as a shareable URL. Copies to clipboard when possible (otherwise shown in a copy prompt).">
+                    Export
+                  </button>
                 </div>
               </div>
             </details>
@@ -976,7 +993,7 @@
   <div class="hdd-summary-backdrop" data-action="close-summary"></div>
   <div class="hdd-summary-panel" role="dialog" aria-label="Filtered Series">
     <div class="hdd-summary-panel-header">
-      <span>Filtered Series</span>
+      <span id="hdd-summary-modal-title">Filtered Series</span>
       <button type="button" class="hdd-summary-close" data-action="close-summary">Close</button>
     </div>
     <div class="hdd-summary hdd-summary-panel-body" id="hdd-selected-summary">
