@@ -1398,6 +1398,8 @@
         if (!section) return;
         if (section === dom.coreSection && section?.dataset?.locked === "true") {
           event.preventDefault();
+          collapseCoreFilterBlocks();
+          setActiveSection(section);
           return;
         }
         setActiveSection(section);
@@ -2804,6 +2806,14 @@
     if (!section || !dom.sections) return;
     dom.sections.forEach((item) => item.classList.remove("is-active"));
     section.classList.add("is-active");
+  }
+
+  function collapseCoreFilterBlocks() {
+    const root = dom.coreFiltersBody || dom.coreSection;
+    if (!root) return;
+    root.querySelectorAll(".hdd-filter-block[open]").forEach((block) => {
+      block.removeAttribute("open");
+    });
   }
 
   function captureSelectScroll() {
@@ -5998,9 +6008,35 @@
     return { moreRect };
   }
 
+  function buildSourceListExportItems(seriesList) {
+    if (!Array.isArray(seriesList) || !seriesList.length) return [];
+    const seen = new Set();
+    const items = [];
+    seriesList.forEach((series) => {
+      const descriptor = series?.descriptor || {};
+      const sourceId = descriptor.sourceId || "";
+      const sourceMeta = sourceId ? state.dataset?.sources?.[sourceId] : null;
+      const sourceKey =
+        sourceId || descriptor.sourceTitle || descriptor.groupId || series?.id || "";
+      if (!sourceKey || seen.has(sourceKey)) return;
+      seen.add(sourceKey);
+      const label =
+        sourceMeta?.clear_name ||
+        sourceMeta?.title ||
+        descriptor.sourceTitle ||
+        descriptor.groupId ||
+        "Unknown source";
+      items.push({
+        index: items.length + 1,
+        label,
+      });
+    });
+    return items;
+  }
+
   function handleDownload(button) {
     const type = (button.dataset.download || "").toLowerCase();
-    const requiresPlot = type === "csv" || type === "png" || type === "svg";
+    const requiresPlot = type === "csv" || type === "txt" || type === "png" || type === "svg";
     if (requiresPlot && !currentSeries.length) {
       alert("Select and plot at least one series before downloading.");
       return;
@@ -6128,6 +6164,14 @@
         });
       });
       downloadBlob(new Blob([rows.join("\n")], { type: "text/csv" }), "hdd-selected.csv");
+    } else if (type === "txt") {
+      const sourceItems = buildSourceListExportItems(currentSeries);
+      if (!sourceItems.length) {
+        alert("No sources available for export.");
+        return;
+      }
+      const lines = sourceItems.map((item) => `${item.index}. ${item.label}`);
+      downloadBlob(new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" }), "hdd-sources.txt");
     } else if (type === "png") {
       if (!currentCanvas) {
         alert("Plot the dataset first to export a PNG.");
