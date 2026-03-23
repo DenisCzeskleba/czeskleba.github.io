@@ -41,7 +41,7 @@
     "email": "Denis@Czeskleba.com",
     "note": "Research inquiries welcome."
   },
-  "database_version": "2026-03-22-09-16",
+  "database_version": "2026-03-23-08-30",
   "schema_version": "2.0.0",
   "line_count": 1353,
   "lines": [
@@ -40069,7 +40069,7 @@
       }
     },
     {
-      "entry_id": "newman_1971_en8_d_665.8k",
+      "entry_id": "newman_1971_en8_d_665.8k_1",
       "source_id": "newman_1971_the_effect_of_temperature",
       "label": "En 8 (1.501965, D (high temp))",
       "plotting": {
@@ -40110,7 +40110,7 @@
       }
     },
     {
-      "entry_id": "newman_1971_en8_d_665.8k",
+      "entry_id": "newman_1971_en8_d_665.8k_2",
       "source_id": "newman_1971_the_effect_of_temperature",
       "label": "En 8 (1.502025, D (high temp))",
       "plotting": {
