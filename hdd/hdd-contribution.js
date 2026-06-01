@@ -24,6 +24,271 @@
     status.style.color = tone === "error" ? "#b91c1c" : "var(--text)";
   }
 
+  function syncSubmitLabel() {
+    if (!submitButton) return;
+    const localOnly = !!(localModeToggle && localModeToggle.checked);
+    const skipValidation = !!(skipValidationToggle && skipValidationToggle.checked);
+    if (localOnly) {
+      submitButton.textContent = "Generate Local JSON";
+      submitButton.title = "Generates JSON in the browser only. Uncheck local test mode to send the form.";
+      return;
+    }
+    submitButton.textContent = skipValidation ? "Send Anyway" : "Submit for Review";
+    submitButton.title = skipValidation
+      ? "Bypass client-side validation and send the submission to Formspree."
+      : "Send the contribution to Formspree for manual review.";
+  }
+
+  function clearValidationState() {
+    if (!form) return;
+    form.querySelectorAll("input, textarea, select").forEach((el) => {
+      if (typeof el.setCustomValidity === "function") {
+        el.setCustomValidity("");
+      }
+    });
+  }
+
+  function markIssue(issues, el, message) {
+    if (!el || !message) return;
+    issues.push({ el, message });
+  }
+
+  function parseNumberOrNull(value) {
+    if (value === "" || value === null || value === undefined) return null;
+    const num = Number(value);
+    return Number.isFinite(num) ? num : null;
+  }
+
+  function validateListOfValues(rowLabel, textarea) {
+    const raw = textarea ? textarea.value.trim() : "";
+    if (!raw) {
+      return `${rowLabel}: list of values requires pasted data.`;
+    }
+
+    const lines = raw.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    if (!lines.length) {
+      return `${rowLabel}: list of values requires pasted data.`;
+    }
+
+    for (let index = 0; index < lines.length; index += 1) {
+      const line = lines[index];
+      const parts = line.split(/[\t,]/).map((part) => part.trim());
+      if (parts.length !== 2 || !parts[0] || !parts[1]) {
+        return `${rowLabel}: line ${index + 1} must contain temperature and diffusivity separated by a comma or tab.`;
+      }
+      if (parseNumberOrNull(parts[0]) === null || parseNumberOrNull(parts[1]) === null) {
+        return `${rowLabel}: line ${index + 1} must contain two numeric values.`;
+      }
+    }
+
+    return null;
+  }
+
+  function validateContribution(payload) {
+    const issues = [];
+
+    if (!payload.rows || !payload.rows.length) {
+      markIssue(issues, rowsBody, "Add at least one data row.");
+    }
+
+    const title = document.getElementById("contrib-title");
+    if (title && !title.value.trim()) {
+      markIssue(issues, title, "Title is required.");
+    }
+
+    const authorRows = authorTable ? Array.from(authorTable.querySelectorAll("[data-author-row]")) : [];
+    const authorDataRows = authorRows.filter((row) => {
+      const first = row.querySelector("[data-author-first]");
+      const last = row.querySelector("[data-author-last]");
+      const orcid = row.querySelector("[data-author-orcid]");
+      return [first, last, orcid].some((el) => el && el.value.trim());
+    });
+    if (!authorDataRows.length) {
+      const firstAuthor = authorTable ? authorTable.querySelector("[data-author-first]") : null;
+      markIssue(issues, firstAuthor, "Add at least one author with a first and last name.");
+    } else {
+      authorDataRows.forEach((row, index) => {
+        const rowLabel = `Author ${index + 1}`;
+        const first = row.querySelector("[data-author-first]");
+        const last = row.querySelector("[data-author-last]");
+        const orcid = row.querySelector("[data-author-orcid]");
+        const firstValue = first ? first.value.trim() : "";
+        const lastValue = last ? last.value.trim() : "";
+        const orcidValue = orcid ? orcid.value.trim() : "";
+        if (!firstValue) markIssue(issues, first, `${rowLabel}: first name is required.`);
+        if (!lastValue) markIssue(issues, last, `${rowLabel}: last name is required.`);
+        if (orcidValue && orcid && !orcid.checkValidity()) {
+          markIssue(
+            issues,
+            orcid,
+            `${rowLabel}: ORCID must use the format 0000-0000-0000-0000 or 0000-0000-0000-000X.`
+          );
+        }
+      });
+    }
+
+    const studiedEffects = Array.from(document.querySelectorAll("[data-studied-effect]")).filter(
+      (select) => select.value
+    );
+    if (!studiedEffects.length) {
+      const firstEffect = document.querySelector("[data-studied-effect]");
+      markIssue(issues, firstEffect, "Research focus: select at least one item.");
+    } else if (studiedEffects.length > 3) {
+      const firstEffect = document.querySelector("[data-studied-effect]");
+      markIssue(issues, firstEffect, "Research focus: select no more than 3 items.");
+    }
+
+    const confirmPeerReviewed = form.querySelector("[name='confirm_peer_reviewed']");
+    const confirmRights = form.querySelector("[name='confirm_rights']");
+    if (confirmPeerReviewed && !confirmPeerReviewed.checked) {
+      markIssue(issues, confirmPeerReviewed, "Confirm that the source is peer-reviewed and open-access.");
+    }
+    if (confirmRights && !confirmRights.checked) {
+      markIssue(issues, confirmRights, "Confirm that you have the right to share these parameters and links.");
+    }
+
+    const publicationChecks = [
+      ["contrib-data-origin", "Data source"],
+      ["contrib-journal", "Journal / Venue"],
+      ["contrib-year", "Year"],
+      ["contrib-doi", "DOI"],
+      ["contrib-oa", "Open-access URL"],
+      ["contrib-language", "Language"],
+      ["contrib-name", "Name"],
+      ["contrib-email", "Email"],
+    ];
+    publicationChecks.forEach(([id, label]) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (!el.checkValidity()) {
+        if (el.validity.valueMissing) {
+          markIssue(issues, el, `${label} is required.`);
+        } else if (el.validity.typeMismatch) {
+          if (el.type === "email") {
+            markIssue(issues, el, `${label} must be a valid email address.`);
+          } else if (el.type === "url") {
+            markIssue(issues, el, `${label} must be a valid URL.`);
+          } else {
+            markIssue(issues, el, `${label} has the wrong format.`);
+          }
+        } else if (el.validity.rangeUnderflow) {
+          markIssue(issues, el, `${label} must be at least ${el.min}.`);
+        } else if (el.validity.rangeOverflow) {
+          markIssue(issues, el, `${label} must be at most ${el.max}.`);
+        } else {
+          markIssue(issues, el, `${label} is invalid.`);
+        }
+      }
+    });
+
+    const year = document.getElementById("contrib-year");
+    if (year) {
+      const yearValue = year.value.trim();
+      if (yearValue && parseNumberOrNull(yearValue) === null) {
+        markIssue(issues, year, "Year must be a number.");
+      } else if (yearValue && year.validity.rangeUnderflow) {
+        markIssue(issues, year, `Year must be at least ${year.min}.`);
+      } else if (yearValue && year.validity.rangeOverflow) {
+        markIssue(issues, year, `Year must be at most ${year.max}.`);
+      }
+    }
+
+    const rows = payload.rows || [];
+    rowsBody.querySelectorAll(".hdd-contrib-row").forEach((row, index) => {
+      const rowData = rows[index] || null;
+      const rowLabel = `Row ${index + 1}`;
+      const displayName = row.querySelector("[data-field='display_name']");
+      const modelType = row.querySelector("[data-field='model_type']");
+      const tmin = row.querySelector("[data-field='tmin']");
+      const tmax = row.querySelector("[data-field='tmax']");
+      const singlePointTemperature = row.querySelector("[data-field='single_point_temperature']");
+      const singlePointDiffusivity = row.querySelector("[data-field='single_point_diffusivity']");
+      const arrheniusD0 = row.querySelector("[data-field='arrhenius_d0']");
+      const arrheniusQ = row.querySelector("[data-field='arrhenius_q']");
+      const powerA = row.querySelector("[data-field='power_a']");
+      const powerN = row.querySelector("[data-field='power_n']");
+      const listValues = row.querySelector("[data-field='list_values']");
+
+      if (!displayName || !displayName.value.trim()) {
+        markIssue(issues, displayName, `${rowLabel}: display name is required.`);
+      }
+      if (!modelType || !modelType.value.trim()) {
+        markIssue(issues, modelType, `${rowLabel}: model type is required.`);
+      }
+
+      const modelTypeValue = rowData ? rowData.model_type : (modelType ? modelType.value.trim() : "");
+      if (modelTypeValue && modelTypeValue !== "single_point" && modelTypeValue !== "list_of_values") {
+        if (!tmin || !tmin.value.trim()) {
+          markIssue(issues, tmin, `${rowLabel}: minimum temperature is required.`);
+        } else if (parseNumberOrNull(tmin.value.trim()) === null) {
+          markIssue(issues, tmin, `${rowLabel}: minimum temperature must be a number.`);
+        }
+        if (!tmax || !tmax.value.trim()) {
+          markIssue(issues, tmax, `${rowLabel}: maximum temperature is required.`);
+        } else if (parseNumberOrNull(tmax.value.trim()) === null) {
+          markIssue(issues, tmax, `${rowLabel}: maximum temperature must be a number.`);
+        }
+        if (
+          tmin &&
+          tmax &&
+          parseNumberOrNull(tmin.value.trim()) !== null &&
+          parseNumberOrNull(tmax.value.trim()) !== null &&
+          parseNumberOrNull(tmin.value.trim()) > parseNumberOrNull(tmax.value.trim())
+        ) {
+          markIssue(issues, tmax, `${rowLabel}: minimum temperature must be less than or equal to maximum temperature.`);
+        }
+      }
+
+      if (modelTypeValue === "single_point") {
+        if (!singlePointTemperature || !singlePointTemperature.value.trim()) {
+          markIssue(issues, singlePointTemperature, `${rowLabel}: single-point temperature is required.`);
+        } else if (parseNumberOrNull(singlePointTemperature.value.trim()) === null) {
+          markIssue(issues, singlePointTemperature, `${rowLabel}: single-point temperature must be a number.`);
+        }
+        if (!singlePointDiffusivity || !singlePointDiffusivity.value.trim()) {
+          markIssue(issues, singlePointDiffusivity, `${rowLabel}: single-point diffusivity is required.`);
+        } else if (parseNumberOrNull(singlePointDiffusivity.value.trim()) === null) {
+          markIssue(issues, singlePointDiffusivity, `${rowLabel}: single-point diffusivity must be a number.`);
+        }
+      }
+
+      if (modelTypeValue === "arrhenius") {
+        if (!arrheniusD0 || !arrheniusD0.value.trim()) {
+          markIssue(issues, arrheniusD0, `${rowLabel}: Arrhenius D0 is required.`);
+        } else if (parseNumberOrNull(arrheniusD0.value.trim()) === null) {
+          markIssue(issues, arrheniusD0, `${rowLabel}: Arrhenius D0 must be a number.`);
+        }
+        if (!arrheniusQ || !arrheniusQ.value.trim()) {
+          markIssue(issues, arrheniusQ, `${rowLabel}: Arrhenius Q is required.`);
+        } else if (parseNumberOrNull(arrheniusQ.value.trim()) === null) {
+          markIssue(issues, arrheniusQ, `${rowLabel}: Arrhenius Q must be a number.`);
+        }
+      }
+
+      if (modelTypeValue === "power") {
+        if (!powerA || !powerA.value.trim()) {
+          markIssue(issues, powerA, `${rowLabel}: power-law A is required.`);
+        } else if (parseNumberOrNull(powerA.value.trim()) === null) {
+          markIssue(issues, powerA, `${rowLabel}: power-law A must be a number.`);
+        }
+        if (!powerN || !powerN.value.trim()) {
+          markIssue(issues, powerN, `${rowLabel}: power-law n is required.`);
+        } else if (parseNumberOrNull(powerN.value.trim()) === null) {
+          markIssue(issues, powerN, `${rowLabel}: power-law n must be a number.`);
+        }
+      }
+
+      if (modelTypeValue === "list_of_values") {
+        const listError = validateListOfValues(rowLabel, listValues);
+        if (listError) {
+          markIssue(issues, listValues, listError);
+        }
+      }
+    });
+
+    return issues;
+  }
+
   function stampInitialValues(container) {
     if (!container) return;
     container.querySelectorAll("input, textarea, select").forEach((el) => {
@@ -1883,81 +2148,30 @@
     };
   }
 
-  function validateRows(payload) {
-    if (!payload.rows.length) {
-      return "Please add at least one data row.";
-    }
-
-    if (!payload.source.authors.length) {
-      return "Please add at least one author.";
-    }
-
-    for (let i = 0; i < payload.source.authors.length; i += 1) {
-      const author = payload.source.authors[i];
-      if (!author.first_name || !author.last_name) {
-        return "Each author must include first and last name.";
-      }
-    }
-
-    if (!payload.source.studied_effects || payload.source.studied_effects.length === 0) {
-      return "Research focus: please select at least one item.";
-    }
-
-    if (payload.source.studied_effects.length > 3) {
-      return "Research focus: please select up to 3 items.";
-    }
-
-    for (let i = 0; i < payload.rows.length; i += 1) {
-      const row = payload.rows[i];
-      const rowLabel = `Row ${i + 1}`;
-
-      if (!row.display_name || !row.model_type) {
-        return `${rowLabel}: display name and model type are required.`;
-      }
-
-      if (row.model_type !== "single_point" && row.model_type !== "list_of_values") {
-        if (row.temperature_validity.min === null || row.temperature_validity.max === null) {
-          return `${rowLabel}: minimum and maximum temperature are required.`;
-        }
-        if (row.temperature_validity.min > row.temperature_validity.max) {
-          return `${rowLabel}: minimum temperature must be <= maximum temperature.`;
-        }
-      }
-
-      if (row.model_type === "single_point") {
-        if (row.model.single_point.temperature === null || row.model.single_point.diffusivity === null) {
-          return `${rowLabel}: single_point requires temperature and diffusivity.`;
-        }
-      }
-
-      if (row.model_type === "arrhenius") {
-        if (row.model.arrhenius.D0 === null || row.model.arrhenius.Q === null) {
-          return `${rowLabel}: arrhenius requires D0 and Q.`;
-        }
-      }
-
-      if (row.model_type === "power") {
-        if (row.model.power.A === null || row.model.power.n === null) {
-          return `${rowLabel}: power requires A and n.`;
-        }
-      }
-
-      if (row.model_type === "list_of_values") {
-        if (!row.model.list_of_values || !row.model.list_of_values.raw) {
-          return `${rowLabel}: list of values requires pasted data.`;
-        }
-      }
-    }
-
-    return null;
-  }
-
   function updateJsonPreview() {
     const payload = buildPayload();
     if (!skipValidationToggle || !skipValidationToggle.checked) {
-      const rowError = validateRows(payload);
-      if (rowError) {
-        setStatus(rowError, "error");
+      clearValidationState();
+      const issues = validateContribution(payload);
+      issues.forEach(({ el, message }) => {
+        if (el && typeof el.setCustomValidity === "function") {
+          el.setCustomValidity(message);
+        }
+      });
+
+      const hasManualIssues = issues.some(({ el }) => !el || typeof el.setCustomValidity !== "function");
+      if (hasManualIssues || !form.checkValidity()) {
+        const firstInvalid = form.querySelector(":invalid");
+        const message = firstInvalid
+          ? firstInvalid.validationMessage || issues[0]?.message || "Please fix the highlighted fields."
+          : issues[0]?.message || "Please fix the highlighted fields.";
+        setStatus(message, "error");
+        if (firstInvalid && typeof firstInvalid.reportValidity === "function") {
+          firstInvalid.reportValidity();
+        }
+        if (firstInvalid && typeof firstInvalid.focus === "function") {
+          firstInvalid.focus();
+        }
         return null;
       }
     }
@@ -2053,13 +2267,28 @@
     });
   }
 
+  if (localModeToggle) {
+    localModeToggle.addEventListener("change", syncSubmitLabel);
+  }
+  if (skipValidationToggle) {
+    skipValidationToggle.addEventListener("change", syncSubmitLabel);
+  }
+
+  form.addEventListener(
+    "input",
+    (event) => {
+      const target = event.target;
+      if (target && typeof target.setCustomValidity === "function") {
+        target.setCustomValidity("");
+      }
+    },
+    true
+  );
+
+  syncSubmitLabel();
+
   form.addEventListener("submit", (event) => {
     event.preventDefault();
-
-    if (!form.reportValidity()) {
-      setStatus("Please fill in the required fields.", "error");
-      return;
-    }
 
     const jsonText = updateJsonPreview();
     if (!jsonText) return;
@@ -2084,6 +2313,7 @@
       .then((response) => {
         if (response.ok) {
           form.reset();
+          syncSubmitLabel();
           setStatus("Thanks! Your submission has been received.", "ok");
           return;
         }
@@ -2100,6 +2330,7 @@
       })
       .finally(() => {
         if (submitButton) submitButton.disabled = false;
+        syncSubmitLabel();
       });
   });
 

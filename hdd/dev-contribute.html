@@ -1741,12 +1741,13 @@
     <span class="hdd-contrib-status" id="hdd-contrib-status"></span>
   </div>
   <div class="hdd-contrib-local">
-    <label><input type="checkbox" id="hdd-local-mode" title="Generate JSON locally without sending a submission." checked /> Local test mode (do not submit)</label>
-    <label><input type="checkbox" id="hdd-skip-validation" title="Skip row validation checks when generating JSON." /> Skip validation checks</label>
+    <label><input type="checkbox" id="hdd-local-mode" title="Generate JSON locally without sending a submission. Uncheck to send the form." checked /> Local test mode (JSON only)</label>
+    <label><input type="checkbox" id="hdd-skip-validation" title="Bypass every client-side validation check and send the submission anyway." /> Skip validation checks (send anyway)</label>
     <button type="button" id="hdd-show-json">Preview JSON</button>
     <button type="button" id="hdd-copy-json">Copy JSON</button>
     <button type="button" id="hdd-download-json">Download JSON</button>
   </div>
+  <p class="hdd-contrib-note">Uncheck local test mode before submitting, otherwise the form will only generate JSON in the browser.</p>
   <textarea id="hdd-json-preview" class="hdd-contrib-preview" readonly placeholder="JSON preview will appear here." title="Local JSON preview."></textarea>
 </form>
 <script src="/hdd/hdd-contribution.js" defer></script>
