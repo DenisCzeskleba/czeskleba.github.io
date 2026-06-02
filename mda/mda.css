@@ -8,6 +8,15 @@ main {
   box-sizing: border-box;
 }
 
+:root {
+  --font-body: "Calibri", "Times New Roman", "Arial", "Segoe UI", sans-serif;
+  --font-display: "Calibri", "Times New Roman", "Arial", "Segoe UI", sans-serif;
+}
+
+body {
+  font-family: var(--font-body);
+}
+
 .mda-app {
   display: grid;
   gap: 1rem;
@@ -64,17 +73,20 @@ header .mda-header-brand-text {
 .mda-button {
   appearance: none;
   border: 1px solid var(--line);
-  background: var(--panel);
+  background: var(--panel-strong);
   color: var(--ink);
-  border-radius: 10px;
-  padding: 0.62rem 0.9rem;
+  border-radius: 12px;
+  padding: 0.58rem 0.9rem;
   font: inherit;
+  font-weight: 600;
   cursor: pointer;
   box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .mda-button:hover {
-  border-color: color-mix(in srgb, var(--line) 60%, var(--ink));
+  background: var(--panel);
+  border-color: color-mix(in srgb, var(--line) 75%, var(--ink));
 }
 
 .mda-button.is-accent {
@@ -84,7 +96,7 @@ header .mda-header-brand-text {
 }
 
 .mda-button.is-secondary {
-  background: transparent;
+  background: var(--panel-strong);
 }
 
 .mda-workspace {
@@ -105,20 +117,36 @@ header .mda-header-brand-text {
 
 .mda-panel {
   padding: 1rem;
-  display: grid;
-  gap: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   position: sticky;
   top: 16px;
   align-self: start;
-  height: calc(100vh - 128px);
+  height: auto;
+  max-height: calc(100vh - 128px);
   overflow: hidden;
+}
+
+.mda-panel-body {
+  display: grid;
+  gap: 14px;
+  flex: 0 0 auto;
+  min-height: 0;
+  align-content: start;
+  overflow: auto;
+  padding-right: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--muted) 55%, transparent) transparent;
 }
 
 .mda-panel-header {
   display: flex;
-  align-items: start;
+  align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.75rem;
+  flex-wrap: nowrap;
+  margin-bottom: 0;
 }
 
 .mda-panel-header h2,
@@ -143,6 +171,27 @@ header .mda-header-brand-text {
   flex: 0 0 auto;
 }
 
+.mda-section {
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+  align-content: start;
+}
+
+.mda-panel-body > .mda-section:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.mda-section h3 {
+  margin: 0;
+  font-size: 0.88rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
 .mda-field {
   display: grid;
   gap: 0.4rem;
@@ -153,16 +202,33 @@ header .mda-header-brand-text {
   font-weight: 600;
 }
 
-.mda-hint {
-  font-size: 0.92rem;
+.mda-inline-row {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.mda-inline-control {
+  display: grid;
+  grid-template-columns: minmax(0, 220px);
+  gap: 0.35rem;
+}
+
+.mda-inline-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   color: var(--muted);
+  font-weight: 700;
 }
 
 .mda-textarea {
   width: 100%;
   box-sizing: border-box;
-  min-height: 240px;
+  min-height: 170px;
+  height: 170px;
+  max-height: 260px;
   resize: vertical;
+  overflow-y: auto;
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: 0.9rem 1rem;
@@ -170,11 +236,15 @@ header .mda-header-brand-text {
   color: var(--ink);
   background: var(--panel-strong);
   line-height: 1.5;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--muted) 55%, transparent) transparent;
 }
 
 .mda-textarea:focus,
 .mda-select:focus,
-.mda-file:focus {
+.mda-file:focus,
+.mda-number:focus,
+.mda-textinput:focus {
   outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
   outline-offset: 2px;
 }
@@ -183,6 +253,8 @@ header .mda-header-brand-text {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.8rem;
+  align-items: start;
+  align-content: start;
 }
 
 .mda-control {
@@ -192,7 +264,9 @@ header .mda-header-brand-text {
 }
 
 .mda-select,
-.mda-file {
+.mda-file,
+.mda-number,
+.mda-textinput {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -204,9 +278,28 @@ header .mda-header-brand-text {
   padding: 0.62rem 0.75rem;
 }
 
+.mda-number,
+.mda-textinput {
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.mda-file[hidden] {
+  display: none;
+}
+
 .mda-file {
   padding: 0.5rem 0.6rem;
-  display: block;
+}
+
+.mda-select {
+  appearance: none;
+  padding-right: 2rem;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 16px) 52%, calc(100% - 10px) 52%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
 }
 
 .mda-status {
@@ -251,14 +344,117 @@ header .mda-header-brand-text {
 
 .mda-stage-header {
   display: flex;
-  align-items: start;
+  align-items: center;
   justify-content: space-between;
   gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.mda-stage-controls {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.mda-tool-panel {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel-strong);
+  overflow: visible;
+  position: relative;
+  width: auto;
+  min-width: 140px;
+}
+
+.mda-tool-panel summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.58rem 0.9rem;
+  font: inherit;
+  font-weight: 600;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  justify-content: center;
+  min-height: 32px;
+  line-height: 1.1;
+}
+
+.mda-tool-panel summary::-webkit-details-marker {
+  display: none;
+}
+
+.mda-tool-panel[open] summary {
+  background: color-mix(in srgb, var(--panel-strong) 92%, var(--panel));
+}
+
+.mda-tool-panel-body {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(250px, 92vw);
+  min-width: 220px;
+  max-width: 92vw;
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.8rem;
+  background: var(--panel-strong);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  z-index: 5;
+}
+
+.mda-tool-panel:not([open]) .mda-tool-panel-body {
+  display: none;
+}
+
+.mda-export-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.mda-tool-panel .mda-button,
+.mda-tool-panel button {
+  min-width: 0;
+}
+
+.mda-tool-panel .mda-button {
+  padding: 0.52rem 0.8rem;
+}
+
+.mda-reference-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.6rem;
+  align-items: end;
+}
+
+.mda-reference-toggle {
+  align-self: end;
+  min-width: 4.8rem;
+}
+
+.mda-inline-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--ink);
+  font-weight: 500;
+  user-select: none;
+}
+
+.mda-inline-checkbox input {
+  accent-color: var(--accent);
 }
 
 .mda-summary-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.85rem;
 }
 
@@ -271,9 +467,10 @@ header .mda-header-brand-text {
 }
 
 .mda-summary-value {
-  font-size: 1.3rem;
-  font-weight: 700;
+  font-size: 1.15rem;
+  font-weight: 600;
   margin-top: 0.25rem;
+  overflow-wrap: anywhere;
 }
 
 .mda-preview-card {
@@ -281,16 +478,9 @@ header .mda-header-brand-text {
   gap: 0.75rem;
 }
 
-.mda-preview-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.mda-preview-head span {
-  color: var(--muted);
-  font-size: 0.94rem;
+.mda-reference-controls {
+  display: grid;
+  gap: 0.5rem;
 }
 
 .mda-preview-wrap {
@@ -298,12 +488,16 @@ header .mda-header-brand-text {
   border-radius: 12px;
   border: 1px solid var(--line);
   background: var(--panel);
+  max-height: 240px;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--muted) 55%, transparent) transparent;
 }
 
 .mda-preview-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 420px;
+  min-width: 340px;
+  font-size: 0.95rem;
 }
 
 .mda-preview-table th,
@@ -321,16 +515,209 @@ header .mda-header-brand-text {
   z-index: 1;
 }
 
+.mda-preview-details {
+  border-top: 1px solid var(--line);
+  padding-top: 0.5rem;
+}
+
+.mda-preview-details summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.45rem 0;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.mda-preview-details summary::-webkit-details-marker {
+  display: none;
+}
+
 .mda-empty {
   padding: 1rem;
   color: var(--muted);
+}
+
+.mda-plot {
+  min-height: 300px;
+  border-radius: 14px;
+  border: 1px solid #d5dbe5;
+  background: #ffffff;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  touch-action: none;
+  --mda-plot-bg: #ffffff;
+  --mda-plot-ink: #111827;
+  --mda-plot-muted: #4b5563;
+  --mda-plot-grid: #e2e8f0;
+  --mda-plot-border: #cfd8e3;
+}
+
+.mda-plot svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.mda-plot-empty {
+  padding: 1.25rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.mda-plot-label {
+  font-size: 0.9rem;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  justify-self: end;
+}
+
+.mda-plot-label:empty {
+  display: none;
+}
+
+.mda-plot-label::before {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 0;
+  border-top: 2px solid var(--accent);
+  border-radius: 999px;
+}
+
+.mda-plot-axis-label {
+  font-size: 12px;
+  fill: var(--mda-plot-ink);
+  font-family: Arial, "Segoe UI", sans-serif;
+  font-weight: 400;
+}
+
+.mda-plot-axis-x {
+  fill: var(--mda-plot-ink);
+}
+
+.mda-plot-grid {
+  stroke: var(--mda-plot-grid);
+  stroke-width: 0.6;
+}
+
+.mda-plot-line {
+  fill: none;
+  stroke-width: 2.4;
+  stroke-linejoin: round;
+  stroke-linecap: butt;
+}
+
+.mda-plot-line-current {
+  stroke: #2563eb;
+}
+
+.mda-plot-line-diffusion {
+  stroke: #111111;
+}
+
+.mda-plot-frame {
+  fill: var(--mda-plot-bg);
+  stroke: var(--mda-plot-border);
+  stroke-width: 0.8;
+}
+
+.mda-plot-value {
+  font-size: 11px;
+  fill: var(--mda-plot-ink);
+  font-family: Arial, "Segoe UI", sans-serif;
+  font-weight: 400;
+}
+
+.mda-plot-value-current,
+.mda-plot-axis-right {
+  fill: #2563eb;
+}
+
+.mda-plot-value-diffusion,
+.mda-plot-axis-left {
+  fill: #111111;
+}
+
+.mda-plot-note {
+  font-size: 11px;
+  fill: var(--mda-plot-muted);
+  font-family: Arial, "Segoe UI", sans-serif;
+  font-weight: 400;
+}
+
+.mda-plot-ref-line {
+  stroke-width: 1;
+  stroke-linecap: round;
+  fill: none;
+  cursor: grab;
+}
+
+.mda-plot-ref-line.mda-plot-ref-baseline,
+.mda-plot-ref-label.mda-plot-ref-baseline {
+  stroke: #4b5563;
+  fill: #4b5563;
+  color: #4b5563;
+}
+
+.mda-plot-ref-line.mda-plot-ref-steady,
+.mda-plot-ref-label.mda-plot-ref-steady {
+  stroke: #111111;
+  fill: #111111;
+  color: #111111;
+}
+
+.mda-plot-ref-label {
+  font-size: 10px;
+  font-family: Arial, "Segoe UI", sans-serif;
+  font-weight: 400;
+  paint-order: normal;
+  stroke: none;
+  dominant-baseline: middle;
+}
+
+.mda-plot-legend-group {
+  font-family: Arial, "Segoe UI", sans-serif;
+  font-size: 10.5px;
+  font-weight: 400;
+}
+
+.mda-plot-legend-group text {
+  font-weight: 400;
+}
+
+.mda-plot-legend-line {
+  stroke-width: 2.2;
+  stroke-linecap: butt;
+}
+
+.mda-plot-legend-diffusion .mda-plot-legend-line,
+.mda-plot-legend-diffusion text {
+  stroke: #111111;
+  fill: #111111;
+  color: #111111;
+}
+
+.mda-plot-legend-current .mda-plot-legend-line,
+.mda-plot-legend-current text {
+  stroke: #2563eb;
+  fill: #2563eb;
+  color: #2563eb;
+}
+
+.mda-plot-ref-label.mda-plot-ref-baseline,
+.mda-plot-ref-label.mda-plot-ref-steady {
+  fill: #111111;
 }
 
 .mda-help-drawer {
   position: fixed;
   inset: 0;
   display: none;
-  z-index: 60;
+  z-index: 50;
 }
 
 .mda-help-drawer.is-open {
@@ -340,51 +727,56 @@ header .mda-header-brand-text {
 .mda-help-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(15, 23, 42, 0.4);
+  background: rgba(15, 23, 42, 0.35);
 }
 
 .mda-help-panel {
   position: absolute;
-  right: 24px;
-  bottom: 24px;
+  top: 0;
+  right: 0;
   width: min(460px, 92vw);
-  max-height: calc(100vh - 80px);
+  height: 100%;
   background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  box-shadow: var(--shadow);
-  display: flex;
-  flex-direction: column;
-  overflow: auto;
-  padding: 0;
+  border-left: 1px solid var(--line);
+  box-shadow: -16px 0 32px rgba(15, 23, 42, 0.2);
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 12px;
+  padding: 16px;
+  resize: horizontal;
+  overflow: hidden;
+  min-width: 320px;
 }
 
 .mda-help-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  padding: 12px 16px;
+  gap: 12px;
+  padding: 0 0 12px;
   border-bottom: 1px solid var(--line);
   font-weight: 600;
 }
 
 .mda-help-close {
   appearance: none;
-  border: none;
   border: 1px solid var(--line);
   background: var(--panel-strong);
   color: var(--ink);
-  border-radius: 999px;
-  padding: 4px 10px;
+  border-radius: 12px;
+  padding: 6px 12px;
   font-size: 0.85rem;
+  font-weight: 600;
   cursor: pointer;
 }
 
 .mda-help-body {
-  padding: 14px 16px 18px;
   display: grid;
   gap: 1rem;
+  overflow: auto;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--muted) 55%, transparent) transparent;
 }
 
 .mda-help-body p {
@@ -400,6 +792,31 @@ header .mda-header-brand-text {
   margin-top: 0.35rem;
 }
 
+.mda-panel-body::-webkit-scrollbar,
+.mda-textarea::-webkit-scrollbar,
+.mda-preview-wrap::-webkit-scrollbar,
+.mda-help-body::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.mda-panel-body::-webkit-scrollbar-thumb,
+.mda-textarea::-webkit-scrollbar-thumb,
+.mda-preview-wrap::-webkit-scrollbar-thumb,
+.mda-help-body::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--muted) 55%, transparent);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+.mda-panel-body::-webkit-scrollbar-track,
+.mda-textarea::-webkit-scrollbar-track,
+.mda-preview-wrap::-webkit-scrollbar-track,
+.mda-help-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 @media (max-width: 980px) {
   .mda-workspace {
     grid-template-columns: 1fr;
@@ -411,7 +828,6 @@ header .mda-header-brand-text {
 }
 
 @media (max-width: 720px) {
-  .mda-intro,
   .mda-stage-header,
   .mda-panel-header {
     flex-direction: column;
@@ -429,11 +845,14 @@ header .mda-header-brand-text {
     grid-template-columns: 1fr;
   }
 
+  .mda-inline-control {
+    grid-template-columns: 1fr;
+  }
+
   .mda-help-panel {
     width: 100vw;
-    right: 0;
-    bottom: 0;
-    max-height: 100vh;
     border-radius: 0;
+    min-width: 0;
+    resize: none;
   }
 }

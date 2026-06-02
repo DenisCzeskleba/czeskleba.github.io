@@ -9,107 +9,151 @@ permalink: /mda/
 <div id="mda-app" class="mda-app">
   <div class="mda-workspace">
     <aside class="mda-panel">
-      <div class="mda-panel-header">
-        <div>
-          <h2>Input</h2>
-        </div>
-        <div class="mda-intro-actions">
+        <div class="mda-panel-header">
+          <div>
+            <h2>Input</h2>
+          </div>
+          <div class="mda-intro-actions">
           <button type="button" class="mda-button is-secondary" id="mda-clear" title="Clear pasted data and reset the preview.">Clear</button>
-          <button type="button" class="mda-button mda-help-open" data-action="open-help" title="Open the short usage guide.">Help</button>
+          <button type="button" class="mda-button is-secondary" id="mda-upload-trigger" title="Upload a CSV or TXT file into the same parser.">File Upload</button>
+          <button type="button" class="mda-button is-accent mda-help-open" data-action="open-help" title="Open the short usage guide.">Help</button>
         </div>
       </div>
 
-      <div class="mda-field">
-        <label for="mda-input" title="Paste exactly two numeric columns, one sample per line, with no header row.">Cleaned data</label>
-        <textarea
-          id="mda-input"
-          class="mda-textarea"
-          spellcheck="false"
-          autocomplete="off"
-          placeholder="0.0 1.2e-9&#10;10.0 1.5e-9&#10;20.0 1.7e-9"
-          title="Paste exactly two numeric columns, one sample per line, with no header row."
-        ></textarea>
-        <div class="mda-hint">Use only clean data lines. Tabs, semicolons, commas, or spaces between columns are detected automatically.</div>
+      <div class="mda-panel-body">
+        <section class="mda-section">
+          <textarea
+            id="mda-input"
+            class="mda-textarea"
+            spellcheck="false"
+            autocomplete="off"
+            placeholder="Paste data here&#10;0.0 1.2e-9&#10;0.5 1.5e-9&#10;1.0 1.7e-9"
+            title="Paste the measurement data here."
+          ></textarea>
+          <div class="mda-inline-row">
+            <div class="mda-control mda-inline-control">
+              <label for="mda-decimal" title="Auto-detect the decimal separator or force dot/comma manually.">Decimal separator</label>
+              <select id="mda-decimal" class="mda-select" title="Auto-detect the decimal separator or force dot/comma manually.">
+                <option value="auto">Auto</option>
+                <option value=".">Dot</option>
+                <option value=",">Comma</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <section class="mda-section">
+          <h3>Experiment</h3>
+          <div class="mda-control-grid">
+            <div class="mda-control">
+              <label for="mda-current-unit" title="Choose the unit of the measured current or signal.">Current unit</label>
+              <select id="mda-current-unit" class="mda-select" title="Choose the unit of the measured current or signal.">
+                <option value="A" selected>A</option>
+                <option value="mA">mA</option>
+                <option value="uA">µA</option>
+                <option value="nA">nA</option>
+                <option value="pA">pA</option>
+              </select>
+            </div>
+            <div class="mda-control">
+              <label for="mda-thickness" title="Enter the membrane thickness.">Membrane Thickness [mm]</label>
+            <input id="mda-thickness" class="mda-number" type="text" inputmode="decimal" lang="en-US" value="0.50" placeholder="0.50" title="Enter the membrane thickness in millimeters." />
+            </div>
+          </div>
+        </section>
+
+        <input
+          id="mda-file"
+          class="mda-file"
+          hidden
+          type="file"
+          accept=".csv,.txt,.tsv,text/plain,text/csv"
+          title="Upload a CSV or TXT file into the same parser."
+        />
       </div>
 
-      <div class="mda-control-grid">
-        <div class="mda-control">
-          <label for="mda-decimal" title="Auto-detect the decimal separator or force dot/comma manually.">Decimal separator</label>
-          <select id="mda-decimal" class="mda-select" title="Auto-detect the decimal separator or force dot/comma manually.">
-            <option value="auto">Auto</option>
-            <option value=".">Dot</option>
-            <option value=",">Comma</option>
-          </select>
-        </div>
-        <div class="mda-control">
-          <label for="mda-file" title="Upload a CSV or TXT file. It will be parsed into the same cleaned two-column format as paste input.">File upload</label>
-          <input
-            id="mda-file"
-            class="mda-file"
-            type="file"
-            accept=".csv,.txt,.tsv,text/plain,text/csv"
-            title="Upload a CSV or TXT file. It will be parsed into the same cleaned two-column format as paste input."
-          />
-        </div>
-      </div>
-
-      <div class="mda-status" id="mda-status" role="status" aria-live="polite">Paste or upload cleaned data to begin.</div>
+      <div class="mda-status" id="mda-status" role="status" aria-live="polite">Paste data to begin.</div>
       <ul class="mda-issues" id="mda-issues" aria-live="polite"></ul>
     </aside>
 
     <section class="mda-stage">
       <div class="mda-stage-header">
-        <div>
-          <h2>Parsed output</h2>
-          <p>Preview, detection summary, and quality checks for the normalized table.</p>
+        <div class="mda-stage-controls">
+          <button type="button" class="mda-button is-secondary" id="mda-reset-plot" title="Reset the preview plot zoom and pan.">Reset</button>
+          <details class="mda-tool-panel">
+            <summary>Plot Options</summary>
+            <div class="mda-tool-panel-body">
+              <div class="mda-control">
+                <label for="mda-plot-unit" title="Choose the unit shown on the plot and data preview.">Y-axis unit</label>
+              <select id="mda-plot-unit" class="mda-select" title="Choose the unit shown on the plot and data preview.">
+                <option value="A">A</option>
+                <option value="mA">mA</option>
+                      <option value="uA" selected>µA</option>
+                <option value="pA">pA</option>
+              </select>
+              </div>
+              <label class="mda-inline-checkbox" title="Toggle the plot grid lines.">
+                <input type="checkbox" id="mda-grid-toggle" checked />
+                <span>Grid lines</span>
+              </label>
+            </div>
+          </details>
+          <details class="mda-tool-panel">
+            <summary>Reference Currents</summary>
+            <div class="mda-tool-panel-body">
+              <div class="mda-reference-row">
+                <div class="mda-control">
+                  <label for="mda-baseline-value" title="Enter the baseline current value.">Baseline</label>
+                  <input id="mda-baseline-value" class="mda-number" type="number" step="any" placeholder="Auto" title="Enter the baseline current value." />
+                </div>
+                <button type="button" class="mda-button is-secondary mda-reference-toggle" id="mda-baseline-toggle" aria-pressed="true" title="Hide or show the baseline marker line.">Hide</button>
+              </div>
+              <div class="mda-reference-row">
+                <div class="mda-control">
+                  <label for="mda-steady-value" title="Enter the steady-state current value.">Steady State</label>
+                  <input id="mda-steady-value" class="mda-number" type="number" step="any" placeholder="Auto" title="Enter the steady-state current value." />
+                </div>
+                <button type="button" class="mda-button is-secondary mda-reference-toggle" id="mda-steady-toggle" aria-pressed="true" title="Hide or show the steady-state marker line.">Hide</button>
+              </div>
+            </div>
+          </details>
+          <details class="mda-tool-panel">
+            <summary>Export</summary>
+            <div class="mda-tool-panel-body">
+              <div class="mda-export-row">
+                <button type="button" class="mda-button is-secondary" data-download="png">PNG</button>
+                <button type="button" class="mda-button is-secondary" data-download="svg">SVG</button>
+                <button type="button" class="mda-button is-secondary" data-download="csv">Data</button>
+              </div>
+            </div>
+          </details>
         </div>
       </div>
 
-      <div class="mda-summary-grid">
-        <div class="mda-summary-card">
-          <h3>Rows</h3>
-          <div class="mda-summary-value" id="mda-row-card">0 rows</div>
-          <p>Valid rows in the cleaned table.</p>
-        </div>
-        <div class="mda-summary-card">
-          <h3>Decimal</h3>
-          <div class="mda-summary-value" id="mda-decimal-card">Not detected</div>
-          <p>Dot or comma, autodetected first.</p>
-        </div>
-        <div class="mda-summary-card">
-          <h3>Split</h3>
-          <div class="mda-summary-value" id="mda-delimiter-card">Not detected</div>
-          <p>Internal column split used by the parser.</p>
-        </div>
-        <div class="mda-summary-card">
-          <h3>Quality</h3>
-          <div class="mda-summary-value" id="mda-quality-card">Not checked</div>
-          <p>Quick format and monotonicity warnings.</p>
-        </div>
+      <div class="mda-plot-card">
+        <div id="mda-plot" class="mda-plot" aria-label="Preview plot"></div>
       </div>
 
-      <div class="mda-preview-card">
-        <div class="mda-preview-head">
-          <h3>Preview</h3>
-          <span id="mda-row-count">0 rows</span>
-        </div>
+      <details class="mda-preview-details">
+        <summary>Data preview</summary>
         <div class="mda-preview-wrap" aria-live="polite">
           <table class="mda-preview-table" aria-label="Parsed data preview">
             <thead>
               <tr>
                 <th>#</th>
                 <th>Time [s]</th>
-                <th>Signal / current</th>
+                <th>Current</th>
+                      <th>Apparent Diffusion Coefficient D<sub>app</sub> [mm²/s]</th>
               </tr>
             </thead>
             <tbody id="mda-preview-body">
               <tr>
-                <td colspan="3" class="mda-empty">No data loaded.</td>
+                <td colspan="4" class="mda-empty">No data loaded.</td>
               </tr>
             </tbody>
           </table>
         </div>
-      </div>
+      </details>
     </section>
   </div>
 </div>
@@ -121,8 +165,8 @@ permalink: /mda/
       <h2>How it works</h2>
       <button type="button" class="mda-help-close" data-action="close-help">Close</button>
     </div>
-    <div class="mda-help-body">
-      <p>MDA starts from one cleaned two-column table: time in seconds first, signal or current second. The parser is deliberately strict so the analysis layer does not have to guess what your spreadsheet meant. New input is autodetected for decimal separators and then normalized into one internal format. Uploads will use the same path as pasted data so the tool stays predictable.</p>
+      <div class="mda-help-body">
+      <p>MDA starts from a strict two-column input: time in seconds first, measured current second. Decimal handling sits next to the paste field, and uploads use the same parser as pasted data so the tool stays predictable.</p>
 
       <div>
         <h3>Input rules</h3>
@@ -130,17 +174,27 @@ permalink: /mda/
           <li>No header row.</li>
           <li>Exactly two numeric values per line.</li>
           <li>One sample per line.</li>
-          <li>Dot or comma decimals are accepted, but only one style should be used in a table.</li>
+          <li>Dot or comma decimals are accepted, but only one style should be used in the file.</li>
+          <li>Start the file at the actual experiment start. Do not include a long pre-equilibration segment unless you really want that time counted in the breakthrough analysis.</li>
+        </ul>
+      </div>
+
+      <div>
+        <h3>Controls</h3>
+        <ul class="mda-help-list">
+          <li>Use the current unit and membrane thickness controls to keep the experimental metadata attached to the file.</li>
+          <li>Set the baseline and steady-state values above the plot. Use the adjacent button to show or hide each marker line, and drag the marker when it is visible.</li>
+          <li>Use Plot Options to change display units or grid visibility.</li>
         </ul>
       </div>
 
       <div>
         <h3>What you get</h3>
         <ul class="mda-help-list">
-          <li>A normalized two-column dataset.</li>
           <li>Validation messages for obvious formatting problems.</li>
-          <li>A preview table and quick quality checks.</li>
-          <li>A stable internal shape for the later diffusion analysis.</li>
+          <li>A preview plot with the measured current and calculated apparent diffusion coefficient.</li>
+          <li>The normalized signal used internally for the inverse solve.</li>
+          <li>Export for PNG, SVG, or plotted data.</li>
         </ul>
       </div>
 
