@@ -28,11 +28,53 @@ permalink: /visualizer/
 
   }
 
+  .visualizer-brand {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 0.25rem 0 1rem;
+  }
+
+  .visualizer-brand-image {
+    flex: 0 0 auto;
+    width: 88px;
+    height: 88px;
+    object-fit: contain;
+  }
+
+  .visualizer-brand-text h1 {
+    margin: 0;
+    font-size: 1.9rem;
+    line-height: 1.15;
+  }
+
+  @media (max-width: 720px) {
+    .visualizer-brand {
+      gap: 12px;
+    }
+
+    .visualizer-brand-image {
+      width: 68px;
+      height: 68px;
+    }
+
+    .visualizer-brand-text h1 {
+      font-size: 1.55rem;
+    }
+  }
+
 </style>
 
 
 
 <link rel="stylesheet" href="/visualizer/styles.css?v=fix3">
+
+<div class="visualizer-brand" aria-label="Lattice Visualizer">
+  <img class="visualizer-brand-image" src="/assets/Visualizer.png" alt="Lattice Visualizer" decoding="async" loading="lazy" />
+  <div class="visualizer-brand-text">
+    <h1>Lattice Visualizer</h1>
+  </div>
+</div>
 
 
 
