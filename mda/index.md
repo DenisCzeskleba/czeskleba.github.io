@@ -60,6 +60,48 @@ permalink: /mda/
 </section>
 
 <style>
+  header .mda-header-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: 0;
+    margin: 0 auto;
+    text-decoration: none;
+    color: var(--text);
+    overflow: hidden;
+  }
+
+  header .mda-header-brand-image {
+    flex: 0 0 auto;
+    width: 38px;
+    height: 38px;
+    object-fit: contain;
+  }
+
+  header .mda-header-brand-text {
+    font-size: 1.06rem;
+    font-weight: 700;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  @media (max-width: 720px) {
+    header .mda-header-brand {
+      gap: 0.5rem;
+    }
+
+    header .mda-header-brand-image {
+      width: 32px;
+      height: 32px;
+    }
+
+    header .mda-header-brand-text {
+      font-size: 0.98rem;
+    }
+  }
+
   .mda-workspace {
     display: grid;
     grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
@@ -144,3 +186,25 @@ permalink: /mda/
     }
   }
 </style>
+
+<script>
+  (function () {
+    const header = document.querySelector("header");
+    if (!header) return;
+
+    const actions = header.querySelector(".header-actions");
+    if (!actions) return;
+
+    if (header.querySelector(".mda-header-brand")) return;
+
+    const brand = document.createElement("div");
+    brand.className = "mda-header-brand";
+    brand.setAttribute("aria-label", "Membrane Diffusion Analyzer");
+    brand.innerHTML = `
+      <img class="mda-header-brand-image" src="/assets/Membrane Diffusion Analyser.png" alt="Membrane Diffusion Analyzer" decoding="async" loading="lazy" />
+      <span class="mda-header-brand-text">Membrane Diffusion Analyzer</span>
+    `;
+
+    header.insertBefore(brand, actions);
+  })();
+</script>

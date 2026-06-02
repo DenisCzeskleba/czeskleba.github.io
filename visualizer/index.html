@@ -28,38 +28,45 @@ permalink: /visualizer/
 
   }
 
-  .visualizer-brand {
-    display: flex;
+  header .visualizer-header-brand {
+    display: inline-flex;
     align-items: center;
-    gap: 16px;
-    margin: 0.25rem 0 1rem;
+    gap: 0.6rem;
+    min-width: 0;
+    margin: 0 auto;
+    text-decoration: none;
+    color: var(--text);
+    overflow: hidden;
   }
 
-  .visualizer-brand-image {
+  header .visualizer-header-brand-image {
     flex: 0 0 auto;
-    width: 88px;
-    height: 88px;
+    width: 38px;
+    height: 38px;
     object-fit: contain;
   }
 
-  .visualizer-brand-text h1 {
-    margin: 0;
-    font-size: 1.9rem;
-    line-height: 1.15;
+  header .visualizer-header-brand-text {
+    font-size: 1.06rem;
+    font-weight: 700;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   @media (max-width: 720px) {
-    .visualizer-brand {
-      gap: 12px;
+    header .visualizer-header-brand {
+      gap: 0.5rem;
     }
 
-    .visualizer-brand-image {
-      width: 68px;
-      height: 68px;
+    header .visualizer-header-brand-image {
+      width: 32px;
+      height: 32px;
     }
 
-    .visualizer-brand-text h1 {
-      font-size: 1.55rem;
+    header .visualizer-header-brand-text {
+      font-size: 0.98rem;
     }
   }
 
@@ -69,12 +76,27 @@ permalink: /visualizer/
 
 <link rel="stylesheet" href="/visualizer/styles.css?v=fix3">
 
-<div class="visualizer-brand" aria-label="Lattice Visualizer">
-  <img class="visualizer-brand-image" src="/assets/Visualizer.png" alt="Lattice Visualizer" decoding="async" loading="lazy" />
-  <div class="visualizer-brand-text">
-    <h1>Lattice Visualizer</h1>
-  </div>
-</div>
+<script>
+  (function () {
+    const header = document.querySelector("header");
+    if (!header) return;
+
+    const actions = header.querySelector(".header-actions");
+    if (!actions) return;
+
+    if (header.querySelector(".visualizer-header-brand")) return;
+
+    const brand = document.createElement("div");
+    brand.className = "visualizer-header-brand";
+    brand.setAttribute("aria-label", "Lattice Visualizer");
+    brand.innerHTML = `
+      <img class="visualizer-header-brand-image" src="/assets/Visualizer.png" alt="Lattice Visualizer" decoding="async" loading="lazy" />
+      <span class="visualizer-header-brand-text">Lattice Visualizer</span>
+    `;
+
+    header.insertBefore(brand, actions);
+  })();
+</script>
 
 
 
