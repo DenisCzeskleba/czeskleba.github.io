@@ -7,6 +7,12 @@ title: Home
 
 Have a look at the following:
 
+<style>
+  main {
+    max-width: 1200px;
+  }
+</style>
+
 <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 24px;">
   <a href="/weldcraft/" style="text-decoration: none; display: inline-block; text-align: center;">
     <img src="/assets/WeldCraft.png" alt="WeldCraft" style="width:250px;" /><br />
