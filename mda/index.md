@@ -30,16 +30,17 @@ permalink: /mda/
             placeholder="Paste data here&#10;0.0 1.2e-9&#10;0.5 1.5e-9&#10;1.0 1.7e-9"
             title="Paste the measurement data here."
           ></textarea>
-          <div class="mda-inline-row">
-            <div class="mda-control mda-inline-control">
-              <label for="mda-decimal" title="Auto-detect the decimal separator or force dot/comma manually.">Decimal separator</label>
-              <select id="mda-decimal" class="mda-select" title="Auto-detect the decimal separator or force dot/comma manually.">
-                <option value="auto">Auto</option>
-                <option value=".">Dot</option>
-                <option value=",">Comma</option>
-              </select>
+          <details class="mda-inline-details">
+            <summary>Decimal separator</summary>
+            <div class="mda-inline-details-body">
+              <div class="mda-control mda-inline-control">
+                <select id="mda-decimal" class="mda-select" title="Decimal separator is detected from new input and can be overridden manually.">
+                  <option value="." selected>Dot</option>
+                  <option value=",">Comma</option>
+                </select>
+              </div>
             </div>
-          </div>
+          </details>
         </section>
 
         <section class="mda-section">
@@ -50,7 +51,7 @@ permalink: /mda/
               <select id="mda-current-unit" class="mda-select" title="Choose the unit of the measured current or signal.">
                 <option value="A" selected>A</option>
                 <option value="mA">mA</option>
-                <option value="uA">µA</option>
+                <option value="uA">&mu;A</option>
                 <option value="nA">nA</option>
                 <option value="pA">pA</option>
               </select>
@@ -80,7 +81,7 @@ permalink: /mda/
       <div class="mda-stage-header">
         <div class="mda-stage-controls">
           <button type="button" class="mda-button is-secondary" id="mda-reset-plot" title="Reset the preview plot zoom and pan.">Reset</button>
-          <details class="mda-tool-panel">
+          <details class="mda-tool-panel is-accent">
             <summary>Plot Options</summary>
             <div class="mda-tool-panel-body">
               <div class="mda-control">
@@ -88,7 +89,7 @@ permalink: /mda/
               <select id="mda-plot-unit" class="mda-select" title="Choose the unit shown on the plot and data preview.">
                 <option value="A">A</option>
                 <option value="mA">mA</option>
-                      <option value="uA" selected>µA</option>
+                      <option value="uA" selected>&mu;A</option>
                 <option value="pA">pA</option>
               </select>
               </div>
@@ -143,7 +144,7 @@ permalink: /mda/
                 <th>#</th>
                 <th>Time [s]</th>
                 <th>Current</th>
-                      <th>Apparent Diffusion Coefficient D<sub>app</sub> [mm²/s]</th>
+                      <th>Apparent Diffusion Coefficient D<sub>app</sub> [mmÂ²/s]</th>
               </tr>
             </thead>
             <tbody id="mda-preview-body">

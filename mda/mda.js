@@ -6,7 +6,7 @@
     { id: "comma", label: "comma", split: (line) => line.split(",") },
   ];
 
-  const DECIMAL_OPTIONS = ["auto", ".", ","];
+  const DECIMAL_OPTIONS = [".", ","];
   const PLOT_WIDTH = 920;
   const PLOT_HEIGHT = 340;
   const PLOT_MARGINS = { top: 42, right: 88, bottom: 48, left: 72 };
@@ -134,6 +134,17 @@
         renderDerivedViews(dom);
       });
     }
+    const stagePanels = root.querySelectorAll(".mda-stage-controls .mda-tool-panel");
+    stagePanels.forEach((panel) => {
+      panel.addEventListener("toggle", () => {
+        if (!panel.open) return;
+        stagePanels.forEach((other) => {
+          if (other !== panel) other.open = false;
+        });
+        requestAnimationFrame(() => positionStagePanels(dom));
+      });
+    });
+    window.addEventListener("resize", () => positionStagePanels(dom));
     if (dom.downloadButtons) {
       dom.downloadButtons.forEach((button) => {
         button.addEventListener("click", () => handleDownload(dom, button.getAttribute("data-download")));
@@ -161,8 +172,8 @@
         state.dragReference = null;
         state.dragPlot = null;
         state.plotViewport = null;
-        dom.decimal.value = "auto";
-        if (dom.currentUnit) dom.currentUnit.value = "nA";
+        dom.decimal.value = ".";
+        if (dom.currentUnit) dom.currentUnit.value = "A";
         if (dom.plotUnit) dom.plotUnit.value = "uA";
         if (dom.gridToggle) dom.gridToggle.checked = true;
         if (dom.baselineValue) dom.baselineValue.value = "";
@@ -468,6 +479,28 @@
     return { xMin, xMax, yMin, yMax };
   }
 
+  function getDiffusionAxisScale(ranges) {
+    const maxAbs = Math.max(Math.abs(ranges.yMin || 0), Math.abs(ranges.yMax || 0));
+    if (!Number.isFinite(maxAbs) || maxAbs === 0) {
+      return { exponent: 0, factor: 1 };
+    }
+    const exponent = Math.floor(Math.log10(maxAbs));
+    return {
+      exponent,
+      factor: Math.pow(10, exponent),
+    };
+  }
+
+  function scaleDiffusionRanges(ranges, factor) {
+    const safeFactor = Number.isFinite(factor) && factor !== 0 ? factor : 1;
+    return {
+      xMin: ranges.xMin,
+      xMax: ranges.xMax,
+      yMin: ranges.yMin / safeFactor,
+      yMax: ranges.yMax / safeFactor,
+    };
+  }
+
   function getBasePlotRanges(points) {
     let xMin = points[0].x;
     let xMax = points[0].x;
@@ -576,7 +609,7 @@
     const reader = new FileReader();
     reader.onload = () => {
       dom.input.value = String(reader.result || "");
-      dom.decimal.value = "auto";
+      dom.decimal.value = ".";
       parseAndRender(dom, "file");
     };
     reader.onerror = () => {
@@ -598,10 +631,7 @@
     }
 
     const manualDecimal = dom.decimal.value;
-    const forcedDecimal =
-      source === "selection" && DECIMAL_OPTIONS.includes(manualDecimal) && manualDecimal !== "auto"
-        ? manualDecimal
-        : null;
+    const forcedDecimal = source === "selection" && DECIMAL_OPTIONS.includes(manualDecimal) ? manualDecimal : null;
 
     const parseResult = bestParse(raw, forcedDecimal);
     if (!parseResult.valid) {
@@ -999,9 +1029,12 @@
     const orderedDiffusion = diffusionPoints.slice().sort((a, b) => a.x - b.x);
     const currentRanges = getCurrentPlotRanges(analysis, inputUnit, displayUnit);
     const diffusionRanges = getDiffusionPlotRanges(analysis);
+    const diffusionAxis = getDiffusionAxisScale(diffusionRanges);
+    const scaledDiffusionRanges = scaleDiffusionRanges(diffusionRanges, diffusionAxis.factor);
+    const orderedScaledDiffusion = orderedDiffusion.map((point) => ({ x: point.x, y: point.y / diffusionAxis.factor }));
     const xTicks = buildNiceTicks(currentRanges.xMin, currentRanges.xMax, 5);
     const currentTicks = buildNiceTicks(currentRanges.yMin, currentRanges.yMax, 5);
-    const diffusionTicks = buildNiceTicks(diffusionRanges.yMin, diffusionRanges.yMax, 5);
+    const diffusionTicks = buildNiceTicks(scaledDiffusionRanges.yMin, scaledDiffusionRanges.yMax, 5);
 
     const innerWidth = PLOT_WIDTH - PLOT_MARGINS.left - PLOT_MARGINS.right;
     const innerHeight = PLOT_HEIGHT - PLOT_MARGINS.top - PLOT_MARGINS.bottom;
@@ -1009,29 +1042,37 @@
     const scaleCurrentY = (value) =>
       PLOT_MARGINS.top + (1 - (value - currentRanges.yMin) / (currentRanges.yMax - currentRanges.yMin)) * innerHeight;
     const scaleDiffusionY = (value) =>
-      PLOT_MARGINS.top + (1 - (value - diffusionRanges.yMin) / (diffusionRanges.yMax - diffusionRanges.yMin)) * innerHeight;
+      PLOT_MARGINS.top + (1 - (value - scaledDiffusionRanges.yMin) / (scaledDiffusionRanges.yMax - scaledDiffusionRanges.yMin)) * innerHeight;
 
     const currentPath = orderedCurrent
       .map((point, index) => `${index === 0 ? "M" : "L"} ${scaleX(point.x).toFixed(2)} ${scaleCurrentY(point.y).toFixed(2)}`)
       .join(" ");
-    const diffusionPath = orderedDiffusion
+    const diffusionPath = orderedScaledDiffusion
       .map((point, index) => `${index === 0 ? "M" : "L"} ${scaleX(point.x).toFixed(2)} ${scaleDiffusionY(point.y).toFixed(2)}`)
       .join(" ");
 
     const parts = [];
     parts.push(`<svg viewBox="0 0 ${PLOT_WIDTH} ${PLOT_HEIGHT}" role="img" aria-label="Preview of measured permeation current and diffusion coefficient">`);
-    const legendX = PLOT_MARGINS.left + 14;
+    const legendGap = 60;
+    const legendLineWidth = 18;
+    const legendTextGap = 12;
+    const legendFontSize = 10.5;
+    const diffusionLegendText = "Apparent Diffusion Coefficient Dapp(t)";
+    const currentLegendText = "Measured permeation current I(t)";
+    const diffusionLegendWidth = legendLineWidth + legendTextGap + measureTextWidth(diffusionLegendText, legendFontSize);
+    const currentLegendWidth = legendLineWidth + legendTextGap + measureTextWidth(currentLegendText, legendFontSize);
+    const legendTotalWidth = diffusionLegendWidth + legendGap + currentLegendWidth;
+    const legendX = Math.max(0, (PLOT_WIDTH - legendTotalWidth) / 2);
     const legendY = 8;
     parts.push(`
       <g class="mda-plot-legend-group" transform="translate(${legendX} ${legendY})">
         <g class="mda-plot-legend-item mda-plot-legend-diffusion">
           <line x1="0" y1="6" x2="18" y2="6" class="mda-plot-legend-line"></line>
           <text x="26" y="10">
-            <tspan x="26" dy="0">Diffusion coefficient</tspan>
-            <tspan x="26" dy="11">D_app(t)</tspan>
+            <tspan x="26" dy="0">Apparent Diffusion Coefficient </tspan><tspan font-style="italic">D</tspan><tspan baseline-shift="sub" font-size="8">app</tspan><tspan>(t)</tspan>
           </text>
         </g>
-        <g class="mda-plot-legend-item mda-plot-legend-current" transform="translate(0 24)">
+        <g class="mda-plot-legend-item mda-plot-legend-current" transform="translate(${diffusionLegendWidth + legendGap} 0)">
           <line x1="0" y1="6" x2="18" y2="6" class="mda-plot-legend-line"></line>
           <text x="26" y="10">Measured permeation current I(t)</text>
         </g>
@@ -1051,7 +1092,7 @@
     diffusionTicks.forEach((value) => {
       const y = scaleDiffusionY(value);
       parts.push(
-        `<text class="mda-plot-value mda-plot-value-diffusion" x="${PLOT_MARGINS.left - 8}" y="${(y + 4).toFixed(2)}" text-anchor="end">${escapeHtml(formatScientificTick(value))}</text>`,
+        `<text class="mda-plot-value mda-plot-value-diffusion" x="${PLOT_MARGINS.left - 8}" y="${(y + 4).toFixed(2)}" text-anchor="end">${escapeHtml(formatScaledTick(value, diffusionAxis.factor))}</text>`,
       );
     });
 
@@ -1079,13 +1120,14 @@
       const y = scaleCurrentY(refValue);
       const handleX = PLOT_WIDTH - PLOT_MARGINS.right - 6;
       const lineColorClass = entry.kind === "baseline" ? "mda-plot-ref-baseline" : "mda-plot-ref-steady";
+      parts.push(`<line class="mda-plot-ref-hitline" data-ref-kind="${entry.kind}" x1="${PLOT_MARGINS.left}" y1="${y.toFixed(2)}" x2="${PLOT_WIDTH - PLOT_MARGINS.right}" y2="${y.toFixed(2)}"></line>`);
       parts.push(`<line class="mda-plot-ref-line ${lineColorClass}" data-ref-kind="${entry.kind}" x1="${PLOT_MARGINS.left}" y1="${y.toFixed(2)}" x2="${PLOT_WIDTH - PLOT_MARGINS.right}" y2="${y.toFixed(2)}"></line>`);
       parts.push(`<text class="mda-plot-ref-label ${lineColorClass}" x="${handleX - 8}" y="${Math.max(18, y - 7).toFixed(2)}" text-anchor="end">${escapeHtml(entry.label)}</text>`);
     });
 
     parts.push(`
       <text class="mda-plot-axis-label mda-plot-axis-left" transform="translate(18 ${PLOT_HEIGHT / 2}) rotate(-90)" text-anchor="middle">
-        <tspan>Apparent Diffusion Coefficient </tspan><tspan font-style="italic">D</tspan><tspan baseline-shift="sub" font-size="8">app</tspan><tspan> (t) [mm</tspan><tspan baseline-shift="super" font-size="8">2</tspan><tspan>/s]</tspan>
+        <tspan>Apparent Diffusion Coefficient </tspan><tspan font-style="italic">D</tspan><tspan baseline-shift="sub" font-size="8">app</tspan><tspan>(t) [10</tspan><tspan baseline-shift="super" font-size="8">${diffusionAxis.exponent}</tspan><tspan> mm²/s]</tspan>
       </text>
     `);
     parts.push(`
@@ -1149,11 +1191,51 @@
     return `${mantissa}×10${exponent < 0 ? "⁻" : ""}${Math.abs(exponent)}`;
   }
 
+  function formatScaledTick(value, factor) {
+    if (!Number.isFinite(value)) return "";
+    if (value === 0) return "0";
+    return Number(value.toPrecision(1)).toString();
+  }
+
+  const textMeasureCanvas = typeof document !== "undefined" ? document.createElement("canvas") : null;
+  const textMeasureContext = textMeasureCanvas ? textMeasureCanvas.getContext("2d") : null;
+
+  function measureTextWidth(text, fontSize) {
+    if (!textMeasureContext) return String(text || "").length * fontSize * 0.56;
+    const family = getComputedStyle(document.documentElement).getPropertyValue("--font-body").trim() || 'Arial, "Segoe UI", sans-serif';
+    textMeasureContext.font = `${fontSize}px ${family}`;
+    return textMeasureContext.measureText(String(text || "")).width;
+  }
+
   function setStatus(dom, message, tone) {
     dom.status.textContent = message;
     dom.status.classList.remove("is-error", "is-ok");
     if (tone === "error") dom.status.classList.add("is-error");
     if (tone === "ok") dom.status.classList.add("is-ok");
+  }
+
+  function positionStagePanels(dom) {
+    const stageControls = dom?.root?.querySelector(".mda-stage-controls");
+    if (!stageControls) return;
+    const exportButton = stageControls.querySelector('[data-download="csv"]')?.closest(".mda-tool-panel") || stageControls.lastElementChild;
+    const controlsRect = stageControls.getBoundingClientRect();
+    const limitRight = exportButton ? exportButton.getBoundingClientRect().right : controlsRect.right;
+
+    stageControls.querySelectorAll(".mda-tool-panel[open]").forEach((panel) => {
+      const body = panel.querySelector(".mda-tool-panel-body");
+      if (!body) return;
+      body.style.left = "0px";
+      body.style.right = "auto";
+      body.style.visibility = "hidden";
+      body.style.display = "grid";
+      const panelRect = panel.getBoundingClientRect();
+      const bodyRect = body.getBoundingClientRect();
+      const maxShiftRight = limitRight - panelRect.left - bodyRect.width;
+      const minShiftLeft = controlsRect.left + 8 - panelRect.left;
+      const shift = Math.min(0, Math.max(minShiftLeft, maxShiftRight));
+      body.style.left = `${Math.round(shift)}px`;
+      body.style.visibility = "";
+    });
   }
 
   function setIssues(dom, messages) {
@@ -1444,11 +1526,15 @@
       .mda-plot-axis-label,.mda-plot-value,.mda-plot-note{font-size:11px;font-weight:400}
       .mda-plot-axis-label tspan{font-family:inherit}
       .mda-plot-legend-group{font-size:10.5px;font-weight:400}
-      .mda-plot-legend-group text{font-weight:400}
+      .mda-plot-legend-group text{fill:${ink};font-weight:400}
+      .mda-plot-legend-diffusion .mda-plot-legend-line{stroke:${diffusionColor}}
+      .mda-plot-legend-current .mda-plot-legend-line{stroke:${currentColor}}
+      .mda-plot-ref-hitline{stroke:transparent;stroke-width:14;fill:none}
       .mda-plot-axis-left,.mda-plot-value-diffusion{fill:${diffusionColor}}
       .mda-plot-axis-right,.mda-plot-value-current{fill:${currentColor}}
       .mda-plot-note{fill:${muted}}
-      .mda-plot-ref-line,.mda-plot-ref-handle,.mda-plot-ref-label{stroke:${ink};fill:${ink}}
+      .mda-plot-ref-line{stroke:${ink};fill:none}
+      .mda-plot-ref-label{fill:${ink}}
       .mda-plot-ref-line{stroke-width:2;stroke-linecap:butt}
       .mda-plot-ref-handle{stroke:${bg};stroke-width:2}
       .mda-plot-ref-label{font-size:10px;font-weight:400;paint-order:normal;stroke:none}
