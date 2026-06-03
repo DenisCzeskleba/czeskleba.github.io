@@ -24,9 +24,9 @@ Have a look at the following:
     <strong>Lattice Visualizer</strong>
   </a>
 
-  <a href="/mda/" style="text-decoration: none; display: inline-block; text-align: center;">
-    <img src="/assets/Membrane Diffusion Analyser.png" alt="Membrane Diffusion Analyzer" style="width:250px;" /><br />
-    <strong>Membrane Diffusion Analyzer</strong>
+  <a href="/hpa/" style="text-decoration: none; display: inline-block; text-align: center;">
+    <img src="/assets/Membrane Diffusion Analyser.png" alt="Hydrogen Permeation Analyzer" style="width:250px;" /><br />
+    <strong>Hydrogen Permeation Analyzer</strong>
   </a>
 
   <a href="/hydrogen-diffusion-database/" style="text-decoration: none; display: inline-block; text-align: center;">

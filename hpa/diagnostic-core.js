@@ -2,7 +2,7 @@
   if (typeof module === "object" && module.exports) {
     module.exports = factory();
   } else {
-    root.MDADiagnosticCore = factory();
+    root.HPADiagnosticCore = factory();
   }
 })(typeof globalThis !== "undefined" ? globalThis : window, function () {
   const SOLVER_POLICY = {

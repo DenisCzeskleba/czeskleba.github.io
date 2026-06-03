@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
   const DELIMITER_CANDIDATES = [
     { id: "tab", label: "tab", split: (line) => line.split("\t") },
     { id: "semicolon", label: "semicolon", split: (line) => line.split(";") },
@@ -44,77 +44,77 @@
   document.addEventListener("DOMContentLoaded", init);
 
   function init() {
-    const root = document.getElementById("mda-app");
+    const root = document.getElementById("hpa-app");
     if (!root) return;
-    const diagnosticCore = window.MDADiagnosticCore || (typeof globalThis !== "undefined" ? globalThis.MDADiagnosticCore : null);
+    const diagnosticCore = window.HPADiagnosticCore || (typeof globalThis !== "undefined" ? globalThis.HPADiagnosticCore : null);
 
     injectHeaderBrand();
 
     const dom = {
       root,
-      input: document.getElementById("mda-input"),
-      file: document.getElementById("mda-file"),
-      uploadTrigger: document.getElementById("mda-upload-trigger"),
-      currentUnit: document.getElementById("mda-current-unit"),
-      baselineValue: document.getElementById("mda-baseline-value"),
-      steadyValue: document.getElementById("mda-steady-value"),
-      baselineReset: document.getElementById("mda-baseline-reset"),
-      baselineToggle: document.getElementById("mda-baseline-toggle"),
-      steadyReset: document.getElementById("mda-steady-reset"),
-      steadyToggle: document.getElementById("mda-steady-toggle"),
-      thickness: document.getElementById("mda-thickness"),
-      t0Offset: document.getElementById("mda-t0-offset"),
-      t0OffsetValue: document.getElementById("mda-t0-offset-value"),
-      minorGridToggle: document.getElementById("mda-minor-grid-toggle"),
-      cropRange: document.getElementById("mda-crop-range"),
-      decimal: document.getElementById("mda-decimal"),
-      plotUnit: document.getElementById("mda-plot-unit"),
-      lowConfidence: document.getElementById("mda-low-confidence"),
-      diffusionScale: document.getElementById("mda-diffusion-scale"),
-      gridToggle: document.getElementById("mda-grid-toggle"),
-      resetPlot: document.getElementById("mda-reset-plot"),
-      status: document.getElementById("mda-status"),
-      statusDetail: document.getElementById("mda-status-detail"),
-        issues: document.getElementById("mda-issues"),
-        previewBody: document.getElementById("mda-preview-body"),
-        plot: document.getElementById("mda-plot"),
-        breakthroughValue: document.getElementById("mda-breakthrough-value"),
-        breakthroughTime: document.getElementById("mda-breakthrough-time"),
-        breakthroughNote: document.getElementById("mda-breakthrough-note"),
-        lagValue: document.getElementById("mda-lag-value"),
-        lagTime: document.getElementById("mda-lag-time"),
-        lagNote: document.getElementById("mda-lag-note"),
-        inflectionValue: document.getElementById("mda-inflection-value"),
-        inflectionTime: document.getElementById("mda-inflection-time"),
-        inflectionNote: document.getElementById("mda-inflection-note"),
-        inverseValue: document.getElementById("mda-inverse-value"),
-        inverseTime: document.getElementById("mda-inverse-time"),
-        inverseNote: document.getElementById("mda-inverse-note"),
-        fitValue: document.getElementById("mda-fit-value"),
-        fitTime: document.getElementById("mda-fit-time"),
-        fitNote: document.getElementById("mda-fit-note"),
-        helpDrawer: document.getElementById("mda-help-drawer"),
-        diagnosticDrawer: document.getElementById("mda-diagnostic-drawer"),
+      input: document.getElementById("hpa-input"),
+      file: document.getElementById("hpa-file"),
+      uploadTrigger: document.getElementById("hpa-upload-trigger"),
+      currentUnit: document.getElementById("hpa-current-unit"),
+      baselineValue: document.getElementById("hpa-baseline-value"),
+      steadyValue: document.getElementById("hpa-steady-value"),
+      baselineReset: document.getElementById("hpa-baseline-reset"),
+      baselineToggle: document.getElementById("hpa-baseline-toggle"),
+      steadyReset: document.getElementById("hpa-steady-reset"),
+      steadyToggle: document.getElementById("hpa-steady-toggle"),
+      thickness: document.getElementById("hpa-thickness"),
+      t0Offset: document.getElementById("hpa-t0-offset"),
+      t0OffsetValue: document.getElementById("hpa-t0-offset-value"),
+      minorGridToggle: document.getElementById("hpa-minor-grid-toggle"),
+      cropRange: document.getElementById("hpa-crop-range"),
+      decimal: document.getElementById("hpa-decimal"),
+      plotUnit: document.getElementById("hpa-plot-unit"),
+      lowConfidence: document.getElementById("hpa-low-confidence"),
+      diffusionScale: document.getElementById("hpa-diffusion-scale"),
+      gridToggle: document.getElementById("hpa-grid-toggle"),
+      resetPlot: document.getElementById("hpa-reset-plot"),
+      status: document.getElementById("hpa-status"),
+      statusDetail: document.getElementById("hpa-status-detail"),
+        issues: document.getElementById("hpa-issues"),
+        previewBody: document.getElementById("hpa-preview-body"),
+        plot: document.getElementById("hpa-plot"),
+        breakthroughValue: document.getElementById("hpa-breakthrough-value"),
+        breakthroughTime: document.getElementById("hpa-breakthrough-time"),
+        breakthroughNote: document.getElementById("hpa-breakthrough-note"),
+        lagValue: document.getElementById("hpa-lag-value"),
+        lagTime: document.getElementById("hpa-lag-time"),
+        lagNote: document.getElementById("hpa-lag-note"),
+        inflectionValue: document.getElementById("hpa-inflection-value"),
+        inflectionTime: document.getElementById("hpa-inflection-time"),
+        inflectionNote: document.getElementById("hpa-inflection-note"),
+        inverseValue: document.getElementById("hpa-inverse-value"),
+        inverseTime: document.getElementById("hpa-inverse-time"),
+        inverseNote: document.getElementById("hpa-inverse-note"),
+        fitValue: document.getElementById("hpa-fit-value"),
+        fitTime: document.getElementById("hpa-fit-time"),
+        fitNote: document.getElementById("hpa-fit-note"),
+        helpDrawer: document.getElementById("hpa-help-drawer"),
+        diagnosticDrawer: document.getElementById("hpa-diagnostic-drawer"),
         helpOpenButtons: root.querySelectorAll("[data-action='open-help']"),
         diagnosticOpenButtons: root.querySelectorAll("[data-action='open-diagnostic']"),
         helpCloseButtons: document.querySelectorAll("[data-action='close-help']"),
         diagnosticCloseButtons: document.querySelectorAll("[data-action='close-diagnostic']"),
-        diagnosticRunButton: document.getElementById("mda-diagnostic-run"),
-        diagnosticApplyButton: document.getElementById("mda-diagnostic-apply"),
-        diagnosticRevertButton: document.getElementById("mda-diagnostic-revert"),
-        diagnosticSummary: document.getElementById("mda-diagnostic-summary"),
-        diagnosticBusyBanner: document.getElementById("mda-diagnostic-busy"),
-        diagnosticBusyText: document.getElementById("mda-diagnostic-busy-text"),
-        diagnosticScore: document.getElementById("mda-diagnostic-score"),
-        diagnosticConfidence: document.getElementById("mda-diagnostic-confidence"),
-        diagnosticT0: document.getElementById("mda-diagnostic-t0"),
-        diagnosticAgreement: document.getElementById("mda-diagnostic-agreement"),
-        diagnosticSnapshot: document.getElementById("mda-diagnostic-snapshot"),
-        diagnosticFindings: document.getElementById("mda-diagnostic-findings"),
-        diagnosticCandidates: document.getElementById("mda-diagnostic-candidates"),
-        diagnosticNotes: document.getElementById("mda-diagnostic-notes"),
+        diagnosticRunButton: document.getElementById("hpa-diagnostic-run"),
+        diagnosticApplyButton: document.getElementById("hpa-diagnostic-apply"),
+        diagnosticRevertButton: document.getElementById("hpa-diagnostic-revert"),
+        diagnosticSummary: document.getElementById("hpa-diagnostic-summary"),
+        diagnosticBusyBanner: document.getElementById("hpa-diagnostic-busy"),
+        diagnosticBusyText: document.getElementById("hpa-diagnostic-busy-text"),
+        diagnosticScore: document.getElementById("hpa-diagnostic-score"),
+        diagnosticConfidence: document.getElementById("hpa-diagnostic-confidence"),
+        diagnosticT0: document.getElementById("hpa-diagnostic-t0"),
+        diagnosticAgreement: document.getElementById("hpa-diagnostic-agreement"),
+        diagnosticSnapshot: document.getElementById("hpa-diagnostic-snapshot"),
+        diagnosticFindings: document.getElementById("hpa-diagnostic-findings"),
+        diagnosticCandidates: document.getElementById("hpa-diagnostic-candidates"),
+        diagnosticNotes: document.getElementById("hpa-diagnostic-notes"),
         downloadButtons: root.querySelectorAll("[data-download]"),
-        clearButton: document.getElementById("mda-clear"),
+        clearButton: document.getElementById("hpa-clear"),
     };
 
     if (!dom.input || !dom.file || !dom.decimal || !dom.status || !dom.issues || !dom.previewBody || !dom.plot) {
@@ -146,14 +146,14 @@
     });
     if (dom.helpDrawer) {
       dom.helpDrawer.addEventListener("click", (event) => {
-        if (event.target === dom.helpDrawer.querySelector(".mda-help-backdrop")) {
+        if (event.target === dom.helpDrawer.querySelector(".hpa-help-backdrop")) {
           closeDrawer(dom.helpDrawer);
         }
       });
     }
     if (dom.diagnosticDrawer) {
       dom.diagnosticDrawer.addEventListener("click", (event) => {
-        if (event.target === dom.diagnosticDrawer.querySelector(".mda-diagnostic-backdrop")) {
+        if (event.target === dom.diagnosticDrawer.querySelector(".hpa-diagnostic-backdrop")) {
           closeDrawer(dom.diagnosticDrawer);
         }
       });
@@ -256,7 +256,7 @@
         renderDerivedViews(dom);
       });
     }
-      const stagePanels = root.querySelectorAll(".mda-stage-controls .mda-tool-panel");
+      const stagePanels = root.querySelectorAll(".hpa-stage-controls .hpa-tool-panel");
       stagePanels.forEach((panel) => {
         const summary = panel.querySelector("summary");
         if (summary) {
@@ -359,17 +359,17 @@
 
   function injectHeaderBrand() {
     const header = document.querySelector("header");
-    if (!header || header.querySelector(".mda-header-brand")) return;
+    if (!header || header.querySelector(".hpa-header-brand")) return;
 
     const actions = header.querySelector(".header-actions");
     if (!actions) return;
 
     const brand = document.createElement("div");
-    brand.className = "mda-header-brand";
-    brand.setAttribute("aria-label", "Membrane Diffusion Analyzer");
+    brand.className = "hpa-header-brand";
+    brand.setAttribute("aria-label", "Hydrogen Permeation Analyzer");
     brand.innerHTML = `
-      <img class="mda-header-brand-image" src="/assets/Membrane Diffusion Analyser.png" alt="Membrane Diffusion Analyzer" decoding="async" loading="lazy" />
-      <span class="mda-header-brand-text">Membrane Diffusion Analyzer</span>
+      <img class="hpa-header-brand-image" src="/assets/Membrane Diffusion Analyser.png" alt="Hydrogen Permeation Analyzer" decoding="async" loading="lazy" />
+      <span class="hpa-header-brand-text">Hydrogen Permeation Analyzer</span>
     `;
     header.insertBefore(brand, actions);
   }
@@ -399,25 +399,25 @@
   }
 
   function isReferenceAuto(element) {
-    return element && element.dataset && element.dataset.mdaReferenceMode === "auto";
+    return element && element.dataset && element.dataset.hpaReferenceMode === "auto";
   }
 
   function isReferenceManual(element) {
-    return element && element.dataset && element.dataset.mdaReferenceMode === "manual";
+    return element && element.dataset && element.dataset.hpaReferenceMode === "manual";
   }
 
   function clearReferenceAuto(element) {
     if (!element || !element.dataset) return;
-    delete element.dataset.mdaReferenceMode;
-    delete element.dataset.mdaReferenceSourceUnit;
-    delete element.dataset.mdaReferenceRawValue;
+    delete element.dataset.hpaReferenceMode;
+    delete element.dataset.hpaReferenceSourceUnit;
+    delete element.dataset.hpaReferenceRawValue;
   }
 
   function markReferenceManual(element) {
     if (!element || !element.dataset) return;
-    element.dataset.mdaReferenceMode = "manual";
-    delete element.dataset.mdaReferenceSourceUnit;
-    delete element.dataset.mdaReferenceRawValue;
+    element.dataset.hpaReferenceMode = "manual";
+    delete element.dataset.hpaReferenceSourceUnit;
+    delete element.dataset.hpaReferenceRawValue;
   }
 
   function setReferenceAutoValue(element, rawValue, sourceUnit, displayUnit) {
@@ -425,9 +425,9 @@
     const nextValue = convertCurrentValue(rawValue, sourceUnit, displayUnit);
     if (!Number.isFinite(nextValue)) return;
     element.value = formatNumber(nextValue);
-    element.dataset.mdaReferenceMode = "auto";
-    element.dataset.mdaReferenceSourceUnit = sourceUnit;
-    element.dataset.mdaReferenceRawValue = String(rawValue);
+    element.dataset.hpaReferenceMode = "auto";
+    element.dataset.hpaReferenceSourceUnit = sourceUnit;
+    element.dataset.hpaReferenceRawValue = String(rawValue);
   }
 
   function attachPlotInteractions(dom) {
@@ -557,11 +557,11 @@
   }
 
   function ensurePlotTooltip() {
-    let tooltip = document.getElementById("mda-plot-tooltip");
+    let tooltip = document.getElementById("hpa-plot-tooltip");
     if (!tooltip) {
       tooltip = document.createElement("div");
-      tooltip.id = "mda-plot-tooltip";
-      tooltip.className = "mda-plot-tooltip";
+      tooltip.id = "hpa-plot-tooltip";
+      tooltip.className = "hpa-plot-tooltip";
       tooltip.setAttribute("aria-hidden", "true");
       document.body.appendChild(tooltip);
     }
@@ -569,7 +569,7 @@
   }
 
   function hidePlotTooltip() {
-    const tooltip = document.getElementById("mda-plot-tooltip");
+    const tooltip = document.getElementById("hpa-plot-tooltip");
     if (!tooltip) return;
     tooltip.style.opacity = "0";
     tooltip.setAttribute("aria-hidden", "true");
@@ -1711,13 +1711,13 @@
     if (!valueNode || !timeNode || !noteNode) return;
     const symbol = symbolHtml || "D";
     if (!result || !result.available) {
-      valueNode.innerHTML = `${symbol} = &mdash;`;
+      valueNode.innerHTML = `${symbol} = &hpash;`;
       timeNode.textContent = "No stable value";
       noteNode.textContent = result && result.note ? result.note : `Unable to compute ${label.toLowerCase()}.`;
       return;
     }
 
-    valueNode.innerHTML = `${symbol} = ${escapeHtml(formatDiffusivity(result.diffusivity))} <span class="mda-result-unit">mm&sup2;/s</span>`;
+    valueNode.innerHTML = `${symbol} = ${escapeHtml(formatDiffusivity(result.diffusivity))} <span class="hpa-result-unit">mm&sup2;/s</span>`;
     if (result.timeHtml) {
       timeNode.innerHTML = result.timeHtml;
     } else {
@@ -1743,7 +1743,7 @@
         const currentCell = Number.isFinite(row.currentDisplay)
           ? formatNumber(row.currentDisplay)
           : formatNumber(convertCurrentValue(row.current, dom.currentUnit ? dom.currentUnit.value : "A", getDisplayUnit(dom)));
-        const diffusivityCell = Number.isFinite(row.diffusivity) ? formatDiffusivity(row.diffusivity) : "&mdash;";
+        const diffusivityCell = Number.isFinite(row.diffusivity) ? formatDiffusivity(row.diffusivity) : "&hpash;";
         return `
           <tr>
             <td>${index + 1}</td>
@@ -2295,6 +2295,12 @@
       diffusionScaleMode === "log"
         ? buildLogMinorTicks(diffusionRanges.yMin, diffusionRanges.yMax)
         : buildLinearMinorTicks(diffusionRanges.yMin, diffusionRanges.yMax, diffusionMajorTicks, 4);
+    const within = (value, min, max) => Number.isFinite(value) && value >= min - 1e-9 && value <= max + 1e-9;
+    const xTicksVisible = xTicks.filter((value) => within(value, currentRanges.xMin, currentRanges.xMax));
+    const xMinorTicksVisible = xMinorTicks.filter((value) => within(value, currentRanges.xMin, currentRanges.xMax));
+    const currentTicksVisible = currentTicks.filter((value) => within(value, currentRanges.yMin, currentRanges.yMax));
+    const diffusionMajorTicksVisible = diffusionMajorTicks.filter((value) => within(value, diffusionRanges.yMin, diffusionRanges.yMax));
+    const diffusionMinorTicksVisible = diffusionMinorTicks.filter((value) => within(value, diffusionRanges.yMin, diffusionRanges.yMax));
 
     const innerWidth = PLOT_WIDTH - PLOT_MARGINS.left - PLOT_MARGINS.right;
     const innerHeight = PLOT_HEIGHT - PLOT_MARGINS.top - PLOT_MARGINS.bottom;
@@ -2322,16 +2328,16 @@
     const diffusionSegmentPaths =
       lowConfidenceMode === "normal"
         ? []
-        : buildSegmentedPolylinePaths(diffusionPlotPoints, [0.1, 0.9], scaleX, scaleDiffusionY);
+        : buildSegmentedPolylinePaths(diffusionPlotPoints, [0.25, 0.75], scaleX, scaleDiffusionY);
     const diffusionSegmentClasses =
       lowConfidenceMode === "hide"
-        ? ["mda-plot-line-diffusion-hidden", "mda-plot-line-diffusion", "mda-plot-line-diffusion-hidden"]
+        ? ["hpa-plot-line-diffusion-hidden", "hpa-plot-line-diffusion", "hpa-plot-line-diffusion-hidden"]
         : lowConfidenceMode === "shaded"
-          ? ["mda-plot-line-diffusion-edge", "mda-plot-line-diffusion", "mda-plot-line-diffusion-edge"]
-          : ["mda-plot-line-diffusion", "mda-plot-line-diffusion", "mda-plot-line-diffusion"];
+          ? ["hpa-plot-line-diffusion-edge", "hpa-plot-line-diffusion", "hpa-plot-line-diffusion-edge"]
+          : ["hpa-plot-line-diffusion", "hpa-plot-line-diffusion", "hpa-plot-line-diffusion"];
 
     const parts = [];
-    const chartClipId = "mda-plot-clip";
+    const chartClipId = "hpa-plot-clip";
     const chartX = PLOT_MARGINS.left;
     const chartY = PLOT_MARGINS.top;
     const chartWidth = innerWidth;
@@ -2347,7 +2353,7 @@
         </clipPath>
       </defs>
     `);
-    parts.push(`<rect class="mda-plot-frame" x="${chartX}" y="${chartY}" width="${chartWidth}" height="${chartHeight}"></rect>`);
+    parts.push(`<rect class="hpa-plot-frame" x="${chartX}" y="${chartY}" width="${chartWidth}" height="${chartHeight}"></rect>`);
     const legendGap = 60;
     const legendLineWidth = 18;
     const legendTextGap = 12;
@@ -2365,28 +2371,28 @@
     const legendX = Math.max(0, (PLOT_WIDTH - legendTotalWidth) / 2);
     const legendY = chartY - 20;
     parts.push(`
-      <g class="mda-plot-legend-group" transform="translate(${legendX} ${legendY})">
+      <g class="hpa-plot-legend-group" transform="translate(${legendX} ${legendY})">
         ${showLowConfidenceLegend ? `
-        <g class="mda-plot-legend-item mda-plot-legend-low-confidence">
-          <line x1="0" y1="6" x2="18" y2="6" class="mda-plot-legend-line mda-plot-legend-low-confidence-line"></line>
+        <g class="hpa-plot-legend-item hpa-plot-legend-low-confidence">
+          <line x1="0" y1="6" x2="18" y2="6" class="hpa-plot-legend-line hpa-plot-legend-low-confidence-line"></line>
           <text x="26" y="10">${lowConfidenceLegendText}</text>
         </g>` : ""}
-        <g class="mda-plot-legend-item mda-plot-legend-diffusion" transform="translate(${(showLowConfidenceLegend ? lowConfidenceLegendWidth + legendGap : 0)} 0)">
-          <line x1="0" y1="6" x2="18" y2="6" class="mda-plot-legend-line"></line>
+        <g class="hpa-plot-legend-item hpa-plot-legend-diffusion" transform="translate(${(showLowConfidenceLegend ? lowConfidenceLegendWidth + legendGap : 0)} 0)">
+          <line x1="0" y1="6" x2="18" y2="6" class="hpa-plot-legend-line"></line>
           <text x="26" y="10">
             <tspan x="26" dy="0">Apparent Diffusion Coefficient </tspan><tspan font-style="italic">D</tspan><tspan baseline-shift="sub" font-size="8">app</tspan><tspan>(t)</tspan>
           </text>
         </g>
-        <g class="mda-plot-legend-item mda-plot-legend-current" transform="translate(${(showLowConfidenceLegend ? lowConfidenceLegendWidth + legendGap : 0) + diffusionLegendWidth + legendGap} 0)">
-          <line x1="0" y1="6" x2="18" y2="6" class="mda-plot-legend-line"></line>
+        <g class="hpa-plot-legend-item hpa-plot-legend-current" transform="translate(${(showLowConfidenceLegend ? lowConfidenceLegendWidth + legendGap : 0) + diffusionLegendWidth + legendGap} 0)">
+          <line x1="0" y1="6" x2="18" y2="6" class="hpa-plot-legend-line"></line>
           <text x="26" y="10">Measured permeation current I(t)</text>
         </g>
       </g>
     `);
 
     const references = [
-      { kind: "baseline", ref: analysis.baseline, label: "Baseline", className: "mda-plot-ref-baseline" },
-      { kind: "steady", ref: analysis.steady, label: "Steady State", className: "mda-plot-ref-steady" },
+      { kind: "baseline", ref: analysis.baseline, label: "Baseline", className: "hpa-plot-ref-baseline" },
+      { kind: "steady", ref: analysis.steady, label: "Steady State", className: "hpa-plot-ref-steady" },
     ];
     const currentHoverPoints = orderedCurrent.map((point) => ({
       x: point.x,
@@ -2429,18 +2435,18 @@
       referenceItems: referenceHoverItems,
     };
 
-    parts.push(`<g class="mda-plot-chart" clip-path="url(#${chartClipId})">`);
+    parts.push(`<g class="hpa-plot-chart" clip-path="url(#${chartClipId})">`);
     if (showGrid) {
       yGridTicks.forEach((value) => {
         const y = yGridScale(value);
         yGridParts.push(
-          `<line class="mda-plot-grid mda-plot-grid-major" x1="${chartX}" y1="${y.toFixed(2)}" x2="${chartX + chartWidth}" y2="${y.toFixed(2)}"></line>`,
+          `<line class="hpa-plot-grid hpa-plot-grid-major" x1="${chartX}" y1="${y.toFixed(2)}" x2="${chartX + chartWidth}" y2="${y.toFixed(2)}"></line>`,
         );
       });
       xTicks.forEach((value) => {
         const x = scaleX(value);
         yGridParts.push(
-          `<line class="mda-plot-grid mda-plot-grid-major" x1="${x.toFixed(2)}" y1="${chartY}" x2="${x.toFixed(2)}" y2="${chartY + chartHeight}"></line>`,
+          `<line class="hpa-plot-grid hpa-plot-grid-major" x1="${x.toFixed(2)}" y1="${chartY}" x2="${x.toFixed(2)}" y2="${chartY + chartHeight}"></line>`,
         );
       });
     }
@@ -2448,56 +2454,56 @@
       diffusionMinorTicks.forEach((value) => {
         const y = scaleDiffusionY(value);
         yGridParts.push(
-          `<line class="mda-plot-grid mda-plot-grid-minor" x1="${chartX}" y1="${y.toFixed(2)}" x2="${chartX + chartWidth}" y2="${y.toFixed(2)}"></line>`,
+          `<line class="hpa-plot-grid hpa-plot-grid-minor" x1="${chartX}" y1="${y.toFixed(2)}" x2="${chartX + chartWidth}" y2="${y.toFixed(2)}"></line>`,
         );
       });
       xMinorTicks.forEach((value) => {
         const x = scaleX(value);
         yGridParts.push(
-          `<line class="mda-plot-grid mda-plot-grid-minor" x1="${x.toFixed(2)}" y1="${chartY}" x2="${x.toFixed(2)}" y2="${chartY + chartHeight}"></line>`,
+          `<line class="hpa-plot-grid hpa-plot-grid-minor" x1="${x.toFixed(2)}" y1="${chartY}" x2="${x.toFixed(2)}" y2="${chartY + chartHeight}"></line>`,
         );
       });
     }
     if (diffusionSegmentPaths.length) {
       diffusionSegmentPaths.forEach((segment) => {
-        const segmentClass = diffusionSegmentClasses[segment.index] || "mda-plot-line-diffusion";
-        parts.push(`<path class="mda-plot-line ${segmentClass}" d="${segment.d}"></path>`);
+        const segmentClass = diffusionSegmentClasses[segment.index] || "hpa-plot-line-diffusion";
+        parts.push(`<path class="hpa-plot-line ${segmentClass}" d="${segment.d}"></path>`);
       });
     } else if (diffusionPath) {
-      parts.push(`<path class="mda-plot-line mda-plot-line-diffusion" d="${diffusionPath}"></path>`);
+      parts.push(`<path class="hpa-plot-line hpa-plot-line-diffusion" d="${diffusionPath}"></path>`);
     }
-    if (currentPath) parts.push(`<path class="mda-plot-line mda-plot-line-current" d="${currentPath}"></path>`);
+    if (currentPath) parts.push(`<path class="hpa-plot-line hpa-plot-line-current" d="${currentPath}"></path>`);
     parts.push(...yGridParts);
     references.forEach((entry) => {
       if (!entry.ref || !Number.isFinite(entry.ref.value)) return;
       if (state.referenceVisibility[entry.kind] === false) return;
       const refValue = convertCurrentValue(entry.ref.value, inputUnit, displayUnit);
       const y = scaleCurrentY(refValue);
-      const lineColorClass = entry.kind === "baseline" ? "mda-plot-ref-baseline" : "mda-plot-ref-steady";
-      parts.push(`<line class="mda-plot-ref-hitline" data-ref-kind="${entry.kind}" x1="${chartX}" y1="${y.toFixed(2)}" x2="${chartX + chartWidth}" y2="${y.toFixed(2)}"></line>`);
-      parts.push(`<line class="mda-plot-ref-line ${lineColorClass}" data-ref-kind="${entry.kind}" x1="${chartX}" y1="${y.toFixed(2)}" x2="${chartX + chartWidth}" y2="${y.toFixed(2)}"></line>`);
+      const lineColorClass = entry.kind === "baseline" ? "hpa-plot-ref-baseline" : "hpa-plot-ref-steady";
+      parts.push(`<line class="hpa-plot-ref-hitline" data-ref-kind="${entry.kind}" x1="${chartX}" y1="${y.toFixed(2)}" x2="${chartX + chartWidth}" y2="${y.toFixed(2)}"></line>`);
+      parts.push(`<line class="hpa-plot-ref-line ${lineColorClass}" data-ref-kind="${entry.kind}" x1="${chartX}" y1="${y.toFixed(2)}" x2="${chartX + chartWidth}" y2="${y.toFixed(2)}"></line>`);
     });
     parts.push(`</g>`);
 
-    currentTicks.forEach((value) => {
+    currentTicksVisible.forEach((value) => {
       const y = scaleCurrentY(value);
       parts.push(
-        `<line class="mda-plot-axis-tick mda-plot-axis-tick-right" x1="${PLOT_WIDTH - PLOT_MARGINS.right}" y1="${y.toFixed(2)}" x2="${PLOT_WIDTH - PLOT_MARGINS.right + 4}" y2="${y.toFixed(2)}"></line>`,
-        `<text class="mda-plot-value mda-plot-value-current" x="${PLOT_WIDTH - PLOT_MARGINS.right + 4}" y="${(y + 3).toFixed(2)}" text-anchor="start">${escapeHtml(formatAxisTick(value))}</text>`,
+        `<line class="hpa-plot-axis-tick hpa-plot-axis-tick-right" x1="${PLOT_WIDTH - PLOT_MARGINS.right}" y1="${y.toFixed(2)}" x2="${PLOT_WIDTH - PLOT_MARGINS.right + 4}" y2="${y.toFixed(2)}"></line>`,
+        `<text class="hpa-plot-value hpa-plot-value-current" x="${PLOT_WIDTH - PLOT_MARGINS.right + 4}" y="${(y + 3).toFixed(2)}" text-anchor="start">${escapeHtml(formatAxisTick(value))}</text>`,
       );
     });
 
-    diffusionMinorTicks.forEach((value) => {
+    diffusionMinorTicksVisible.forEach((value) => {
       const y = scaleDiffusionY(value);
-      parts.push(`<line class="mda-plot-axis-tick mda-plot-axis-tick-left mda-plot-axis-tick-minor" x1="${PLOT_MARGINS.left - 3}" y1="${y.toFixed(2)}" x2="${PLOT_MARGINS.left}" y2="${y.toFixed(2)}"></line>`);
+      parts.push(`<line class="hpa-plot-axis-tick hpa-plot-axis-tick-left hpa-plot-axis-tick-minor" x1="${PLOT_MARGINS.left - 3}" y1="${y.toFixed(2)}" x2="${PLOT_MARGINS.left}" y2="${y.toFixed(2)}"></line>`);
     });
 
-    diffusionMajorTicks.forEach((value) => {
+    diffusionMajorTicksVisible.forEach((value) => {
       const y = scaleDiffusionY(value);
-      const tickClass = "mda-plot-axis-tick mda-plot-axis-tick-left";
+      const tickClass = "hpa-plot-axis-tick hpa-plot-axis-tick-left";
       parts.push(`<line class="${tickClass}" x1="${PLOT_MARGINS.left - 4}" y1="${y.toFixed(2)}" x2="${PLOT_MARGINS.left}" y2="${y.toFixed(2)}"></line>`);
       parts.push(
-        `<text class="mda-plot-value mda-plot-value-diffusion" x="${PLOT_MARGINS.left - 4}" y="${(y + 3).toFixed(2)}" text-anchor="end">${escapeHtml(
+        `<text class="hpa-plot-value hpa-plot-value-diffusion" x="${PLOT_MARGINS.left - 4}" y="${(y + 3).toFixed(2)}" text-anchor="end">${escapeHtml(
           diffusionScaleMode === "log"
             ? formatLogTick(Math.pow(10, value) * diffusionAxis.factor)
             : formatAxisTick(value),
@@ -2505,43 +2511,43 @@
       );
     });
 
-    if (xMinorTicks.length) {
-      xMinorTicks.forEach((value) => {
+    if (xMinorTicksVisible.length) {
+      xMinorTicksVisible.forEach((value) => {
         const x = scaleX(value);
         parts.push(
-          `<line class="mda-plot-axis-tick mda-plot-axis-tick-bottom mda-plot-axis-tick-minor" x1="${x.toFixed(2)}" y1="${PLOT_HEIGHT - PLOT_MARGINS.bottom}" x2="${x.toFixed(2)}" y2="${PLOT_HEIGHT - PLOT_MARGINS.bottom + 4}"></line>`,
+          `<line class="hpa-plot-axis-tick hpa-plot-axis-tick-bottom hpa-plot-axis-tick-minor" x1="${x.toFixed(2)}" y1="${PLOT_HEIGHT - PLOT_MARGINS.bottom}" x2="${x.toFixed(2)}" y2="${PLOT_HEIGHT - PLOT_MARGINS.bottom + 4}"></line>`,
         );
       });
     }
 
-    xTicks.forEach((value) => {
+    xTicksVisible.forEach((value) => {
       const x = scaleX(value);
       parts.push(
-        `<line class="mda-plot-axis-tick mda-plot-axis-tick-bottom" x1="${x.toFixed(2)}" y1="${PLOT_HEIGHT - PLOT_MARGINS.bottom}" x2="${x.toFixed(2)}" y2="${PLOT_HEIGHT - PLOT_MARGINS.bottom + 6}"></line>`,
+        `<line class="hpa-plot-axis-tick hpa-plot-axis-tick-bottom" x1="${x.toFixed(2)}" y1="${PLOT_HEIGHT - PLOT_MARGINS.bottom}" x2="${x.toFixed(2)}" y2="${PLOT_HEIGHT - PLOT_MARGINS.bottom + 6}"></line>`,
       );
       parts.push(
-        `<text class="mda-plot-value" x="${x.toFixed(2)}" y="${PLOT_HEIGHT - 18}" text-anchor="middle">${escapeHtml(formatAxisTick(value))}</text>`,
+        `<text class="hpa-plot-value" x="${x.toFixed(2)}" y="${PLOT_HEIGHT - 18}" text-anchor="middle">${escapeHtml(formatAxisTick(value))}</text>`,
       );
     });
     parts.push(
       diffusionScaleMode === "log"
         ? `
-      <text class="mda-plot-axis-label mda-plot-axis-left" transform="translate(${axisLabelInsetLeft} ${PLOT_HEIGHT / 2}) rotate(-90)" text-anchor="middle">
+      <text class="hpa-plot-axis-label hpa-plot-axis-left" transform="translate(${axisLabelInsetLeft} ${PLOT_HEIGHT / 2}) rotate(-90)" text-anchor="middle">
         <tspan>Apparent Diffusion Coefficient </tspan><tspan font-style="italic">D</tspan><tspan baseline-shift="sub" font-size="8">app</tspan><tspan>(t) [mm²/s]</tspan>
       </text>
     `
         : `
-      <text class="mda-plot-axis-label mda-plot-axis-left" transform="translate(${axisLabelInsetLeft} ${PLOT_HEIGHT / 2}) rotate(-90)" text-anchor="middle">
+      <text class="hpa-plot-axis-label hpa-plot-axis-left" transform="translate(${axisLabelInsetLeft} ${PLOT_HEIGHT / 2}) rotate(-90)" text-anchor="middle">
         <tspan>Apparent Diffusion Coefficient </tspan><tspan font-style="italic">D</tspan><tspan baseline-shift="sub" font-size="8">app</tspan><tspan>(t) [10</tspan><tspan baseline-shift="super" font-size="8">${diffusionAxis.exponent}</tspan><tspan> mm²/s]</tspan>
       </text>
     `,
     );
     parts.push(`
-      <text class="mda-plot-axis-label mda-plot-axis-right" transform="translate(${PLOT_WIDTH - axisLabelInsetRight} ${PLOT_HEIGHT / 2}) rotate(270)" text-anchor="middle">
+      <text class="hpa-plot-axis-label hpa-plot-axis-right" transform="translate(${PLOT_WIDTH - axisLabelInsetRight} ${PLOT_HEIGHT / 2}) rotate(270)" text-anchor="middle">
         <tspan>Permeation current I(t) [${currentUnitLabel}]</tspan>
       </text>
     `);
-    parts.push(`<text class="mda-plot-axis-label mda-plot-axis-x" x="${PLOT_WIDTH / 2}" y="${PLOT_HEIGHT - 5}" text-anchor="middle">Time [s]</text>`);
+    parts.push(`<text class="hpa-plot-axis-label hpa-plot-axis-x" x="${PLOT_WIDTH / 2}" y="${PLOT_HEIGHT - 5}" text-anchor="middle">Time [s]</text>`);
     parts.push("</svg>");
 
     dom.plot.innerHTML = parts.join("");
@@ -2550,7 +2556,7 @@
 
   function renderPlotEmpty(dom) {
     if (dom.plot) {
-      dom.plot.innerHTML = `<div class="mda-plot-empty">Paste data to see the preview plot.</div>`;
+      dom.plot.innerHTML = `<div class="hpa-plot-empty">Paste data to see the preview plot.</div>`;
     }
   }
 
@@ -2693,16 +2699,16 @@
 
   function getDiagnosticCore() {
     if (typeof window === "undefined") return null;
-    return window.MDADiagnosticCore || null;
+    return window.HPADiagnosticCore || null;
   }
 
   function captureReferenceSnapshot(element) {
     if (!element) return null;
     return {
       value: element.value,
-      mode: element.dataset ? element.dataset.mdaReferenceMode || null : null,
-      sourceUnit: element.dataset ? element.dataset.mdaReferenceSourceUnit || null : null,
-      rawValue: element.dataset ? element.dataset.mdaReferenceRawValue || null : null,
+      mode: element.dataset ? element.dataset.hpaReferenceMode || null : null,
+      sourceUnit: element.dataset ? element.dataset.hpaReferenceSourceUnit || null : null,
+      rawValue: element.dataset ? element.dataset.hpaReferenceRawValue || null : null,
     };
   }
 
@@ -2711,9 +2717,9 @@
     element.value = snapshot.value != null ? snapshot.value : "";
     if (snapshot.mode === "auto") {
       if (snapshot.sourceUnit && snapshot.rawValue != null && Number.isFinite(Number(snapshot.rawValue))) {
-        element.dataset.mdaReferenceMode = "auto";
-        element.dataset.mdaReferenceSourceUnit = snapshot.sourceUnit;
-        element.dataset.mdaReferenceRawValue = String(snapshot.rawValue);
+        element.dataset.hpaReferenceMode = "auto";
+        element.dataset.hpaReferenceSourceUnit = snapshot.sourceUnit;
+        element.dataset.hpaReferenceRawValue = String(snapshot.rawValue);
       } else {
         clearReferenceAuto(element);
       }
@@ -2799,6 +2805,11 @@
   function revertDiagnosticSnapshot(dom) {
     if (!state.diagnosticSnapshot) return;
     restoreDiagnosticSnapshot(dom, state.diagnosticSnapshot);
+    state.plotViewport = null;
+    if (dom.t0Offset) dom.t0Offset.value = "0";
+    syncT0OffsetDisplay(dom);
+    resetReferenceField(dom, dom.baselineValue);
+    resetReferenceField(dom, dom.steadyValue);
     setStatus(dom, "Restored the pre-diagnostic snapshot.", "ok");
     renderDiagnosticDrawer(dom, state.diagnosticReport);
   }
@@ -3013,8 +3024,8 @@
     if (!finding) return "";
     const severity = finding.severity || "warning";
     return `
-      <li class="mda-diagnostic-finding is-${escapeHtml(severity)}">
-        <span class="mda-diagnostic-finding-title">${escapeHtml(finding.title || "Finding")}</span>
+      <li class="hpa-diagnostic-finding is-${escapeHtml(severity)}">
+        <span class="hpa-diagnostic-finding-title">${escapeHtml(finding.title || "Finding")}</span>
         <div>${escapeHtml(finding.text || "")}</div>
       </li>
     `;
@@ -3028,7 +3039,7 @@
     const flatnessText = Number.isFinite(candidate.flatnessScore) ? formatDiagnosticScore(candidate.flatnessScore) : "—";
     const agreementText = Number.isFinite(candidate.methodSpread) ? formatDiagnosticScore(candidate.methodSpread) : "—";
     return `
-      <article class="mda-diagnostic-candidate${isBest ? " is-best" : ""}">
+      <article class="hpa-diagnostic-candidate${isBest ? " is-best" : ""}">
         <strong>${escapeHtml(prefix)} candidate</strong>
         <span>t<sub>0</sub>: ${escapeHtml(t0Text)}</span>
         <span>Score: ${escapeHtml(scoreText)} | Agreement: ${escapeHtml(agreementText)} | Flatness: ${escapeHtml(flatnessText)}</span>
@@ -3045,14 +3056,14 @@
   }
 
   function positionStagePanels(dom) {
-    const stageControls = dom?.root?.querySelector(".mda-stage-controls");
+    const stageControls = dom?.root?.querySelector(".hpa-stage-controls");
     if (!stageControls) return;
-    const exportButton = stageControls.querySelector('[data-download="csv"]')?.closest(".mda-tool-panel") || stageControls.lastElementChild;
+    const exportButton = stageControls.querySelector('[data-download="csv"]')?.closest(".hpa-tool-panel") || stageControls.lastElementChild;
     const controlsRect = stageControls.getBoundingClientRect();
     const limitRight = exportButton ? exportButton.getBoundingClientRect().right : controlsRect.right;
 
-    stageControls.querySelectorAll(".mda-tool-panel[open]").forEach((panel) => {
-      const body = panel.querySelector(".mda-tool-panel-body");
+    stageControls.querySelectorAll(".hpa-tool-panel[open]").forEach((panel) => {
+      const body = panel.querySelector(".hpa-tool-panel-body");
       if (!body) return;
       body.style.left = "0px";
       body.style.right = "auto";
@@ -3287,7 +3298,7 @@
   }
 
   function renderEmptyTable(dom) {
-    dom.previewBody.innerHTML = `<tr><td colspan="4" class="mda-empty">No valid rows parsed yet.</td></tr>`;
+    dom.previewBody.innerHTML = `<tr><td colspan="4" class="hpa-empty">No valid rows parsed yet.</td></tr>`;
   }
 
   function parseRangeSpec(raw) {
@@ -3403,13 +3414,13 @@
 
     if (type === "csv") {
       const csv = buildExportCsv(dom, analysis);
-      downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), "mda-data.csv");
+      downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), "hpa-data.csv");
       return;
     }
 
     if (type === "svg") {
       const svg = buildExportSvg(dom, analysis);
-      downloadBlob(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }), "mda-plot.svg");
+      downloadBlob(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }), "hpa-plot.svg");
       return;
     }
 
@@ -3436,7 +3447,7 @@
         ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
         canvas.toBlob((output) => {
           URL.revokeObjectURL(url);
-          if (output) downloadBlob(output, "mda-plot.png");
+          if (output) downloadBlob(output, "hpa-plot.png");
         }, "image/png");
       };
       image.onerror = () => {
@@ -3476,26 +3487,26 @@
     clone.setAttribute("version", "1.1");
 
     const style = document.createElementNS("http://www.w3.org/2000/svg", "style");
-    const liveGridMajor = dom.plot ? dom.plot.querySelector(".mda-plot-grid-major") : null;
-    const liveGridMinor = dom.plot ? dom.plot.querySelector(".mda-plot-grid-minor") : null;
-    const liveCurrentLine = dom.plot ? dom.plot.querySelector(".mda-plot-line-current") : null;
-    const liveDiffusionLine = dom.plot ? dom.plot.querySelector(".mda-plot-line-diffusion") : null;
-    const liveAxisLabel = dom.plot ? dom.plot.querySelector(".mda-plot-axis-label") : null;
-    const liveAxisTick = dom.plot ? dom.plot.querySelector(".mda-plot-axis-tick") : null;
-    const liveFrame = dom.plot ? dom.plot.querySelector(".mda-plot-frame") : null;
-    const liveLegendText = dom.plot ? dom.plot.querySelector(".mda-plot-legend-group text") : null;
-    const liveRefLine = dom.plot ? dom.plot.querySelector(".mda-plot-ref-line") : null;
-    const liveLowConfidenceLine = dom.plot ? dom.plot.querySelector(".mda-plot-line-diffusion-edge, .mda-plot-line-diffusion-hidden") : null;
+    const liveGridMajor = dom.plot ? dom.plot.querySelector(".hpa-plot-grid-major") : null;
+    const liveGridMinor = dom.plot ? dom.plot.querySelector(".hpa-plot-grid-minor") : null;
+    const liveCurrentLine = dom.plot ? dom.plot.querySelector(".hpa-plot-line-current") : null;
+    const liveDiffusionLine = dom.plot ? dom.plot.querySelector(".hpa-plot-line-diffusion") : null;
+    const liveAxisLabel = dom.plot ? dom.plot.querySelector(".hpa-plot-axis-label") : null;
+    const liveAxisTick = dom.plot ? dom.plot.querySelector(".hpa-plot-axis-tick") : null;
+    const liveFrame = dom.plot ? dom.plot.querySelector(".hpa-plot-frame") : null;
+    const liveLegendText = dom.plot ? dom.plot.querySelector(".hpa-plot-legend-group text") : null;
+    const liveRefLine = dom.plot ? dom.plot.querySelector(".hpa-plot-ref-line") : null;
+    const liveLowConfidenceLine = dom.plot ? dom.plot.querySelector(".hpa-plot-line-diffusion-edge, .hpa-plot-line-diffusion-hidden") : null;
     const lowConfidenceMode = dom.lowConfidence && dom.lowConfidence.value ? dom.lowConfidence.value : state.plotLowConfidenceMode;
     const rootStyle = getComputedStyle(document.documentElement);
-    const bg = readStyleValue(liveFrame, "fill", rootStyle.getPropertyValue("--mda-plot-bg").trim() || "#ffffff");
-    const border = readStyleValue(liveFrame, "stroke", rootStyle.getPropertyValue("--mda-plot-border").trim() || "#cfd8e3");
-    const grid = readStyleValue(liveGridMajor || liveGridMinor, "stroke", rootStyle.getPropertyValue("--mda-plot-grid").trim() || "#e2e8f0");
+    const bg = readStyleValue(liveFrame, "fill", rootStyle.getPropertyValue("--hpa-plot-bg").trim() || "#ffffff");
+    const border = readStyleValue(liveFrame, "stroke", rootStyle.getPropertyValue("--hpa-plot-border").trim() || "#cfd8e3");
+    const grid = readStyleValue(liveGridMajor || liveGridMinor, "stroke", rootStyle.getPropertyValue("--hpa-plot-grid").trim() || "#e2e8f0");
     const currentColor = readStyleValue(liveCurrentLine, "stroke", "#2563eb");
     const diffusionColor = readStyleValue(liveDiffusionLine, "stroke", "#111111");
-    const diffusionEdgeColor = readStyleValue(liveLowConfidenceLine, "stroke", rootStyle.getPropertyValue("--mda-plot-diffusion-edge").trim() || "#111111");
-    const ink = readStyleValue(liveLegendText || liveAxisLabel, "fill", rootStyle.getPropertyValue("--mda-plot-ink").trim() || "#111827");
-    const muted = readStyleValue(liveAxisTick, "stroke", rootStyle.getPropertyValue("--mda-plot-muted").trim() || "#4b5563");
+    const diffusionEdgeColor = readStyleValue(liveLowConfidenceLine, "stroke", rootStyle.getPropertyValue("--hpa-plot-diffusion-edge").trim() || "#111111");
+    const ink = readStyleValue(liveLegendText || liveAxisLabel, "fill", rootStyle.getPropertyValue("--hpa-plot-ink").trim() || "#111827");
+    const muted = readStyleValue(liveAxisTick, "stroke", rootStyle.getPropertyValue("--hpa-plot-muted").trim() || "#4b5563");
     const gridMajorWidth = readStyleValue(liveGridMajor, "stroke-width", "0.8");
     const gridMajorOpacity = readStyleValue(liveGridMajor, "opacity", "0.95");
     const gridMinorWidth = readStyleValue(liveGridMinor, "stroke-width", "0.6");
@@ -3505,37 +3516,37 @@
     const refLineWidth = readStyleValue(liveRefLine, "stroke-width", "1");
     const frameWidth = readStyleValue(liveFrame, "stroke-width", "0.5");
     style.textContent = `
-      .mda-plot-grid{stroke:${grid};stroke-linecap:butt;fill:none;shape-rendering:crispEdges}
-      .mda-plot-grid-major{stroke-width:${gridMajorWidth};opacity:${gridMajorOpacity}}
-      .mda-plot-grid-minor{stroke-width:${gridMinorWidth};opacity:${gridMinorOpacity}${gridMinorDasharray ? `;stroke-dasharray:${gridMinorDasharray}` : ""}}
-      .mda-plot-line{fill:none;stroke-width:${lineWidth};stroke-linejoin:round;stroke-linecap:butt}
-      .mda-plot-line-current{stroke:${currentColor}}
-      .mda-plot-line-diffusion{stroke:${diffusionColor}}
-      .mda-plot-line-diffusion-edge{stroke:${diffusionEdgeColor};opacity:${lowConfidenceMode === "shaded" ? "0.45" : "1"}}
-      .mda-plot-line-diffusion-hidden{stroke:${diffusionEdgeColor};opacity:0}
-      .mda-plot-point{stroke:${bg};stroke-width:2}
-      .mda-plot-point-current{fill:${currentColor}}
-      .mda-plot-point-diffusion{fill:${diffusionColor}}
-      .mda-plot-axis-label,.mda-plot-value,.mda-plot-note,.mda-plot-ref-label,.mda-plot-legend-group{font-family:Arial,"Segoe UI",sans-serif}
-      .mda-plot-axis-label,.mda-plot-value,.mda-plot-note{font-size:11px;font-weight:400}
-      .mda-plot-axis-label tspan{font-family:inherit}
-      .mda-plot-legend-group{font-size:10.5px;font-weight:400}
-      .mda-plot-legend-group text{fill:${ink};font-weight:400}
-      .mda-plot-legend-low-confidence-line{stroke:${diffusionEdgeColor};opacity:0.45}
-      .mda-plot-legend-diffusion .mda-plot-legend-line{stroke:${diffusionColor}}
-      .mda-plot-legend-current .mda-plot-legend-line{stroke:${currentColor}}
-      .mda-plot-ref-hitline{stroke:transparent;stroke-width:14;fill:none}
-      .mda-plot-axis-left,.mda-plot-value-diffusion{fill:${diffusionColor}}
-      .mda-plot-axis-right,.mda-plot-value-current{fill:${currentColor}}
-      .mda-plot-note{fill:${muted}}
-      .mda-plot-ref-line{stroke:${ink};fill:none}
-      .mda-plot-ref-label{fill:${ink}}
-      .mda-plot-ref-line{stroke-width:${refLineWidth};stroke-linecap:butt}
-      .mda-plot-ref-handle{stroke:${bg};stroke-width:2}
-      .mda-plot-ref-label{font-size:10px;font-weight:400;paint-order:normal;stroke:none}
-      .mda-plot-frame{fill:${bg};stroke:${border};stroke-width:${frameWidth};pointer-events:none}
-      .mda-plot-axis-tick{stroke:${muted};stroke-width:1;fill:none;shape-rendering:crispEdges}
-      .mda-plot-axis-tick-minor{stroke-width:0.75;opacity:0.8}
+      .hpa-plot-grid{stroke:${grid};stroke-linecap:butt;fill:none;shape-rendering:crispEdges}
+      .hpa-plot-grid-major{stroke-width:${gridMajorWidth};opacity:${gridMajorOpacity}}
+      .hpa-plot-grid-minor{stroke-width:${gridMinorWidth};opacity:${gridMinorOpacity}${gridMinorDasharray ? `;stroke-dasharray:${gridMinorDasharray}` : ""}}
+      .hpa-plot-line{fill:none;stroke-width:${lineWidth};stroke-linejoin:round;stroke-linecap:butt}
+      .hpa-plot-line-current{stroke:${currentColor}}
+      .hpa-plot-line-diffusion{stroke:${diffusionColor}}
+      .hpa-plot-line-diffusion-edge{stroke:${diffusionEdgeColor};opacity:${lowConfidenceMode === "shaded" ? "0.45" : "1"}}
+      .hpa-plot-line-diffusion-hidden{stroke:${diffusionEdgeColor};opacity:0}
+      .hpa-plot-point{stroke:${bg};stroke-width:2}
+      .hpa-plot-point-current{fill:${currentColor}}
+      .hpa-plot-point-diffusion{fill:${diffusionColor}}
+      .hpa-plot-axis-label,.hpa-plot-value,.hpa-plot-note,.hpa-plot-ref-label,.hpa-plot-legend-group{font-family:Arial,"Segoe UI",sans-serif}
+      .hpa-plot-axis-label,.hpa-plot-value,.hpa-plot-note{font-size:11px;font-weight:400}
+      .hpa-plot-axis-label tspan{font-family:inherit}
+      .hpa-plot-legend-group{font-size:10.5px;font-weight:400}
+      .hpa-plot-legend-group text{fill:${ink};font-weight:400}
+      .hpa-plot-legend-low-confidence-line{stroke:${diffusionEdgeColor};opacity:0.45}
+      .hpa-plot-legend-diffusion .hpa-plot-legend-line{stroke:${diffusionColor}}
+      .hpa-plot-legend-current .hpa-plot-legend-line{stroke:${currentColor}}
+      .hpa-plot-ref-hitline{stroke:transparent;stroke-width:14;fill:none}
+      .hpa-plot-axis-left,.hpa-plot-value-diffusion{fill:${diffusionColor}}
+      .hpa-plot-axis-right,.hpa-plot-value-current{fill:${currentColor}}
+      .hpa-plot-note{fill:${muted}}
+      .hpa-plot-ref-line{stroke:${ink};fill:none}
+      .hpa-plot-ref-label{fill:${ink}}
+      .hpa-plot-ref-line{stroke-width:${refLineWidth};stroke-linecap:butt}
+      .hpa-plot-ref-handle{stroke:${bg};stroke-width:2}
+      .hpa-plot-ref-label{font-size:10px;font-weight:400;paint-order:normal;stroke:none}
+      .hpa-plot-frame{fill:${bg};stroke:${border};stroke-width:${frameWidth};pointer-events:none}
+      .hpa-plot-axis-tick{stroke:${muted};stroke-width:1;fill:none;shape-rendering:crispEdges}
+      .hpa-plot-axis-tick-minor{stroke-width:0.75;opacity:0.8}
     `;
     clone.insertBefore(style, clone.firstChild);
     return new XMLSerializer().serializeToString(clone);
