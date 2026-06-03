@@ -357,6 +357,65 @@ header .mda-header-brand-text {
   gap: 1rem;
 }
 
+.mda-results-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.mda-result-card {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+  padding: 0.8rem 0.9rem 0.85rem;
+  min-width: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.mda-result-card h3 {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.2;
+}
+
+.mda-result-value {
+  font-size: 1.02rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.mda-result-unit {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.mda-result-meta,
+.mda-result-note {
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.mda-result-note {
+  color: color-mix(in srgb, #475569 72%, var(--muted));
+}
+
+@media (max-width: 1180px) {
+  .mda-results-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .mda-results-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .mda-stage-header {
   display: flex;
   align-items: center;
@@ -374,7 +433,8 @@ header .mda-header-brand-text {
   margin-left: auto;
 }
 
-.mda-stage-controls > .mda-button {
+.mda-stage-controls > .mda-button,
+.mda-stage-controls > .mda-tool-panel > summary {
   border-radius: 999px;
   padding: 0 10px;
   height: 30px;
@@ -405,19 +465,14 @@ header .mda-header-brand-text {
 .mda-tool-panel summary {
   list-style: none;
   cursor: pointer;
-  padding: 0 10px;
   font: inherit;
   font-weight: 600;
-  font-size: 0.86rem;
   color: var(--ink);
   display: flex;
   align-items: center;
   gap: 0.4rem;
   justify-content: center;
   line-height: 1;
-  height: 30px;
-  box-sizing: border-box;
-  border-radius: 999px;
   border: 1px solid var(--line);
   background: var(--panel-strong);
   box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
@@ -430,14 +485,7 @@ header .mda-header-brand-text {
 }
 
 .mda-tool-panel[open] summary {
-  background: color-mix(in srgb, var(--panel-strong) 92%, var(--panel));
-}
-
-.mda-tool-panel:not(.is-accent):hover:not([open]) summary {
-  background: var(--panel);
-  border-color: color-mix(in srgb, var(--line) 75%, var(--ink));
-  color: var(--ink);
-  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+  background: var(--panel-strong);
 }
 
 .mda-tool-panel.is-accent[open] summary {
@@ -445,8 +493,9 @@ header .mda-header-brand-text {
   color: #fff;
 }
 
-.mda-tool-panel.is-accent:hover:not([open]) summary {
-  background: color-mix(in srgb, var(--accent) 85%, #000);
+.mda-tool-panel.is-accent summary:hover,
+.mda-tool-panel.is-accent summary:focus-visible {
+  background: color-mix(in srgb, var(--accent) 85%, #000) !important;
   color: #fff;
 }
 
@@ -455,7 +504,7 @@ header .mda-header-brand-text {
   top: calc(100% + 8px);
   left: 0;
   right: auto;
-  width: fit-content;
+  width: max-content;
   min-width: 0;
   max-width: calc(100vw - 2rem);
   display: inline-flex;
@@ -490,6 +539,18 @@ header .mda-header-brand-text {
 
 .mda-tool-panel .mda-button {
   padding: 5px 10px;
+}
+
+.mda-tool-panel-body > .mda-control {
+  min-width: 220px;
+}
+
+.mda-tool-panel-body .mda-reference-row {
+  min-width: 290px;
+}
+
+.mda-tool-panel .mda-export-row {
+  min-width: 0;
 }
 
 .mda-inline-details {

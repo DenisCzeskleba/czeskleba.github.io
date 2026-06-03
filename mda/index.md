@@ -82,7 +82,7 @@ permalink: /mda/
         <div class="mda-stage-controls">
           <button type="button" class="mda-button is-secondary" id="mda-reset-plot" title="Reset the preview plot zoom and pan.">Reset</button>
           <details class="mda-tool-panel is-accent">
-            <summary>Plot Options</summary>
+            <summary class="mda-button is-accent">Plot Options</summary>
             <div class="mda-tool-panel-body">
               <div class="mda-control">
                 <label for="mda-plot-unit" title="Choose the unit shown on the plot and data preview.">Y-axis unit</label>
@@ -97,10 +97,14 @@ permalink: /mda/
                 <input type="checkbox" id="mda-grid-toggle" checked />
                 <span>Grid lines</span>
               </label>
+              <label class="mda-inline-checkbox" title="Toggle the left diffusion axis between linear and logarithmic scaling.">
+                <input type="checkbox" id="mda-diffusion-scale" />
+                <span>Log left axis</span>
+              </label>
             </div>
           </details>
           <details class="mda-tool-panel">
-            <summary>Reference Currents</summary>
+            <summary class="mda-button is-secondary">Reference Currents</summary>
             <div class="mda-tool-panel-body">
               <div class="mda-reference-row">
                 <div class="mda-control">
@@ -119,7 +123,7 @@ permalink: /mda/
             </div>
           </details>
           <details class="mda-tool-panel">
-            <summary>Export</summary>
+            <summary class="mda-button is-secondary">Export</summary>
             <div class="mda-tool-panel-body">
               <div class="mda-export-row">
                 <button type="button" class="mda-button is-secondary" data-download="png">PNG</button>
@@ -131,12 +135,39 @@ permalink: /mda/
         </div>
       </div>
 
-      <div class="mda-plot-card">
-        <div id="mda-plot" class="mda-plot" aria-label="Preview plot"></div>
-      </div>
+        <div class="mda-plot-card">
+          <div id="mda-plot" class="mda-plot" aria-label="Preview plot"></div>
+        </div>
 
-      <details class="mda-preview-details">
-        <summary>Data preview</summary>
+        <div class="mda-results-grid" aria-label="Classical diffusion results">
+          <article class="mda-result-card">
+            <h3>Breakthrough</h3>
+            <div class="mda-result-value" id="mda-breakthrough-value">—</div>
+            <div class="mda-result-meta" id="mda-breakthrough-time">Load data to calculate breakthrough time.</div>
+            <div class="mda-result-note" id="mda-breakthrough-note"></div>
+          </article>
+          <article class="mda-result-card">
+            <h3>Time lag</h3>
+            <div class="mda-result-value" id="mda-lag-value">—</div>
+            <div class="mda-result-meta" id="mda-lag-time">Load data to calculate time lag.</div>
+            <div class="mda-result-note" id="mda-lag-note"></div>
+          </article>
+          <article class="mda-result-card">
+            <h3>Inflection point</h3>
+            <div class="mda-result-value" id="mda-inflection-value">—</div>
+            <div class="mda-result-meta" id="mda-inflection-time">Load data to calculate the inflection point.</div>
+            <div class="mda-result-note" id="mda-inflection-note"></div>
+          </article>
+          <article class="mda-result-card">
+            <h3>D<sub>app</sub> plateau</h3>
+            <div class="mda-result-value" id="mda-plateau-value">—</div>
+            <div class="mda-result-meta" id="mda-plateau-time">Load data to estimate the stabilized inverse plateau.</div>
+            <div class="mda-result-note" id="mda-plateau-note"></div>
+          </article>
+        </div>
+
+        <details class="mda-preview-details">
+          <summary>Data preview</summary>
         <div class="mda-preview-wrap" aria-live="polite">
           <table class="mda-preview-table" aria-label="Parsed data preview">
             <thead>
@@ -144,7 +175,7 @@ permalink: /mda/
                 <th>#</th>
                 <th>Time [s]</th>
                 <th>Current</th>
-                      <th>Apparent Diffusion Coefficient D<sub>app</sub> [mmÂ²/s]</th>
+                      <th>Apparent Diffusion Coefficient D<sub>app</sub> [mm&sup2;/s]</th>
               </tr>
             </thead>
             <tbody id="mda-preview-body">
@@ -180,14 +211,17 @@ permalink: /mda/
         </ul>
       </div>
 
-      <div>
-        <h3>Controls</h3>
-        <ul class="mda-help-list">
-          <li>Use the current unit and membrane thickness controls to keep the experimental metadata attached to the file.</li>
-          <li>Set the baseline and steady-state values above the plot. Use the adjacent button to show or hide each marker line, and drag the marker when it is visible.</li>
-          <li>Use Plot Options to change display units or grid visibility.</li>
-        </ul>
-      </div>
+        <div>
+          <h3>Controls</h3>
+          <ul class="mda-help-list">
+            <li>Use the current unit and membrane thickness controls to keep the experimental metadata attached to the file.</li>
+            <li>Set the baseline and steady-state values above the plot. Use the adjacent button to show or hide each marker line, and drag the marker when it is visible.</li>
+            <li>Use Plot Options to change display units or grid visibility.</li>
+            <li>Breakthrough time uses the first point where the normalized curve reaches 10% of steady state: D = L&sup2; / (15.3 t<sub>b</sub>).</li>
+            <li>Time lag uses the point where the normalized curve reaches 63% of steady state: D = L&sup2; / (6 t<sub>lag</sub>).</li>
+            <li>Inflection-point diffusivity uses the peak slope of the normalized curve: D = 0.924 L&sup2; / (&pi;&sup2; t<sub>i</sub>).</li>
+          </ul>
+        </div>
 
       <div>
         <h3>What you get</h3>

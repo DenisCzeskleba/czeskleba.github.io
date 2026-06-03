@@ -26,6 +26,7 @@
     currentParse: null,
     currentAnalysis: null,
     referenceVisibility: { baseline: true, steady: true },
+    plotDiffusionScale: "linear",
     dragReference: null,
     dragPlot: null,
     plotViewport: null,
@@ -53,22 +54,37 @@
       cropRange: document.getElementById("mda-crop-range"),
       decimal: document.getElementById("mda-decimal"),
       plotUnit: document.getElementById("mda-plot-unit"),
+      diffusionScale: document.getElementById("mda-diffusion-scale"),
       gridToggle: document.getElementById("mda-grid-toggle"),
       resetPlot: document.getElementById("mda-reset-plot"),
       status: document.getElementById("mda-status"),
-      issues: document.getElementById("mda-issues"),
-      previewBody: document.getElementById("mda-preview-body"),
-      plot: document.getElementById("mda-plot"),
-      helpDrawer: document.getElementById("mda-help-drawer"),
-      helpOpenButtons: root.querySelectorAll("[data-action='open-help']"),
-      helpCloseButtons: document.querySelectorAll("[data-action='close-help']"),
-      downloadButtons: root.querySelectorAll("[data-download]"),
-      clearButton: document.getElementById("mda-clear"),
+        issues: document.getElementById("mda-issues"),
+        previewBody: document.getElementById("mda-preview-body"),
+        plot: document.getElementById("mda-plot"),
+        breakthroughValue: document.getElementById("mda-breakthrough-value"),
+        breakthroughTime: document.getElementById("mda-breakthrough-time"),
+        breakthroughNote: document.getElementById("mda-breakthrough-note"),
+        lagValue: document.getElementById("mda-lag-value"),
+        lagTime: document.getElementById("mda-lag-time"),
+        lagNote: document.getElementById("mda-lag-note"),
+        inflectionValue: document.getElementById("mda-inflection-value"),
+        inflectionTime: document.getElementById("mda-inflection-time"),
+        inflectionNote: document.getElementById("mda-inflection-note"),
+        plateauValue: document.getElementById("mda-plateau-value"),
+        plateauTime: document.getElementById("mda-plateau-time"),
+        plateauNote: document.getElementById("mda-plateau-note"),
+        helpDrawer: document.getElementById("mda-help-drawer"),
+        helpOpenButtons: root.querySelectorAll("[data-action='open-help']"),
+        helpCloseButtons: document.querySelectorAll("[data-action='close-help']"),
+        downloadButtons: root.querySelectorAll("[data-download]"),
+        clearButton: document.getElementById("mda-clear"),
     };
 
     if (!dom.input || !dom.file || !dom.decimal || !dom.status || !dom.issues || !dom.previewBody || !dom.plot) {
       return;
     }
+
+    state.plotDiffusionScale = dom.diffusionScale && dom.diffusionScale.checked ? "log" : "linear";
 
     dom.helpOpenButtons.forEach((button) => {
       button.addEventListener("click", () => openDrawer(dom.helpDrawer));
@@ -128,19 +144,34 @@
     if (dom.gridToggle) {
       dom.gridToggle.addEventListener("change", () => renderDerivedViews(dom));
     }
+    if (dom.diffusionScale) {
+      dom.diffusionScale.addEventListener("change", () => {
+        state.plotDiffusionScale = dom.diffusionScale.checked ? "log" : "linear";
+        state.plotViewport = null;
+        renderDerivedViews(dom);
+      });
+    }
     if (dom.resetPlot) {
       dom.resetPlot.addEventListener("click", () => {
         state.plotViewport = null;
         renderDerivedViews(dom);
       });
     }
-    const stagePanels = root.querySelectorAll(".mda-stage-controls .mda-tool-panel");
-    stagePanels.forEach((panel) => {
-      panel.addEventListener("toggle", () => {
-        if (!panel.open) return;
-        stagePanels.forEach((other) => {
-          if (other !== panel) other.open = false;
-        });
+      const stagePanels = root.querySelectorAll(".mda-stage-controls .mda-tool-panel");
+      stagePanels.forEach((panel) => {
+        const summary = panel.querySelector("summary");
+        if (summary) {
+          const setHover = (value) => panel.classList.toggle("is-hovered", value);
+          summary.addEventListener("pointerenter", () => setHover(true));
+          summary.addEventListener("pointerleave", () => setHover(false));
+          summary.addEventListener("focus", () => setHover(true));
+          summary.addEventListener("blur", () => setHover(false));
+        }
+        panel.addEventListener("toggle", () => {
+          if (!panel.open) return;
+          stagePanels.forEach((other) => {
+            if (other !== panel) other.open = false;
+          });
         requestAnimationFrame(() => positionStagePanels(dom));
       });
     });
@@ -176,6 +207,8 @@
         if (dom.currentUnit) dom.currentUnit.value = "A";
         if (dom.plotUnit) dom.plotUnit.value = "uA";
         if (dom.gridToggle) dom.gridToggle.checked = true;
+        state.plotDiffusionScale = "linear";
+        if (dom.diffusionScale) dom.diffusionScale.checked = false;
         if (dom.baselineValue) dom.baselineValue.value = "";
         if (dom.steadyValue) dom.steadyValue.value = "";
         if (dom.thickness) dom.thickness.value = "0.50";
@@ -353,7 +386,7 @@
 
   function startPlotPan(dom, event, svg) {
     if (!state.currentAnalysis || !state.currentAnalysis.rows || !state.currentAnalysis.rows.length) return;
-    const ranges = getPlotRanges(state.currentAnalysis, dom.currentUnit ? dom.currentUnit.value : "A", getDisplayUnit(dom));
+    const ranges = getPlotRanges(state.currentAnalysis, dom.currentUnit ? dom.currentUnit.value : "A", getDisplayUnit(dom), state.plotDiffusionScale);
     state.dragPlot = {
       pointerId: event.pointerId,
       svg,
@@ -375,7 +408,7 @@
     if (!state.currentAnalysis || !state.currentAnalysis.rows || !state.currentAnalysis.rows.length) return;
     const svg = getPlotSvg(dom, event);
     if (!svg) return;
-    const ranges = getPlotRanges(state.currentAnalysis, dom.currentUnit ? dom.currentUnit.value : "A", getDisplayUnit(dom));
+    const ranges = getPlotRanges(state.currentAnalysis, dom.currentUnit ? dom.currentUnit.value : "A", getDisplayUnit(dom), state.plotDiffusionScale);
     const point = pointerToDataPoint(event, svg, ranges);
     if (!point) return;
 
@@ -444,9 +477,11 @@
     return { xMin, xMax, yMin, yMax };
   }
 
-  function getPlotRanges(analysis, inputUnit, displayUnit) {
+  function getPlotRanges(analysis, inputUnit, displayUnit, diffusionScaleMode) {
     const currentRanges = getCurrentPlotRanges(analysis, inputUnit, displayUnit);
-    const diffusionRanges = getDiffusionPlotRanges(analysis);
+    const diffusionBaseRanges = getDiffusionBaseRanges(analysis);
+    const diffusionAxis = getDiffusionAxisScale(diffusionBaseRanges);
+    const diffusionRanges = getDiffusionPlotRanges(analysis, diffusionScaleMode, diffusionAxis.factor);
     return {
       xMin: currentRanges.xMin,
       xMax: currentRanges.xMax,
@@ -457,15 +492,37 @@
     };
   }
 
-  function getDiffusionPlotRanges(analysis) {
+  function getDiffusionBaseRanges(analysis, factor) {
     const rows = analysis && analysis.previewRows ? analysis.previewRows : [];
     const points = rows
-      .map((row) => ({ x: row.time, y: row.diffusivity }))
+      .map((row) => ({ x: row.time, y: convertDiffusivityToDisplay(row.diffusivity) }))
       .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
     if (!points.length) {
       return { xMin: 0, xMax: 1, yMin: 0, yMax: 1 };
     }
-    const base = getBasePlotRanges(points);
+    const safeFactor = Number.isFinite(factor) && factor !== 0 ? factor : 1;
+    const scaledPoints = points.map((point) => ({ x: point.x, y: point.y / safeFactor }));
+    return getBasePlotRanges(scaledPoints);
+  }
+
+  function getDiffusionPlotRanges(analysis, scaleMode, factor) {
+    const rows = analysis && analysis.previewRows ? analysis.previewRows : [];
+    const points = rows
+      .map((row) => ({ x: row.time, y: convertDiffusivityToDisplay(row.diffusivity) }))
+      .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
+    if (!points.length) {
+      return { xMin: 0, xMax: 1, yMin: 0, yMax: 1 };
+    }
+    const safeFactor = Number.isFinite(factor) && factor !== 0 ? factor : 1;
+    const scaledPoints = points.map((point) => ({ x: point.x, y: point.y / safeFactor }));
+    const preparedPoints =
+      scaleMode === "log"
+        ? scaledPoints.filter((point) => point.y > 0).map((point) => ({ x: point.x, y: Math.log10(point.y) }))
+        : scaledPoints;
+    if (!preparedPoints.length) {
+      return { xMin: 0, xMax: 1, yMin: 0, yMax: 1 };
+    }
+    const base = getBasePlotRanges(preparedPoints);
     if (!state.plotViewport) {
       return base;
     }
@@ -872,15 +929,28 @@
     }
 
     const solveDeadline = performance.now() + SOLVER_POLICY.timeoutMs;
-    const previewRows = rows.map((row) => ({
-      ...row,
-      currentDisplay: convertCurrentValue(row.current, inputUnit, displayUnit),
-      normalized: normalizedAvailable ? (row.current - baseline.value) / denom : null,
-      diffusivity:
-        normalizedAvailable && thicknessMm != null
-          ? solveApparentDiffusivity((row.current - baseline.value) / denom, row.time, thicknessMm / 1000, solveDeadline)
-          : null,
-    }));
+    let outOfRangeCount = 0;
+    const normalizedEpsilon = 1e-9;
+    const previewRows = rows.map((row) => {
+      const normalized = normalizedAvailable ? (row.current - baseline.value) / denom : null;
+      const normalizedInRange =
+        Number.isFinite(normalized) && normalized >= -normalizedEpsilon && normalized <= 1 + normalizedEpsilon;
+      const diffusivity =
+        normalizedAvailable && thicknessMm != null && normalizedInRange
+          ? solveApparentDiffusivity(normalized, row.time, thicknessMm / 1000, solveDeadline)
+          : null;
+      if (normalizedAvailable && Number.isFinite(normalized) && !normalizedInRange) {
+        outOfRangeCount += 1;
+      }
+      return {
+        ...row,
+        currentDisplay: convertCurrentValue(row.current, inputUnit, displayUnit),
+        normalized,
+        diffusivity,
+      };
+    });
+
+    const classical = normalizedAvailable && thicknessMm != null ? buildClassicalResults(previewRows, thicknessMm) : buildEmptyClassicalResults();
 
     for (let i = 1; i < rows.length; i += 1) {
       if (rows[i].time <= rows[i - 1].time) {
@@ -890,28 +960,33 @@
     }
 
     if (normalizedAvailable) {
-      const outsideRange = previewRows.filter(
-        (row) => Number.isFinite(row.normalized) && (row.normalized < -0.25 || row.normalized > 1.25),
-      );
-      if (outsideRange.length) {
-        notes.push("Normalized values extend outside the expected 0 to 1 range.");
+      if (outOfRangeCount) {
+        notes.push("Some normalized values fall outside the physical 0 to 1 range. D_app is omitted for those rows.");
+      } else {
+        const outsideRange = previewRows.filter(
+          (row) => Number.isFinite(row.normalized) && (row.normalized < -0.25 || row.normalized > 1.25),
+        );
+        if (outsideRange.length) {
+          notes.push("Normalized values extend outside the expected 0 to 1 range.");
+        }
       }
     }
 
     return {
       rows,
       previewRows,
-      baseline,
-      steady,
-      thicknessMm,
-      normalizedAvailable,
-      issues,
-      notes,
-    };
-  }
+        baseline,
+        steady,
+        thicknessMm,
+        normalizedAvailable,
+        classical,
+        issues,
+        notes,
+      };
+    }
 
-  function renderParsed(dom, config, analysis) {
-    setStatus(dom, "Loaded data.", "ok");
+    function renderParsed(dom, config, analysis) {
+      setStatus(dom, "Loaded data.", "ok");
 
     const warnings = [];
     if (config.headerLikely) {
@@ -920,22 +995,24 @@
     warnings.push(...analysis.notes);
     setIssues(dom, dedupe([...warnings, ...analysis.issues]).filter(Boolean));
 
-    syncReferenceControls(dom, analysis);
-    updateSummary(dom, analysis);
-    renderPreview(dom, analysis);
-    renderPlot(dom, analysis);
-  }
+      syncReferenceControls(dom, analysis);
+      updateSummary(dom, analysis);
+      renderResults(dom, analysis);
+      renderPreview(dom, analysis);
+      renderPlot(dom, analysis);
+    }
 
   function renderDerivedViews(dom) {
     if (!state.currentAnalysis || !state.currentParse) {
       renderEmpty(dom, "Paste data to begin.");
       return;
+      }
+      syncReferenceControls(dom, state.currentAnalysis);
+      updateSummary(dom, state.currentAnalysis);
+      renderResults(dom, state.currentAnalysis);
+      renderPreview(dom, state.currentAnalysis);
+      renderPlot(dom, state.currentAnalysis);
     }
-    syncReferenceControls(dom, state.currentAnalysis);
-    updateSummary(dom, state.currentAnalysis);
-    renderPreview(dom, state.currentAnalysis);
-    renderPlot(dom, state.currentAnalysis);
-  }
 
   function syncReferenceControls(dom, analysis) {
     const baselineValue = analysis && analysis.baseline && Number.isFinite(analysis.baseline.value) ? analysis.baseline.value : null;
@@ -967,8 +1044,44 @@
     void analysis;
   }
 
+  function buildLogTicks(min, max) {
+    if (!Number.isFinite(min) || !Number.isFinite(max)) return [];
+    if (min === max) return [min];
+    const minExp = Math.floor(min);
+    const maxExp = Math.ceil(max);
+    const ticks = [];
+    for (let exponent = minExp; exponent <= maxExp; exponent += 1) {
+      ticks.push(exponent);
+    }
+    return ticks;
+  }
+
+  function renderResults(dom, analysis) {
+    const empty = buildEmptyClassicalResults();
+    const classical = analysis && analysis.classical ? analysis.classical : empty;
+
+    setResultCard(dom.breakthroughValue, dom.breakthroughTime, dom.breakthroughNote, classical.breakthrough, "Breakthrough");
+    setResultCard(dom.lagValue, dom.lagTime, dom.lagNote, classical.timeLag, "Time lag");
+    setResultCard(dom.inflectionValue, dom.inflectionTime, dom.inflectionNote, classical.inflection, "Inflection");
+    setResultCard(dom.plateauValue, dom.plateauTime, dom.plateauNote, classical.plateau, "Plateau");
+  }
+
+  function setResultCard(valueNode, timeNode, noteNode, result, label) {
+    if (!valueNode || !timeNode || !noteNode) return;
+    if (!result || !result.available) {
+      valueNode.textContent = "—";
+      timeNode.textContent = "No stable value";
+      noteNode.textContent = result && result.note ? result.note : `Unable to compute ${label.toLowerCase()}.`;
+      return;
+    }
+
+    valueNode.innerHTML = `${escapeHtml(formatDiffusivity(result.diffusivity))} <span class="mda-result-unit">mm&sup2;/s</span>`;
+    timeNode.textContent = result.timeText || "—";
+    noteNode.textContent = result.note || "";
+  }
+
   function renderPreview(dom, analysis) {
-    const previewRows = (analysis && analysis.previewRows ? analysis.previewRows : []).slice(0, 8);
+    const previewRows = analysis && analysis.previewRows ? analysis.previewRows : [];
     if (!previewRows.length) {
       renderEmptyTable(dom);
       return;
@@ -980,7 +1093,7 @@
         const currentCell = Number.isFinite(row.currentDisplay)
           ? formatNumber(row.currentDisplay)
           : formatNumber(convertCurrentValue(row.current, dom.currentUnit ? dom.currentUnit.value : "A", getDisplayUnit(dom)));
-        const diffusivityCell = Number.isFinite(row.diffusivity) ? formatPlotNumber(row.diffusivity) : "&mdash;";
+        const diffusivityCell = Number.isFinite(row.diffusivity) ? formatDiffusivity(row.diffusivity) : "&mdash;";
         return `
           <tr>
             <td>${index + 1}</td>
@@ -994,9 +1107,215 @@
 
     const table = dom.previewBody.closest("table");
     const headerCells = table ? table.querySelectorAll("thead th") : null;
-    if (headerCells && headerCells[2]) {
-      headerCells[2].textContent = `Current [${unitLabel}]`;
+      if (headerCells && headerCells[2]) {
+        headerCells[2].textContent = `Current [${unitLabel}]`;
+      }
     }
+
+    function buildClassicalResults(previewRows, thicknessMm) {
+      const thicknessMeters = thicknessMm / 1000;
+      const rows = (previewRows || [])
+        .map((row) => ({
+          time: row.time,
+          normalized: row.normalized,
+          diffusivity: row.diffusivity,
+        }))
+        .filter((row) => Number.isFinite(row.time) && Number.isFinite(row.normalized))
+        .sort((a, b) => a.time - b.time);
+
+      const breakthrough = solveThresholdMethod(rows, thicknessMeters, 0.1, 15.3, "Breakthrough (10%)");
+      const timeLag = solveThresholdMethod(rows, thicknessMeters, 0.63, 6, "Time lag (63%)");
+      const inflection = solveInflectionMethod(rows, thicknessMeters);
+      const plateau = solveDiffusionPlateau(previewRows, thicknessMeters);
+
+      return { breakthrough, timeLag, inflection, plateau };
+    }
+
+    function buildEmptyClassicalResults() {
+      return {
+        breakthrough: { available: false, note: "Load data to calculate breakthrough time." },
+        timeLag: { available: false, note: "Load data to calculate time lag." },
+        inflection: { available: false, note: "Load data to calculate the inflection point." },
+        plateau: { available: false, note: "Load data to estimate the stabilized inverse plateau." },
+      };
+    }
+
+    function solveThresholdMethod(rows, thicknessMeters, threshold, coefficient, label) {
+      const crossing = findCrossingTime(rows, threshold);
+      if (!crossing) {
+        return {
+          available: false,
+          note: `${label} not found in the normalized curve.`,
+        };
+      }
+      const diffusivity = (thicknessMeters * thicknessMeters) / (coefficient * crossing.time);
+      return {
+        available: Number.isFinite(diffusivity) && diffusivity > 0,
+        diffusivity,
+        timeText: `${label}: t = ${formatNumber(crossing.time)} s`,
+        note: `${label} threshold ${Math.round(threshold * 100)}%.`,
+      };
+    }
+
+    function solveInflectionMethod(rows, thicknessMeters) {
+      const inflection = findInflectionTime(rows);
+      if (!inflection) {
+        return {
+          available: false,
+          note: "No clear inflection point could be detected.",
+        };
+      }
+      const diffusivity = (0.924 * thicknessMeters * thicknessMeters) / (Math.PI * Math.PI * inflection.time);
+      return {
+        available: Number.isFinite(diffusivity) && diffusivity > 0,
+        diffusivity,
+        timeText: `t = ${formatNumber(inflection.time)} s`,
+        note: "Inflection-point estimate from the maximum slope of the normalized curve.",
+      };
+    }
+
+    function solveDiffusionPlateau(previewRows, thicknessMeters) {
+      const points = (previewRows || [])
+        .map((row) => ({ time: row.time, diffusivity: row.diffusivity, normalized: row.normalized }))
+        .filter((row) => Number.isFinite(row.time) && Number.isFinite(row.diffusivity) && Number.isFinite(row.normalized))
+        .sort((a, b) => a.time - b.time);
+      if (points.length < 5) {
+        return { available: false, note: "Not enough inverse-solve points to judge a plateau." };
+      }
+
+      const window = chooseStableWindow(points);
+      if (!window) {
+        return { available: false, note: "No stable inverse-solve plateau found." };
+      }
+
+      const values = window.points.map((point) => point.diffusivity);
+      const medianValue = median(values);
+      if (!Number.isFinite(medianValue) || medianValue <= SOLVER_POLICY.dLower * 10 || medianValue >= SOLVER_POLICY.dUpper / 10) {
+        return {
+          available: false,
+          note: "Inverse-solve values are pinned near the numerical bounds, so no stable plateau is reported.",
+        };
+      }
+      const note = `Stable window from ${formatNumber(window.points[0].time)} to ${formatNumber(window.points[window.points.length - 1].time)} s.`;
+      void thicknessMeters;
+      return {
+        available: true,
+        diffusivity: medianValue,
+        timeText: `${window.points.length} points`,
+        note,
+      };
+    }
+
+    function chooseStableWindow(points) {
+      let best = null;
+      for (let windowSize = Math.min(points.length, 12); windowSize >= 5; windowSize -= 1) {
+        for (let start = 0; start <= points.length - windowSize; start += 1) {
+          const candidate = points.slice(start, start + windowSize);
+          const values = candidate.map((point) => point.diffusivity).filter((value) => Number.isFinite(value));
+          if (values.length < windowSize) continue;
+          const normalizedMedian = median(candidate.map((point) => point.normalized));
+          if (!Number.isFinite(normalizedMedian) || normalizedMedian <= 0.02 || normalizedMedian >= 0.98) {
+            continue;
+          }
+          const center = median(values);
+          const spread = iqr(values) / Math.max(Math.abs(center), Number.EPSILON);
+          const slope = Math.abs(linearSlope(candidate)) * Math.max(candidate[candidate.length - 1].time - candidate[0].time, 1) / Math.max(Math.abs(center), Number.EPSILON);
+          if (spread > 0.12 || slope > 0.12) continue;
+          const score = spread + slope + Math.abs(normalizedMedian - 0.5) * 0.15;
+          if (!best || score < best.score) {
+            best = { points: candidate, score };
+          }
+        }
+      }
+      return best;
+    }
+
+    function findCrossingTime(rows, threshold) {
+      if (!rows.length) return null;
+      const first = rows[0];
+      if (Number.isFinite(first.normalized) && first.normalized >= threshold) {
+        return { time: first.time, normalized: first.normalized };
+      }
+      for (let i = 1; i < rows.length; i += 1) {
+        const prev = rows[i - 1];
+        const curr = rows[i];
+        if (!Number.isFinite(prev.normalized) || !Number.isFinite(curr.normalized)) continue;
+        if (prev.normalized === threshold) return { time: prev.time, normalized: prev.normalized };
+        if ((prev.normalized < threshold && curr.normalized >= threshold) || (prev.normalized > threshold && curr.normalized <= threshold)) {
+          const span = curr.normalized - prev.normalized;
+          if (span === 0) return { time: curr.time, normalized: curr.normalized };
+          const ratio = (threshold - prev.normalized) / span;
+          const time = prev.time + ratio * (curr.time - prev.time);
+          return { time, normalized: threshold };
+        }
+      }
+      return null;
+    }
+
+    function findInflectionTime(rows) {
+      if (rows.length < 3) return null;
+      let best = null;
+      for (let i = 1; i < rows.length - 1; i += 1) {
+        const prev = rows[i - 1];
+        const curr = rows[i];
+        const next = rows[i + 1];
+        const span = next.time - prev.time;
+        if (!Number.isFinite(prev.normalized) || !Number.isFinite(curr.normalized) || !Number.isFinite(next.normalized) || span <= 0) {
+          continue;
+        }
+        const slope = (next.normalized - prev.normalized) / span;
+        if (!best || slope > best.slope) {
+          best = { index: i, slope, time: curr.time };
+        }
+      }
+      if (!best) return null;
+      return { time: best.time, slope: best.slope };
+    }
+
+    function median(values) {
+      const filtered = values.filter((value) => Number.isFinite(value)).sort((a, b) => a - b);
+      if (!filtered.length) return null;
+      const mid = Math.floor(filtered.length / 2);
+      return filtered.length % 2 ? filtered[mid] : (filtered[mid - 1] + filtered[mid]) / 2;
+    }
+
+    function iqr(values) {
+      const filtered = values.filter((value) => Number.isFinite(value)).sort((a, b) => a - b);
+      if (filtered.length < 4) return 0;
+      const q1 = filtered[Math.floor((filtered.length - 1) * 0.25)];
+      const q3 = filtered[Math.floor((filtered.length - 1) * 0.75)];
+      return q3 - q1;
+    }
+
+    function linearSlope(points) {
+      const filtered = points.filter((point) => Number.isFinite(point.time) && Number.isFinite(point.diffusivity));
+      if (filtered.length < 2) return 0;
+      const n = filtered.length;
+      const meanX = filtered.reduce((sum, point) => sum + point.time, 0) / n;
+      const meanY = filtered.reduce((sum, point) => sum + point.diffusivity, 0) / n;
+      let numerator = 0;
+      let denominator = 0;
+      filtered.forEach((point) => {
+        const dx = point.time - meanX;
+        numerator += dx * (point.diffusivity - meanY);
+        denominator += dx * dx;
+      });
+      return denominator === 0 ? 0 : numerator / denominator;
+    }
+
+  function formatDiffusivity(value) {
+    if (!Number.isFinite(value)) return "—";
+    const mm2PerS = convertDiffusivityToDisplay(value);
+    const abs = Math.abs(mm2PerS);
+    if (abs >= 1000 || (abs > 0 && abs < 0.001)) {
+      return formatScientificTick(mm2PerS);
+    }
+    return formatNumber(mm2PerS);
+  }
+
+  function convertDiffusivityToDisplay(value) {
+    if (!Number.isFinite(value)) return null;
+    return value * 1e6;
   }
 
   function renderPlot(dom, analysis) {
@@ -1012,12 +1331,13 @@
     const displayUnit = getDisplayUnit(dom);
     const currentUnitLabel = formatUnitLabel(displayUnit);
     const showGrid = !dom.gridToggle || dom.gridToggle.checked;
+    const diffusionScaleMode = dom.diffusionScale && dom.diffusionScale.checked ? "log" : "linear";
 
     const currentPoints = rows
       .map((row) => ({ x: row.time, y: convertCurrentValue(row.current, inputUnit, displayUnit) }))
       .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
     const diffusionPoints = (analysis.previewRows || [])
-      .map((row) => ({ x: row.time, y: row.diffusivity }))
+      .map((row) => ({ x: row.time, y: convertDiffusivityToDisplay(row.diffusivity) }))
       .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
 
     if (!currentPoints.length) {
@@ -1028,26 +1348,41 @@
     const orderedCurrent = currentPoints.slice().sort((a, b) => a.x - b.x);
     const orderedDiffusion = diffusionPoints.slice().sort((a, b) => a.x - b.x);
     const currentRanges = getCurrentPlotRanges(analysis, inputUnit, displayUnit);
-    const diffusionRanges = getDiffusionPlotRanges(analysis);
-    const diffusionAxis = getDiffusionAxisScale(diffusionRanges);
-    const scaledDiffusionRanges = scaleDiffusionRanges(diffusionRanges, diffusionAxis.factor);
-    const orderedScaledDiffusion = orderedDiffusion.map((point) => ({ x: point.x, y: point.y / diffusionAxis.factor }));
+    const diffusionBaseRanges = getDiffusionBaseRanges(analysis);
+    const diffusionAxis = getDiffusionAxisScale(diffusionBaseRanges);
+    const diffusionRanges = getDiffusionPlotRanges(analysis, diffusionScaleMode, diffusionAxis.factor);
+    const orderedScaledDiffusion = orderedDiffusion
+      .map((point) => ({ x: point.x, y: point.y / diffusionAxis.factor }))
+      .filter((point) => diffusionScaleMode !== "log" || point.y > 0);
+    const diffusionPlotPoints =
+      diffusionScaleMode === "log"
+        ? orderedScaledDiffusion.map((point) => ({ x: point.x, y: Math.log10(point.y) }))
+        : orderedScaledDiffusion;
     const xTicks = buildNiceTicks(currentRanges.xMin, currentRanges.xMax, 5);
     const currentTicks = buildNiceTicks(currentRanges.yMin, currentRanges.yMax, 5);
-    const diffusionTicks = buildNiceTicks(scaledDiffusionRanges.yMin, scaledDiffusionRanges.yMax, 5);
+    const diffusionTicks =
+      diffusionScaleMode === "log"
+        ? buildLogTicks(diffusionRanges.yMin, diffusionRanges.yMax)
+        : buildNiceTicks(diffusionRanges.yMin, diffusionRanges.yMax, 5);
 
     const innerWidth = PLOT_WIDTH - PLOT_MARGINS.left - PLOT_MARGINS.right;
     const innerHeight = PLOT_HEIGHT - PLOT_MARGINS.top - PLOT_MARGINS.bottom;
     const scaleX = (value) => PLOT_MARGINS.left + ((value - currentRanges.xMin) / (currentRanges.xMax - currentRanges.xMin)) * innerWidth;
     const scaleCurrentY = (value) =>
       PLOT_MARGINS.top + (1 - (value - currentRanges.yMin) / (currentRanges.yMax - currentRanges.yMin)) * innerHeight;
-    const scaleDiffusionY = (value) =>
-      PLOT_MARGINS.top + (1 - (value - scaledDiffusionRanges.yMin) / (scaledDiffusionRanges.yMax - scaledDiffusionRanges.yMin)) * innerHeight;
+    const scaleDiffusionY =
+      diffusionScaleMode === "log"
+        ? (value) =>
+            PLOT_MARGINS.top +
+            (1 - (value - diffusionRanges.yMin) / (diffusionRanges.yMax - diffusionRanges.yMin)) * innerHeight
+        : (value) =>
+            PLOT_MARGINS.top +
+            (1 - (value - diffusionRanges.yMin) / (diffusionRanges.yMax - diffusionRanges.yMin)) * innerHeight;
 
     const currentPath = orderedCurrent
       .map((point, index) => `${index === 0 ? "M" : "L"} ${scaleX(point.x).toFixed(2)} ${scaleCurrentY(point.y).toFixed(2)}`)
       .join(" ");
-    const diffusionPath = orderedScaledDiffusion
+    const diffusionPath = diffusionPlotPoints
       .map((point, index) => `${index === 0 ? "M" : "L"} ${scaleX(point.x).toFixed(2)} ${scaleDiffusionY(point.y).toFixed(2)}`)
       .join(" ");
 
@@ -1092,7 +1427,11 @@
     diffusionTicks.forEach((value) => {
       const y = scaleDiffusionY(value);
       parts.push(
-        `<text class="mda-plot-value mda-plot-value-diffusion" x="${PLOT_MARGINS.left - 8}" y="${(y + 4).toFixed(2)}" text-anchor="end">${escapeHtml(formatScaledTick(value, diffusionAxis.factor))}</text>`,
+        `<text class="mda-plot-value mda-plot-value-diffusion" x="${PLOT_MARGINS.left - 8}" y="${(y + 4).toFixed(2)}" text-anchor="end">${escapeHtml(
+          diffusionScaleMode === "log"
+            ? formatLogTick(Math.pow(10, value) * diffusionAxis.factor)
+            : formatScaledTick(value, diffusionAxis.factor),
+        )}</text>`,
       );
     });
 
@@ -1125,11 +1464,19 @@
       parts.push(`<text class="mda-plot-ref-label ${lineColorClass}" x="${handleX - 8}" y="${Math.max(18, y - 7).toFixed(2)}" text-anchor="end">${escapeHtml(entry.label)}</text>`);
     });
 
-    parts.push(`
+    parts.push(
+      diffusionScaleMode === "log"
+        ? `
+      <text class="mda-plot-axis-label mda-plot-axis-left" transform="translate(18 ${PLOT_HEIGHT / 2}) rotate(-90)" text-anchor="middle">
+        <tspan>Apparent Diffusion Coefficient </tspan><tspan font-style="italic">D</tspan><tspan baseline-shift="sub" font-size="8">app</tspan><tspan>(t) [mm²/s]</tspan>
+      </text>
+    `
+        : `
       <text class="mda-plot-axis-label mda-plot-axis-left" transform="translate(18 ${PLOT_HEIGHT / 2}) rotate(-90)" text-anchor="middle">
         <tspan>Apparent Diffusion Coefficient </tspan><tspan font-style="italic">D</tspan><tspan baseline-shift="sub" font-size="8">app</tspan><tspan>(t) [10</tspan><tspan baseline-shift="super" font-size="8">${diffusionAxis.exponent}</tspan><tspan> mm²/s]</tspan>
       </text>
-    `);
+    `,
+    );
     parts.push(`
       <text class="mda-plot-axis-label mda-plot-axis-right" transform="translate(${PLOT_WIDTH - 18} ${PLOT_HEIGHT / 2}) rotate(270)" text-anchor="middle">
         <tspan>Permeation current I(t) [${currentUnitLabel}]</tspan>
@@ -1195,6 +1542,25 @@
     if (!Number.isFinite(value)) return "";
     if (value === 0) return "0";
     return Number(value.toPrecision(1)).toString();
+  }
+
+  function formatLogTick(value) {
+    if (!Number.isFinite(value) || value <= 0) return "";
+    const exponent = Math.round(Math.log10(value));
+    const rounded = Math.pow(10, exponent);
+    if (Math.abs(value - rounded) / rounded > 1e-6) {
+      return formatScientificTick(value);
+    }
+    return `10${toSuperscript(exponent)}`;
+  }
+
+  function toSuperscript(value) {
+    const digits = String(Math.trunc(value));
+    const map = { "-": "⁻", "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹" };
+    return digits
+      .split("")
+      .map((char) => map[char] || "")
+      .join("");
   }
 
   const textMeasureCanvas = typeof document !== "undefined" ? document.createElement("canvas") : null;
@@ -1275,6 +1641,7 @@
   function solveApparentDiffusivity(normalized, timeSeconds, thicknessMeters, deadline) {
     if (!Number.isFinite(normalized) || !Number.isFinite(timeSeconds) || !Number.isFinite(thicknessMeters)) return null;
     if (timeSeconds <= 0 || thicknessMeters <= 0) return null;
+    if (normalized < -1e-9 || normalized > 1 + 1e-9) return null;
 
     const target = clamp(normalized, 1e-12, 1 - 1e-12);
     let lower = SOLVER_POLICY.dLower;
@@ -1313,6 +1680,14 @@
     if (diffusivity <= 0 || timeSeconds <= 0 || thicknessMeters <= 0) return 0;
 
     const factor = (Math.PI * Math.PI * diffusivity * timeSeconds) / (thicknessMeters * thicknessMeters);
+    if (factor < 1.6) {
+      return evaluateFickResponseTheta(factor, deadline);
+    }
+
+    return evaluateFickResponseDirect(factor, deadline);
+  }
+
+  function evaluateFickResponseDirect(factor, deadline) {
     let sum = 0;
     let stableCount = 0;
     let previousValue = null;
@@ -1340,10 +1715,41 @@
     return clamp(1 + 2 * sum, 0, 1);
   }
 
+  function evaluateFickResponseTheta(factor, deadline) {
+    if (!(factor > 0)) return 0;
+    let sum = 0;
+    let stableCount = 0;
+    let previousValue = null;
+    const root = Math.sqrt(Math.PI / factor);
+
+    for (let m = 0; m <= SOLVER_POLICY.maxTerms; m += 1) {
+      if (deadline && performance.now() > deadline) return null;
+      const k = 2 * m + 1;
+      const term = Math.exp(-((k * k) * Math.PI * Math.PI) / (4 * factor));
+      sum += term;
+
+      const value = 2 * root * sum;
+      if (m + 1 >= SOLVER_POLICY.minTerms) {
+        const delta = previousValue == null ? Math.abs(term) : Math.abs(value - previousValue);
+        const tolerance = Math.max(SOLVER_POLICY.absTolerance, SOLVER_POLICY.relTolerance * Math.max(1, Math.abs(value)));
+        if (delta <= tolerance) {
+          stableCount += 1;
+        } else {
+          stableCount = 0;
+        }
+        if (stableCount >= 3) return clamp(value, 0, 1);
+      }
+      previousValue = value;
+    }
+
+    return clamp(2 * root * sum, 0, 1);
+  }
+
   function renderEmpty(dom, message) {
     setStatus(dom, message, "");
     renderEmptyTable(dom);
     setIssues(dom, []);
+    renderResults(dom, null);
     renderPlotEmpty(dom);
   }
 
