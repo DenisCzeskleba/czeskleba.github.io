@@ -99,30 +99,22 @@ permalink: /mda/
                 <option value="pA">pA</option>
               </select>
               </div>
-            <label class="mda-inline-checkbox" title="Toggle the plot grid lines.">
-              <input type="checkbox" id="mda-grid-toggle" checked />
-              <span>Grid lines</span>
-            </label>
-            <label class="mda-inline-checkbox" title="Toggle the minor grid lines.">
-              <input type="checkbox" id="mda-minor-grid-toggle" checked />
-              <span>Minor grid</span>
-            </label>
+            <div class="mda-inline-checkbox-row">
+              <label class="mda-inline-checkbox" title="Toggle the plot grid lines.">
+                <input type="checkbox" id="mda-grid-toggle" checked />
+                <span>Grid lines</span>
+              </label>
+              <label class="mda-inline-checkbox" title="Toggle the minor grid lines.">
+                <input type="checkbox" id="mda-minor-grid-toggle" checked />
+                <span>Minor</span>
+              </label>
+            </div>
             <label class="mda-inline-checkbox" title="Toggle the left diffusion axis between linear and logarithmic scaling.">
               <input type="checkbox" id="mda-diffusion-scale" />
               <span>Log left axis</span>
             </label>
-              <div class="mda-control">
-                <label for="mda-trust-percent" title="Mark the first and last part of the x-axis as lower trust.">Edge band [%]</label>
-                <input id="mda-trust-percent" type="range" min="0" max="49" step="1" value="10" />
-                <div class="mda-slider-value" id="mda-trust-percent-value">10%</div>
-              </div>
-              <div class="mda-control">
-                <label for="mda-trust-alpha" title="Control the transparency of the edge bands.">Edge alpha</label>
-                <input id="mda-trust-alpha" type="range" min="0" max="1" step="0.05" value="0.18" />
-                <div class="mda-slider-value" id="mda-trust-alpha-value">0.18</div>
-              </div>
-            </div>
-          </details>
+          </div>
+        </details>
           <details class="mda-tool-panel">
             <summary class="mda-button is-secondary">Baseline</summary>
             <div class="mda-tool-panel-body">

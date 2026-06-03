@@ -616,6 +616,15 @@ header .mda-header-brand-text {
   user-select: none;
 }
 
+.mda-inline-checkbox-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 100%;
+}
+
 .mda-inline-checkbox input {
   accent-color: var(--accent);
 }
@@ -784,10 +793,6 @@ header .mda-header-brand-text {
   stroke-dasharray: 2 4;
 }
 
-.mda-plot-trust-band {
-  pointer-events: none;
-}
-
 .mda-plot-line {
   fill: none;
   stroke-width: 2.4;
@@ -807,6 +812,7 @@ header .mda-header-brand-text {
   fill: var(--mda-plot-bg);
   stroke: var(--mda-plot-border);
   stroke-width: 0.8;
+  pointer-events: none;
 }
 
 .mda-plot-value {

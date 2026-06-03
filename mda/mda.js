@@ -57,10 +57,6 @@
       thickness: document.getElementById("mda-thickness"),
       t0Offset: document.getElementById("mda-t0-offset"),
       t0OffsetValue: document.getElementById("mda-t0-offset-value"),
-      trustPercent: document.getElementById("mda-trust-percent"),
-      trustPercentValue: document.getElementById("mda-trust-percent-value"),
-      trustAlpha: document.getElementById("mda-trust-alpha"),
-      trustAlphaValue: document.getElementById("mda-trust-alpha-value"),
       minorGridToggle: document.getElementById("mda-minor-grid-toggle"),
       cropRange: document.getElementById("mda-crop-range"),
       decimal: document.getElementById("mda-decimal"),
@@ -150,26 +146,6 @@
         scheduleParse(dom, "selection");
       });
       syncT0OffsetDisplay(dom);
-    }
-    if (dom.trustPercent) {
-      dom.trustPercent.addEventListener("input", () => {
-        syncTrustBandDisplay(dom);
-        renderDerivedViews(dom);
-      });
-      dom.trustPercent.addEventListener("change", () => {
-        syncTrustBandDisplay(dom);
-        renderDerivedViews(dom);
-      });
-    }
-    if (dom.trustAlpha) {
-      dom.trustAlpha.addEventListener("input", () => {
-        syncTrustBandDisplay(dom);
-        renderDerivedViews(dom);
-      });
-      dom.trustAlpha.addEventListener("change", () => {
-        syncTrustBandDisplay(dom);
-        renderDerivedViews(dom);
-      });
     }
     if (dom.thickness) {
       dom.thickness.addEventListener("keydown", (event) => {
@@ -283,9 +259,6 @@
         if (dom.thickness) dom.thickness.value = "0.50";
         if (dom.t0Offset) dom.t0Offset.value = "0";
         syncT0OffsetDisplay(dom);
-        if (dom.trustPercent) dom.trustPercent.value = "10";
-        if (dom.trustAlpha) dom.trustAlpha.value = "0.18";
-        syncTrustBandDisplay(dom);
         if (dom.cropRange) dom.cropRange.value = "";
         renderEmpty(dom, "Paste data to begin.");
       });
@@ -295,7 +268,6 @@
       dom.plotUnit.value = "uA";
     }
     syncT0OffsetDisplay(dom);
-    syncTrustBandDisplay(dom);
     renderEmpty(dom, "Paste data to begin.");
   }
 
@@ -406,11 +378,18 @@
       const rect = svg.getBoundingClientRect();
       if (!rect.width || !rect.height) return;
       const dx = (event.clientX - state.dragPlot.startX) / rect.width;
+      const dy = (event.clientY - state.dragPlot.startY) / rect.height;
       const base = state.dragPlot.viewport || state.dragPlot.ranges;
       const xSpan = base.xMax - base.xMin;
+      const ySpan = base.yMax - base.yMin;
+      const diffusionYSpan = base.diffusionYMax - base.diffusionYMin;
       state.plotViewport = {
         xMin: base.xMin - dx * xSpan,
         xMax: base.xMax - dx * xSpan,
+        yMin: base.yMin + dy * ySpan,
+        yMax: base.yMax + dy * ySpan,
+        diffusionYMin: base.diffusionYMin + dy * diffusionYSpan,
+        diffusionYMax: base.diffusionYMax + dy * diffusionYSpan,
       };
       renderPlot(dom, state.currentAnalysis);
       event.preventDefault();
@@ -515,6 +494,7 @@
       pointerId: event.pointerId,
       svg,
       startX: event.clientX,
+      startY: event.clientY,
       viewport: state.plotViewport ? { ...state.plotViewport } : null,
       ranges,
     };
@@ -532,32 +512,51 @@
     const svg = getPlotSvg(dom, event);
     if (!svg) return;
     const ranges = getPlotRanges(state.currentAnalysis, dom.currentUnit ? dom.currentUnit.value : "A", getDisplayUnit(dom), state.plotDiffusionScale);
-    const point = pointerToDataPointX(event, svg, ranges);
-    if (!Number.isFinite(point)) return;
+    const point = pointerToPlotFractions(event, svg);
+    if (!point) return;
 
     const factor = event.deltaY > 0 ? 1.12 : 0.89;
-    const next = scaleViewportX(ranges, point, factor);
+    const next = scaleViewport(ranges, point, factor);
     state.plotViewport = next;
     renderPlot(dom, state.currentAnalysis);
     event.preventDefault();
   }
 
-  function pointerToDataPointX(event, svg, ranges) {
+  function pointerToPlotFractions(event, svg) {
     const rect = svg.getBoundingClientRect();
     if (!rect.width || !rect.height) return null;
     const x = (event.clientX - rect.left) / rect.width;
-    const clampedX = Math.max(0, Math.min(1, x));
+    const y = (event.clientY - rect.top) / rect.height;
     const innerWidth = PLOT_WIDTH - PLOT_MARGINS.left - PLOT_MARGINS.right;
-    return ranges.xMin + ((clampedX * PLOT_WIDTH - PLOT_MARGINS.left) / innerWidth) * (ranges.xMax - ranges.xMin);
+    const innerHeight = PLOT_HEIGHT - PLOT_MARGINS.top - PLOT_MARGINS.bottom;
+    const plotX = (x * PLOT_WIDTH - PLOT_MARGINS.left) / innerWidth;
+    const plotY = (y * PLOT_HEIGHT - PLOT_MARGINS.top) / innerHeight;
+    return {
+      xRatio: Math.max(0, Math.min(1, plotX)),
+      yRatio: Math.max(0, Math.min(1, plotY)),
+    };
   }
 
-  function scaleViewportX(ranges, centerX, scaleX) {
+  function scaleViewport(ranges, fractions, scaleX) {
     const xSpan = Math.max(ranges.xMax - ranges.xMin, Number.EPSILON);
+    const ySpan = Math.max(ranges.yMax - ranges.yMin, Number.EPSILON);
+    const diffusionYSpan = Math.max(ranges.diffusionYMax - ranges.diffusionYMin, Number.EPSILON);
     const nextXSpan = Math.max(xSpan * scaleX, Number.EPSILON);
-    const xRatio = xSpan ? (centerX - ranges.xMin) / xSpan : 0.5;
-    const xMin = centerX - xRatio * nextXSpan;
+    const nextYSpan = Math.max(ySpan * scaleX, Number.EPSILON);
+    const nextDiffusionYSpan = Math.max(diffusionYSpan * scaleX, Number.EPSILON);
+    const xRatio = fractions && Number.isFinite(fractions.xRatio) ? fractions.xRatio : 0.5;
+    const yRatio = fractions && Number.isFinite(fractions.yRatio) ? fractions.yRatio : 0.5;
+    const xCenter = ranges.xMin + xRatio * xSpan;
+    const yCenter = ranges.yMax - yRatio * ySpan;
+    const diffusionYCenter = ranges.diffusionYMax - yRatio * diffusionYSpan;
+    const xMin = xCenter - xRatio * nextXSpan;
     const xMax = xMin + nextXSpan;
-    return { xMin, xMax };
+    const yMin = yCenter - (1 - yRatio) * nextYSpan;
+    const yMax = yMin + nextYSpan;
+    const diffusionYRatio = yRatio;
+    const diffusionYMin = diffusionYCenter - (1 - diffusionYRatio) * nextDiffusionYSpan;
+    const diffusionYMax = diffusionYMin + nextDiffusionYSpan;
+    return { xMin, xMax, yMin, yMax, diffusionYMin, diffusionYMax };
   }
 
   function getCurrentPlotRanges(analysis, inputUnit, displayUnit) {
@@ -577,8 +576,10 @@
 
     const xMin = Number.isFinite(state.plotViewport.xMin) ? state.plotViewport.xMin : base.xMin;
     const xMax = Number.isFinite(state.plotViewport.xMax) ? state.plotViewport.xMax : base.xMax;
-    if (xMax <= xMin) return base;
-    return { xMin, xMax, yMin: base.yMin, yMax: base.yMax };
+    const yMin = Number.isFinite(state.plotViewport.yMin) ? state.plotViewport.yMin : base.yMin;
+    const yMax = Number.isFinite(state.plotViewport.yMax) ? state.plotViewport.yMax : base.yMax;
+    if (xMax <= xMin || yMax <= yMin) return base;
+    return { xMin, xMax, yMin, yMax };
   }
 
   function getPlotRanges(analysis, inputUnit, displayUnit, diffusionScaleMode) {
@@ -632,10 +633,12 @@
     }
     const xMin = Number.isFinite(state.plotViewport.xMin) ? state.plotViewport.xMin : base.xMin;
     const xMax = Number.isFinite(state.plotViewport.xMax) ? state.plotViewport.xMax : base.xMax;
-    if (xMax <= xMin) {
+    const yMin = Number.isFinite(state.plotViewport.diffusionYMin) ? state.plotViewport.diffusionYMin : base.yMin;
+    const yMax = Number.isFinite(state.plotViewport.diffusionYMax) ? state.plotViewport.diffusionYMax : base.yMax;
+    if (xMax <= xMin || yMax <= yMin) {
       return base;
     }
-    return { xMin, xMax, yMin: base.yMin, yMax: base.yMax };
+    return { xMin, xMax, yMin, yMax };
   }
 
   function getDiffusionAxisScale(ranges) {
@@ -674,8 +677,8 @@
 
     const xSpan = xMax - xMin || Math.max(1, Math.abs(xMin) || 1);
     const ySpan = yMax - yMin || Math.max(1e-12, Math.abs(yMin) || 1e-12);
-    const xPad = xSpan * 0.08;
-    const yPad = ySpan * 0.08;
+    const xPad = xSpan * 0.01;
+    const yPad = ySpan * 0.01;
     return {
       xMin: xMin - xPad,
       xMax: xMax + xPad,
@@ -700,17 +703,24 @@
   }
 
   function buildLinearMinorTicks(min, max, majorTicks, subdivisions) {
-    if (!Number.isFinite(min) || !Number.isFinite(max) || !Array.isArray(majorTicks) || majorTicks.length < 2) return [];
+    if (!Number.isFinite(min) || !Number.isFinite(max)) return [];
     const parts = [];
     const segments = Math.max(1, Math.floor(subdivisions || 4));
-    for (let i = 0; i < majorTicks.length - 1; i += 1) {
-      const start = majorTicks[i];
-      const end = majorTicks[i + 1];
+    const ticks = Array.isArray(majorTicks) && majorTicks.length >= 2 ? majorTicks : [min, max];
+    for (let i = 0; i < ticks.length - 1; i += 1) {
+      const start = ticks[i];
+      const end = ticks[i + 1];
       if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) continue;
       const step = (end - start) / (segments + 1);
       for (let j = 1; j <= segments; j += 1) {
         const value = start + step * j;
         if (value > min && value < max) parts.push(value);
+      }
+    }
+    if (!parts.length && max > min) {
+      const step = (max - min) / (segments + 1);
+      for (let j = 1; j <= segments; j += 1) {
+        parts.push(min + step * j);
       }
     }
     return parts;
@@ -1596,10 +1606,6 @@
             (1 - (value - diffusionRanges.yMin) / (diffusionRanges.yMax - diffusionRanges.yMin)) * innerHeight;
     const yGridTicks = diffusionMajorTicks;
     const yGridScale = scaleDiffusionY;
-    const trustBand = getTrustBandConfig(dom);
-    const xSpan = currentRanges.xMax - currentRanges.xMin;
-    const trustBandWidth = xSpan > 0 ? xSpan * trustBand.percent : 0;
-
     const currentPath = orderedCurrent
       .map((point, index) => `${index === 0 ? "M" : "L"} ${scaleX(point.x).toFixed(2)} ${scaleCurrentY(point.y).toFixed(2)}`)
       .join(" ");
@@ -1608,7 +1614,21 @@
       .join(" ");
 
     const parts = [];
+    const chartClipId = "mda-plot-clip";
+    const chartX = PLOT_MARGINS.left;
+    const chartY = PLOT_MARGINS.top;
+    const chartWidth = innerWidth;
+    const chartHeight = innerHeight;
+    const yGridParts = [];
     parts.push(`<svg viewBox="0 0 ${PLOT_WIDTH} ${PLOT_HEIGHT}" role="img" aria-label="Preview of measured permeation current and diffusion coefficient">`);
+    parts.push(`
+      <defs>
+        <clipPath id="${chartClipId}">
+          <rect x="${chartX}" y="${chartY}" width="${chartWidth}" height="${chartHeight}"></rect>
+        </clipPath>
+      </defs>
+    `);
+    parts.push(`<rect class="mda-plot-frame" x="${chartX}" y="${chartY}" width="${chartWidth}" height="${chartHeight}"></rect>`);
     const legendGap = 60;
     const legendLineWidth = 18;
     const legendTextGap = 12;
@@ -1620,34 +1640,6 @@
     const legendTotalWidth = diffusionLegendWidth + legendGap + currentLegendWidth;
     const legendX = Math.max(0, (PLOT_WIDTH - legendTotalWidth) / 2);
     const legendY = 8;
-    if (trustBandWidth > 0 && trustBand.alpha > 0) {
-      const leftStop = Math.max(0, Math.min(100, trustBand.alpha * 100));
-      const leftInner = Math.max(0, Math.min(100, trustBand.alpha * 28));
-      const rightStop = Math.max(0, Math.min(100, trustBand.alpha * 100));
-      const rightInner = Math.max(0, Math.min(100, trustBand.alpha * 28));
-      parts.push(`
-      <defs>
-        <linearGradient id="mda-trust-left" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="#94a3b8" stop-opacity="${(trustBand.alpha * 0.95).toFixed(3)}"></stop>
-          <stop offset="${leftInner.toFixed(1)}%" stop-color="#94a3b8" stop-opacity="${(trustBand.alpha * 0.45).toFixed(3)}"></stop>
-          <stop offset="${leftStop.toFixed(1)}%" stop-color="#94a3b8" stop-opacity="0"></stop>
-        </linearGradient>
-        <linearGradient id="mda-trust-right" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="#94a3b8" stop-opacity="0"></stop>
-          <stop offset="${(100 - rightStop).toFixed(1)}%" stop-color="#94a3b8" stop-opacity="${(trustBand.alpha * 0.45).toFixed(3)}"></stop>
-          <stop offset="100%" stop-color="#94a3b8" stop-opacity="${(trustBand.alpha * 0.95).toFixed(3)}"></stop>
-        </linearGradient>
-      </defs>
-      `);
-      const leftX = scaleX(currentRanges.xMin);
-      const leftWidth = scaleX(currentRanges.xMin + trustBandWidth) - leftX;
-      const rightX = scaleX(currentRanges.xMax - trustBandWidth);
-      const rightWidth = scaleX(currentRanges.xMax) - rightX;
-      parts.push(`
-        <rect class="mda-plot-trust-band" x="${leftX.toFixed(2)}" y="${PLOT_MARGINS.top}" width="${leftWidth.toFixed(2)}" height="${innerHeight}" fill="url(#mda-trust-left)"></rect>
-        <rect class="mda-plot-trust-band" x="${rightX.toFixed(2)}" y="${PLOT_MARGINS.top}" width="${rightWidth.toFixed(2)}" height="${innerHeight}" fill="url(#mda-trust-right)"></rect>
-      `);
-    }
     parts.push(`
       <g class="mda-plot-legend-group" transform="translate(${legendX} ${legendY})">
         <g class="mda-plot-legend-item mda-plot-legend-diffusion">
@@ -1663,22 +1655,53 @@
       </g>
     `);
 
-    yGridTicks.forEach((value) => {
-      const y = yGridScale(value);
-      if (showGrid) {
-        parts.push(
-          `<line class="mda-plot-grid mda-plot-grid-major" x1="${PLOT_MARGINS.left}" y1="${y.toFixed(2)}" x2="${PLOT_WIDTH - PLOT_MARGINS.right}" y2="${y.toFixed(2)}"></line>`,
+    const references = [
+      { kind: "baseline", ref: analysis.baseline, label: "Baseline", className: "mda-plot-ref-baseline" },
+      { kind: "steady", ref: analysis.steady, label: "Steady State", className: "mda-plot-ref-steady" },
+    ];
+
+    parts.push(`<g class="mda-plot-chart" clip-path="url(#${chartClipId})">`);
+    if (showGrid) {
+      yGridTicks.forEach((value) => {
+        const y = yGridScale(value);
+        yGridParts.push(
+          `<line class="mda-plot-grid mda-plot-grid-major" x1="${chartX}" y1="${y.toFixed(2)}" x2="${chartX + chartWidth}" y2="${y.toFixed(2)}"></line>`,
         );
-      }
-    });
-    if (showGrid && showMinorGrid) {
-      diffusionMinorTicks.forEach((value) => {
-        const y = scaleDiffusionY(value);
-        parts.push(
-          `<line class="mda-plot-grid mda-plot-grid-minor" x1="${PLOT_MARGINS.left}" y1="${y.toFixed(2)}" x2="${PLOT_WIDTH - PLOT_MARGINS.right}" y2="${y.toFixed(2)}"></line>`,
+      });
+      xTicks.forEach((value) => {
+        const x = scaleX(value);
+        yGridParts.push(
+          `<line class="mda-plot-grid mda-plot-grid-major" x1="${x.toFixed(2)}" y1="${chartY}" x2="${x.toFixed(2)}" y2="${chartY + chartHeight}"></line>`,
         );
       });
     }
+    if (showMinorGrid) {
+      diffusionMinorTicks.forEach((value) => {
+        const y = scaleDiffusionY(value);
+        yGridParts.push(
+          `<line class="mda-plot-grid mda-plot-grid-minor" x1="${chartX}" y1="${y.toFixed(2)}" x2="${chartX + chartWidth}" y2="${y.toFixed(2)}"></line>`,
+        );
+      });
+      xMinorTicks.forEach((value) => {
+        const x = scaleX(value);
+        yGridParts.push(
+          `<line class="mda-plot-grid mda-plot-grid-minor" x1="${x.toFixed(2)}" y1="${chartY}" x2="${x.toFixed(2)}" y2="${chartY + chartHeight}"></line>`,
+        );
+      });
+    }
+    if (diffusionPath) parts.push(`<path class="mda-plot-line mda-plot-line-diffusion" d="${diffusionPath}"></path>`);
+    if (currentPath) parts.push(`<path class="mda-plot-line mda-plot-line-current" d="${currentPath}"></path>`);
+    parts.push(...yGridParts);
+    references.forEach((entry) => {
+      if (!entry.ref || !Number.isFinite(entry.ref.value)) return;
+      if (state.referenceVisibility[entry.kind] === false) return;
+      const refValue = convertCurrentValue(entry.ref.value, inputUnit, displayUnit);
+      const y = scaleCurrentY(refValue);
+      const lineColorClass = entry.kind === "baseline" ? "mda-plot-ref-baseline" : "mda-plot-ref-steady";
+      parts.push(`<line class="mda-plot-ref-hitline" data-ref-kind="${entry.kind}" x1="${chartX}" y1="${y.toFixed(2)}" x2="${chartX + chartWidth}" y2="${y.toFixed(2)}"></line>`);
+      parts.push(`<line class="mda-plot-ref-line ${lineColorClass}" data-ref-kind="${entry.kind}" x1="${chartX}" y1="${y.toFixed(2)}" x2="${chartX + chartWidth}" y2="${y.toFixed(2)}"></line>`);
+    });
+    parts.push(`</g>`);
 
     currentTicks.forEach((value) => {
       const y = scaleCurrentY(value);
@@ -1688,12 +1711,10 @@
       );
     });
 
-    if (diffusionScaleMode === "log") {
-      diffusionMinorTicks.forEach((value) => {
-        const y = scaleDiffusionY(value);
-        parts.push(`<line class="mda-plot-axis-tick mda-plot-axis-tick-left mda-plot-axis-tick-minor" x1="${PLOT_MARGINS.left - 4}" y1="${y.toFixed(2)}" x2="${PLOT_MARGINS.left}" y2="${y.toFixed(2)}"></line>`);
-      });
-    }
+    diffusionMinorTicks.forEach((value) => {
+      const y = scaleDiffusionY(value);
+      parts.push(`<line class="mda-plot-axis-tick mda-plot-axis-tick-left mda-plot-axis-tick-minor" x1="${PLOT_MARGINS.left - 4}" y1="${y.toFixed(2)}" x2="${PLOT_MARGINS.left}" y2="${y.toFixed(2)}"></line>`);
+    });
 
     diffusionMajorTicks.forEach((value) => {
       const y = scaleDiffusionY(value);
@@ -1703,19 +1724,14 @@
         `<text class="mda-plot-value mda-plot-value-diffusion" x="${PLOT_MARGINS.left - 8}" y="${(y + 4).toFixed(2)}" text-anchor="end">${escapeHtml(
           diffusionScaleMode === "log"
             ? formatLogTick(Math.pow(10, value) * diffusionAxis.factor)
-            : formatScaledTick(value, diffusionAxis.factor),
+            : formatAxisTick(value),
         )}</text>`,
       );
     });
 
-    if (xMinorTicks.length && showMinorGrid) {
+    if (xMinorTicks.length) {
       xMinorTicks.forEach((value) => {
         const x = scaleX(value);
-        if (showGrid) {
-          parts.push(
-            `<line class="mda-plot-grid mda-plot-grid-minor" x1="${x.toFixed(2)}" y1="${PLOT_MARGINS.top}" x2="${x.toFixed(2)}" y2="${PLOT_HEIGHT - PLOT_MARGINS.bottom}"></line>`,
-          );
-        }
         parts.push(
           `<line class="mda-plot-axis-tick mda-plot-axis-tick-bottom mda-plot-axis-tick-minor" x1="${x.toFixed(2)}" y1="${PLOT_HEIGHT - PLOT_MARGINS.bottom}" x2="${x.toFixed(2)}" y2="${PLOT_HEIGHT - PLOT_MARGINS.bottom + 5}"></line>`,
         );
@@ -1724,11 +1740,6 @@
 
     xTicks.forEach((value) => {
       const x = scaleX(value);
-      if (showGrid) {
-        parts.push(
-          `<line class="mda-plot-grid mda-plot-grid-major" x1="${x.toFixed(2)}" y1="${PLOT_MARGINS.top}" x2="${x.toFixed(2)}" y2="${PLOT_HEIGHT - PLOT_MARGINS.bottom}"></line>`,
-        );
-      }
       parts.push(
         `<line class="mda-plot-axis-tick mda-plot-axis-tick-bottom" x1="${x.toFixed(2)}" y1="${PLOT_HEIGHT - PLOT_MARGINS.bottom}" x2="${x.toFixed(2)}" y2="${PLOT_HEIGHT - PLOT_MARGINS.bottom + 8}"></line>`,
       );
@@ -1736,14 +1747,6 @@
         `<text class="mda-plot-value" x="${x.toFixed(2)}" y="${PLOT_HEIGHT - 14}" text-anchor="middle">${escapeHtml(formatAxisTick(value))}</text>`,
       );
     });
-
-    if (diffusionPath) parts.push(`<path class="mda-plot-line mda-plot-line-diffusion" d="${diffusionPath}"></path>`);
-    if (currentPath) parts.push(`<path class="mda-plot-line mda-plot-line-current" d="${currentPath}"></path>`);
-
-    const references = [
-      { kind: "baseline", ref: analysis.baseline, label: "Baseline", className: "mda-plot-ref-baseline" },
-      { kind: "steady", ref: analysis.steady, label: "Steady State", className: "mda-plot-ref-steady" },
-    ];
     references.forEach((entry) => {
       if (!entry.ref || !Number.isFinite(entry.ref.value)) return;
       if (state.referenceVisibility[entry.kind] === false) return;
@@ -1751,8 +1754,6 @@
       const y = scaleCurrentY(refValue);
       const handleX = PLOT_WIDTH - PLOT_MARGINS.right - 6;
       const lineColorClass = entry.kind === "baseline" ? "mda-plot-ref-baseline" : "mda-plot-ref-steady";
-      parts.push(`<line class="mda-plot-ref-hitline" data-ref-kind="${entry.kind}" x1="${PLOT_MARGINS.left}" y1="${y.toFixed(2)}" x2="${PLOT_WIDTH - PLOT_MARGINS.right}" y2="${y.toFixed(2)}"></line>`);
-      parts.push(`<line class="mda-plot-ref-line ${lineColorClass}" data-ref-kind="${entry.kind}" x1="${PLOT_MARGINS.left}" y1="${y.toFixed(2)}" x2="${PLOT_WIDTH - PLOT_MARGINS.right}" y2="${y.toFixed(2)}"></line>`);
       parts.push(`<text class="mda-plot-ref-label ${lineColorClass}" x="${handleX - 8}" y="${Math.max(18, y - 7).toFixed(2)}" text-anchor="end">${escapeHtml(entry.label)}</text>`);
     });
 
@@ -1840,12 +1841,6 @@
     return `${mantissa}×10${exponent < 0 ? "⁻" : ""}${Math.abs(exponent)}`;
   }
 
-  function formatScaledTick(value, factor) {
-    if (!Number.isFinite(value)) return "";
-    if (value === 0) return "0";
-    return Number(value.toPrecision(1)).toString();
-  }
-
   function formatLogTick(value) {
     if (!Number.isFinite(value) || value <= 0) return "";
     const exponent = Math.round(Math.log10(value));
@@ -1930,29 +1925,6 @@
     dom.t0OffsetValue.textContent = `${prefix}${formatNumber(offset)} s`;
   }
 
-  function syncTrustBandDisplay(dom) {
-    if (!dom) return;
-    const percent = parseNumberInput(dom.trustPercent ? dom.trustPercent.value : null);
-    const alpha = parseNumberInput(dom.trustAlpha ? dom.trustAlpha.value : null);
-    if (dom.trustPercentValue) {
-      dom.trustPercentValue.textContent = `${formatNumber(Number.isFinite(percent) ? percent : 0)}%`;
-    }
-    if (dom.trustAlphaValue) {
-      dom.trustAlphaValue.textContent = formatNumber(Number.isFinite(alpha) ? alpha : 0);
-    }
-  }
-
-  function getTrustBandConfig(dom) {
-    const percent = parseNumberInput(dom && dom.trustPercent ? dom.trustPercent.value : null);
-    const alpha = parseNumberInput(dom && dom.trustAlpha ? dom.trustAlpha.value : null);
-    const safePercent = Number.isFinite(percent) ? Math.max(0, Math.min(49, percent)) / 100 : 0.1;
-    const safeAlpha = Number.isFinite(alpha) ? Math.max(0, Math.min(1, alpha)) : 0.18;
-    return {
-      percent: safePercent,
-      alpha: safeAlpha,
-    };
-  }
-
   function positionStagePanels(dom) {
     const stageControls = dom?.root?.querySelector(".mda-stage-controls");
     if (!stageControls) return;
@@ -1969,9 +1941,7 @@
       body.style.display = "grid";
       const panelRect = panel.getBoundingClientRect();
       const bodyRect = body.getBoundingClientRect();
-      const maxShiftRight = limitRight - panelRect.left - bodyRect.width;
-      const minShiftLeft = controlsRect.left + 8 - panelRect.left;
-      const shift = Math.min(0, Math.max(minShiftLeft, maxShiftRight));
+      const shift = Math.min(0, limitRight - panelRect.left - bodyRect.width);
       body.style.left = `${Math.round(shift)}px`;
       body.style.visibility = "";
     });
@@ -2379,7 +2349,6 @@
       .mda-plot-grid{stroke:${grid};stroke-linecap:butt;fill:none}
       .mda-plot-grid-major{stroke-width:0.6;opacity:0.85}
       .mda-plot-grid-minor{stroke-width:0.4;opacity:0.45;stroke-dasharray:2 4}
-      .mda-plot-trust-band{pointer-events:none}
       .mda-plot-line{fill:none;stroke-width:2.4;stroke-linejoin:round;stroke-linecap:butt}
       .mda-plot-line-current{stroke:${currentColor}}
       .mda-plot-line-diffusion{stroke:${diffusionColor}}
@@ -2402,6 +2371,7 @@
       .mda-plot-ref-line{stroke-width:2;stroke-linecap:butt}
       .mda-plot-ref-handle{stroke:${bg};stroke-width:2}
       .mda-plot-ref-label{font-size:10px;font-weight:400;paint-order:normal;stroke:none}
+      .mda-plot-frame{fill:${bg};stroke:${border};stroke-width:0.8;pointer-events:none}
       .mda-plot-axis-tick{stroke:${muted};stroke-width:1;fill:none}
       .mda-plot-axis-tick-minor{stroke-width:0.75;opacity:0.8}
     `;
