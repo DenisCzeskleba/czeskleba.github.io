@@ -183,7 +183,7 @@
                 </div>
                 <div class="mda-control" style="margin-top:0.75rem;">
                   <label for="mda-t0-offset" title="Set the start time offset. Negative values remove early time; positive values prepend baseline time.">Start Time Offset (t<sub>0</sub>)</label>
-                  <input id="mda-t0-offset" type="range" min="-100" max="100" step="0.1" value="0" title="Set the start time offset. Negative values remove early time; positive values prepend baseline time." />
+                  <input id="mda-t0-offset" type="range" min="-180" max="180" step="0.1" value="0" title="Set the start time offset. Negative values remove early time; positive values prepend baseline time." />
                   <div class="mda-slider-value" id="mda-t0-offset-value">0.0 s</div>
                 </div>
               </section>
@@ -281,30 +281,38 @@
           <div id="mda-plot" class="mda-plot" aria-label="Preview plot"></div>
         </div>
 
-        <div class="mda-results-grid" aria-label="Classical diffusion results">
+        <h2 class="mda-results-heading">Apparent Diffusion Coefficients by Mathematical Model</h2>
+
+        <div class="mda-results-grid" aria-label="Diffusion model results">
           <article class="mda-result-card">
             <h3>Breakthrough</h3>
-            <div class="mda-result-value" id="mda-breakthrough-value">—</div>
+            <div class="mda-result-value" id="mda-breakthrough-value">D<sub>b</sub> = &mdash;</div>
             <div class="mda-result-meta" id="mda-breakthrough-time">Load data to calculate breakthrough time.</div>
             <div class="mda-result-note" id="mda-breakthrough-note"></div>
           </article>
           <article class="mda-result-card">
             <h3>Time lag</h3>
-            <div class="mda-result-value" id="mda-lag-value">—</div>
+            <div class="mda-result-value" id="mda-lag-value">D<sub>lag</sub> = &mdash;</div>
             <div class="mda-result-meta" id="mda-lag-time">Load data to calculate time lag.</div>
             <div class="mda-result-note" id="mda-lag-note"></div>
           </article>
           <article class="mda-result-card">
             <h3>Inflection point</h3>
-            <div class="mda-result-value" id="mda-inflection-value">—</div>
+            <div class="mda-result-value" id="mda-inflection-value">D<sub>IP</sub> = &mdash;</div>
             <div class="mda-result-meta" id="mda-inflection-time">Load data to calculate the inflection point.</div>
             <div class="mda-result-note" id="mda-inflection-note"></div>
           </article>
           <article class="mda-result-card">
-            <h3>D<sub>app</sub> plateau</h3>
-            <div class="mda-result-value" id="mda-plateau-value">—</div>
-            <div class="mda-result-meta" id="mda-plateau-time">Load data to estimate the stabilized inverse plateau.</div>
-            <div class="mda-result-note" id="mda-plateau-note"></div>
+            <h3>Inverse Fickian</h3>
+            <div class="mda-result-value" id="mda-inverse-value">D<sub>Inv</sub> = &mdash;</div>
+            <div class="mda-result-meta" id="mda-inverse-time">Load data to estimate the stabilized inverse window.</div>
+            <div class="mda-result-note" id="mda-inverse-note"></div>
+          </article>
+          <article class="mda-result-card">
+            <h3>Best-fit transient model</h3>
+            <div class="mda-result-value" id="mda-fit-value">D<sub>fit</sub> = &mdash;</div>
+            <div class="mda-result-meta" id="mda-fit-time">Load data to fit D and t<sub>0</sub> together.</div>
+            <div class="mda-result-note" id="mda-fit-note"></div>
           </article>
         </div>
 

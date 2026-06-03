@@ -81,9 +81,12 @@
         inflectionValue: document.getElementById("mda-inflection-value"),
         inflectionTime: document.getElementById("mda-inflection-time"),
         inflectionNote: document.getElementById("mda-inflection-note"),
-        plateauValue: document.getElementById("mda-plateau-value"),
-        plateauTime: document.getElementById("mda-plateau-time"),
-        plateauNote: document.getElementById("mda-plateau-note"),
+        inverseValue: document.getElementById("mda-inverse-value"),
+        inverseTime: document.getElementById("mda-inverse-time"),
+        inverseNote: document.getElementById("mda-inverse-note"),
+        fitValue: document.getElementById("mda-fit-value"),
+        fitTime: document.getElementById("mda-fit-time"),
+        fitNote: document.getElementById("mda-fit-note"),
         helpDrawer: document.getElementById("mda-help-drawer"),
         helpOpenButtons: root.querySelectorAll("[data-action='open-help']"),
         helpCloseButtons: document.querySelectorAll("[data-action='close-help']"),
@@ -1405,6 +1408,10 @@
       notes.push(`Crop range applied: ${formatNumber(cropRange.start)} to ${formatNumber(cropRange.end)} s.`);
     }
 
+    const fitRows = cropRange
+      ? sourceRows.filter((row) => row.time >= cropRange.start && row.time <= cropRange.end)
+      : sourceRows.slice();
+
     if (!rows.length) {
       issues.push("No rows remain after cropping.");
       return {
@@ -1455,6 +1462,7 @@
     });
 
     const classical = normalizedAvailable && thicknessMm != null ? buildClassicalResults(previewRows, thicknessMm, denom) : buildEmptyClassicalResults();
+    const fit = normalizedAvailable && thicknessMm != null ? buildFitResult(fitRows, thicknessMm, baseline.value, steady.value) : buildEmptyFitResult();
 
     for (let i = 1; i < rows.length; i += 1) {
       if (rows[i].time <= rows[i - 1].time) {
@@ -1485,6 +1493,7 @@
         normalizedAvailable,
         diagnostics,
         classical,
+        fit,
         issues,
         notes,
       };
@@ -1619,26 +1628,32 @@
   }
 
   function renderResults(dom, analysis) {
-    const empty = buildEmptyClassicalResults();
-    const classical = analysis && analysis.classical ? analysis.classical : empty;
+    const classical = analysis && analysis.classical ? analysis.classical : buildEmptyClassicalResults();
+    const fit = analysis && analysis.fit ? analysis.fit : buildEmptyFitResult();
 
-    setResultCard(dom.breakthroughValue, dom.breakthroughTime, dom.breakthroughNote, classical.breakthrough, "Breakthrough");
-    setResultCard(dom.lagValue, dom.lagTime, dom.lagNote, classical.timeLag, "Time lag");
-    setResultCard(dom.inflectionValue, dom.inflectionTime, dom.inflectionNote, classical.inflection, "Inflection");
-    setResultCard(dom.plateauValue, dom.plateauTime, dom.plateauNote, classical.plateau, "Plateau");
+    setResultCard(dom.breakthroughValue, dom.breakthroughTime, dom.breakthroughNote, classical.breakthrough, "Breakthrough", "D<sub>b</sub>");
+    setResultCard(dom.lagValue, dom.lagTime, dom.lagNote, classical.timeLag, "Time lag", "D<sub>lag</sub>");
+    setResultCard(dom.inflectionValue, dom.inflectionTime, dom.inflectionNote, classical.inflection, "Inflection", "D<sub>IP</sub>");
+    setResultCard(dom.inverseValue, dom.inverseTime, dom.inverseNote, classical.inverseFickian, "Inverse Fickian", "D<sub>Inv</sub>");
+    setResultCard(dom.fitValue, dom.fitTime, dom.fitNote, fit, "Best-fit transient model", "D<sub>fit</sub>");
   }
 
-  function setResultCard(valueNode, timeNode, noteNode, result, label) {
+  function setResultCard(valueNode, timeNode, noteNode, result, label, symbolHtml) {
     if (!valueNode || !timeNode || !noteNode) return;
+    const symbol = symbolHtml || "D";
     if (!result || !result.available) {
-      valueNode.textContent = "—";
+      valueNode.innerHTML = `${symbol} = &mdash;`;
       timeNode.textContent = "No stable value";
       noteNode.textContent = result && result.note ? result.note : `Unable to compute ${label.toLowerCase()}.`;
       return;
     }
 
-    valueNode.innerHTML = `${escapeHtml(formatDiffusivity(result.diffusivity))} <span class="mda-result-unit">mm&sup2;/s</span>`;
-    timeNode.textContent = result.timeText || "—";
+    valueNode.innerHTML = `${symbol} = ${escapeHtml(formatDiffusivity(result.diffusivity))} <span class="mda-result-unit">mm&sup2;/s</span>`;
+    if (result.timeHtml) {
+      timeNode.innerHTML = result.timeHtml;
+    } else {
+      timeNode.textContent = result.timeText || "—";
+    }
     noteNode.textContent = result.note || "";
   }
 
@@ -1689,9 +1704,9 @@
       const breakthrough = solveThresholdMethod(rows, thicknessMeters, 0.1, 15.3, "Breakthrough (10%)");
       const timeLag = solveThresholdMethod(rows, thicknessMeters, 0.63, 6, "Time lag (63%)");
       const inflection = solveInflectionMethod(rows, thicknessMeters, iMax);
-      const plateau = solveDiffusionPlateau(previewRows, thicknessMeters);
+      const inverseFickian = solveInverseFickianWindow(previewRows, thicknessMeters);
 
-      return { breakthrough, timeLag, inflection, plateau };
+      return { breakthrough, timeLag, inflection, inverseFickian };
     }
 
     function buildEmptyClassicalResults() {
@@ -1699,7 +1714,14 @@
         breakthrough: { available: false, note: "Load data to calculate breakthrough time." },
         timeLag: { available: false, note: "Load data to calculate time lag." },
         inflection: { available: false, note: "Load data to calculate the inflection point." },
-        plateau: { available: false, note: "Load data to estimate the stabilized inverse plateau." },
+        inverseFickian: { available: false, note: "Load data to estimate the inverse Fickian window." },
+      };
+    }
+
+    function buildEmptyFitResult() {
+      return {
+        available: false,
+        note: "Load data to fit D and t0 together.",
       };
     }
 
@@ -1743,18 +1765,18 @@
       };
     }
 
-    function solveDiffusionPlateau(previewRows, thicknessMeters) {
+    function solveInverseFickianWindow(previewRows, thicknessMeters) {
       const points = (previewRows || [])
         .map((row) => ({ time: row.time, diffusivity: row.diffusivity, normalized: row.normalized }))
         .filter((row) => Number.isFinite(row.time) && Number.isFinite(row.diffusivity) && Number.isFinite(row.normalized))
         .sort((a, b) => a.time - b.time);
       if (points.length < 5) {
-        return { available: false, note: "Not enough inverse-solve points to judge a plateau." };
+        return { available: false, note: "Not enough inverse-solve points to judge an inverse Fickian window." };
       }
 
       const window = chooseStableWindow(points);
       if (!window) {
-        return { available: false, note: "No stable inverse-solve plateau found." };
+        return { available: false, note: "No stable inverse Fickian window found." };
       }
 
       const values = window.points.map((point) => point.diffusivity);
@@ -1762,10 +1784,10 @@
       if (!Number.isFinite(medianValue) || medianValue <= SOLVER_POLICY.dLower * 10 || medianValue >= SOLVER_POLICY.dUpper / 10) {
         return {
           available: false,
-          note: "Inverse-solve values are pinned near the numerical bounds, so no stable plateau is reported.",
+          note: "Inverse-solve values are pinned near the numerical bounds, so no stable inverse window is reported.",
         };
       }
-      const note = `Stable window from ${formatNumber(window.points[0].time)} to ${formatNumber(window.points[window.points.length - 1].time)} s.`;
+      const note = `Stable inverse window from ${formatNumber(window.points[0].time)} to ${formatNumber(window.points[window.points.length - 1].time)} s.`;
       void thicknessMeters;
       return {
         available: true,
@@ -1776,8 +1798,13 @@
     }
 
     function chooseStableWindow(points) {
+      return chooseStableWindowWithMinSize(points, 8) || chooseStableWindowWithMinSize(points, 5);
+    }
+
+    function chooseStableWindowWithMinSize(points, minWindowSize) {
       let best = null;
-      for (let windowSize = Math.min(points.length, 12); windowSize >= 5; windowSize -= 1) {
+      const maxWindowSize = Math.min(points.length, 16);
+      for (let windowSize = maxWindowSize; windowSize >= minWindowSize; windowSize -= 1) {
         for (let start = 0; start <= points.length - windowSize; start += 1) {
           const candidate = points.slice(start, start + windowSize);
           const values = candidate.map((point) => point.diffusivity).filter((value) => Number.isFinite(value));
@@ -1790,13 +1817,190 @@
           const spread = iqr(values) / Math.max(Math.abs(center), Number.EPSILON);
           const slope = Math.abs(linearSlope(candidate)) * Math.max(candidate[candidate.length - 1].time - candidate[0].time, 1) / Math.max(Math.abs(center), Number.EPSILON);
           if (spread > 0.12 || slope > 0.12) continue;
-          const score = spread + slope + Math.abs(normalizedMedian - 0.5) * 0.15;
-          if (!best || score < best.score) {
+          const lengthPenalty = (maxWindowSize - windowSize) * 0.01;
+          const score = spread + slope + Math.abs(normalizedMedian - 0.5) * 0.15 + lengthPenalty;
+          if (!best || score < best.score || (Math.abs(score - best.score) < 0.003 && windowSize > best.points.length)) {
             best = { points: candidate, score };
           }
         }
       }
       return best;
+    }
+
+    function buildFitResult(fitRows, thicknessMm, baselineValue, steadyValue) {
+      const thicknessMeters = thicknessMm / 1000;
+      const rows = (fitRows || [])
+        .map((row) => ({
+          time: row.time,
+          current: row.current,
+        }))
+        .filter((row) => Number.isFinite(row.time) && Number.isFinite(row.current))
+        .sort((a, b) => a.time - b.time);
+
+      if (rows.length < 4) {
+        return { available: false, note: "Not enough points to fit D and t0 together." };
+      }
+      if (!Number.isFinite(baselineValue) || !Number.isFinite(steadyValue)) {
+        return { available: false, note: "The fit requires fixed baseline and steady-state values." };
+      }
+      const denom = steadyValue - baselineValue;
+      if (!Number.isFinite(denom) || denom <= 0) {
+        return { available: false, note: "The fit requires a positive baseline-to-steady-state span." };
+      }
+
+      const normalizedRows = rows
+        .map((row) => ({
+          time: row.time,
+          normalized: (row.current - baselineValue) / denom,
+        }))
+        .filter((row) => Number.isFinite(row.time) && Number.isFinite(row.normalized));
+
+      if (normalizedRows.length < 4) {
+        return { available: false, note: "Not enough normalized points to fit D and t0 together." };
+      }
+
+      const sampledRows = sampleEvenly(normalizedRows, 160);
+      const deadline = performance.now() + SOLVER_POLICY.timeoutMs;
+      const seed = estimateFitSeed(sampledRows, thicknessMeters);
+      const best = optimizeFitSearch(sampledRows, thicknessMeters, seed, deadline);
+      if (!best) {
+        return { available: false, note: "No stable D and t0 fit could be found." };
+      }
+
+      const rmse = Math.sqrt(best.sse / Math.max(best.count, 1));
+      const noteParts = [`Full-curve least-squares fit over ${best.count} points.`];
+      if (Number.isFinite(rmse)) {
+        noteParts.push(`Normalized RMSE ${formatNumber(rmse)}.`);
+      }
+      const lastNormalized = normalizedRows[normalizedRows.length - 1]?.normalized;
+      if (Number.isFinite(lastNormalized) && lastNormalized < 0.9) {
+        noteParts.push("Steady state is not fully reached, so the fit extrapolates the asymptote from the fixed references.");
+      }
+
+      const t0Text = `${best.timeOffset >= 0 ? "+" : ""}${formatNumber(best.timeOffset)} s`;
+      return {
+        available: true,
+        diffusivity: best.diffusivity,
+        timeHtml: `t<sub>0</sub> = ${escapeHtml(t0Text)}`,
+        note: noteParts.join(" "),
+      };
+    }
+
+    function optimizeFitSearch(rows, thicknessMeters, seed, deadline) {
+      if (!rows.length || !Number.isFinite(thicknessMeters) || thicknessMeters <= 0) return null;
+
+      const minLog = Math.log10(SOLVER_POLICY.dLower);
+      const maxLog = Math.log10(SOLVER_POLICY.dUpper);
+      const timeMin = rows[0].time;
+      const timeMax = rows[rows.length - 1].time;
+      const timeSpan = Math.max(1, timeMax - timeMin);
+      const timeLower = timeMin - timeSpan;
+      const timeUpper = timeMax + timeSpan;
+
+      let logCenter = seed && Number.isFinite(seed.diffusivity) ? Math.log10(clamp(seed.diffusivity, SOLVER_POLICY.dLower, SOLVER_POLICY.dUpper)) : (minLog + maxLog) / 2;
+      let timeCenter = seed && Number.isFinite(seed.timeOffset) ? seed.timeOffset : timeMin;
+      let logHalfRange = seed && Number.isFinite(seed.diffusivity) ? 1.0 : (maxLog - minLog) / 2;
+      let timeHalfRange = seed && Number.isFinite(seed.timeOffset) ? Math.max(timeSpan * 0.5, 1) : Math.max(timeSpan, 1);
+      let best = null;
+
+      const stages = [
+        { logSteps: 13, timeSteps: 13 },
+        { logSteps: 11, timeSteps: 11 },
+        { logSteps: 9, timeSteps: 9 },
+      ];
+
+      for (const stage of stages) {
+        const stageLogLower = clamp(logCenter - logHalfRange, minLog, maxLog);
+        const stageLogUpper = clamp(logCenter + logHalfRange, minLog, maxLog);
+        const stageTimeLower = clamp(timeCenter - timeHalfRange, timeLower, timeUpper);
+        const stageTimeUpper = clamp(timeCenter + timeHalfRange, timeLower, timeUpper);
+        let stageBest = null;
+
+        for (let i = 0; i < stage.logSteps; i += 1) {
+          if (deadline && performance.now() > deadline) return best || stageBest;
+          const logD = stage.logSteps === 1 ? logCenter : stageLogLower + ((stageLogUpper - stageLogLower) * i) / (stage.logSteps - 1);
+          const diffusivity = Math.pow(10, logD);
+          for (let j = 0; j < stage.timeSteps; j += 1) {
+            if (deadline && performance.now() > deadline) return best || stageBest;
+            const timeOffset = stage.timeSteps === 1 ? timeCenter : stageTimeLower + ((stageTimeUpper - stageTimeLower) * j) / (stage.timeSteps - 1);
+            const candidate = scoreFitCandidate(rows, thicknessMeters, diffusivity, timeOffset, deadline);
+            if (!candidate) continue;
+            if (!stageBest || candidate.score < stageBest.score) {
+              stageBest = candidate;
+            }
+          }
+        }
+
+        if (!stageBest) break;
+        best = stageBest;
+        logCenter = Math.log10(stageBest.diffusivity);
+        timeCenter = stageBest.timeOffset;
+        logHalfRange = Math.max(logHalfRange * 0.35, 0.03);
+        timeHalfRange = Math.max(timeHalfRange * 0.35, timeSpan * 0.01, 0.05);
+      }
+
+      return best;
+    }
+
+    function scoreFitCandidate(rows, thicknessMeters, diffusivity, timeOffset, deadline) {
+      if (!Number.isFinite(diffusivity) || diffusivity <= 0 || !Number.isFinite(timeOffset)) return null;
+      let sumSquares = 0;
+      let count = 0;
+      for (const row of rows) {
+        if (deadline && performance.now() > deadline) return null;
+        const model = evaluateFickResponseDetailed(diffusivity, row.time + timeOffset, thicknessMeters, deadline);
+        const predicted = typeof model === "number" ? model : model && model.value;
+        if (!Number.isFinite(predicted) || !Number.isFinite(row.normalized)) return null;
+        const residual = predicted - row.normalized;
+        sumSquares += residual * residual;
+        count += 1;
+      }
+      if (count < 4) return null;
+      return {
+        diffusivity,
+        timeOffset,
+        count,
+        sse: sumSquares,
+        score: Math.sqrt(sumSquares / count),
+      };
+    }
+
+    function estimateFitSeed(rows, thicknessMeters) {
+      if (!rows.length || !Number.isFinite(thicknessMeters) || thicknessMeters <= 0) return null;
+      const breakthrough = findCrossingTime(rows, 0.1);
+      const timeLag = findCrossingTime(rows, 0.63);
+      if (!breakthrough || !timeLag || !Number.isFinite(breakthrough.time) || !Number.isFinite(timeLag.time) || timeLag.time <= breakthrough.time) {
+        return null;
+      }
+
+      const span = timeLag.time - breakthrough.time;
+      const coefficient = (1 / 6) - (1 / 15.3);
+      const diffusivity = (thicknessMeters * thicknessMeters * coefficient) / span;
+      if (!Number.isFinite(diffusivity) || diffusivity <= 0) return null;
+      const timeOffset = (thicknessMeters * thicknessMeters) / (6 * diffusivity) - timeLag.time;
+      if (!Number.isFinite(timeOffset)) return null;
+
+      return {
+        diffusivity: clamp(diffusivity, SOLVER_POLICY.dLower, SOLVER_POLICY.dUpper),
+        timeOffset,
+      };
+    }
+
+    function sampleEvenly(points, maxPoints) {
+      if (!Array.isArray(points) || !points.length) return [];
+      if (!Number.isFinite(maxPoints) || maxPoints <= 0 || points.length <= maxPoints) {
+        return points.slice();
+      }
+      const sampled = [];
+      const lastIndex = points.length - 1;
+      for (let i = 0; i < maxPoints; i += 1) {
+        const index = Math.round((i * lastIndex) / (maxPoints - 1));
+        const point = points[index];
+        if (!point) continue;
+        if (sampled.length && sampled[sampled.length - 1].time === point.time) continue;
+        sampled.push(point);
+      }
+      return sampled;
     }
 
     function findCrossingTime(rows, threshold) {
