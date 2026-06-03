@@ -13,7 +13,7 @@ permalink: /mda/
           <div>
             <h2>Input</h2>
           </div>
-          <div class="mda-intro-actions">
+        <div class="mda-intro-actions">
           <button type="button" class="mda-button is-secondary" id="mda-clear" title="Clear pasted data and reset the preview.">Clear</button>
           <button type="button" class="mda-button is-secondary" id="mda-upload-trigger" title="Upload a CSV or TXT file into the same parser.">File Upload</button>
           <button type="button" class="mda-button is-accent mda-help-open" data-action="open-help" title="Open the short usage guide.">Help</button>
@@ -85,6 +85,9 @@ permalink: /mda/
 
     <section class="mda-stage">
       <div class="mda-stage-header">
+        <div class="mda-stage-left-actions">
+          <button type="button" class="mda-button is-accent" id="mda-diagnostic-open" data-action="open-diagnostic" title="Experimental: Run a diagnostic self-consistency check and suggest candidate settings.">Experimental: Diagnostics</button>
+        </div>
         <div class="mda-stage-controls">
           <button type="button" class="mda-button is-secondary" id="mda-reset-plot" title="Reset the preview plot zoom and pan.">Reset</button>
           <details class="mda-tool-panel is-accent">
@@ -189,8 +192,8 @@ permalink: /mda/
             <div class="mda-result-note" id="mda-inverse-note"></div>
           </article>
           <article class="mda-result-card">
-            <h3>Best-fit transient model</h3>
-            <div class="mda-result-value" id="mda-fit-value">D<sub>fit</sub> = &mdash;</div>
+            <h3>Global Transient Fit</h3>
+            <div class="mda-result-value" id="mda-fit-value">D<sub>GTF</sub> = &mdash;</div>
             <div class="mda-result-meta" id="mda-fit-time">Load data to fit D and t<sub>0</sub> together.</div>
             <div class="mda-result-note" id="mda-fit-note"></div>
           </article>
@@ -276,4 +279,72 @@ permalink: /mda/
   </aside>
 </div>
 
+<div class="mda-diagnostic-drawer" id="mda-diagnostic-drawer" aria-hidden="true">
+  <div class="mda-diagnostic-backdrop" data-action="close-diagnostic"></div>
+  <aside class="mda-diagnostic-panel" role="dialog" aria-modal="true" aria-label="Diagnostic mode">
+    <div class="mda-diagnostic-header">
+      <div>
+        <h2>Diagnostic mode</h2>
+        <p id="mda-diagnostic-summary">Paste data or load a file, then run Diagnose.</p>
+      </div>
+      <button type="button" class="mda-diagnostic-close" data-action="close-diagnostic">Close</button>
+    </div>
+    <div class="mda-diagnostic-body">
+      <section class="mda-diagnostic-actions-row">
+        <button type="button" class="mda-button is-accent" id="mda-diagnostic-run">Diagnose</button>
+        <button type="button" class="mda-button is-secondary" id="mda-diagnostic-apply" disabled>Apply Best</button>
+        <button type="button" class="mda-button is-secondary" id="mda-diagnostic-revert" disabled>Revert</button>
+      </section>
+
+      <section class="mda-diagnostic-grid mda-diagnostic-section--results" aria-label="Diagnostic score summary">
+        <article class="mda-diagnostic-card">
+          <span>Composite score</span>
+          <strong id="mda-diagnostic-score">—</strong>
+        </article>
+        <article class="mda-diagnostic-card">
+          <span>Confidence</span>
+          <strong id="mda-diagnostic-confidence">—</strong>
+        </article>
+        <article class="mda-diagnostic-card">
+          <span>Best t<sub>0</sub></span>
+          <strong id="mda-diagnostic-t0">—</strong>
+        </article>
+        <article class="mda-diagnostic-card">
+          <span>Agreement</span>
+          <strong id="mda-diagnostic-agreement">—</strong>
+        </article>
+      </section>
+
+      <section class="mda-diagnostic-block mda-diagnostic-section--results">
+        <h3>Snapshot</h3>
+        <div id="mda-diagnostic-snapshot" class="mda-diagnostic-text">No snapshot stored yet.</div>
+      </section>
+
+      <section class="mda-diagnostic-block mda-diagnostic-section--results">
+        <h3>Findings</h3>
+        <ul id="mda-diagnostic-findings" class="mda-diagnostic-list"></ul>
+      </section>
+
+      <section class="mda-diagnostic-block mda-diagnostic-section--results">
+        <h3>Top candidates</h3>
+        <div id="mda-diagnostic-candidates" class="mda-diagnostic-candidates"></div>
+      </section>
+
+      <div class="mda-diagnostic-busy" id="mda-diagnostic-busy" hidden>
+        <span class="mda-diagnostic-busy-dot" aria-hidden="true"></span>
+        <div>
+          <strong>Diagnosing</strong>
+          <div id="mda-diagnostic-busy-text">Working through the candidate settings now.</div>
+        </div>
+      </div>
+
+      <section class="mda-diagnostic-block">
+        <h3>Notes</h3>
+        <div id="mda-diagnostic-notes" class="mda-diagnostic-text">Paste data or load a file, then run Diagnose to generate a report.</div>
+      </section>
+    </div>
+  </aside>
+</div>
+
+<script src="/mda/diagnostic-core.js" defer></script>
 <script src="/mda/mda.js" defer></script>

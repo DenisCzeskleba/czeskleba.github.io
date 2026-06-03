@@ -95,6 +95,30 @@ header .mda-header-brand-text {
   border-color: var(--accent);
 }
 
+#mda-diagnostic-open {
+  background: #7a2b2b;
+  border-color: #7a2b2b;
+  color: #fff;
+}
+
+#mda-diagnostic-open:hover,
+#mda-diagnostic-open:focus-visible {
+  background: #8d3535;
+  border-color: #8d3535;
+  color: #fff;
+}
+
+body.dark #mda-diagnostic-open {
+  background: #8c3232;
+  border-color: #8c3232;
+}
+
+body.dark #mda-diagnostic-open:hover,
+body.dark #mda-diagnostic-open:focus-visible {
+  background: #a03c3c;
+  border-color: #a03c3c;
+}
+
 .mda-button.is-secondary {
   background: var(--panel-strong);
 }
@@ -440,6 +464,10 @@ header .mda-header-brand-text {
   .mda-results-grid {
     grid-template-columns: 1fr;
   }
+
+  .mda-diagnostic-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .mda-stage-header {
@@ -451,6 +479,14 @@ header .mda-header-brand-text {
   width: 100%;
 }
 
+.mda-stage-left-actions {
+  margin-right: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
 .mda-stage-controls {
   display: flex;
   align-items: center;
@@ -460,6 +496,7 @@ header .mda-header-brand-text {
 }
 
 .mda-stage-controls > .mda-button,
+.mda-stage-left-actions > .mda-button,
 .mda-stage-controls > .mda-tool-panel > summary {
   border-radius: 999px;
   padding: 0 10px;
@@ -745,6 +782,7 @@ header .mda-header-brand-text {
   display: block;
   width: 100%;
   height: auto;
+  overflow: hidden;
 }
 
 .mda-plot-empty {
@@ -970,28 +1008,32 @@ header .mda-header-brand-text {
   margin-top: 2px;
 }
 
-.mda-help-drawer {
+.mda-help-drawer,
+.mda-diagnostic-drawer {
   position: fixed;
   inset: 0;
   display: none;
   z-index: 50;
 }
 
-.mda-help-drawer.is-open {
+.mda-help-drawer.is-open,
+.mda-diagnostic-drawer.is-open {
   display: block;
 }
 
-.mda-help-backdrop {
+.mda-help-backdrop,
+.mda-diagnostic-backdrop {
   position: absolute;
   inset: 0;
   background: rgba(15, 23, 42, 0.35);
 }
 
-.mda-help-panel {
+.mda-help-panel,
+.mda-diagnostic-panel {
   position: absolute;
   top: 0;
   right: 0;
-  width: min(460px, 92vw);
+  width: min(520px, 92vw);
   height: 100%;
   background: var(--panel);
   border-left: 1px solid var(--line);
@@ -1005,7 +1047,20 @@ header .mda-header-brand-text {
   min-width: 320px;
 }
 
-.mda-help-header {
+.mda-diagnostic-drawer[aria-busy="true"] .mda-diagnostic-panel {
+  box-shadow: -16px 0 32px rgba(122, 43, 43, 0.28);
+}
+
+.mda-diagnostic-drawer[aria-busy="true"] .mda-diagnostic-header {
+  border-bottom-color: color-mix(in srgb, #7a2b2b 28%, var(--line));
+}
+
+.mda-diagnostic-panel {
+  width: min(620px, 96vw);
+}
+
+.mda-help-header,
+.mda-diagnostic-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1015,7 +1070,8 @@ header .mda-header-brand-text {
   font-weight: 600;
 }
 
-.mda-help-close {
+.mda-help-close,
+.mda-diagnostic-close {
   appearance: none;
   border: 1px solid var(--line);
   background: var(--panel-strong);
@@ -1027,32 +1083,216 @@ header .mda-header-brand-text {
   cursor: pointer;
 }
 
-.mda-help-body {
+.mda-help-body,
+.mda-diagnostic-body {
   display: grid;
   gap: 1rem;
   overflow: auto;
   min-height: 0;
+  align-content: start;
+  grid-auto-rows: min-content;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--muted) 55%, transparent) transparent;
 }
 
-.mda-help-body p {
+.mda-help-body p,
+.mda-diagnostic-body p {
   margin: 0.35rem 0 0;
 }
 
-.mda-help-list {
+.mda-help-list,
+.mda-diagnostic-list {
   margin: 0.5rem 0 0;
   padding-left: 1.15rem;
 }
 
-.mda-help-list li + li {
+.mda-help-list li + li,
+.mda-diagnostic-list li + li {
   margin-top: 0.35rem;
+}
+
+.mda-diagnostic-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.mda-diagnostic-actions-row .mda-button {
+  min-height: 44px;
+  padding: 0.7rem 1rem;
+}
+
+.mda-diagnostic-actions-row .mda-button.is-accent {
+  padding-inline: 1.05rem;
+}
+
+.mda-diagnostic-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.mda-diagnostic-section--results {
+  display: none;
+}
+
+.mda-diagnostic-drawer.has-report .mda-diagnostic-section--results {
+  display: block;
+}
+
+.mda-diagnostic-drawer.has-report .mda-diagnostic-grid.mda-diagnostic-section--results {
+  display: grid;
+}
+
+.mda-diagnostic-busy {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid color-mix(in srgb, #7a2b2b 36%, var(--line));
+  border-radius: 14px;
+  background: color-mix(in srgb, #7a2b2b 12%, var(--panel));
+  padding: 0.75rem 0.9rem;
+}
+
+.mda-diagnostic-busy[hidden],
+.mda-diagnostic-results-shell[hidden] {
+  display: none !important;
+}
+
+.mda-diagnostic-busy strong {
+  display: block;
+  margin-bottom: 0.15rem;
+}
+
+.mda-diagnostic-busy div {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.mda-diagnostic-busy-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #a03c3c;
+  box-shadow: 0 0 0 0 rgba(160, 60, 60, 0.55);
+  animation: mda-diagnostic-pulse 1.25s ease-in-out infinite;
+  flex: 0 0 auto;
+}
+
+@keyframes mda-diagnostic-pulse {
+  0% {
+    transform: scale(0.85);
+    box-shadow: 0 0 0 0 rgba(160, 60, 60, 0.45);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 12px rgba(160, 60, 60, 0);
+  }
+  100% {
+    transform: scale(0.85);
+    box-shadow: 0 0 0 0 rgba(160, 60, 60, 0);
+  }
+}
+
+.mda-diagnostic-card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel-strong);
+  padding: 0.8rem 0.85rem;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.mda-diagnostic-card span {
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.mda-diagnostic-card strong {
+  font-size: 1.05rem;
+  color: var(--ink);
+}
+
+.mda-diagnostic-block {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--panel) 92%, var(--panel-strong));
+  padding: 0.85rem;
+}
+
+.mda-diagnostic-block h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.mda-diagnostic-text {
+  color: var(--muted);
+  line-height: 1.45;
+  font-size: 0.92rem;
+}
+
+.mda-diagnostic-findings,
+.mda-diagnostic-candidates {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.mda-diagnostic-finding {
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  padding: 0.7rem 0.8rem;
+}
+
+.mda-diagnostic-finding.is-ok {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+}
+
+.mda-diagnostic-finding.is-warning {
+  border-color: color-mix(in srgb, #c08a00 40%, var(--line));
+}
+
+.mda-diagnostic-finding.is-critical {
+  border-color: color-mix(in srgb, #b42318 40%, var(--line));
+}
+
+.mda-diagnostic-finding-title {
+  font-weight: 700;
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.mda-diagnostic-candidate {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  padding: 0.7rem 0.8rem;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.mda-diagnostic-candidate strong {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.mda-diagnostic-candidate span {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.mda-diagnostic-candidate.is-best {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent);
 }
 
 .mda-panel-body::-webkit-scrollbar,
 .mda-textarea::-webkit-scrollbar,
 .mda-preview-wrap::-webkit-scrollbar,
-.mda-help-body::-webkit-scrollbar {
+.mda-help-body::-webkit-scrollbar,
+.mda-diagnostic-body::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
@@ -1060,7 +1300,8 @@ header .mda-header-brand-text {
 .mda-panel-body::-webkit-scrollbar-thumb,
 .mda-textarea::-webkit-scrollbar-thumb,
 .mda-preview-wrap::-webkit-scrollbar-thumb,
-.mda-help-body::-webkit-scrollbar-thumb {
+.mda-help-body::-webkit-scrollbar-thumb,
+.mda-diagnostic-body::-webkit-scrollbar-thumb {
   background: color-mix(in srgb, var(--muted) 55%, transparent);
   border-radius: 999px;
   border: 3px solid transparent;
@@ -1070,7 +1311,8 @@ header .mda-header-brand-text {
 .mda-panel-body::-webkit-scrollbar-track,
 .mda-textarea::-webkit-scrollbar-track,
 .mda-preview-wrap::-webkit-scrollbar-track,
-.mda-help-body::-webkit-scrollbar-track {
+.mda-help-body::-webkit-scrollbar-track,
+.mda-diagnostic-body::-webkit-scrollbar-track {
   background: transparent;
 }
 
@@ -1089,6 +1331,12 @@ header .mda-header-brand-text {
   .mda-panel-header {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .mda-stage-left-actions {
+    margin-right: 0;
+    width: 100%;
+    order: -1;
   }
 
   .mda-panel {

@@ -9,7 +9,7 @@
   const DECIMAL_OPTIONS = [".", ","];
   const PLOT_WIDTH = 920;
   const PLOT_HEIGHT = 340;
-  const PLOT_MARGINS = { top: 42, right: 88, bottom: 48, left: 72 };
+  const PLOT_MARGINS = { top: 24, right: 40, bottom: 36, left: 40 };
   const SOLVER_POLICY = {
     minTerms: 3,
     maxTerms: 100,
@@ -25,6 +25,11 @@
     currentFileName: null,
     currentParse: null,
     currentAnalysis: null,
+    diagnosticSnapshot: null,
+    diagnosticReport: null,
+    diagnosticBusy: false,
+    diagnosticBusyTimer: null,
+    diagnosticBusyStartedAt: 0,
     referenceVisibility: { baseline: true, steady: true },
     plotDiffusionScale: "linear",
     plotLowConfidenceMode: "shaded",
@@ -41,6 +46,7 @@
   function init() {
     const root = document.getElementById("mda-app");
     if (!root) return;
+    const diagnosticCore = window.MDADiagnosticCore || (typeof globalThis !== "undefined" ? globalThis.MDADiagnosticCore : null);
 
     injectHeaderBrand();
 
@@ -88,8 +94,25 @@
         fitTime: document.getElementById("mda-fit-time"),
         fitNote: document.getElementById("mda-fit-note"),
         helpDrawer: document.getElementById("mda-help-drawer"),
+        diagnosticDrawer: document.getElementById("mda-diagnostic-drawer"),
         helpOpenButtons: root.querySelectorAll("[data-action='open-help']"),
+        diagnosticOpenButtons: root.querySelectorAll("[data-action='open-diagnostic']"),
         helpCloseButtons: document.querySelectorAll("[data-action='close-help']"),
+        diagnosticCloseButtons: document.querySelectorAll("[data-action='close-diagnostic']"),
+        diagnosticRunButton: document.getElementById("mda-diagnostic-run"),
+        diagnosticApplyButton: document.getElementById("mda-diagnostic-apply"),
+        diagnosticRevertButton: document.getElementById("mda-diagnostic-revert"),
+        diagnosticSummary: document.getElementById("mda-diagnostic-summary"),
+        diagnosticBusyBanner: document.getElementById("mda-diagnostic-busy"),
+        diagnosticBusyText: document.getElementById("mda-diagnostic-busy-text"),
+        diagnosticScore: document.getElementById("mda-diagnostic-score"),
+        diagnosticConfidence: document.getElementById("mda-diagnostic-confidence"),
+        diagnosticT0: document.getElementById("mda-diagnostic-t0"),
+        diagnosticAgreement: document.getElementById("mda-diagnostic-agreement"),
+        diagnosticSnapshot: document.getElementById("mda-diagnostic-snapshot"),
+        diagnosticFindings: document.getElementById("mda-diagnostic-findings"),
+        diagnosticCandidates: document.getElementById("mda-diagnostic-candidates"),
+        diagnosticNotes: document.getElementById("mda-diagnostic-notes"),
         downloadButtons: root.querySelectorAll("[data-download]"),
         clearButton: document.getElementById("mda-clear"),
     };
@@ -98,14 +121,28 @@
       return;
     }
 
+    if (!diagnosticCore) {
+      console.warn("Diagnostic core failed to load.");
+      if (dom.diagnosticRunButton) dom.diagnosticRunButton.disabled = true;
+    }
+
     state.plotDiffusionScale = dom.diffusionScale && dom.diffusionScale.checked ? "log" : "linear";
     state.plotLowConfidenceMode = dom.lowConfidence && dom.lowConfidence.value ? dom.lowConfidence.value : "shaded";
 
     dom.helpOpenButtons.forEach((button) => {
       button.addEventListener("click", () => openDrawer(dom.helpDrawer));
     });
+    dom.diagnosticOpenButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        openDrawer(dom.diagnosticDrawer, dom.helpDrawer);
+        renderDiagnosticDrawer(dom, state.diagnosticReport);
+      });
+    });
     dom.helpCloseButtons.forEach((button) => {
       button.addEventListener("click", () => closeDrawer(dom.helpDrawer));
+    });
+    dom.diagnosticCloseButtons.forEach((button) => {
+      button.addEventListener("click", () => closeDrawer(dom.diagnosticDrawer));
     });
     if (dom.helpDrawer) {
       dom.helpDrawer.addEventListener("click", (event) => {
@@ -114,8 +151,18 @@
         }
       });
     }
+    if (dom.diagnosticDrawer) {
+      dom.diagnosticDrawer.addEventListener("click", (event) => {
+        if (event.target === dom.diagnosticDrawer.querySelector(".mda-diagnostic-backdrop")) {
+          closeDrawer(dom.diagnosticDrawer);
+        }
+      });
+    }
     document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") closeDrawer(dom.helpDrawer);
+      if (event.key === "Escape") {
+        closeDrawer(dom.helpDrawer);
+        closeDrawer(dom.diagnosticDrawer);
+      }
     });
 
     dom.input.addEventListener("input", () => scheduleParse(dom, "paste"));
@@ -234,6 +281,16 @@
       });
     }
 
+    if (dom.diagnosticRunButton) {
+      dom.diagnosticRunButton.addEventListener("click", () => runDiagnosticAnalysis(dom));
+    }
+    if (dom.diagnosticApplyButton) {
+      dom.diagnosticApplyButton.addEventListener("click", () => applyDiagnosticBest(dom));
+    }
+    if (dom.diagnosticRevertButton) {
+      dom.diagnosticRevertButton.addEventListener("click", () => revertDiagnosticSnapshot(dom));
+    }
+
     if (dom.baselineToggle) {
       dom.baselineToggle.addEventListener("click", () => toggleReferenceVisibility(dom, "baseline"));
     }
@@ -281,6 +338,9 @@
         if (dom.t0Offset) dom.t0Offset.value = "0";
         syncT0OffsetDisplay(dom);
         if (dom.cropRange) dom.cropRange.value = "";
+        state.diagnosticSnapshot = null;
+        state.diagnosticReport = null;
+        renderDiagnosticDrawer(dom, null);
         renderEmpty(dom, "Paste data to begin.");
       });
     }
@@ -292,6 +352,7 @@
       dom.lowConfidence.value = "shaded";
     }
     syncT0OffsetDisplay(dom);
+    renderDiagnosticDrawer(dom, null);
     renderEmpty(dom, "Paste data to begin.");
     loadDebugDefaultInput(dom);
   }
@@ -313,8 +374,9 @@
     header.insertBefore(brand, actions);
   }
 
-  function openDrawer(drawer) {
+  function openDrawer(drawer, otherDrawer) {
     if (!drawer) return;
+    if (otherDrawer) closeDrawer(otherDrawer);
     drawer.classList.add("is-open");
     drawer.setAttribute("aria-hidden", "false");
   }
@@ -323,6 +385,11 @@
     if (!drawer) return;
     drawer.classList.remove("is-open");
     drawer.setAttribute("aria-hidden", "true");
+  }
+
+  function closeAllDrawers(dom) {
+    closeDrawer(dom && dom.helpDrawer);
+    closeDrawer(dom && dom.diagnosticDrawer);
   }
 
   function toggleReferenceVisibility(dom, kind) {
@@ -1535,6 +1602,7 @@
       syncReferenceControls(dom, analysis);
       updateSummary(dom, analysis);
       renderDiagnostics(dom, analysis);
+      renderDiagnosticDrawer(dom, state.diagnosticReport);
       renderResults(dom, analysis);
       renderPreview(dom, analysis);
       renderPlot(dom, analysis);
@@ -1548,6 +1616,7 @@
       syncReferenceControls(dom, state.currentAnalysis);
       updateSummary(dom, state.currentAnalysis);
       renderDiagnostics(dom, state.currentAnalysis);
+      renderDiagnosticDrawer(dom, state.diagnosticReport);
       renderResults(dom, state.currentAnalysis);
       renderPreview(dom, state.currentAnalysis);
       renderPlot(dom, state.currentAnalysis);
@@ -1635,7 +1704,7 @@
     setResultCard(dom.lagValue, dom.lagTime, dom.lagNote, classical.timeLag, "Time lag", "D<sub>lag</sub>");
     setResultCard(dom.inflectionValue, dom.inflectionTime, dom.inflectionNote, classical.inflection, "Inflection", "D<sub>IP</sub>");
     setResultCard(dom.inverseValue, dom.inverseTime, dom.inverseNote, classical.inverseFickian, "Inverse Fickian", "D<sub>Inv</sub>");
-    setResultCard(dom.fitValue, dom.fitTime, dom.fitNote, fit, "Best-fit transient model", "D<sub>fit</sub>");
+    setResultCard(dom.fitValue, dom.fitTime, dom.fitNote, fit, "Global Transient Fit", "D<sub>GTF</sub>");
   }
 
   function setResultCard(valueNode, timeNode, noteNode, result, label, symbolHtml) {
@@ -1654,7 +1723,11 @@
     } else {
       timeNode.textContent = result.timeText || "—";
     }
-    noteNode.textContent = result.note || "";
+    if (result.noteHtml) {
+      noteNode.innerHTML = result.noteHtml;
+    } else {
+      noteNode.textContent = result.note || "";
+    }
   }
 
   function renderPreview(dom, analysis) {
@@ -1701,8 +1774,8 @@
         .filter((row) => Number.isFinite(row.time) && Number.isFinite(row.normalized) && Number.isFinite(row.current))
         .sort((a, b) => a.time - b.time);
 
-      const breakthrough = solveThresholdMethod(rows, thicknessMeters, 0.1, 15.3, "Breakthrough (10%)");
-      const timeLag = solveThresholdMethod(rows, thicknessMeters, 0.63, 6, "Time lag (63%)");
+      const breakthrough = solveThresholdMethod(rows, thicknessMeters, 0.1, 15.3, "Breakthrough (10%)", "D = L<sup>2</sup> / (15.3 t<sub>b</sub>)");
+      const timeLag = solveThresholdMethod(rows, thicknessMeters, 0.63, 6, "Time lag (63%)", "D = L<sup>2</sup> / (6 t<sub>lag</sub>)");
       const inflection = solveInflectionMethod(rows, thicknessMeters, iMax);
       const inverseFickian = solveInverseFickianWindow(previewRows, thicknessMeters);
 
@@ -1725,7 +1798,7 @@
       };
     }
 
-    function solveThresholdMethod(rows, thicknessMeters, threshold, coefficient, label) {
+    function solveThresholdMethod(rows, thicknessMeters, threshold, coefficient, label, formulaHtml) {
       const crossing = findCrossingTime(rows, threshold);
       if (!crossing) {
         return {
@@ -1738,7 +1811,7 @@
         available: Number.isFinite(diffusivity) && diffusivity > 0,
         diffusivity,
         timeText: `${label}: t = ${formatNumber(crossing.time)} s`,
-        note: `${label} threshold ${Math.round(threshold * 100)}%.`,
+        noteHtml: formulaHtml || `${label} threshold ${Math.round(threshold * 100)}%.`,
       };
     }
 
@@ -1761,7 +1834,7 @@
         available: Number.isFinite(diffusivity) && diffusivity > 0,
         diffusivity,
         timeText: `t = ${formatNumber(inflection.time)} s`,
-        note: "Inflection-point estimate at I/I_max ≈ 0.2442.",
+        noteHtml: "Inflection-point estimate (ideal solution) at I/I<sub>max</sub> ≈ 0.2442",
       };
     }
 
@@ -1770,40 +1843,45 @@
         .map((row) => ({ time: row.time, diffusivity: row.diffusivity, normalized: row.normalized }))
         .filter((row) => Number.isFinite(row.time) && Number.isFinite(row.diffusivity) && Number.isFinite(row.normalized))
         .sort((a, b) => a.time - b.time);
-      if (points.length < 5) {
+      const sampledPoints = sampleEvenly(points, 120);
+      if (sampledPoints.length < 8) {
         return { available: false, note: "Not enough inverse-solve points to judge an inverse Fickian window." };
       }
 
-      const window = chooseStableWindow(points);
+      const window = chooseStableWindow(sampledPoints);
       if (!window) {
         return { available: false, note: "No stable inverse Fickian window found." };
       }
 
       const values = window.points.map((point) => point.diffusivity);
-      const medianValue = median(values);
-      if (!Number.isFinite(medianValue) || medianValue <= SOLVER_POLICY.dLower * 10 || medianValue >= SOLVER_POLICY.dUpper / 10) {
+      const robustValue = trimmedMean(values);
+      if (!Number.isFinite(robustValue) || robustValue <= SOLVER_POLICY.dLower * 10 || robustValue >= SOLVER_POLICY.dUpper / 10) {
         return {
           available: false,
           note: "Inverse-solve values are pinned near the numerical bounds, so no stable inverse window is reported.",
         };
       }
-      const note = `Stable inverse window from ${formatNumber(window.points[0].time)} to ${formatNumber(window.points[window.points.length - 1].time)} s.`;
+      const span = window.points[window.points.length - 1].time - window.points[0].time;
+      const note = `Robust inverse window from ${formatNumber(window.points[0].time)} to ${formatNumber(window.points[window.points.length - 1].time)} s`;
       void thicknessMeters;
       return {
         available: true,
-        diffusivity: medianValue,
-        timeText: `${window.points.length} points`,
+        diffusivity: robustValue,
+        timeText: Number.isFinite(span)
+          ? `Average over ${window.points.length} points / ${formatNumber(span)} s`
+          : `Average over ${window.points.length} points`,
         note,
       };
     }
 
     function chooseStableWindow(points) {
-      return chooseStableWindowWithMinSize(points, 8) || chooseStableWindowWithMinSize(points, 5);
+      return chooseStableWindowWithMinSize(points, Math.max(8, Math.ceil(points.length * 0.3))) || chooseStableWindowWithMinSize(points, 8);
     }
 
     function chooseStableWindowWithMinSize(points, minWindowSize) {
       let best = null;
-      const maxWindowSize = Math.min(points.length, 16);
+      const maxWindowSize = Math.min(points.length, Math.max(minWindowSize, Math.ceil(points.length * 0.8)));
+      const totalSpan = Math.max(points[points.length - 1].time - points[0].time, Number.EPSILON);
       for (let windowSize = maxWindowSize; windowSize >= minWindowSize; windowSize -= 1) {
         for (let start = 0; start <= points.length - windowSize; start += 1) {
           const candidate = points.slice(start, start + windowSize);
@@ -1813,14 +1891,23 @@
           if (!Number.isFinite(normalizedMedian) || normalizedMedian <= 0.02 || normalizedMedian >= 0.98) {
             continue;
           }
-          const center = median(values);
+          const center = trimmedMean(values);
           const spread = iqr(values) / Math.max(Math.abs(center), Number.EPSILON);
           const slope = Math.abs(linearSlope(candidate)) * Math.max(candidate[candidate.length - 1].time - candidate[0].time, 1) / Math.max(Math.abs(center), Number.EPSILON);
-          if (spread > 0.12 || slope > 0.12) continue;
-          const lengthPenalty = (maxWindowSize - windowSize) * 0.01;
-          const score = spread + slope + Math.abs(normalizedMedian - 0.5) * 0.15 + lengthPenalty;
-          if (!best || score < best.score || (Math.abs(score - best.score) < 0.003 && windowSize > best.points.length)) {
-            best = { points: candidate, score };
+          if (!Number.isFinite(center) || spread > 0.18 || slope > 0.18) continue;
+          const candidateSpan = Math.max(candidate[candidate.length - 1].time - candidate[0].time, 0);
+          const spanFraction = candidateSpan / totalSpan;
+          const countFraction = candidate.length / points.length;
+          const midpointFraction = ((candidate[0].time + candidate[candidate.length - 1].time) / 2 - points[0].time) / totalSpan;
+          const score =
+            spread * 1.4 +
+            slope * 1.15 +
+            Math.abs(normalizedMedian - 0.5) * 0.12 +
+            (1 - countFraction) * 0.45 +
+            (1 - spanFraction) * 0.45 +
+            Math.abs(midpointFraction - 0.5) * 0.08;
+          if (!best || score < best.score || (Math.abs(score - best.score) < 0.003 && (windowSize > best.points.length || candidateSpan > best.span))) {
+            best = { points: candidate, score, span: candidateSpan };
           }
         }
       }
@@ -1868,20 +1955,19 @@
       }
 
       const rmse = Math.sqrt(best.sse / Math.max(best.count, 1));
-      const noteParts = [`Full-curve least-squares fit over ${best.count} points.`];
+      const noteParts = [];
       if (Number.isFinite(rmse)) {
-        noteParts.push(`Normalized RMSE ${formatNumber(rmse)}.`);
+        noteParts.push(`Error (RMSE) over ${best.count} points: ${formatFitRmsePercent(rmse)} (${describeFitQuality(rmse)})`);
       }
       const lastNormalized = normalizedRows[normalizedRows.length - 1]?.normalized;
       if (Number.isFinite(lastNormalized) && lastNormalized < 0.9) {
         noteParts.push("Steady state is not fully reached, so the fit extrapolates the asymptote from the fixed references.");
       }
 
-      const t0Text = `${best.timeOffset >= 0 ? "+" : ""}${formatNumber(best.timeOffset)} s`;
       return {
         available: true,
         diffusivity: best.diffusivity,
-        timeHtml: `t<sub>0</sub> = ${escapeHtml(t0Text)}`,
+        timeHtml: `Best combined single fit: D<sub>app</sub> for t<sub>0</sub> = ${escapeHtml(formatFitOffset(best.timeOffset))} s`,
         note: noteParts.join(" "),
       };
     }
@@ -2083,6 +2169,41 @@
       return filtered.length % 2 ? filtered[mid] : (filtered[mid - 1] + filtered[mid]) / 2;
     }
 
+    function trimmedMean(values) {
+      const filtered = values.filter((value) => Number.isFinite(value)).sort((a, b) => a - b);
+      if (!filtered.length) return null;
+      if (filtered.length < 6) {
+        return filtered.reduce((sum, value) => sum + value, 0) / filtered.length;
+      }
+      const cut = Math.floor(filtered.length * 0.2);
+      const trimmed = filtered.slice(cut, filtered.length - cut);
+      if (!trimmed.length) return median(filtered);
+      return trimmed.reduce((sum, value) => sum + value, 0) / trimmed.length;
+    }
+
+    function formatFitOffset(value) {
+      if (!Number.isFinite(value)) return "—";
+      const rounded = Math.round(value * 10) / 10;
+      return `${rounded >= 0 ? "+" : ""}${rounded.toFixed(1)}`;
+    }
+
+    function formatFitRmsePercent(rmse) {
+      if (!Number.isFinite(rmse)) return "—";
+      return `${(rmse * 100).toFixed(1)}%`;
+    }
+
+    function describeFitQuality(rmse) {
+      const percent = rmse * 100;
+      if (!Number.isFinite(percent)) return "Unknown fit";
+      if (percent < 1.5) return "Excellent fit";
+      if (percent < 3) return "Good fit";
+      if (percent < 5) return "Acceptable fit";
+      if (percent < 8) return "Questionable fit";
+      if (percent < 12) return "Poor fit";
+      if (percent < 20) return "Unreliable fit";
+      return "Invalid fit";
+    }
+
     function iqr(values) {
       const filtered = values.filter((value) => Number.isFinite(value)).sort((a, b) => a - b);
       if (filtered.length < 4) return 0;
@@ -2215,6 +2336,8 @@
     const chartY = PLOT_MARGINS.top;
     const chartWidth = innerWidth;
     const chartHeight = innerHeight;
+    const axisLabelInsetLeft = Math.max(15, PLOT_MARGINS.left - 26);
+    const axisLabelInsetRight = Math.max(-3, PLOT_MARGINS.right - 31);
     const yGridParts = [];
     parts.push(`<svg viewBox="0 0 ${PLOT_WIDTH} ${PLOT_HEIGHT}" role="img" aria-label="Preview of measured permeation current and diffusion coefficient">`);
     parts.push(`
@@ -2240,7 +2363,7 @@
     const currentLegendWidth = legendLineWidth + legendTextGap + measureTextWidth(currentLegendText, legendFontSize);
     const legendTotalWidth = (showLowConfidenceLegend ? lowConfidenceLegendWidth + legendGap : 0) + diffusionLegendWidth + legendGap + currentLegendWidth;
     const legendX = Math.max(0, (PLOT_WIDTH - legendTotalWidth) / 2);
-    const legendY = 8;
+    const legendY = chartY - 20;
     parts.push(`
       <g class="mda-plot-legend-group" transform="translate(${legendX} ${legendY})">
         ${showLowConfidenceLegend ? `
@@ -2359,22 +2482,22 @@
     currentTicks.forEach((value) => {
       const y = scaleCurrentY(value);
       parts.push(
-        `<line class="mda-plot-axis-tick mda-plot-axis-tick-right" x1="${PLOT_WIDTH - PLOT_MARGINS.right}" y1="${y.toFixed(2)}" x2="${PLOT_WIDTH - PLOT_MARGINS.right + 7}" y2="${y.toFixed(2)}"></line>`,
-        `<text class="mda-plot-value mda-plot-value-current" x="${PLOT_WIDTH - PLOT_MARGINS.right + 8}" y="${(y + 4).toFixed(2)}" text-anchor="start">${escapeHtml(formatAxisTick(value))}</text>`,
+        `<line class="mda-plot-axis-tick mda-plot-axis-tick-right" x1="${PLOT_WIDTH - PLOT_MARGINS.right}" y1="${y.toFixed(2)}" x2="${PLOT_WIDTH - PLOT_MARGINS.right + 4}" y2="${y.toFixed(2)}"></line>`,
+        `<text class="mda-plot-value mda-plot-value-current" x="${PLOT_WIDTH - PLOT_MARGINS.right + 4}" y="${(y + 3).toFixed(2)}" text-anchor="start">${escapeHtml(formatAxisTick(value))}</text>`,
       );
     });
 
     diffusionMinorTicks.forEach((value) => {
       const y = scaleDiffusionY(value);
-      parts.push(`<line class="mda-plot-axis-tick mda-plot-axis-tick-left mda-plot-axis-tick-minor" x1="${PLOT_MARGINS.left - 4}" y1="${y.toFixed(2)}" x2="${PLOT_MARGINS.left}" y2="${y.toFixed(2)}"></line>`);
+      parts.push(`<line class="mda-plot-axis-tick mda-plot-axis-tick-left mda-plot-axis-tick-minor" x1="${PLOT_MARGINS.left - 3}" y1="${y.toFixed(2)}" x2="${PLOT_MARGINS.left}" y2="${y.toFixed(2)}"></line>`);
     });
 
     diffusionMajorTicks.forEach((value) => {
       const y = scaleDiffusionY(value);
       const tickClass = "mda-plot-axis-tick mda-plot-axis-tick-left";
-      parts.push(`<line class="${tickClass}" x1="${PLOT_MARGINS.left - 8}" y1="${y.toFixed(2)}" x2="${PLOT_MARGINS.left}" y2="${y.toFixed(2)}"></line>`);
+      parts.push(`<line class="${tickClass}" x1="${PLOT_MARGINS.left - 4}" y1="${y.toFixed(2)}" x2="${PLOT_MARGINS.left}" y2="${y.toFixed(2)}"></line>`);
       parts.push(
-        `<text class="mda-plot-value mda-plot-value-diffusion" x="${PLOT_MARGINS.left - 8}" y="${(y + 4).toFixed(2)}" text-anchor="end">${escapeHtml(
+        `<text class="mda-plot-value mda-plot-value-diffusion" x="${PLOT_MARGINS.left - 4}" y="${(y + 3).toFixed(2)}" text-anchor="end">${escapeHtml(
           diffusionScaleMode === "log"
             ? formatLogTick(Math.pow(10, value) * diffusionAxis.factor)
             : formatAxisTick(value),
@@ -2386,7 +2509,7 @@
       xMinorTicks.forEach((value) => {
         const x = scaleX(value);
         parts.push(
-          `<line class="mda-plot-axis-tick mda-plot-axis-tick-bottom mda-plot-axis-tick-minor" x1="${x.toFixed(2)}" y1="${PLOT_HEIGHT - PLOT_MARGINS.bottom}" x2="${x.toFixed(2)}" y2="${PLOT_HEIGHT - PLOT_MARGINS.bottom + 5}"></line>`,
+          `<line class="mda-plot-axis-tick mda-plot-axis-tick-bottom mda-plot-axis-tick-minor" x1="${x.toFixed(2)}" y1="${PLOT_HEIGHT - PLOT_MARGINS.bottom}" x2="${x.toFixed(2)}" y2="${PLOT_HEIGHT - PLOT_MARGINS.bottom + 4}"></line>`,
         );
       });
     }
@@ -2394,41 +2517,31 @@
     xTicks.forEach((value) => {
       const x = scaleX(value);
       parts.push(
-        `<line class="mda-plot-axis-tick mda-plot-axis-tick-bottom" x1="${x.toFixed(2)}" y1="${PLOT_HEIGHT - PLOT_MARGINS.bottom}" x2="${x.toFixed(2)}" y2="${PLOT_HEIGHT - PLOT_MARGINS.bottom + 8}"></line>`,
+        `<line class="mda-plot-axis-tick mda-plot-axis-tick-bottom" x1="${x.toFixed(2)}" y1="${PLOT_HEIGHT - PLOT_MARGINS.bottom}" x2="${x.toFixed(2)}" y2="${PLOT_HEIGHT - PLOT_MARGINS.bottom + 6}"></line>`,
       );
       parts.push(
-        `<text class="mda-plot-value" x="${x.toFixed(2)}" y="${PLOT_HEIGHT - 14}" text-anchor="middle">${escapeHtml(formatAxisTick(value))}</text>`,
+        `<text class="mda-plot-value" x="${x.toFixed(2)}" y="${PLOT_HEIGHT - 18}" text-anchor="middle">${escapeHtml(formatAxisTick(value))}</text>`,
       );
     });
-    references.forEach((entry) => {
-      if (!entry.ref || !Number.isFinite(entry.ref.value)) return;
-      if (state.referenceVisibility[entry.kind] === false) return;
-      const refValue = convertCurrentValue(entry.ref.value, inputUnit, displayUnit);
-      const y = scaleCurrentY(refValue);
-      const handleX = PLOT_WIDTH - PLOT_MARGINS.right - 6;
-      const lineColorClass = entry.kind === "baseline" ? "mda-plot-ref-baseline" : "mda-plot-ref-steady";
-      parts.push(`<text class="mda-plot-ref-label ${lineColorClass}" x="${handleX - 8}" y="${Math.max(18, y - 7).toFixed(2)}" text-anchor="end">${escapeHtml(entry.label)}</text>`);
-    });
-
     parts.push(
       diffusionScaleMode === "log"
         ? `
-      <text class="mda-plot-axis-label mda-plot-axis-left" transform="translate(18 ${PLOT_HEIGHT / 2}) rotate(-90)" text-anchor="middle">
+      <text class="mda-plot-axis-label mda-plot-axis-left" transform="translate(${axisLabelInsetLeft} ${PLOT_HEIGHT / 2}) rotate(-90)" text-anchor="middle">
         <tspan>Apparent Diffusion Coefficient </tspan><tspan font-style="italic">D</tspan><tspan baseline-shift="sub" font-size="8">app</tspan><tspan>(t) [mm²/s]</tspan>
       </text>
     `
         : `
-      <text class="mda-plot-axis-label mda-plot-axis-left" transform="translate(18 ${PLOT_HEIGHT / 2}) rotate(-90)" text-anchor="middle">
+      <text class="mda-plot-axis-label mda-plot-axis-left" transform="translate(${axisLabelInsetLeft} ${PLOT_HEIGHT / 2}) rotate(-90)" text-anchor="middle">
         <tspan>Apparent Diffusion Coefficient </tspan><tspan font-style="italic">D</tspan><tspan baseline-shift="sub" font-size="8">app</tspan><tspan>(t) [10</tspan><tspan baseline-shift="super" font-size="8">${diffusionAxis.exponent}</tspan><tspan> mm²/s]</tspan>
       </text>
     `,
     );
     parts.push(`
-      <text class="mda-plot-axis-label mda-plot-axis-right" transform="translate(${PLOT_WIDTH - 18} ${PLOT_HEIGHT / 2}) rotate(270)" text-anchor="middle">
+      <text class="mda-plot-axis-label mda-plot-axis-right" transform="translate(${PLOT_WIDTH - axisLabelInsetRight} ${PLOT_HEIGHT / 2}) rotate(270)" text-anchor="middle">
         <tspan>Permeation current I(t) [${currentUnitLabel}]</tspan>
       </text>
     `);
-    parts.push(`<text class="mda-plot-axis-label mda-plot-axis-x" x="${PLOT_WIDTH / 2}" y="${PLOT_HEIGHT - 6}" text-anchor="middle">Time [s]</text>`);
+    parts.push(`<text class="mda-plot-axis-label mda-plot-axis-x" x="${PLOT_WIDTH / 2}" y="${PLOT_HEIGHT - 5}" text-anchor="middle">Time [s]</text>`);
     parts.push("</svg>");
 
     dom.plot.innerHTML = parts.join("");
@@ -2576,6 +2689,352 @@
     dom.statusDetail.textContent = parts.length
       ? `Diagnostics: ${parts.join(" · ")}.`
       : "Diagnostics are unavailable for this dataset.";
+  }
+
+  function getDiagnosticCore() {
+    if (typeof window === "undefined") return null;
+    return window.MDADiagnosticCore || null;
+  }
+
+  function captureReferenceSnapshot(element) {
+    if (!element) return null;
+    return {
+      value: element.value,
+      mode: element.dataset ? element.dataset.mdaReferenceMode || null : null,
+      sourceUnit: element.dataset ? element.dataset.mdaReferenceSourceUnit || null : null,
+      rawValue: element.dataset ? element.dataset.mdaReferenceRawValue || null : null,
+    };
+  }
+
+  function restoreReferenceSnapshot(element, snapshot) {
+    if (!element || !snapshot) return;
+    element.value = snapshot.value != null ? snapshot.value : "";
+    if (snapshot.mode === "auto") {
+      if (snapshot.sourceUnit && snapshot.rawValue != null && Number.isFinite(Number(snapshot.rawValue))) {
+        element.dataset.mdaReferenceMode = "auto";
+        element.dataset.mdaReferenceSourceUnit = snapshot.sourceUnit;
+        element.dataset.mdaReferenceRawValue = String(snapshot.rawValue);
+      } else {
+        clearReferenceAuto(element);
+      }
+      return;
+    }
+    if (snapshot.mode === "manual") {
+      markReferenceManual(element);
+      return;
+    }
+    clearReferenceAuto(element);
+  }
+
+  function captureDiagnosticSnapshot(dom) {
+    return {
+      inputValue: dom.input ? dom.input.value : "",
+      currentFileName: state.currentFileName,
+      currentUnit: dom.currentUnit ? dom.currentUnit.value : "A",
+      plotUnit: dom.plotUnit ? dom.plotUnit.value : "uA",
+      thickness: dom.thickness ? dom.thickness.value : "",
+      t0Offset: dom.t0Offset ? dom.t0Offset.value : "0",
+      decimal: dom.decimal ? dom.decimal.value : ".",
+      cropRange: dom.cropRange ? dom.cropRange.value : "",
+      currentUnitIndex: dom.currentUnit ? dom.currentUnit.selectedIndex : 0,
+      plotUnitIndex: dom.plotUnit ? dom.plotUnit.selectedIndex : 0,
+      lowConfidence: dom.lowConfidence ? dom.lowConfidence.value : "shaded",
+      diffusionScale: dom.diffusionScale ? dom.diffusionScale.checked : false,
+      gridToggle: dom.gridToggle ? dom.gridToggle.checked : true,
+      minorGridToggle: dom.minorGridToggle ? dom.minorGridToggle.checked : true,
+      baseline: captureReferenceSnapshot(dom.baselineValue),
+      steady: captureReferenceSnapshot(dom.steadyValue),
+      referenceVisibility: { ...state.referenceVisibility },
+      plotViewport: state.plotViewport ? { ...state.plotViewport } : null,
+      plotLowConfidenceMode: state.plotLowConfidenceMode,
+      plotDiffusionScale: state.plotDiffusionScale,
+    };
+  }
+
+  function restoreDiagnosticSnapshot(dom, snapshot) {
+    if (!snapshot) return;
+    if (dom.input) dom.input.value = snapshot.inputValue != null ? snapshot.inputValue : "";
+    if (dom.file) dom.file.value = "";
+    state.currentFileName = snapshot.currentFileName || null;
+    if (dom.currentUnit && snapshot.currentUnit) dom.currentUnit.value = snapshot.currentUnit;
+    if (dom.plotUnit && snapshot.plotUnit) dom.plotUnit.value = snapshot.plotUnit;
+    if (dom.thickness && snapshot.thickness != null) dom.thickness.value = snapshot.thickness;
+    if (dom.t0Offset && snapshot.t0Offset != null) dom.t0Offset.value = snapshot.t0Offset;
+    if (dom.decimal && snapshot.decimal) dom.decimal.value = snapshot.decimal;
+    if (dom.cropRange) dom.cropRange.value = snapshot.cropRange || "";
+    if (dom.lowConfidence && snapshot.lowConfidence) dom.lowConfidence.value = snapshot.lowConfidence;
+    if (dom.diffusionScale) dom.diffusionScale.checked = !!snapshot.diffusionScale;
+    if (dom.gridToggle) dom.gridToggle.checked = snapshot.gridToggle !== false;
+    if (dom.minorGridToggle) dom.minorGridToggle.checked = snapshot.minorGridToggle !== false;
+    restoreReferenceSnapshot(dom.baselineValue, snapshot.baseline);
+    restoreReferenceSnapshot(dom.steadyValue, snapshot.steady);
+    state.referenceVisibility = snapshot.referenceVisibility ? { ...snapshot.referenceVisibility } : { baseline: true, steady: true };
+    state.plotViewport = snapshot.plotViewport ? { ...snapshot.plotViewport } : null;
+    state.plotLowConfidenceMode = snapshot.plotLowConfidenceMode || "shaded";
+    state.plotDiffusionScale = snapshot.plotDiffusionScale || (dom.diffusionScale && dom.diffusionScale.checked ? "log" : "linear");
+    syncT0OffsetDisplay(dom);
+    scheduleParse(dom, "selection");
+  }
+
+  function applyDiagnosticBest(dom) {
+    const report = state.diagnosticReport;
+    if (!report || !report.best) return;
+    const inputUnit = dom.currentUnit ? dom.currentUnit.value : "A";
+    const displayUnit = getDisplayUnit(dom);
+    if (dom.baselineValue && Number.isFinite(report.best.baselineValue)) {
+      setReferenceAutoValue(dom.baselineValue, report.best.baselineValue, inputUnit, displayUnit);
+    }
+    if (dom.steadyValue && Number.isFinite(report.best.steadyValue)) {
+      setReferenceAutoValue(dom.steadyValue, report.best.steadyValue, inputUnit, displayUnit);
+    }
+    if (dom.t0Offset && Number.isFinite(report.best.t0Offset)) {
+      dom.t0Offset.value = String(report.best.t0Offset);
+      syncT0OffsetDisplay(dom);
+    }
+    setStatus(dom, "Applied the best diagnostic candidate.", "ok");
+    scheduleParse(dom, "selection");
+    renderDiagnosticDrawer(dom, state.diagnosticReport);
+  }
+
+  function revertDiagnosticSnapshot(dom) {
+    if (!state.diagnosticSnapshot) return;
+    restoreDiagnosticSnapshot(dom, state.diagnosticSnapshot);
+    setStatus(dom, "Restored the pre-diagnostic snapshot.", "ok");
+    renderDiagnosticDrawer(dom, state.diagnosticReport);
+  }
+
+  function runDiagnosticAnalysis(dom) {
+    const core = getDiagnosticCore();
+    if (!core) {
+      setStatus(dom, "Diagnostic core is unavailable.", "error");
+      return null;
+    }
+    if (state.diagnosticBusy) {
+      return state.diagnosticReport;
+    }
+    const snapshot = captureDiagnosticSnapshot(dom);
+    state.diagnosticSnapshot = snapshot;
+    state.diagnosticReport = null;
+    state.diagnosticBusy = true;
+    state.diagnosticBusyStartedAt = Date.now();
+    if (state.diagnosticBusyTimer) {
+      window.clearTimeout(state.diagnosticBusyTimer);
+      state.diagnosticBusyTimer = null;
+    }
+    renderDiagnosticDrawer(dom, null);
+    setStatus(dom, "Running diagnostics...", "info");
+
+    window.requestAnimationFrame(() => {
+      state.diagnosticBusyTimer = window.setTimeout(() => {
+        const finish = (report, tone, message) => {
+          const complete = () => {
+            state.diagnosticReport = report;
+            state.diagnosticBusy = false;
+            state.diagnosticBusyTimer = null;
+            renderDiagnosticDrawer(dom, report);
+            setStatus(dom, message, tone);
+          };
+          const elapsed = Math.max(0, Date.now() - (state.diagnosticBusyStartedAt || Date.now()));
+          const remaining = Math.max(0, 250 - elapsed);
+          if (remaining > 0) {
+            window.setTimeout(complete, remaining);
+          } else {
+            complete();
+          }
+        };
+
+        try {
+          parseAndRender(dom, "selection");
+          if (!state.currentParse || !state.currentParse.rows || !state.currentParse.rows.length) {
+            state.diagnosticBusy = false;
+            state.diagnosticBusyTimer = null;
+            renderDiagnosticDrawer(dom, null);
+            setStatus(dom, "Load data before running diagnostics.", "error");
+            return;
+          }
+          const baseline = state.currentAnalysis && state.currentAnalysis.baseline ? state.currentAnalysis.baseline.value : null;
+          const steady = state.currentAnalysis && state.currentAnalysis.steady ? state.currentAnalysis.steady.value : null;
+          const report = core.analyzeDiagnostic({
+            rows: state.currentParse.rows,
+            thicknessMm: parseNumberInput(dom.thickness ? dom.thickness.value : null),
+            baselineValue: baseline,
+            steadyValue: steady,
+            t0Offset: parseNumberInput(dom.t0Offset ? dom.t0Offset.value : null) || 0,
+            cropRange: parseRangeSpec(dom.cropRange ? dom.cropRange.value : ""),
+          });
+          finish(report, report && report.best ? "ok" : "error", report && report.best ? "Diagnostic complete." : "Diagnostic complete with limited confidence.");
+        } catch (error) {
+          console.error(error);
+          finish(null, "error", "Diagnostic failed.");
+        }
+      }, 0);
+    });
+
+    return null;
+  }
+
+  function formatDiagnosticNumber(value) {
+    if (!Number.isFinite(value)) return "—";
+    const abs = Math.abs(value);
+    if (abs >= 1000 || (abs > 0 && abs < 0.001)) {
+      return value.toExponential(3);
+    }
+    return formatNumber(value);
+  }
+
+  function formatDiagnosticScore(value) {
+    if (!Number.isFinite(value)) return "—";
+    return formatNumber(value);
+  }
+
+  function renderDiagnosticDrawer(dom, report) {
+    if (!dom) return;
+    const busy = !!state.diagnosticBusy;
+    if (dom.diagnosticDrawer) dom.diagnosticDrawer.setAttribute("aria-busy", busy ? "true" : "false");
+    if (dom.diagnosticDrawer) dom.diagnosticDrawer.classList.toggle("has-report", !!report && !busy);
+    if (dom.diagnosticBusyBanner) dom.diagnosticBusyBanner.hidden = !busy;
+    if (dom.diagnosticBusyText) {
+      dom.diagnosticBusyText.textContent = busy
+        ? "Working through the candidate settings now."
+        : "Ready.";
+    }
+    if (dom.diagnosticRunButton) {
+      if (!dom.diagnosticRunButton.dataset.labelDefault) {
+        dom.diagnosticRunButton.dataset.labelDefault = dom.diagnosticRunButton.textContent || "Diagnose";
+      }
+      dom.diagnosticRunButton.disabled = busy;
+      dom.diagnosticRunButton.textContent = busy ? "Running..." : dom.diagnosticRunButton.dataset.labelDefault;
+    }
+    if (dom.diagnosticOpenButtons) {
+      dom.diagnosticOpenButtons.forEach((button) => {
+        button.disabled = busy;
+      });
+    }
+    if (dom.diagnosticApplyButton) dom.diagnosticApplyButton.disabled = !(report && report.best);
+    if (dom.diagnosticRevertButton) dom.diagnosticRevertButton.disabled = !state.diagnosticSnapshot;
+
+    if (busy) {
+      if (dom.diagnosticSummary) dom.diagnosticSummary.textContent = "Diagnostics are running. Please wait while the candidate settings are being evaluated.";
+      if (dom.diagnosticScore) dom.diagnosticScore.textContent = "…";
+      if (dom.diagnosticConfidence) dom.diagnosticConfidence.textContent = "…";
+      if (dom.diagnosticT0) dom.diagnosticT0.textContent = "…";
+      if (dom.diagnosticAgreement) dom.diagnosticAgreement.textContent = "…";
+      if (dom.diagnosticSnapshot) {
+        dom.diagnosticSnapshot.textContent = state.diagnosticSnapshot ? "Snapshot stored. The diagnostic is currently analyzing the data." : "Capturing snapshot and analyzing the data.";
+      }
+      if (dom.diagnosticNotes) dom.diagnosticNotes.textContent = "This can take a moment on larger datasets. The window is still working.";
+      if (dom.diagnosticFindings) dom.diagnosticFindings.innerHTML = "";
+      if (dom.diagnosticCandidates) dom.diagnosticCandidates.innerHTML = "";
+      return;
+    }
+
+    if (!report) {
+      if (dom.diagnosticSummary) dom.diagnosticSummary.textContent = "Ready to analyze the pasted data.";
+      if (dom.diagnosticScore) dom.diagnosticScore.textContent = "—";
+      if (dom.diagnosticConfidence) dom.diagnosticConfidence.textContent = "—";
+      if (dom.diagnosticT0) dom.diagnosticT0.textContent = "—";
+      if (dom.diagnosticAgreement) dom.diagnosticAgreement.textContent = "—";
+      if (dom.diagnosticSnapshot) dom.diagnosticSnapshot.textContent = "No snapshot stored yet.";
+      if (dom.diagnosticNotes) dom.diagnosticNotes.textContent = "Paste data or load a file, then run Diagnose to generate the score and candidate settings.";
+      if (dom.diagnosticFindings) dom.diagnosticFindings.innerHTML = "";
+      if (dom.diagnosticCandidates) dom.diagnosticCandidates.innerHTML = "";
+      return;
+    }
+
+    const best = report.best || null;
+    const current = report.current || null;
+    if (dom.diagnosticSummary) dom.diagnosticSummary.textContent = report.summary || "Diagnostic complete.";
+    if (dom.diagnosticScore) dom.diagnosticScore.textContent = formatDiagnosticScore(best && best.score);
+    if (dom.diagnosticConfidence) dom.diagnosticConfidence.textContent = best && Number.isFinite(best.confidence) ? `${Math.round(best.confidence)}%` : "—";
+    if (dom.diagnosticT0) dom.diagnosticT0.textContent = best ? `${best.t0Offset > 0 ? "+" : ""}${formatDiagnosticNumber(best.t0Offset)} s` : "—";
+    if (dom.diagnosticAgreement) {
+      dom.diagnosticAgreement.textContent = best && Number.isFinite(best.methodSpread) ? `log spread ${formatDiagnosticScore(best.methodSpread)}` : "—";
+    }
+
+    if (dom.diagnosticSnapshot) {
+      const parts = [];
+      if (state.diagnosticSnapshot) {
+        parts.push(`Input rows: ${state.currentParse && state.currentParse.rows ? state.currentParse.rows.length : 0}.`);
+        parts.push(`t0: ${state.diagnosticSnapshot.t0Offset || "0"} s.`);
+        parts.push(`Thickness: ${state.diagnosticSnapshot.thickness || "—"} mm.`);
+        parts.push(`Baseline: ${describeReferenceSnapshot(state.diagnosticSnapshot.baseline)}.`);
+        parts.push(`Steady state: ${describeReferenceSnapshot(state.diagnosticSnapshot.steady)}.`);
+      } else {
+        parts.push("No snapshot stored yet.");
+      }
+      dom.diagnosticSnapshot.textContent = parts.join(" ");
+    }
+
+    if (dom.diagnosticNotes) {
+      const notes = [];
+      if (best && best.flatnessWindow) {
+        notes.push(`Central flatness window: ${formatDiagnosticNumber(best.flatnessWindow.low * 100)}% to ${formatDiagnosticNumber(best.flatnessWindow.high * 100)}% of normalized signal.`);
+      }
+      if (report.comparison && Number.isFinite(report.comparison.t0Delta) && Math.abs(report.comparison.t0Delta) > 0.5) {
+        notes.push(`Best time-zero shift relative to the current setup: ${report.comparison.t0Delta > 0 ? "+" : ""}${formatDiagnosticNumber(report.comparison.t0Delta)} s.`);
+      }
+      if (report.recommendations && report.recommendations.length) {
+        notes.push(report.recommendations.join(" "));
+      }
+      if (report.rawChecks && report.rawChecks.gapNote) {
+        notes.push(report.rawChecks.gapNote);
+      }
+      if (current && Number.isFinite(current.score)) {
+        notes.push(`Current setup score: ${formatDiagnosticScore(current.score)}.`);
+      }
+      dom.diagnosticNotes.textContent = notes.length ? notes.join(" ") : "No additional notes.";
+    }
+
+    if (dom.diagnosticFindings) {
+      dom.diagnosticFindings.innerHTML = (report.findings || [])
+        .map((finding) => renderDiagnosticFinding(finding))
+        .join("");
+    }
+
+    if (dom.diagnosticCandidates) {
+      dom.diagnosticCandidates.innerHTML = (report.topCandidates || [])
+        .map((candidate, index) => renderDiagnosticCandidate(candidate, index === 0))
+        .join("");
+    }
+  }
+
+  function describeReferenceSnapshot(snapshot) {
+    if (!snapshot) return "—";
+    if (snapshot.mode === "auto") {
+      return `auto (${snapshot.value || "—"})`;
+    }
+    if (snapshot.mode === "manual") {
+      return `manual (${snapshot.value || "—"})`;
+    }
+    return snapshot.value || "—";
+  }
+
+  function renderDiagnosticFinding(finding) {
+    if (!finding) return "";
+    const severity = finding.severity || "warning";
+    return `
+      <li class="mda-diagnostic-finding is-${escapeHtml(severity)}">
+        <span class="mda-diagnostic-finding-title">${escapeHtml(finding.title || "Finding")}</span>
+        <div>${escapeHtml(finding.text || "")}</div>
+      </li>
+    `;
+  }
+
+  function renderDiagnosticCandidate(candidate, isBest) {
+    if (!candidate) return "";
+    const prefix = isBest ? "Best" : candidate.label || "Candidate";
+    const t0Text = Number.isFinite(candidate.t0Offset) ? `${candidate.t0Offset > 0 ? "+" : ""}${formatDiagnosticNumber(candidate.t0Offset)} s` : "—";
+    const scoreText = Number.isFinite(candidate.score) ? formatDiagnosticScore(candidate.score) : "—";
+    const flatnessText = Number.isFinite(candidate.flatnessScore) ? formatDiagnosticScore(candidate.flatnessScore) : "—";
+    const agreementText = Number.isFinite(candidate.methodSpread) ? formatDiagnosticScore(candidate.methodSpread) : "—";
+    return `
+      <article class="mda-diagnostic-candidate${isBest ? " is-best" : ""}">
+        <strong>${escapeHtml(prefix)} candidate</strong>
+        <span>t<sub>0</sub>: ${escapeHtml(t0Text)}</span>
+        <span>Score: ${escapeHtml(scoreText)} | Agreement: ${escapeHtml(agreementText)} | Flatness: ${escapeHtml(flatnessText)}</span>
+        <span>Baseline: ${escapeHtml(formatDiagnosticNumber(candidate.baselineValue))} | Steady: ${escapeHtml(formatDiagnosticNumber(candidate.steadyValue))}</span>
+      </article>
+    `;
   }
 
   function syncT0OffsetDisplay(dom) {
