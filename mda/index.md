@@ -63,7 +63,7 @@ permalink: /mda/
           </div>
           <div class="mda-control" style="margin-top:0.75rem;">
             <label for="mda-t0-offset" title="Shift the time origin forward or backward.">t0 offset [s]</label>
-            <input id="mda-t0-offset" type="range" min="-30" max="30" step="0.1" value="0" title="Shift the time origin. Positive values remove early time; negative values prepend baseline time." />
+            <input id="mda-t0-offset" type="range" min="-100" max="100" step="0.1" value="0" title="Shift the time origin. Positive values remove early time; negative values prepend baseline time." />
             <div class="mda-slider-value" id="mda-t0-offset-value">0.0 s</div>
           </div>
         </section>
@@ -99,14 +99,18 @@ permalink: /mda/
                 <option value="pA">pA</option>
               </select>
               </div>
-              <label class="mda-inline-checkbox" title="Toggle the plot grid lines.">
-                <input type="checkbox" id="mda-grid-toggle" checked />
-                <span>Grid lines</span>
-              </label>
-              <label class="mda-inline-checkbox" title="Toggle the left diffusion axis between linear and logarithmic scaling.">
-                <input type="checkbox" id="mda-diffusion-scale" />
-                <span>Log left axis</span>
-              </label>
+            <label class="mda-inline-checkbox" title="Toggle the plot grid lines.">
+              <input type="checkbox" id="mda-grid-toggle" checked />
+              <span>Grid lines</span>
+            </label>
+            <label class="mda-inline-checkbox" title="Toggle the minor grid lines.">
+              <input type="checkbox" id="mda-minor-grid-toggle" checked />
+              <span>Minor grid</span>
+            </label>
+            <label class="mda-inline-checkbox" title="Toggle the left diffusion axis between linear and logarithmic scaling.">
+              <input type="checkbox" id="mda-diffusion-scale" />
+              <span>Log left axis</span>
+            </label>
               <div class="mda-control">
                 <label for="mda-trust-percent" title="Mark the first and last part of the x-axis as lower trust.">Edge band [%]</label>
                 <input id="mda-trust-percent" type="range" min="0" max="49" step="1" value="10" />
@@ -120,13 +124,14 @@ permalink: /mda/
             </div>
           </details>
           <details class="mda-tool-panel">
-            <summary class="mda-button is-secondary">Reference Currents</summary>
+            <summary class="mda-button is-secondary">Baseline</summary>
             <div class="mda-tool-panel-body">
               <div class="mda-reference-row">
                 <div class="mda-control">
                   <label for="mda-baseline-value" title="Enter the baseline current value.">Baseline</label>
                   <input id="mda-baseline-value" class="mda-number" type="number" step="any" placeholder="Auto" title="Enter the baseline current value." />
                 </div>
+                <button type="button" class="mda-button is-accent mda-reference-toggle" id="mda-baseline-reset" title="Reset the baseline value to the auto-detected data default.">Reset</button>
                 <button type="button" class="mda-button is-secondary mda-reference-toggle" id="mda-baseline-toggle" aria-pressed="true" title="Hide or show the baseline marker line.">Hide</button>
               </div>
               <div class="mda-reference-row">
@@ -134,6 +139,7 @@ permalink: /mda/
                   <label for="mda-steady-value" title="Enter the steady-state current value.">Steady State</label>
                   <input id="mda-steady-value" class="mda-number" type="number" step="any" placeholder="Auto" title="Enter the steady-state current value." />
                 </div>
+                <button type="button" class="mda-button is-accent mda-reference-toggle" id="mda-steady-reset" title="Reset the steady-state value to the auto-detected data default.">Reset</button>
                 <button type="button" class="mda-button is-secondary mda-reference-toggle" id="mda-steady-toggle" aria-pressed="true" title="Hide or show the steady-state marker line.">Hide</button>
               </div>
             </div>
