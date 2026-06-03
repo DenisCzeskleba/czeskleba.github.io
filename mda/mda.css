@@ -257,6 +257,13 @@ header .mda-header-brand-text {
   align-content: start;
 }
 
+.mda-slider-value {
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
 .mda-control {
   display: grid;
   gap: 0.4rem;
@@ -328,6 +335,16 @@ header .mda-header-brand-text {
 .mda-status.is-ok {
   color: color-mix(in srgb, #0f766e 45%, var(--muted));
   font-style: normal;
+}
+
+.mda-status-detail {
+  margin-top: 0.15rem;
+  padding: 0 0.15rem 0.35rem;
+  font-size: 0.77rem;
+  line-height: 1.35;
+  color: color-mix(in srgb, var(--muted) 78%, #0f172a);
+  font-style: normal;
+  pointer-events: none;
 }
 
 .mda-issues {
@@ -752,7 +769,23 @@ header .mda-header-brand-text {
 
 .mda-plot-grid {
   stroke: var(--mda-plot-grid);
+  stroke-linecap: butt;
+  fill: none;
+}
+
+.mda-plot-grid-major {
   stroke-width: 0.6;
+  opacity: 0.85;
+}
+
+.mda-plot-grid-minor {
+  stroke-width: 0.4;
+  opacity: 0.45;
+  stroke-dasharray: 2 4;
+}
+
+.mda-plot-trust-band {
+  pointer-events: none;
 }
 
 .mda-plot-line {
@@ -867,6 +900,17 @@ header .mda-header-brand-text {
 .mda-plot-ref-label.mda-plot-ref-steady {
   fill: #111111;
   stroke: none;
+}
+
+.mda-plot-axis-tick {
+  stroke: var(--mda-plot-muted);
+  stroke-width: 1;
+  fill: none;
+}
+
+.mda-plot-axis-tick-minor {
+  stroke-width: 0.75;
+  opacity: 0.8;
 }
 
 .mda-help-drawer {

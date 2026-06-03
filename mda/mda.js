@@ -11,7 +11,7 @@
   const PLOT_HEIGHT = 340;
   const PLOT_MARGINS = { top: 42, right: 88, bottom: 48, left: 72 };
   const SOLVER_POLICY = {
-    minTerms: 50,
+    minTerms: 3,
     maxTerms: 100,
     relTolerance: 1e-10,
     absTolerance: 1e-14,
@@ -28,6 +28,8 @@
     referenceVisibility: { baseline: true, steady: true },
     plotDiffusionScale: "linear",
     dragReference: null,
+    dragReferenceFrame: null,
+    dragReferencePending: null,
     dragPlot: null,
     plotViewport: null,
   };
@@ -51,6 +53,12 @@
       baselineToggle: document.getElementById("mda-baseline-toggle"),
       steadyToggle: document.getElementById("mda-steady-toggle"),
       thickness: document.getElementById("mda-thickness"),
+      t0Offset: document.getElementById("mda-t0-offset"),
+      t0OffsetValue: document.getElementById("mda-t0-offset-value"),
+      trustPercent: document.getElementById("mda-trust-percent"),
+      trustPercentValue: document.getElementById("mda-trust-percent-value"),
+      trustAlpha: document.getElementById("mda-trust-alpha"),
+      trustAlphaValue: document.getElementById("mda-trust-alpha-value"),
       cropRange: document.getElementById("mda-crop-range"),
       decimal: document.getElementById("mda-decimal"),
       plotUnit: document.getElementById("mda-plot-unit"),
@@ -58,6 +66,7 @@
       gridToggle: document.getElementById("mda-grid-toggle"),
       resetPlot: document.getElementById("mda-reset-plot"),
       status: document.getElementById("mda-status"),
+      statusDetail: document.getElementById("mda-status-detail"),
         issues: document.getElementById("mda-issues"),
         previewBody: document.getElementById("mda-preview-body"),
         plot: document.getElementById("mda-plot"),
@@ -111,11 +120,54 @@
     }
     dom.decimal.addEventListener("change", () => scheduleParse(dom, "selection"));
 
-    [dom.baselineValue, dom.steadyValue, dom.thickness, dom.cropRange].forEach((element) => {
+    [dom.baselineValue, dom.steadyValue].forEach((element) => {
+      if (!element) return;
+      element.addEventListener("input", () => {
+        markReferenceManual(element);
+        scheduleParse(dom, "selection");
+      });
+      element.addEventListener("change", () => {
+        markReferenceManual(element);
+        scheduleParse(dom, "selection");
+      });
+    });
+
+    [dom.thickness, dom.cropRange].forEach((element) => {
       if (!element) return;
       element.addEventListener("change", () => scheduleParse(dom, "selection"));
       element.addEventListener("input", () => scheduleParse(dom, "selection"));
     });
+    if (dom.t0Offset) {
+      dom.t0Offset.addEventListener("input", () => {
+        syncT0OffsetDisplay(dom);
+        scheduleParse(dom, "selection");
+      });
+      dom.t0Offset.addEventListener("change", () => {
+        syncT0OffsetDisplay(dom);
+        scheduleParse(dom, "selection");
+      });
+      syncT0OffsetDisplay(dom);
+    }
+    if (dom.trustPercent) {
+      dom.trustPercent.addEventListener("input", () => {
+        syncTrustBandDisplay(dom);
+        renderDerivedViews(dom);
+      });
+      dom.trustPercent.addEventListener("change", () => {
+        syncTrustBandDisplay(dom);
+        renderDerivedViews(dom);
+      });
+    }
+    if (dom.trustAlpha) {
+      dom.trustAlpha.addEventListener("input", () => {
+        syncTrustBandDisplay(dom);
+        renderDerivedViews(dom);
+      });
+      dom.trustAlpha.addEventListener("change", () => {
+        syncTrustBandDisplay(dom);
+        renderDerivedViews(dom);
+      });
+    }
     if (dom.thickness) {
       dom.thickness.addEventListener("keydown", (event) => {
         if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
@@ -201,6 +253,8 @@
         state.referenceVisibility.baseline = true;
         state.referenceVisibility.steady = true;
         state.dragReference = null;
+        state.dragReferenceFrame = null;
+        state.dragReferencePending = null;
         state.dragPlot = null;
         state.plotViewport = null;
         dom.decimal.value = ".";
@@ -209,9 +263,16 @@
         if (dom.gridToggle) dom.gridToggle.checked = true;
         state.plotDiffusionScale = "linear";
         if (dom.diffusionScale) dom.diffusionScale.checked = false;
+        clearReferenceAuto(dom.baselineValue);
+        clearReferenceAuto(dom.steadyValue);
         if (dom.baselineValue) dom.baselineValue.value = "";
         if (dom.steadyValue) dom.steadyValue.value = "";
         if (dom.thickness) dom.thickness.value = "0.50";
+        if (dom.t0Offset) dom.t0Offset.value = "0";
+        syncT0OffsetDisplay(dom);
+        if (dom.trustPercent) dom.trustPercent.value = "10";
+        if (dom.trustAlpha) dom.trustAlpha.value = "0.18";
+        syncTrustBandDisplay(dom);
         if (dom.cropRange) dom.cropRange.value = "";
         renderEmpty(dom, "Paste data to begin.");
       });
@@ -220,6 +281,8 @@
     if (dom.plotUnit) {
       dom.plotUnit.value = "uA";
     }
+    syncT0OffsetDisplay(dom);
+    syncTrustBandDisplay(dom);
     renderEmpty(dom, "Paste data to begin.");
   }
 
@@ -258,6 +321,38 @@
     renderDerivedViews(dom);
   }
 
+  function isReferenceAuto(element) {
+    return element && element.dataset && element.dataset.mdaReferenceMode === "auto";
+  }
+
+  function isReferenceManual(element) {
+    return element && element.dataset && element.dataset.mdaReferenceMode === "manual";
+  }
+
+  function clearReferenceAuto(element) {
+    if (!element || !element.dataset) return;
+    delete element.dataset.mdaReferenceMode;
+    delete element.dataset.mdaReferenceSourceUnit;
+    delete element.dataset.mdaReferenceRawValue;
+  }
+
+  function markReferenceManual(element) {
+    if (!element || !element.dataset) return;
+    element.dataset.mdaReferenceMode = "manual";
+    delete element.dataset.mdaReferenceSourceUnit;
+    delete element.dataset.mdaReferenceRawValue;
+  }
+
+  function setReferenceAutoValue(element, rawValue, sourceUnit, displayUnit) {
+    if (!element || !Number.isFinite(rawValue)) return;
+    const nextValue = convertCurrentValue(rawValue, sourceUnit, displayUnit);
+    if (!Number.isFinite(nextValue)) return;
+    element.value = formatNumber(nextValue);
+    element.dataset.mdaReferenceMode = "auto";
+    element.dataset.mdaReferenceSourceUnit = sourceUnit;
+    element.dataset.mdaReferenceRawValue = String(rawValue);
+  }
+
   function attachPlotInteractions(dom) {
     if (!dom.plot) return;
 
@@ -286,7 +381,7 @@
       if (Number.isFinite(state.dragReference.pointerId) && event.pointerId !== state.dragReference.pointerId) return;
       const svg = getPlotSvg(dom, event);
       if (!svg) return;
-      updateReferenceFromPointer(dom, state.dragReference.kind, event, svg);
+      queueReferenceDragUpdate(dom, state.dragReference.kind, event, svg);
       event.preventDefault();
     });
 
@@ -316,6 +411,11 @@
     });
 
     const finishDrag = () => {
+      if (state.dragReferenceFrame != null) {
+        window.cancelAnimationFrame(state.dragReferenceFrame);
+        state.dragReferenceFrame = null;
+      }
+      state.dragReferencePending = null;
       if (state.dragReference && state.dragReference.svg && state.dragReference.svg.releasePointerCapture) {
         try {
           state.dragReference.svg.releasePointerCapture(state.dragReference.pointerId);
@@ -381,7 +481,25 @@
       }
     }
     state.referenceVisibility[kind] = true;
-    updateReferenceFromPointer(dom, kind, event, svg);
+    queueReferenceDragUpdate(dom, kind, event, svg);
+  }
+
+  function queueReferenceDragUpdate(dom, kind, event, svg) {
+    state.dragReferencePending = {
+      kind,
+      pointerId: event.pointerId,
+      clientX: event.clientX,
+      clientY: event.clientY,
+      svg,
+    };
+    if (state.dragReferenceFrame != null) return;
+    state.dragReferenceFrame = window.requestAnimationFrame(() => {
+      state.dragReferenceFrame = null;
+      const pending = state.dragReferencePending;
+      if (!pending || !state.dragReference) return;
+      if (Number.isFinite(state.dragReference.pointerId) && pending.pointerId !== state.dragReference.pointerId) return;
+      updateReferenceFromPointer(dom, pending.kind, pending.clientX, pending.clientY, pending.svg);
+    });
   }
 
   function startPlotPan(dom, event, svg) {
@@ -597,6 +715,23 @@
     return ticks;
   }
 
+  function buildLinearMinorTicks(min, max, majorTicks, subdivisions) {
+    if (!Number.isFinite(min) || !Number.isFinite(max) || !Array.isArray(majorTicks) || majorTicks.length < 2) return [];
+    const parts = [];
+    const segments = Math.max(1, Math.floor(subdivisions || 4));
+    for (let i = 0; i < majorTicks.length - 1; i += 1) {
+      const start = majorTicks[i];
+      const end = majorTicks[i + 1];
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) continue;
+      const step = (end - start) / (segments + 1);
+      for (let j = 1; j <= segments; j += 1) {
+        const value = start + step * j;
+        if (value > min && value < max) parts.push(value);
+      }
+    }
+    return parts;
+  }
+
   function niceNumber(range, round) {
     const exponent = Math.floor(Math.log10(Math.abs(range)));
     const fraction = Math.abs(range) / Math.pow(10, exponent);
@@ -613,29 +748,36 @@
     return niceFraction * Math.pow(10, exponent);
   }
 
-  function updateReferenceFromPointer(dom, kind, event, svg) {
+  function updateReferenceFromPointer(dom, kind, clientX, clientY, svg) {
     if (!state.currentAnalysis) return;
-    if (state.dragReference && Number.isFinite(state.dragReference.pointerId) && event.pointerId !== state.dragReference.pointerId) {
-      return;
-    }
-    const y = pointerToPlotY(event, svg);
+    const y = pointerToPlotY(clientY, svg);
     if (y == null) return;
     const value = plotYToValue(y, svg, state.currentAnalysis, dom.currentUnit ? dom.currentUnit.value : "A", getDisplayUnit(dom));
     if (!Number.isFinite(value)) return;
 
     if (kind === "baseline" && dom.baselineValue) {
       dom.baselineValue.value = formatNumber(value);
+      markReferenceManual(dom.baselineValue);
       parseAndRender(dom, "selection");
     } else if (kind === "steady" && dom.steadyValue) {
       dom.steadyValue.value = formatNumber(value);
+      markReferenceManual(dom.steadyValue);
       parseAndRender(dom, "selection");
     }
   }
 
   function pointerToPlotY(event, svg) {
+    if (event == null) return null;
+    if (typeof event === "number") {
+      return pointerToPlotYFromClientY(event, svg);
+    }
+    return pointerToPlotYFromClientY(event.clientY, svg);
+  }
+
+  function pointerToPlotYFromClientY(clientY, svg) {
     const rect = svg.getBoundingClientRect();
     if (!rect.height) return null;
-    const y = ((event.clientY - rect.top) / rect.height) * PLOT_HEIGHT;
+    const y = ((clientY - rect.top) / rect.height) * PLOT_HEIGHT;
     return Math.max(0, Math.min(PLOT_HEIGHT, y));
   }
 
@@ -706,6 +848,13 @@
     const config = parseResult.valid;
     if (source !== "selection") {
       dom.decimal.value = config.decimalSeparator;
+    }
+
+    if (source === "paste" || source === "file") {
+      clearReferenceAuto(dom.baselineValue);
+      clearReferenceAuto(dom.steadyValue);
+      if (dom.baselineValue) dom.baselineValue.value = "";
+      if (dom.steadyValue) dom.steadyValue.value = "";
     }
 
     state.currentParse = config;
@@ -888,8 +1037,32 @@
   function buildAnalysis(dom, config) {
     const notes = [];
     const issues = [];
+    const diagnostics = {
+      rowsSolved: 0,
+      totalTermsUsed: 0,
+      maxTermsUsed: 0,
+      lastTermsUsed: null,
+      lastTermContribution: null,
+      lastSolveMethod: null,
+      lastDelta: null,
+      lastTolerance: null,
+    };
+    const inputUnit = dom.currentUnit ? dom.currentUnit.value : "A";
+    const displayUnit = getDisplayUnit(dom);
+    const t0Offset = parseNumberInput(dom.t0Offset ? dom.t0Offset.value : null) || 0;
     const cropRange = parseRangeSpec(dom.cropRange ? dom.cropRange.value : "");
-    let rows = config.rows.slice();
+    const sourceRows = config.rows.slice();
+    const baseline = resolveReferenceRows(sourceRows, dom.baselineValue ? dom.baselineValue.value : null, "baseline", inputUnit, displayUnit);
+    const steady = resolveReferenceRows(sourceRows, dom.steadyValue ? dom.steadyValue.value : null, "steady", inputUnit, displayUnit);
+    let rows = applyTimeOffsetRows(sourceRows, t0Offset, baseline);
+
+    if (t0Offset !== 0) {
+      notes.push(
+        t0Offset > 0
+          ? `t0 offset applied: removed the first ${formatNumber(t0Offset)} s of data and shifted the remaining times back to zero.`
+          : `t0 offset applied: prepended ${formatNumber(Math.abs(t0Offset))} s of baseline time and shifted the data forward.`,
+      );
+    }
 
     if (cropRange) {
       rows = rows.filter((row) => row.time >= cropRange.start && row.time <= cropRange.end);
@@ -900,21 +1073,16 @@
       issues.push("No rows remain after cropping.");
       return {
         rows: [],
-      previewRows: [],
-      baseline: null,
-      steady: null,
+        previewRows: [],
+        baseline,
+        steady,
         thicknessMm: null,
         normalizedAvailable: false,
+        diagnostics,
         issues,
         notes,
       };
     }
-
-    const inputUnit = dom.currentUnit ? dom.currentUnit.value : "A";
-    const displayUnit = getDisplayUnit(dom);
-
-    const baseline = resolveReferenceRows(rows, dom.baselineValue ? dom.baselineValue.value : null, "baseline", inputUnit, displayUnit);
-    const steady = resolveReferenceRows(rows, dom.steadyValue ? dom.steadyValue.value : null, "steady", inputUnit, displayUnit);
     const thicknessMm = parseNumberInput(dom.thickness ? dom.thickness.value : null);
 
     if (baseline.error) issues.push(baseline.error);
@@ -936,8 +1104,8 @@
       const normalizedInRange =
         Number.isFinite(normalized) && normalized >= -normalizedEpsilon && normalized <= 1 + normalizedEpsilon;
       const diffusivity =
-        normalizedAvailable && thicknessMm != null && normalizedInRange
-          ? solveApparentDiffusivity(normalized, row.time, thicknessMm / 1000, solveDeadline)
+        !row.synthetic && normalizedAvailable && thicknessMm != null && normalizedInRange
+          ? solveApparentDiffusivity(normalized, row.time, thicknessMm / 1000, solveDeadline, diagnostics)
           : null;
       if (normalizedAvailable && Number.isFinite(normalized) && !normalizedInRange) {
         outOfRangeCount += 1;
@@ -979,11 +1147,35 @@
         steady,
         thicknessMm,
         normalizedAvailable,
+        diagnostics,
         classical,
         issues,
         notes,
       };
     }
+
+  function recordSolverDiagnostics(diagnostics, evalResult) {
+    if (!diagnostics || !evalResult) return;
+    const termsUsed = Number.isFinite(evalResult.termsUsed) ? evalResult.termsUsed : null;
+    if (termsUsed != null) {
+      diagnostics.rowsSolved += 1;
+      diagnostics.totalTermsUsed += termsUsed;
+      diagnostics.maxTermsUsed = Math.max(diagnostics.maxTermsUsed || 0, termsUsed);
+      diagnostics.lastTermsUsed = termsUsed;
+    }
+    if (Number.isFinite(evalResult.lastTermContribution)) {
+      diagnostics.lastTermContribution = evalResult.lastTermContribution;
+    }
+    if (Number.isFinite(evalResult.lastDelta)) {
+      diagnostics.lastDelta = evalResult.lastDelta;
+    }
+    if (Number.isFinite(evalResult.tolerance)) {
+      diagnostics.lastTolerance = evalResult.tolerance;
+    }
+    if (evalResult.method) {
+      diagnostics.lastSolveMethod = evalResult.method;
+    }
+  }
 
     function renderParsed(dom, config, analysis) {
       setStatus(dom, "Loaded data.", "ok");
@@ -997,6 +1189,7 @@
 
       syncReferenceControls(dom, analysis);
       updateSummary(dom, analysis);
+      renderDiagnostics(dom, analysis);
       renderResults(dom, analysis);
       renderPreview(dom, analysis);
       renderPlot(dom, analysis);
@@ -1009,6 +1202,7 @@
       }
       syncReferenceControls(dom, state.currentAnalysis);
       updateSummary(dom, state.currentAnalysis);
+      renderDiagnostics(dom, state.currentAnalysis);
       renderResults(dom, state.currentAnalysis);
       renderPreview(dom, state.currentAnalysis);
       renderPlot(dom, state.currentAnalysis);
@@ -1017,15 +1211,25 @@
   function syncReferenceControls(dom, analysis) {
     const baselineValue = analysis && analysis.baseline && Number.isFinite(analysis.baseline.value) ? analysis.baseline.value : null;
     const steadyValue = analysis && analysis.steady && Number.isFinite(analysis.steady.value) ? analysis.steady.value : null;
+    const inputUnit = dom.currentUnit ? dom.currentUnit.value : "A";
+    const displayUnit = getDisplayUnit(dom);
 
     if (dom.baselineValue) {
-      if (!String(dom.baselineValue.value || "").trim() && baselineValue != null && document.activeElement !== dom.baselineValue) {
-        dom.baselineValue.value = formatNumber(baselineValue);
+      if (isReferenceAuto(dom.baselineValue)) {
+        if (baselineValue != null && document.activeElement !== dom.baselineValue) {
+          setReferenceAutoValue(dom.baselineValue, baselineValue, inputUnit, displayUnit);
+        }
+      } else if (!isReferenceManual(dom.baselineValue) && !String(dom.baselineValue.value || "").trim() && baselineValue != null && document.activeElement !== dom.baselineValue) {
+        setReferenceAutoValue(dom.baselineValue, baselineValue, inputUnit, displayUnit);
       }
     }
     if (dom.steadyValue) {
-      if (!String(dom.steadyValue.value || "").trim() && steadyValue != null && document.activeElement !== dom.steadyValue) {
-        dom.steadyValue.value = formatNumber(steadyValue);
+      if (isReferenceAuto(dom.steadyValue)) {
+        if (steadyValue != null && document.activeElement !== dom.steadyValue) {
+          setReferenceAutoValue(dom.steadyValue, steadyValue, inputUnit, displayUnit);
+        }
+      } else if (!isReferenceManual(dom.steadyValue) && !String(dom.steadyValue.value || "").trim() && steadyValue != null && document.activeElement !== dom.steadyValue) {
+        setReferenceAutoValue(dom.steadyValue, steadyValue, inputUnit, displayUnit);
       }
     }
 
@@ -1052,6 +1256,21 @@
     const ticks = [];
     for (let exponent = minExp; exponent <= maxExp; exponent += 1) {
       ticks.push(exponent);
+    }
+    return ticks;
+  }
+
+  function buildLogMinorTicks(min, max) {
+    if (!Number.isFinite(min) || !Number.isFinite(max)) return [];
+    if (min === max) return [];
+    const ticks = [];
+    const startExp = Math.floor(min);
+    const endExp = Math.ceil(max);
+    for (let exponent = startExp; exponent <= endExp; exponent += 1) {
+      for (let mantissa = 2; mantissa < 10; mantissa += 1) {
+        const value = Math.log10(mantissa) + exponent;
+        if (value > min && value < max) ticks.push(value);
+      }
     }
     return ticks;
   }
@@ -1359,11 +1578,13 @@
         ? orderedScaledDiffusion.map((point) => ({ x: point.x, y: Math.log10(point.y) }))
         : orderedScaledDiffusion;
     const xTicks = buildNiceTicks(currentRanges.xMin, currentRanges.xMax, 5);
+    const xMinorTicks = buildLinearMinorTicks(currentRanges.xMin, currentRanges.xMax, xTicks, 4);
     const currentTicks = buildNiceTicks(currentRanges.yMin, currentRanges.yMax, 5);
-    const diffusionTicks =
+    const diffusionMajorTicks =
       diffusionScaleMode === "log"
         ? buildLogTicks(diffusionRanges.yMin, diffusionRanges.yMax)
         : buildNiceTicks(diffusionRanges.yMin, diffusionRanges.yMax, 5);
+    const diffusionMinorTicks = diffusionScaleMode === "log" ? buildLogMinorTicks(diffusionRanges.yMin, diffusionRanges.yMax) : [];
 
     const innerWidth = PLOT_WIDTH - PLOT_MARGINS.left - PLOT_MARGINS.right;
     const innerHeight = PLOT_HEIGHT - PLOT_MARGINS.top - PLOT_MARGINS.bottom;
@@ -1378,6 +1599,11 @@
         : (value) =>
             PLOT_MARGINS.top +
             (1 - (value - diffusionRanges.yMin) / (diffusionRanges.yMax - diffusionRanges.yMin)) * innerHeight;
+    const yGridTicks = diffusionScaleMode === "log" ? diffusionMajorTicks : currentTicks;
+    const yGridScale = diffusionScaleMode === "log" ? scaleDiffusionY : scaleCurrentY;
+    const trustBand = getTrustBandConfig(dom);
+    const xSpan = currentRanges.xMax - currentRanges.xMin;
+    const trustBandWidth = xSpan > 0 ? xSpan * trustBand.percent : 0;
 
     const currentPath = orderedCurrent
       .map((point, index) => `${index === 0 ? "M" : "L"} ${scaleX(point.x).toFixed(2)} ${scaleCurrentY(point.y).toFixed(2)}`)
@@ -1399,6 +1625,16 @@
     const legendTotalWidth = diffusionLegendWidth + legendGap + currentLegendWidth;
     const legendX = Math.max(0, (PLOT_WIDTH - legendTotalWidth) / 2);
     const legendY = 8;
+    if (trustBandWidth > 0 && trustBand.alpha > 0) {
+      const leftX = scaleX(currentRanges.xMin);
+      const leftWidth = scaleX(currentRanges.xMin + trustBandWidth) - leftX;
+      const rightX = scaleX(currentRanges.xMax - trustBandWidth);
+      const rightWidth = scaleX(currentRanges.xMax) - rightX;
+      parts.push(`
+        <rect class="mda-plot-trust-band" x="${leftX.toFixed(2)}" y="${PLOT_MARGINS.top}" width="${leftWidth.toFixed(2)}" height="${innerHeight}" fill="#94a3b8" fill-opacity="${trustBand.alpha.toFixed(3)}"></rect>
+        <rect class="mda-plot-trust-band" x="${rightX.toFixed(2)}" y="${PLOT_MARGINS.top}" width="${rightWidth.toFixed(2)}" height="${innerHeight}" fill="#94a3b8" fill-opacity="${trustBand.alpha.toFixed(3)}"></rect>
+      `);
+    }
     parts.push(`
       <g class="mda-plot-legend-group" transform="translate(${legendX} ${legendY})">
         <g class="mda-plot-legend-item mda-plot-legend-diffusion">
@@ -1414,18 +1650,34 @@
       </g>
     `);
 
+    yGridTicks.forEach((value) => {
+      const y = yGridScale(value);
+      if (showGrid) {
+        parts.push(
+          `<line class="mda-plot-grid mda-plot-grid-major" x1="${PLOT_MARGINS.left}" y1="${y.toFixed(2)}" x2="${PLOT_WIDTH - PLOT_MARGINS.right}" y2="${y.toFixed(2)}"></line>`,
+        );
+      }
+    });
+
     currentTicks.forEach((value) => {
       const y = scaleCurrentY(value);
-      if (showGrid) {
-        parts.push(`<line class="mda-plot-grid" x1="${PLOT_MARGINS.left}" y1="${y.toFixed(2)}" x2="${PLOT_WIDTH - PLOT_MARGINS.right}" y2="${y.toFixed(2)}"></line>`);
-      }
       parts.push(
+        `<line class="mda-plot-axis-tick mda-plot-axis-tick-right" x1="${PLOT_WIDTH - PLOT_MARGINS.right}" y1="${y.toFixed(2)}" x2="${PLOT_WIDTH - PLOT_MARGINS.right + 7}" y2="${y.toFixed(2)}"></line>`,
         `<text class="mda-plot-value mda-plot-value-current" x="${PLOT_WIDTH - PLOT_MARGINS.right + 8}" y="${(y + 4).toFixed(2)}" text-anchor="start">${escapeHtml(formatAxisTick(value))}</text>`,
       );
     });
 
-    diffusionTicks.forEach((value) => {
+    if (diffusionScaleMode === "log") {
+      diffusionMinorTicks.forEach((value) => {
+        const y = scaleDiffusionY(value);
+        parts.push(`<line class="mda-plot-axis-tick mda-plot-axis-tick-left mda-plot-axis-tick-minor" x1="${PLOT_MARGINS.left - 4}" y1="${y.toFixed(2)}" x2="${PLOT_MARGINS.left}" y2="${y.toFixed(2)}"></line>`);
+      });
+    }
+
+    diffusionMajorTicks.forEach((value) => {
       const y = scaleDiffusionY(value);
+      const tickClass = "mda-plot-axis-tick mda-plot-axis-tick-left";
+      parts.push(`<line class="${tickClass}" x1="${PLOT_MARGINS.left - 8}" y1="${y.toFixed(2)}" x2="${PLOT_MARGINS.left}" y2="${y.toFixed(2)}"></line>`);
       parts.push(
         `<text class="mda-plot-value mda-plot-value-diffusion" x="${PLOT_MARGINS.left - 8}" y="${(y + 4).toFixed(2)}" text-anchor="end">${escapeHtml(
           diffusionScaleMode === "log"
@@ -1435,11 +1687,30 @@
       );
     });
 
+    if (xMinorTicks.length) {
+      xMinorTicks.forEach((value) => {
+        const x = scaleX(value);
+        if (showGrid) {
+          parts.push(
+            `<line class="mda-plot-grid mda-plot-grid-minor" x1="${x.toFixed(2)}" y1="${PLOT_MARGINS.top}" x2="${x.toFixed(2)}" y2="${PLOT_HEIGHT - PLOT_MARGINS.bottom}"></line>`,
+          );
+        }
+        parts.push(
+          `<line class="mda-plot-axis-tick mda-plot-axis-tick-bottom mda-plot-axis-tick-minor" x1="${x.toFixed(2)}" y1="${PLOT_HEIGHT - PLOT_MARGINS.bottom}" x2="${x.toFixed(2)}" y2="${PLOT_HEIGHT - PLOT_MARGINS.bottom + 5}"></line>`,
+        );
+      });
+    }
+
     xTicks.forEach((value) => {
       const x = scaleX(value);
       if (showGrid) {
-        parts.push(`<line class="mda-plot-grid" x1="${x.toFixed(2)}" y1="${PLOT_MARGINS.top}" x2="${x.toFixed(2)}" y2="${PLOT_HEIGHT - PLOT_MARGINS.bottom}"></line>`);
+        parts.push(
+          `<line class="mda-plot-grid mda-plot-grid-major" x1="${x.toFixed(2)}" y1="${PLOT_MARGINS.top}" x2="${x.toFixed(2)}" y2="${PLOT_HEIGHT - PLOT_MARGINS.bottom}"></line>`,
+        );
       }
+      parts.push(
+        `<line class="mda-plot-axis-tick mda-plot-axis-tick-bottom" x1="${x.toFixed(2)}" y1="${PLOT_HEIGHT - PLOT_MARGINS.bottom}" x2="${x.toFixed(2)}" y2="${PLOT_HEIGHT - PLOT_MARGINS.bottom + 8}"></line>`,
+      );
       parts.push(
         `<text class="mda-plot-value" x="${x.toFixed(2)}" y="${PLOT_HEIGHT - 14}" text-anchor="middle">${escapeHtml(formatAxisTick(value))}</text>`,
       );
@@ -1498,6 +1769,16 @@
     if (!Number.isFinite(value)) return "";
     const text = Number(value.toPrecision(12)).toString();
     return text;
+  }
+
+  function formatDiagnosticNumber(value) {
+    if (!Number.isFinite(value)) return "";
+    const abs = Math.abs(value);
+    if (abs === 0) return "0";
+    if (abs >= 1000 || abs < 0.001) {
+      return Number(value.toExponential(3)).toString();
+    }
+    return Number(value.toPrecision(6)).toString();
   }
 
   function formatFixedNumber(value, digits) {
@@ -1580,6 +1861,77 @@
     if (tone === "ok") dom.status.classList.add("is-ok");
   }
 
+  function renderDiagnostics(dom, analysis) {
+    if (!dom.statusDetail) return;
+    if (!analysis || !analysis.diagnostics || !analysis.previewRows || !analysis.previewRows.length) {
+      dom.statusDetail.textContent = "Diagnostics appear after data is parsed.";
+      return;
+    }
+
+    const diagnostics = analysis.diagnostics;
+    const rowsSolved = Number.isFinite(diagnostics.rowsSolved) ? diagnostics.rowsSolved : 0;
+    const avgTerms = rowsSolved > 0 ? diagnostics.totalTermsUsed / rowsSolved : null;
+    const maxTerms = Number.isFinite(diagnostics.maxTermsUsed) ? diagnostics.maxTermsUsed : null;
+    const lastTerms = Number.isFinite(diagnostics.lastTermsUsed) ? diagnostics.lastTermsUsed : null;
+    const lastContribution = Number.isFinite(diagnostics.lastTermContribution) ? diagnostics.lastTermContribution : null;
+    const lastDelta = Number.isFinite(diagnostics.lastDelta) ? diagnostics.lastDelta : null;
+    const lastTolerance = Number.isFinite(diagnostics.lastTolerance) ? diagnostics.lastTolerance : null;
+    const parts = [];
+
+    if (rowsSolved > 0) {
+      parts.push(`${rowsSolved} inverse solves`);
+    }
+    if (avgTerms != null) {
+      parts.push(`avg ${formatNumber(avgTerms)} terms`);
+    }
+    if (maxTerms != null) {
+      parts.push(`max ${maxTerms} terms`);
+    }
+    if (lastTerms != null) {
+      parts.push(`last ${lastTerms} terms`);
+    }
+    if (lastContribution != null) {
+      parts.push(`last term ${formatDiagnosticNumber(lastContribution)}`);
+    }
+    if (lastDelta != null && lastTolerance != null) {
+      parts.push(`last Δ ${formatDiagnosticNumber(lastDelta)} / tol ${formatDiagnosticNumber(lastTolerance)}`);
+    }
+
+    dom.statusDetail.textContent = parts.length
+      ? `Diagnostics: ${parts.join(" · ")}.`
+      : "Diagnostics are unavailable for this dataset.";
+  }
+
+  function syncT0OffsetDisplay(dom) {
+    if (!dom || !dom.t0OffsetValue) return;
+    const offset = parseNumberInput(dom.t0Offset ? dom.t0Offset.value : null) || 0;
+    const prefix = offset > 0 ? "+" : "";
+    dom.t0OffsetValue.textContent = `${prefix}${formatNumber(offset)} s`;
+  }
+
+  function syncTrustBandDisplay(dom) {
+    if (!dom) return;
+    const percent = parseNumberInput(dom.trustPercent ? dom.trustPercent.value : null);
+    const alpha = parseNumberInput(dom.trustAlpha ? dom.trustAlpha.value : null);
+    if (dom.trustPercentValue) {
+      dom.trustPercentValue.textContent = `${formatNumber(Number.isFinite(percent) ? percent : 0)}%`;
+    }
+    if (dom.trustAlphaValue) {
+      dom.trustAlphaValue.textContent = formatNumber(Number.isFinite(alpha) ? alpha : 0);
+    }
+  }
+
+  function getTrustBandConfig(dom) {
+    const percent = parseNumberInput(dom && dom.trustPercent ? dom.trustPercent.value : null);
+    const alpha = parseNumberInput(dom && dom.trustAlpha ? dom.trustAlpha.value : null);
+    const safePercent = Number.isFinite(percent) ? Math.max(0, Math.min(49, percent)) / 100 : 0.1;
+    const safeAlpha = Number.isFinite(alpha) ? Math.max(0, Math.min(1, alpha)) : 0.18;
+    return {
+      percent: safePercent,
+      alpha: safeAlpha,
+    };
+  }
+
   function positionStagePanels(dom) {
     const stageControls = dom?.root?.querySelector(".mda-stage-controls");
     if (!stageControls) return;
@@ -1638,7 +1990,7 @@
     return (value * getCurrentFactor(fromUnit)) / getCurrentFactor(toUnit);
   }
 
-  function solveApparentDiffusivity(normalized, timeSeconds, thicknessMeters, deadline) {
+  function solveApparentDiffusivity(normalized, timeSeconds, thicknessMeters, deadline, diagnostics) {
     if (!Number.isFinite(normalized) || !Number.isFinite(timeSeconds) || !Number.isFinite(thicknessMeters)) return null;
     if (timeSeconds <= 0 || thicknessMeters <= 0) return null;
     if (normalized < -1e-9 || normalized > 1 + 1e-9) return null;
@@ -1646,57 +1998,69 @@
     const target = clamp(normalized, 1e-12, 1 - 1e-12);
     let lower = SOLVER_POLICY.dLower;
     let upper = SOLVER_POLICY.dUpper;
-    let lowerValue = evaluateFickResponse(lower, timeSeconds, thicknessMeters);
-    let upperValue = evaluateFickResponse(upper, timeSeconds, thicknessMeters);
-    if (!Number.isFinite(lowerValue) || !Number.isFinite(upperValue)) return null;
+    let lowerEval = evaluateFickResponseDetailed(lower, timeSeconds, thicknessMeters);
+    let upperEval = evaluateFickResponseDetailed(upper, timeSeconds, thicknessMeters);
+    if (!lowerEval || !upperEval || !Number.isFinite(lowerEval.value) || !Number.isFinite(upperEval.value)) return null;
 
-    if (target <= lowerValue) return lower;
-    if (target >= upperValue) return upper;
+    if (target <= lowerEval.value) {
+      if (diagnostics) recordSolverDiagnostics(diagnostics, lowerEval);
+      return lower;
+    }
+    if (target >= upperEval.value) {
+      if (diagnostics) recordSolverDiagnostics(diagnostics, upperEval);
+      return upper;
+    }
 
     const solveDeadline = Number.isFinite(deadline) ? deadline : performance.now() + SOLVER_POLICY.timeoutMs;
     let best = null;
+    let bestEval = null;
     for (let iteration = 0; iteration < 80; iteration += 1) {
       const mid = Math.sqrt(lower * upper);
-      const midValue = evaluateFickResponse(mid, timeSeconds, thicknessMeters, solveDeadline);
-      if (!Number.isFinite(midValue)) return best;
+      const midEval = evaluateFickResponseDetailed(mid, timeSeconds, thicknessMeters, solveDeadline);
+      if (!midEval || !Number.isFinite(midEval.value)) return best;
       best = mid;
-      const error = midValue - target;
+      bestEval = midEval;
+      const error = midEval.value - target;
       const tolerance = Math.max(SOLVER_POLICY.absTolerance, SOLVER_POLICY.relTolerance * Math.max(1, Math.abs(target)));
+      if (diagnostics) recordSolverDiagnostics(diagnostics, midEval);
       if (Math.abs(error) <= tolerance) return mid;
-      if (midValue < target) {
+      if (midEval.value < target) {
         lower = mid;
-        lowerValue = midValue;
+        lowerEval = midEval;
       } else {
         upper = mid;
-        upperValue = midValue;
+        upperEval = midEval;
       }
       if (upper / lower <= 1 + 1e-12) return mid;
     }
+    if (diagnostics && bestEval) recordSolverDiagnostics(diagnostics, bestEval);
     return best;
   }
 
-  function evaluateFickResponse(diffusivity, timeSeconds, thicknessMeters, deadline) {
+  function evaluateFickResponseDetailed(diffusivity, timeSeconds, thicknessMeters, deadline) {
     if (!Number.isFinite(diffusivity) || !Number.isFinite(timeSeconds) || !Number.isFinite(thicknessMeters)) return null;
     if (diffusivity <= 0 || timeSeconds <= 0 || thicknessMeters <= 0) return 0;
 
     const factor = (Math.PI * Math.PI * diffusivity * timeSeconds) / (thicknessMeters * thicknessMeters);
     if (factor < 1.6) {
-      return evaluateFickResponseTheta(factor, deadline);
+      return evaluateFickResponseThetaDetailed(factor, deadline);
     }
 
-    return evaluateFickResponseDirect(factor, deadline);
+    return evaluateFickResponseDirectDetailed(factor, deadline);
   }
 
-  function evaluateFickResponseDirect(factor, deadline) {
+  function evaluateFickResponseDirectDetailed(factor, deadline) {
     let sum = 0;
     let stableCount = 0;
     let previousValue = null;
+    let lastTerm = 0;
 
     for (let n = 1; n <= SOLVER_POLICY.maxTerms; n += 1) {
       if (deadline && performance.now() > deadline) return null;
       const sign = n % 2 === 0 ? 1 : -1;
       const term = sign * Math.exp(-(n * n) * factor);
       sum += term;
+      lastTerm = term;
 
       const value = 1 + 2 * sum;
       if (n >= SOLVER_POLICY.minTerms) {
@@ -1707,26 +2071,51 @@
         } else {
           stableCount = 0;
         }
-        if (stableCount >= 3) return clamp(value, 0, 1);
+        if (stableCount >= 3) {
+          return {
+            value: clamp(value, 0, 1),
+            termsUsed: n,
+            lastTermContribution: 2 * term,
+            lastDelta: delta,
+            tolerance,
+            method: "direct",
+          };
+        }
       }
       previousValue = value;
     }
 
-    return clamp(1 + 2 * sum, 0, 1);
+    return {
+      value: clamp(1 + 2 * sum, 0, 1),
+      termsUsed: SOLVER_POLICY.maxTerms,
+      lastTermContribution: 2 * lastTerm,
+      lastDelta: previousValue == null ? Math.abs(lastTerm) : Math.abs((1 + 2 * sum) - previousValue),
+      tolerance: Math.max(SOLVER_POLICY.absTolerance, SOLVER_POLICY.relTolerance * Math.max(1, Math.abs(1 + 2 * sum))),
+      method: "direct",
+    };
   }
 
-  function evaluateFickResponseTheta(factor, deadline) {
-    if (!(factor > 0)) return 0;
+  function evaluateFickResponseThetaDetailed(factor, deadline) {
+    if (!(factor > 0)) {
+      return {
+        value: 0,
+        termsUsed: 0,
+        lastTermContribution: 0,
+        method: "theta",
+      };
+    }
     let sum = 0;
     let stableCount = 0;
     let previousValue = null;
     const root = Math.sqrt(Math.PI / factor);
+    let lastTerm = 0;
 
     for (let m = 0; m <= SOLVER_POLICY.maxTerms; m += 1) {
       if (deadline && performance.now() > deadline) return null;
       const k = 2 * m + 1;
       const term = Math.exp(-((k * k) * Math.PI * Math.PI) / (4 * factor));
       sum += term;
+      lastTerm = term;
 
       const value = 2 * root * sum;
       if (m + 1 >= SOLVER_POLICY.minTerms) {
@@ -1737,16 +2126,33 @@
         } else {
           stableCount = 0;
         }
-        if (stableCount >= 3) return clamp(value, 0, 1);
+        if (stableCount >= 3) {
+          return {
+            value: clamp(value, 0, 1),
+            termsUsed: m + 1,
+            lastTermContribution: 2 * root * term,
+            lastDelta: delta,
+            tolerance,
+            method: "theta",
+          };
+        }
       }
       previousValue = value;
     }
 
-    return clamp(2 * root * sum, 0, 1);
+    return {
+      value: clamp(2 * root * sum, 0, 1),
+      termsUsed: SOLVER_POLICY.maxTerms + 1,
+      lastTermContribution: 2 * root * lastTerm,
+      lastDelta: previousValue == null ? Math.abs(2 * root * lastTerm) : Math.abs((2 * root * sum) - previousValue),
+      tolerance: Math.max(SOLVER_POLICY.absTolerance, SOLVER_POLICY.relTolerance * Math.max(1, Math.abs(2 * root * sum))),
+      method: "theta",
+    };
   }
 
   function renderEmpty(dom, message) {
     setStatus(dom, message, "");
+    renderDiagnostics(dom, null);
     renderEmptyTable(dom);
     setIssues(dom, []);
     renderResults(dom, null);
@@ -1798,19 +2204,46 @@
       };
     }
 
-    const count = Math.max(1, Math.min(rows.length, Math.max(3, Math.ceil(rows.length * 0.1))));
-    const half = Math.max(1, Math.floor(rows.length / 2));
-    const segment = Math.min(count, half);
-    const subset = kind === "baseline" ? rows.slice(0, segment) : rows.slice(rows.length - segment);
+    const values = rows.map((row) => row.current).filter((value) => Number.isFinite(value));
+    if (!values.length) {
+      return { value: null };
+    }
+
+    const value = kind === "baseline" ? Math.min(...values) : Math.max(...values);
     return {
-      value: average(subset.map((row) => row.current)),
+      value,
     };
   }
 
-  function average(values) {
-    const filtered = values.filter((value) => Number.isFinite(value));
-    if (!filtered.length) return null;
-    return filtered.reduce((sum, value) => sum + value, 0) / filtered.length;
+  function applyTimeOffsetRows(rows, t0Offset, baseline) {
+    const sourceRows = Array.isArray(rows) ? rows : [];
+    if (!sourceRows.length || !Number.isFinite(t0Offset) || t0Offset === 0) {
+      return sourceRows.map((row) => ({ ...row }));
+    }
+
+    if (t0Offset > 0) {
+      return sourceRows
+        .filter((row) => Number.isFinite(row.time) && row.time >= t0Offset)
+        .map((row) => ({ ...row, time: row.time - t0Offset }));
+    }
+
+    const shift = Math.abs(t0Offset);
+    const firstCurrentRow = sourceRows.find((row) => Number.isFinite(row.current));
+    const baselineValue = baseline && Number.isFinite(baseline.value) ? baseline.value : firstCurrentRow ? firstCurrentRow.current : null;
+
+    const shiftedRows = sourceRows
+      .filter((row) => Number.isFinite(row.time))
+      .map((row) => ({ ...row, time: row.time + shift }));
+
+    if (!Number.isFinite(baselineValue)) {
+      return shiftedRows;
+    }
+
+    const syntheticRows = [
+      { lineNumber: 0, time: 0, current: baselineValue, synthetic: true },
+      { lineNumber: 0, time: shift, current: baselineValue, synthetic: true },
+    ];
+    return syntheticRows.concat(shiftedRows);
   }
 
   function formatUnitLabel(value) {
@@ -1887,9 +2320,10 @@
   function buildExportCsv(dom, analysis) {
     const inputUnit = dom.currentUnit ? dom.currentUnit.value : "A";
     const displayUnit = getDisplayUnit(dom);
+    const exportRows = Array.isArray(analysis.previewRows) && analysis.previewRows.length ? analysis.previewRows : analysis.rows;
     const rows = [
       ["Time [s]", `Current [${formatUnitLabel(displayUnit)}]`, "D_app [m^2/s]"],
-      ...analysis.rows.map((row) => {
+      ...exportRows.map((row) => {
         const current = convertCurrentValue(row.current, inputUnit, displayUnit);
         const diffusivity = Number.isFinite(row.diffusivity) ? row.diffusivity : null;
         return [row.time, current, diffusivity];
@@ -1921,7 +2355,10 @@
     const grid = "#e2e8f0";
     const border = "#cfd8e3";
     style.textContent = `
-      .mda-plot-grid{stroke:${grid};stroke-width:0.75}
+      .mda-plot-grid{stroke:${grid};stroke-linecap:butt;fill:none}
+      .mda-plot-grid-major{stroke-width:0.6;opacity:0.85}
+      .mda-plot-grid-minor{stroke-width:0.4;opacity:0.45;stroke-dasharray:2 4}
+      .mda-plot-trust-band{pointer-events:none}
       .mda-plot-line{fill:none;stroke-width:2.4;stroke-linejoin:round;stroke-linecap:butt}
       .mda-plot-line-current{stroke:${currentColor}}
       .mda-plot-line-diffusion{stroke:${diffusionColor}}
@@ -1944,6 +2381,8 @@
       .mda-plot-ref-line{stroke-width:2;stroke-linecap:butt}
       .mda-plot-ref-handle{stroke:${bg};stroke-width:2}
       .mda-plot-ref-label{font-size:10px;font-weight:400;paint-order:normal;stroke:none}
+      .mda-plot-axis-tick{stroke:${muted};stroke-width:1;fill:none}
+      .mda-plot-axis-tick-minor{stroke-width:0.75;opacity:0.8}
     `;
     clone.insertBefore(style, clone.firstChild);
     return new XMLSerializer().serializeToString(clone);
@@ -1993,4 +2432,3 @@
     return value.charAt(0).toUpperCase() + value.slice(1);
   }
 })();
-
