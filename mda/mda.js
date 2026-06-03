@@ -27,11 +27,13 @@
     currentAnalysis: null,
     referenceVisibility: { baseline: true, steady: true },
     plotDiffusionScale: "linear",
+    plotLowConfidenceMode: "shaded",
     dragReference: null,
     dragReferenceFrame: null,
     dragReferencePending: null,
     dragPlot: null,
     plotViewport: null,
+    plotHoverCache: null,
   };
 
   document.addEventListener("DOMContentLoaded", init);
@@ -61,6 +63,7 @@
       cropRange: document.getElementById("mda-crop-range"),
       decimal: document.getElementById("mda-decimal"),
       plotUnit: document.getElementById("mda-plot-unit"),
+      lowConfidence: document.getElementById("mda-low-confidence"),
       diffusionScale: document.getElementById("mda-diffusion-scale"),
       gridToggle: document.getElementById("mda-grid-toggle"),
       resetPlot: document.getElementById("mda-reset-plot"),
@@ -93,6 +96,7 @@
     }
 
     state.plotDiffusionScale = dom.diffusionScale && dom.diffusionScale.checked ? "log" : "linear";
+    state.plotLowConfidenceMode = dom.lowConfidence && dom.lowConfidence.value ? dom.lowConfidence.value : "shaded";
 
     dom.helpOpenButtons.forEach((button) => {
       button.addEventListener("click", () => openDrawer(dom.helpDrawer));
@@ -145,6 +149,11 @@
         syncT0OffsetDisplay(dom);
         scheduleParse(dom, "selection");
       });
+      dom.t0Offset.addEventListener("dblclick", () => {
+        dom.t0Offset.value = "0";
+        syncT0OffsetDisplay(dom);
+        scheduleParse(dom, "selection");
+      });
       syncT0OffsetDisplay(dom);
     }
     if (dom.thickness) {
@@ -169,6 +178,12 @@
     }
     if (dom.plotUnit) {
       dom.plotUnit.addEventListener("change", () => {
+        renderDerivedViews(dom);
+      });
+    }
+    if (dom.lowConfidence) {
+      dom.lowConfidence.addEventListener("change", () => {
+        state.plotLowConfidenceMode = dom.lowConfidence.value || "shaded";
         renderDerivedViews(dom);
       });
     }
@@ -230,6 +245,7 @@
     }
 
     attachPlotInteractions(dom);
+    ensurePlotTooltip();
 
     if (dom.clearButton) {
       dom.clearButton.addEventListener("click", () => {
@@ -252,6 +268,8 @@
         if (dom.minorGridToggle) dom.minorGridToggle.checked = true;
         state.plotDiffusionScale = "linear";
         if (dom.diffusionScale) dom.diffusionScale.checked = false;
+        state.plotLowConfidenceMode = "shaded";
+        if (dom.lowConfidence) dom.lowConfidence.value = "shaded";
         clearReferenceAuto(dom.baselineValue);
         clearReferenceAuto(dom.steadyValue);
         if (dom.baselineValue) dom.baselineValue.value = "";
@@ -267,8 +285,12 @@
     if (dom.plotUnit) {
       dom.plotUnit.value = "uA";
     }
+    if (dom.lowConfidence) {
+      dom.lowConfidence.value = "shaded";
+    }
     syncT0OffsetDisplay(dom);
     renderEmpty(dom, "Paste data to begin.");
+    loadDebugDefaultInput(dom);
   }
 
   function injectHeaderBrand() {
@@ -426,6 +448,14 @@
     dom.plot.addEventListener("pointerup", finishPlotDrag);
     dom.plot.addEventListener("pointercancel", finishPlotDrag);
     dom.plot.addEventListener("pointerleave", finishPlotDrag);
+    dom.plot.addEventListener("pointermove", (event) => {
+      if (state.dragReference || state.dragPlot) {
+        hidePlotTooltip();
+        return;
+      }
+      updatePlotTooltip(dom, event);
+    });
+    dom.plot.addEventListener("mouseleave", hidePlotTooltip);
     dom.plot.addEventListener(
       "wheel",
       (event) => {
@@ -454,6 +484,318 @@
       return target.ownerSVGElement;
     }
     return dom.plot ? dom.plot.querySelector("svg") : null;
+  }
+
+  function ensurePlotTooltip() {
+    let tooltip = document.getElementById("mda-plot-tooltip");
+    if (!tooltip) {
+      tooltip = document.createElement("div");
+      tooltip.id = "mda-plot-tooltip";
+      tooltip.className = "mda-plot-tooltip";
+      tooltip.setAttribute("aria-hidden", "true");
+      document.body.appendChild(tooltip);
+    }
+    return tooltip;
+  }
+
+  function hidePlotTooltip() {
+    const tooltip = document.getElementById("mda-plot-tooltip");
+    if (!tooltip) return;
+    tooltip.style.opacity = "0";
+    tooltip.setAttribute("aria-hidden", "true");
+  }
+
+  function updatePlotTooltip(dom, event) {
+    const tooltip = ensurePlotTooltip();
+    const cache = state.plotHoverCache;
+    const svg = getPlotSvg(dom, event);
+    if (!cache || !svg || !state.currentAnalysis || !state.currentAnalysis.rows || !state.currentAnalysis.rows.length) {
+      hidePlotTooltip();
+      return;
+    }
+
+    const rect = svg.getBoundingClientRect();
+    if (!rect.width || !rect.height) {
+      hidePlotTooltip();
+      return;
+    }
+
+    const x = ((event.clientX - rect.left) / rect.width) * PLOT_WIDTH;
+    const y = ((event.clientY - rect.top) / rect.height) * PLOT_HEIGHT;
+    if (x < cache.chartX || x > cache.chartX + cache.chartWidth || y < cache.chartY || y > cache.chartY + cache.chartHeight) {
+      hidePlotTooltip();
+      return;
+    }
+
+    const best = findNearestPlotHoverTarget(cache, x, y);
+    if (!best) {
+      hidePlotTooltip();
+      return;
+    }
+
+    tooltip.innerHTML = renderPlotTooltipContent(best);
+    tooltip.style.opacity = "1";
+    tooltip.setAttribute("aria-hidden", "false");
+    const offset = 16;
+    const gap = 8;
+    const pageLeft = window.scrollX;
+    const pageTop = window.scrollY;
+    const viewportRight = pageLeft + window.innerWidth;
+    const viewportBottom = pageTop + window.innerHeight;
+    let left = event.clientX + window.scrollX + offset;
+    let top = event.clientY + window.scrollY + offset;
+    const tooltipWidth = tooltip.offsetWidth;
+    const tooltipHeight = tooltip.offsetHeight;
+
+    if (left + tooltipWidth + gap > viewportRight) {
+      left = event.clientX + window.scrollX - tooltipWidth - offset;
+    }
+    if (top + tooltipHeight + gap > viewportBottom) {
+      top = event.clientY + window.scrollY - tooltipHeight - offset;
+    }
+
+    left = Math.max(pageLeft + gap, Math.min(left, viewportRight - tooltipWidth - gap));
+    top = Math.max(pageTop + gap, Math.min(top, viewportBottom - tooltipHeight - gap));
+
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
+  }
+
+  function renderPlotTooltipContent(target) {
+    if (!target) return "";
+    if (target.kind === "current") {
+      const unit = target.unitLabel || "";
+      return `
+        <strong>Measured permeation current I(t)</strong>
+        <div>t = ${escapeHtml(formatAxisTick(target.x))} s</div>
+        <div>I = ${escapeHtml(formatAxisTick(target.displayValue))} ${escapeHtml(unit)}</div>
+      `;
+    }
+    if (target.kind === "diffusion") {
+      return `
+        <strong>Apparent diffusion coefficient D<sub>app</sub>(t)</strong>
+        <div>t = ${escapeHtml(formatAxisTick(target.x))} s</div>
+        <div>D = ${escapeHtml(formatScientificTick(target.displayValue))} mm²/s</div>
+      `;
+    }
+    return `
+      <strong>${escapeHtml(target.label || "Reference")}</strong>
+      <div>I = ${escapeHtml(formatAxisTick(target.displayValue))} ${escapeHtml(target.unitLabel || "")}</div>
+    `;
+  }
+
+  function findNearestPlotHoverTarget(cache, x, y) {
+    const lineThreshold = 10;
+    const refThreshold = 8;
+    let best = null;
+    let bestDistSq = lineThreshold * lineThreshold;
+
+    const consider = (candidate, distSq, anchorX, anchorY) => {
+      if (!candidate || !Number.isFinite(distSq) || distSq > bestDistSq) return;
+      bestDistSq = distSq;
+      best = { ...candidate, anchorX, anchorY };
+    };
+
+    const scanPolyline = (points, kind, label, unitLabel, displayFn) => {
+      if (!Array.isArray(points) || points.length < 1) return;
+      if (points.length === 1) {
+        const point = points[0];
+        const dx = x - point.px;
+        const dy = y - point.py;
+        consider(
+          {
+            kind,
+            label,
+            x: point.x,
+            displayValue: displayFn(point, point, 0),
+            unitLabel,
+          },
+          dx * dx + dy * dy,
+          point.px,
+          point.py,
+        );
+        return;
+      }
+      for (let index = 0; index < points.length - 1; index += 1) {
+        const a = points[index];
+        const b = points[index + 1];
+        const projection = pointToSegmentProjection(x, y, a.px, a.py, b.px, b.py);
+        if (projection.distSq > bestDistSq) continue;
+        const t = projection.t;
+        const px = projection.px;
+        const py = projection.py;
+        const interpX = a.x + (b.x - a.x) * t;
+        const interpValue = displayFn(a, b, t, projection);
+        consider(
+          {
+            kind,
+            label,
+            x: interpX,
+            displayValue: interpValue,
+            unitLabel,
+          },
+          projection.distSq,
+          px,
+          py,
+        );
+      }
+    };
+
+    scanPolyline(
+      cache.currentPoints,
+      "current",
+      "Measured permeation current I(t)",
+      cache.currentUnitLabel || "",
+      (a, b, t) => a.y + (b.y - a.y) * t,
+    );
+
+    scanPolyline(
+      cache.diffusionPoints,
+      "diffusion",
+      "Apparent diffusion coefficient Dapp(t)",
+      "mm²/s",
+      (a, b, t) => {
+        const value = a.displayY + (b.displayY - a.displayY) * t;
+        return Number.isFinite(value) ? value : null;
+      },
+    );
+
+    if (Array.isArray(cache.referenceItems)) {
+      cache.referenceItems.forEach((item) => {
+        const dx = x - item.px;
+        const dy = y - item.py;
+        consider(
+          {
+            kind: "reference",
+            label: item.label,
+            displayValue: item.displayValue,
+            unitLabel: item.currentUnitLabel || "",
+          },
+          dy * dy,
+          item.px,
+          item.py,
+        );
+      });
+    }
+
+    return best;
+  }
+
+  function pointToSegmentProjection(px, py, ax, ay, bx, by) {
+    const dx = bx - ax;
+    const dy = by - ay;
+    if (dx === 0 && dy === 0) {
+      const rx = px - ax;
+      const ry = py - ay;
+      return {
+        px: ax,
+        py: ay,
+        t: 0,
+        distSq: rx * rx + ry * ry,
+      };
+    }
+    const lengthSq = dx * dx + dy * dy;
+    const rawT = ((px - ax) * dx + (py - ay) * dy) / lengthSq;
+    const t = Math.max(0, Math.min(1, rawT));
+    const projX = ax + t * dx;
+    const projY = ay + t * dy;
+    const rx = px - projX;
+    const ry = py - projY;
+    return {
+      px: projX,
+      py: projY,
+      t,
+      distSq: rx * rx + ry * ry,
+    };
+  }
+
+  function buildPolylinePath(points, scaleX, scaleY) {
+    return points
+      .map((point, index) => `${index === 0 ? "M" : "L"} ${scaleX(point.x).toFixed(2)} ${scaleY(point.y).toFixed(2)}`)
+      .join(" ");
+  }
+
+  function buildSegmentedPolylinePaths(points, fractions, scaleX, scaleY) {
+    if (!Array.isArray(points) || points.length < 2) return [];
+    const screenPoints = points.map((point) => ({ x: scaleX(point.x), y: scaleY(point.y) }));
+    const thresholds = (fractions || [])
+      .filter((value) => Number.isFinite(value) && value > 0 && value < 1)
+      .sort((a, b) => a - b);
+    if (!thresholds.length) {
+      return [
+        {
+          index: 0,
+          d: screenPoints.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(" "),
+        },
+      ];
+    }
+
+    const totalLength = screenPoints.reduce((sum, point, index) => {
+      if (index === 0) return 0;
+      const prev = screenPoints[index - 1];
+      return sum + Math.hypot(point.x - prev.x, point.y - prev.y);
+    }, 0);
+    if (!Number.isFinite(totalLength) || totalLength <= 0) {
+      return [
+        {
+          index: 0,
+          d: screenPoints.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(" "),
+        },
+      ];
+    }
+
+    const targets = thresholds.map((fraction) => fraction * totalLength);
+    const segmentPoints = Array.from({ length: thresholds.length + 1 }, () => []);
+
+    const pushUnique = (bucket, point) => {
+      const last = bucket[bucket.length - 1];
+      if (!last || last.x !== point.x || last.y !== point.y) {
+        bucket.push(point);
+      }
+    };
+
+    const interpolatePoint = (a, b, ratio) => ({
+      x: a.x + (b.x - a.x) * ratio,
+      y: a.y + (b.y - a.y) * ratio,
+    });
+
+    let thresholdIndex = 0;
+    let currentBucket = 0;
+    let pathLength = 0;
+    pushUnique(segmentPoints[0], screenPoints[0]);
+
+    for (let i = 1; i < screenPoints.length; i += 1) {
+      const start = screenPoints[i - 1];
+      const end = screenPoints[i];
+      const edgeLength = Math.hypot(end.x - start.x, end.y - start.y);
+      if (edgeLength === 0) {
+        pushUnique(segmentPoints[currentBucket], end);
+        continue;
+      }
+
+      while (thresholdIndex < targets.length && targets[thresholdIndex] <= pathLength + edgeLength) {
+        const ratio = (targets[thresholdIndex] - pathLength) / edgeLength;
+        const crossing = interpolatePoint(start, end, Math.max(0, Math.min(1, ratio)));
+        pushUnique(segmentPoints[currentBucket], crossing);
+        currentBucket = thresholdIndex + 1;
+        pushUnique(segmentPoints[currentBucket], crossing);
+        thresholdIndex += 1;
+      }
+
+      pushUnique(segmentPoints[currentBucket], end);
+      pathLength += edgeLength;
+    }
+
+    return segmentPoints
+      .map((segment, index) =>
+        segment.length >= 2
+          ? {
+              index,
+              d: segment.map((point, pointIndex) => `${pointIndex === 0 ? "M" : "L"} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(" "),
+            }
+          : null,
+      )
+      .filter(Boolean);
   }
 
   function startReferenceDrag(dom, kind, event, svg) {
@@ -677,8 +1019,8 @@
 
     const xSpan = xMax - xMin || Math.max(1, Math.abs(xMin) || 1);
     const ySpan = yMax - yMin || Math.max(1e-12, Math.abs(yMin) || 1e-12);
-    const xPad = xSpan * 0.01;
-    const yPad = ySpan * 0.01;
+    const xPad = xSpan * 0.00;
+    const yPad = ySpan * 0.05;
     return {
       xMin: xMin - xPad,
       xMax: xMax + xPad,
@@ -1052,9 +1394,9 @@
 
     if (t0Offset !== 0) {
       notes.push(
-        t0Offset > 0
-          ? `t0 offset applied: removed the first ${formatNumber(t0Offset)} s of data and shifted the remaining times back to zero.`
-          : `t0 offset applied: prepended ${formatNumber(Math.abs(t0Offset))} s of baseline time and shifted the data forward.`,
+        t0Offset < 0
+          ? `Start time applied: removed the first ${formatNumber(Math.abs(t0Offset))} s of data and shifted the remaining times back to zero.`
+          : `Start time applied: prepended ${formatNumber(t0Offset)} s of baseline time and shifted the data forward.`,
       );
     }
 
@@ -1112,7 +1454,7 @@
       };
     });
 
-    const classical = normalizedAvailable && thicknessMm != null ? buildClassicalResults(previewRows, thicknessMm) : buildEmptyClassicalResults();
+    const classical = normalizedAvailable && thicknessMm != null ? buildClassicalResults(previewRows, thicknessMm, denom) : buildEmptyClassicalResults();
 
     for (let i = 1; i < rows.length; i += 1) {
       if (rows[i].time <= rows[i - 1].time) {
@@ -1332,20 +1674,21 @@
       }
     }
 
-    function buildClassicalResults(previewRows, thicknessMm) {
+    function buildClassicalResults(previewRows, thicknessMm, iMax) {
       const thicknessMeters = thicknessMm / 1000;
       const rows = (previewRows || [])
         .map((row) => ({
           time: row.time,
+          current: row.current,
           normalized: row.normalized,
           diffusivity: row.diffusivity,
         }))
-        .filter((row) => Number.isFinite(row.time) && Number.isFinite(row.normalized))
+        .filter((row) => Number.isFinite(row.time) && Number.isFinite(row.normalized) && Number.isFinite(row.current))
         .sort((a, b) => a.time - b.time);
 
       const breakthrough = solveThresholdMethod(rows, thicknessMeters, 0.1, 15.3, "Breakthrough (10%)");
       const timeLag = solveThresholdMethod(rows, thicknessMeters, 0.63, 6, "Time lag (63%)");
-      const inflection = solveInflectionMethod(rows, thicknessMeters);
+      const inflection = solveInflectionMethod(rows, thicknessMeters, iMax);
       const plateau = solveDiffusionPlateau(previewRows, thicknessMeters);
 
       return { breakthrough, timeLag, inflection, plateau };
@@ -1377,20 +1720,26 @@
       };
     }
 
-    function solveInflectionMethod(rows, thicknessMeters) {
-      const inflection = findInflectionTime(rows);
+    function solveInflectionMethod(rows, thicknessMeters, iMax) {
+      const inflection = findInflectionPoint(rows, 0.2442);
       if (!inflection) {
         return {
           available: false,
           note: "No clear inflection point could be detected.",
         };
       }
-      const diffusivity = (0.924 * thicknessMeters * thicknessMeters) / (Math.PI * Math.PI * inflection.time);
+      if (!Number.isFinite(iMax) || iMax <= 0) {
+        return {
+          available: false,
+          note: "Inflection-point method requires a valid steady-state current.",
+        };
+      }
+      const diffusivity = (0.04124 * thicknessMeters * thicknessMeters * inflection.slope) / (0.2442 * iMax);
       return {
         available: Number.isFinite(diffusivity) && diffusivity > 0,
         diffusivity,
         timeText: `t = ${formatNumber(inflection.time)} s`,
-        note: "Inflection-point estimate from the maximum slope of the normalized curve.",
+        note: "Inflection-point estimate at I/I_max ≈ 0.2442.",
       };
     }
 
@@ -1472,24 +1821,55 @@
       return null;
     }
 
-    function findInflectionTime(rows) {
-      if (rows.length < 3) return null;
-      let best = null;
-      for (let i = 1; i < rows.length - 1; i += 1) {
-        const prev = rows[i - 1];
-        const curr = rows[i];
-        const next = rows[i + 1];
-        const span = next.time - prev.time;
-        if (!Number.isFinite(prev.normalized) || !Number.isFinite(curr.normalized) || !Number.isFinite(next.normalized) || span <= 0) {
-          continue;
+    function findInflectionPoint(rows, target) {
+      if (rows.length < 3 || !Number.isFinite(target)) return null;
+      const sorted = rows
+        .filter((row) => Number.isFinite(row.time) && Number.isFinite(row.normalized) && Number.isFinite(row.current))
+        .sort((a, b) => a.time - b.time);
+      if (sorted.length < 3) return null;
+
+      let leftIndex = -1;
+      for (let i = 1; i < sorted.length; i += 1) {
+        const prev = sorted[i - 1];
+        const curr = sorted[i];
+        if (prev.normalized === target) {
+          leftIndex = i - 1;
+          break;
         }
-        const slope = (next.normalized - prev.normalized) / span;
-        if (!best || slope > best.slope) {
-          best = { index: i, slope, time: curr.time };
+        if ((prev.normalized < target && curr.normalized >= target) || (prev.normalized > target && curr.normalized <= target)) {
+          leftIndex = i - 1;
+          break;
         }
       }
-      if (!best) return null;
-      return { time: best.time, slope: best.slope };
+
+      if (leftIndex < 0) {
+        let closest = 0;
+        let closestDelta = Math.abs(sorted[0].normalized - target);
+        for (let i = 1; i < sorted.length; i += 1) {
+          const delta = Math.abs(sorted[i].normalized - target);
+          if (delta < closestDelta) {
+            closest = i;
+            closestDelta = delta;
+          }
+        }
+        leftIndex = Math.max(0, closest - 1);
+      }
+
+      const rightIndex = Math.min(sorted.length - 1, leftIndex + 1);
+      const left = sorted[leftIndex];
+      const right = sorted[rightIndex];
+      const span = right.normalized - left.normalized;
+      const ratio = span === 0 ? 0 : (target - left.normalized) / span;
+      const clampedRatio = Math.max(0, Math.min(1, ratio));
+      const time = left.time + (right.time - left.time) * clampedRatio;
+
+      const windowStart = Math.max(0, leftIndex - 2);
+      const windowEnd = Math.min(sorted.length, rightIndex + 3);
+      const window = sorted.slice(windowStart, windowEnd);
+      const slope = linearSlope(window.map((row) => ({ time: row.time, diffusivity: row.current })));
+      if (!Number.isFinite(slope)) return null;
+
+      return { time, slope };
     }
 
     function median(values) {
@@ -1612,6 +1992,18 @@
     const diffusionPath = diffusionPlotPoints
       .map((point, index) => `${index === 0 ? "M" : "L"} ${scaleX(point.x).toFixed(2)} ${scaleDiffusionY(point.y).toFixed(2)}`)
       .join(" ");
+    const lowConfidenceMode = dom.lowConfidence && dom.lowConfidence.value ? dom.lowConfidence.value : state.plotLowConfidenceMode;
+    state.plotLowConfidenceMode = lowConfidenceMode || "shaded";
+    const diffusionSegmentPaths =
+      lowConfidenceMode === "normal"
+        ? []
+        : buildSegmentedPolylinePaths(diffusionPlotPoints, [0.1, 0.9], scaleX, scaleDiffusionY);
+    const diffusionSegmentClasses =
+      lowConfidenceMode === "hide"
+        ? ["mda-plot-line-diffusion-hidden", "mda-plot-line-diffusion", "mda-plot-line-diffusion-hidden"]
+        : lowConfidenceMode === "shaded"
+          ? ["mda-plot-line-diffusion-edge", "mda-plot-line-diffusion", "mda-plot-line-diffusion-edge"]
+          : ["mda-plot-line-diffusion", "mda-plot-line-diffusion", "mda-plot-line-diffusion"];
 
     const parts = [];
     const chartClipId = "mda-plot-clip";
@@ -1633,22 +2025,32 @@
     const legendLineWidth = 18;
     const legendTextGap = 12;
     const legendFontSize = 10.5;
-    const diffusionLegendText = "Apparent Diffusion Coefficient Dapp(t)";
+    const lowConfidenceLegendText = "Low Confidence";
+    const diffusionPlotLegendText = "Apparent Diffusion Coefficient Dapp(t)";
     const currentLegendText = "Measured permeation current I(t)";
-    const diffusionLegendWidth = legendLineWidth + legendTextGap + measureTextWidth(diffusionLegendText, legendFontSize);
+    const showLowConfidenceLegend = lowConfidenceMode === "shaded";
+    const lowConfidenceLegendWidth = showLowConfidenceLegend
+      ? legendLineWidth + legendTextGap + measureTextWidth(lowConfidenceLegendText, legendFontSize)
+      : 0;
+    const diffusionLegendWidth = legendLineWidth + legendTextGap + measureTextWidth(diffusionPlotLegendText, legendFontSize);
     const currentLegendWidth = legendLineWidth + legendTextGap + measureTextWidth(currentLegendText, legendFontSize);
-    const legendTotalWidth = diffusionLegendWidth + legendGap + currentLegendWidth;
+    const legendTotalWidth = (showLowConfidenceLegend ? lowConfidenceLegendWidth + legendGap : 0) + diffusionLegendWidth + legendGap + currentLegendWidth;
     const legendX = Math.max(0, (PLOT_WIDTH - legendTotalWidth) / 2);
     const legendY = 8;
     parts.push(`
       <g class="mda-plot-legend-group" transform="translate(${legendX} ${legendY})">
-        <g class="mda-plot-legend-item mda-plot-legend-diffusion">
+        ${showLowConfidenceLegend ? `
+        <g class="mda-plot-legend-item mda-plot-legend-low-confidence">
+          <line x1="0" y1="6" x2="18" y2="6" class="mda-plot-legend-line mda-plot-legend-low-confidence-line"></line>
+          <text x="26" y="10">${lowConfidenceLegendText}</text>
+        </g>` : ""}
+        <g class="mda-plot-legend-item mda-plot-legend-diffusion" transform="translate(${(showLowConfidenceLegend ? lowConfidenceLegendWidth + legendGap : 0)} 0)">
           <line x1="0" y1="6" x2="18" y2="6" class="mda-plot-legend-line"></line>
           <text x="26" y="10">
             <tspan x="26" dy="0">Apparent Diffusion Coefficient </tspan><tspan font-style="italic">D</tspan><tspan baseline-shift="sub" font-size="8">app</tspan><tspan>(t)</tspan>
           </text>
         </g>
-        <g class="mda-plot-legend-item mda-plot-legend-current" transform="translate(${diffusionLegendWidth + legendGap} 0)">
+        <g class="mda-plot-legend-item mda-plot-legend-current" transform="translate(${(showLowConfidenceLegend ? lowConfidenceLegendWidth + legendGap : 0) + diffusionLegendWidth + legendGap} 0)">
           <line x1="0" y1="6" x2="18" y2="6" class="mda-plot-legend-line"></line>
           <text x="26" y="10">Measured permeation current I(t)</text>
         </g>
@@ -1659,6 +2061,46 @@
       { kind: "baseline", ref: analysis.baseline, label: "Baseline", className: "mda-plot-ref-baseline" },
       { kind: "steady", ref: analysis.steady, label: "Steady State", className: "mda-plot-ref-steady" },
     ];
+    const currentHoverPoints = orderedCurrent.map((point) => ({
+      x: point.x,
+      y: point.y,
+      px: scaleX(point.x),
+      py: scaleCurrentY(point.y),
+    }));
+    const diffusionHoverPoints = diffusionPlotPoints.map((point, index) => ({
+      x: point.x,
+      y: point.y,
+      px: scaleX(point.x),
+      py: scaleDiffusionY(point.y),
+      displayY: Number.isFinite(orderedDiffusion[index]?.y) ? orderedDiffusion[index].y : null,
+    }));
+    const referenceHoverItems = references
+      .filter((entry) => entry.ref && Number.isFinite(entry.ref.value) && state.referenceVisibility[entry.kind] !== false)
+      .map((entry) => {
+        const refValue = convertCurrentValue(entry.ref.value, inputUnit, displayUnit);
+        const y = scaleCurrentY(refValue);
+        return {
+          kind: entry.kind,
+          label: entry.label,
+          displayValue: refValue,
+          px: PLOT_WIDTH - PLOT_MARGINS.right,
+          py: y,
+          currentUnitLabel,
+        };
+      });
+    state.plotHoverCache = {
+      chartX,
+      chartY,
+      chartWidth,
+      chartHeight,
+      currentUnitLabel,
+      displayUnit,
+      diffusionScaleMode,
+      diffusionAxis,
+      currentPoints: currentHoverPoints,
+      diffusionPoints: diffusionHoverPoints,
+      referenceItems: referenceHoverItems,
+    };
 
     parts.push(`<g class="mda-plot-chart" clip-path="url(#${chartClipId})">`);
     if (showGrid) {
@@ -1689,7 +2131,14 @@
         );
       });
     }
-    if (diffusionPath) parts.push(`<path class="mda-plot-line mda-plot-line-diffusion" d="${diffusionPath}"></path>`);
+    if (diffusionSegmentPaths.length) {
+      diffusionSegmentPaths.forEach((segment) => {
+        const segmentClass = diffusionSegmentClasses[segment.index] || "mda-plot-line-diffusion";
+        parts.push(`<path class="mda-plot-line ${segmentClass}" d="${segment.d}"></path>`);
+      });
+    } else if (diffusionPath) {
+      parts.push(`<path class="mda-plot-line mda-plot-line-diffusion" d="${diffusionPath}"></path>`);
+    }
     if (currentPath) parts.push(`<path class="mda-plot-line mda-plot-line-current" d="${currentPath}"></path>`);
     parts.push(...yGridParts);
     references.forEach((entry) => {
@@ -1779,6 +2228,7 @@
     parts.push("</svg>");
 
     dom.plot.innerHTML = parts.join("");
+    hidePlotTooltip();
   }
 
   function renderPlotEmpty(dom) {
@@ -1849,6 +2299,12 @@
       return formatScientificTick(value);
     }
     return `10${toSuperscript(exponent)}`;
+  }
+
+  function readStyleValue(element, property, fallback) {
+    if (!element) return fallback;
+    const value = getComputedStyle(element).getPropertyValue(property).trim();
+    return value || fallback;
   }
 
   function toSuperscript(value) {
@@ -2148,6 +2604,23 @@
     setIssues(dom, []);
     renderResults(dom, null);
     renderPlotEmpty(dom);
+    state.plotHoverCache = null;
+    hidePlotTooltip();
+  }
+
+  async function loadDebugDefaultInput(dom) {
+    if (!dom || !dom.input || String(dom.input.value || "").trim()) return;
+    try {
+      const response = await fetch(encodeURI("./default val for debug.md"), { cache: "no-store" });
+      if (!response.ok) return;
+      const text = await response.text();
+      const trimmed = text.trimEnd();
+      if (!trimmed || String(dom.input.value || "").trim()) return;
+      dom.input.value = trimmed;
+      scheduleParse(dom, "paste");
+    } catch {
+      // Optional debug seed only.
+    }
   }
 
   function renderEmptyTable(dom) {
@@ -2212,13 +2685,14 @@
       return sourceRows.map((row) => ({ ...row }));
     }
 
-    if (t0Offset > 0) {
+    if (t0Offset < 0) {
+      const shift = Math.abs(t0Offset);
       return sourceRows
-        .filter((row) => Number.isFinite(row.time) && row.time >= t0Offset)
-        .map((row) => ({ ...row, time: row.time - t0Offset }));
+        .filter((row) => Number.isFinite(row.time) && row.time >= shift)
+        .map((row) => ({ ...row, time: row.time - shift }));
     }
 
-    const shift = Math.abs(t0Offset);
+    const shift = t0Offset;
     const firstCurrentRow = sourceRows.find((row) => Number.isFinite(row.current));
     const baselineValue = baseline && Number.isFinite(baseline.value) ? baseline.value : firstCurrentRow ? firstCurrentRow.current : null;
 
@@ -2282,18 +2756,21 @@
       const url = URL.createObjectURL(blob);
       const image = new Image();
       image.onload = () => {
+        const exportScale = Math.max(300 / 96, window.devicePixelRatio || 1);
         const canvas = document.createElement("canvas");
-        canvas.width = PLOT_WIDTH;
-        canvas.height = PLOT_HEIGHT;
+        canvas.width = Math.round(PLOT_WIDTH * exportScale);
+        canvas.height = Math.round(PLOT_HEIGHT * exportScale);
         const ctx = canvas.getContext("2d");
         if (!ctx) {
           URL.revokeObjectURL(url);
           alert("PNG export is not available in this browser.");
           return;
         }
+        if ("imageSmoothingEnabled" in ctx) ctx.imageSmoothingEnabled = true;
+        if ("imageSmoothingQuality" in ctx) ctx.imageSmoothingQuality = "high";
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(image, 0, 0);
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
         canvas.toBlob((output) => {
           URL.revokeObjectURL(url);
           if (output) downloadBlob(output, "mda-plot.png");
@@ -2336,22 +2813,43 @@
     clone.setAttribute("version", "1.1");
 
     const style = document.createElementNS("http://www.w3.org/2000/svg", "style");
+    const liveGridMajor = dom.plot ? dom.plot.querySelector(".mda-plot-grid-major") : null;
+    const liveGridMinor = dom.plot ? dom.plot.querySelector(".mda-plot-grid-minor") : null;
+    const liveCurrentLine = dom.plot ? dom.plot.querySelector(".mda-plot-line-current") : null;
+    const liveDiffusionLine = dom.plot ? dom.plot.querySelector(".mda-plot-line-diffusion") : null;
+    const liveAxisLabel = dom.plot ? dom.plot.querySelector(".mda-plot-axis-label") : null;
+    const liveAxisTick = dom.plot ? dom.plot.querySelector(".mda-plot-axis-tick") : null;
+    const liveFrame = dom.plot ? dom.plot.querySelector(".mda-plot-frame") : null;
+    const liveLegendText = dom.plot ? dom.plot.querySelector(".mda-plot-legend-group text") : null;
+    const liveRefLine = dom.plot ? dom.plot.querySelector(".mda-plot-ref-line") : null;
+    const liveLowConfidenceLine = dom.plot ? dom.plot.querySelector(".mda-plot-line-diffusion-edge, .mda-plot-line-diffusion-hidden") : null;
+    const lowConfidenceMode = dom.lowConfidence && dom.lowConfidence.value ? dom.lowConfidence.value : state.plotLowConfidenceMode;
     const rootStyle = getComputedStyle(document.documentElement);
-    const accent = rootStyle.getPropertyValue("--accent").trim() || "#31c1b5";
-    const currentColor = "#2563eb";
-    const diffusionColor = "#111111";
-    const bg = "#ffffff";
-    const ink = "#111827";
-    const muted = "#4b5563";
-    const grid = "#e2e8f0";
-    const border = "#cfd8e3";
+    const bg = readStyleValue(liveFrame, "fill", rootStyle.getPropertyValue("--mda-plot-bg").trim() || "#ffffff");
+    const border = readStyleValue(liveFrame, "stroke", rootStyle.getPropertyValue("--mda-plot-border").trim() || "#cfd8e3");
+    const grid = readStyleValue(liveGridMajor || liveGridMinor, "stroke", rootStyle.getPropertyValue("--mda-plot-grid").trim() || "#e2e8f0");
+    const currentColor = readStyleValue(liveCurrentLine, "stroke", "#2563eb");
+    const diffusionColor = readStyleValue(liveDiffusionLine, "stroke", "#111111");
+    const diffusionEdgeColor = readStyleValue(liveLowConfidenceLine, "stroke", rootStyle.getPropertyValue("--mda-plot-diffusion-edge").trim() || "#111111");
+    const ink = readStyleValue(liveLegendText || liveAxisLabel, "fill", rootStyle.getPropertyValue("--mda-plot-ink").trim() || "#111827");
+    const muted = readStyleValue(liveAxisTick, "stroke", rootStyle.getPropertyValue("--mda-plot-muted").trim() || "#4b5563");
+    const gridMajorWidth = readStyleValue(liveGridMajor, "stroke-width", "0.8");
+    const gridMajorOpacity = readStyleValue(liveGridMajor, "opacity", "0.95");
+    const gridMinorWidth = readStyleValue(liveGridMinor, "stroke-width", "0.6");
+    const gridMinorOpacity = readStyleValue(liveGridMinor, "opacity", "0.7");
+    const gridMinorDasharray = readStyleValue(liveGridMinor, "stroke-dasharray", "");
+    const lineWidth = readStyleValue(liveCurrentLine, "stroke-width", "2.4");
+    const refLineWidth = readStyleValue(liveRefLine, "stroke-width", "1");
+    const frameWidth = readStyleValue(liveFrame, "stroke-width", "0.5");
     style.textContent = `
-      .mda-plot-grid{stroke:${grid};stroke-linecap:butt;fill:none}
-      .mda-plot-grid-major{stroke-width:0.6;opacity:0.85}
-      .mda-plot-grid-minor{stroke-width:0.4;opacity:0.45;stroke-dasharray:2 4}
-      .mda-plot-line{fill:none;stroke-width:2.4;stroke-linejoin:round;stroke-linecap:butt}
+      .mda-plot-grid{stroke:${grid};stroke-linecap:butt;fill:none;shape-rendering:crispEdges}
+      .mda-plot-grid-major{stroke-width:${gridMajorWidth};opacity:${gridMajorOpacity}}
+      .mda-plot-grid-minor{stroke-width:${gridMinorWidth};opacity:${gridMinorOpacity}${gridMinorDasharray ? `;stroke-dasharray:${gridMinorDasharray}` : ""}}
+      .mda-plot-line{fill:none;stroke-width:${lineWidth};stroke-linejoin:round;stroke-linecap:butt}
       .mda-plot-line-current{stroke:${currentColor}}
       .mda-plot-line-diffusion{stroke:${diffusionColor}}
+      .mda-plot-line-diffusion-edge{stroke:${diffusionEdgeColor};opacity:${lowConfidenceMode === "shaded" ? "0.45" : "1"}}
+      .mda-plot-line-diffusion-hidden{stroke:${diffusionEdgeColor};opacity:0}
       .mda-plot-point{stroke:${bg};stroke-width:2}
       .mda-plot-point-current{fill:${currentColor}}
       .mda-plot-point-diffusion{fill:${diffusionColor}}
@@ -2360,6 +2858,7 @@
       .mda-plot-axis-label tspan{font-family:inherit}
       .mda-plot-legend-group{font-size:10.5px;font-weight:400}
       .mda-plot-legend-group text{fill:${ink};font-weight:400}
+      .mda-plot-legend-low-confidence-line{stroke:${diffusionEdgeColor};opacity:0.45}
       .mda-plot-legend-diffusion .mda-plot-legend-line{stroke:${diffusionColor}}
       .mda-plot-legend-current .mda-plot-legend-line{stroke:${currentColor}}
       .mda-plot-ref-hitline{stroke:transparent;stroke-width:14;fill:none}
@@ -2368,11 +2867,11 @@
       .mda-plot-note{fill:${muted}}
       .mda-plot-ref-line{stroke:${ink};fill:none}
       .mda-plot-ref-label{fill:${ink}}
-      .mda-plot-ref-line{stroke-width:2;stroke-linecap:butt}
+      .mda-plot-ref-line{stroke-width:${refLineWidth};stroke-linecap:butt}
       .mda-plot-ref-handle{stroke:${bg};stroke-width:2}
       .mda-plot-ref-label{font-size:10px;font-weight:400;paint-order:normal;stroke:none}
-      .mda-plot-frame{fill:${bg};stroke:${border};stroke-width:0.8;pointer-events:none}
-      .mda-plot-axis-tick{stroke:${muted};stroke-width:1;fill:none}
+      .mda-plot-frame{fill:${bg};stroke:${border};stroke-width:${frameWidth};pointer-events:none}
+      .mda-plot-axis-tick{stroke:${muted};stroke-width:1;fill:none;shape-rendering:crispEdges}
       .mda-plot-axis-tick-minor{stroke-width:0.75;opacity:0.8}
     `;
     clone.insertBefore(style, clone.firstChild);

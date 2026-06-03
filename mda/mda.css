@@ -728,7 +728,8 @@ header .mda-header-brand-text {
   --mda-plot-ink: #111827;
   --mda-plot-muted: #4b5563;
   --mda-plot-grid: #e2e8f0;
-  --mda-plot-border: #cfd8e3;
+  --mda-plot-border: #111827;
+  --mda-plot-diffusion-edge: #111111;
 }
 
 .mda-plot svg {
@@ -780,17 +781,17 @@ header .mda-header-brand-text {
   stroke: var(--mda-plot-grid);
   stroke-linecap: butt;
   fill: none;
+  shape-rendering: crispEdges;
 }
 
 .mda-plot-grid-major {
   stroke-width: 0.6;
-  opacity: 0.85;
+  opacity: 0.95;
 }
 
 .mda-plot-grid-minor {
-  stroke-width: 0.4;
-  opacity: 0.45;
-  stroke-dasharray: 2 4;
+  stroke-width: 0.5;
+  opacity: 0.4;
 }
 
 .mda-plot-line {
@@ -808,10 +809,20 @@ header .mda-header-brand-text {
   stroke: #111111;
 }
 
+.mda-plot-line-diffusion-edge {
+  stroke: var(--mda-plot-diffusion-edge);
+  opacity: 0.45;
+}
+
+.mda-plot-line-diffusion-hidden {
+  stroke: var(--mda-plot-diffusion-edge);
+  opacity: 0;
+}
+
 .mda-plot-frame {
   fill: var(--mda-plot-bg);
   stroke: var(--mda-plot-border);
-  stroke-width: 0.8;
+  stroke-width: 0.5;
   pointer-events: none;
 }
 
@@ -898,6 +909,11 @@ header .mda-header-brand-text {
   stroke: #111111;
 }
 
+.mda-plot-legend-low-confidence-line {
+  stroke: var(--mda-plot-diffusion-edge);
+  opacity: 0.45;
+}
+
 .mda-plot-legend-current .mda-plot-legend-line {
   stroke: #2563eb;
 }
@@ -912,11 +928,37 @@ header .mda-header-brand-text {
   stroke: var(--mda-plot-muted);
   stroke-width: 1;
   fill: none;
+  shape-rendering: crispEdges;
 }
 
 .mda-plot-axis-tick-minor {
   stroke-width: 0.75;
   opacity: 0.8;
+}
+
+.mda-plot-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(17, 24, 39, 0.94);
+  color: #fff;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.12s ease;
+  max-width: 260px;
+  z-index: 50;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+}
+
+.mda-plot-tooltip strong {
+  font-weight: 600;
+}
+
+.mda-plot-tooltip div + div {
+  margin-top: 2px;
 }
 
 .mda-help-drawer {

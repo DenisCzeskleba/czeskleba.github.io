@@ -182,8 +182,8 @@
                   </div>
                 </div>
                 <div class="mda-control" style="margin-top:0.75rem;">
-                  <label for="mda-t0-offset" title="Shift the time origin forward or backward.">t0 offset [s]</label>
-                  <input id="mda-t0-offset" type="range" min="-100" max="100" step="0.1" value="0" title="Shift the time origin. Positive values remove early time; negative values prepend baseline time." />
+                  <label for="mda-t0-offset" title="Set the start time offset. Negative values remove early time; positive values prepend baseline time.">Start Time Offset (t<sub>0</sub>)</label>
+                  <input id="mda-t0-offset" type="range" min="-100" max="100" step="0.1" value="0" title="Set the start time offset. Negative values remove early time; positive values prepend baseline time." />
                   <div class="mda-slider-value" id="mda-t0-offset-value">0.0 s</div>
                 </div>
               </section>
@@ -217,6 +217,14 @@
                         <option value="mA">mA</option>
                         <option value="uA" selected>&mu;A</option>
                         <option value="pA">pA</option>
+                      </select>
+                    </div>
+                    <div class="mda-control">
+                      <label for="mda-low-confidence" title="Choose how the first and last 10% of the diffusion curve are rendered.">Low Confidence</label>
+                      <select id="mda-low-confidence" class="mda-select" title="Choose how the first and last 10% of the diffusion curve are rendered.">
+                        <option value="normal">Normal</option>
+                        <option value="shaded" selected>Shaded</option>
+                        <option value="hide">Hide</option>
                       </select>
                     </div>
               <div class="mda-inline-checkbox-row">
