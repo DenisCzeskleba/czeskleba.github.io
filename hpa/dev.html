@@ -230,6 +230,24 @@
                         <option value="hide">Hide</option>
                       </select>
                     </div>
+            <div class="hpa-color-grid" aria-label="Plot line colors">
+              <label class="hpa-color-control" for="hpa-color-current" title="Set the measured permeation current color.">
+                <span>Measurement</span>
+                <input type="color" id="hpa-color-current" class="hpa-color-input" value="#2563eb" />
+              </label>
+              <label class="hpa-color-control" for="hpa-color-diffusion" title="Set the diffusion coefficient color.">
+                <span>Diffusion Coefficient (<span style="font-style:italic;">D</span><sub>inv</sub>)</span>
+                <input type="color" id="hpa-color-diffusion" class="hpa-color-input" value="#111111" />
+              </label>
+              <label class="hpa-color-control" for="hpa-color-diffusion-edge" title="Set the low-confidence segment color.">
+                <span>Low Confidence Region</span>
+                <input type="color" id="hpa-color-diffusion-edge" class="hpa-color-input" value="#6b7280" />
+              </label>
+              <label class="hpa-color-control" for="hpa-color-fit" title="Set the simulated measurement color.">
+                <span>Simulated Measurement (<span style="font-style:italic;">D</span><sub>GTF</sub>)</span>
+                <input type="color" id="hpa-color-fit" class="hpa-color-input" value="#7c3aed" />
+              </label>
+            </div>
               <div class="hpa-inline-checkbox-row">
                 <label class="hpa-inline-checkbox" title="Toggle the plot grid lines.">
                   <input type="checkbox" id="hpa-grid-toggle" checked />
@@ -240,9 +258,9 @@
                   <span>Minor</span>
                 </label>
               </div>
-              <label class="hpa-inline-checkbox" title="Toggle the left diffusion axis between linear and logarithmic scaling.">
+              <label class="hpa-inline-checkbox" title="Toggle the diffusion axis between linear and logarithmic scaling.">
                 <input type="checkbox" id="hpa-diffusion-scale" />
-                <span>Log left axis</span>
+                <span>Log Diffusion Axis</span>
               </label>
             </div>
           </details>
@@ -311,8 +329,9 @@
             <div class="hpa-result-meta" id="hpa-inverse-time">Load data to estimate the stabilized inverse window.</div>
             <div class="hpa-result-note" id="hpa-inverse-note"></div>
           </article>
-          <article class="hpa-result-card">
+          <article class="hpa-result-card hpa-result-card-fit">
             <h3>Global Transient Fit</h3>
+            <button type="button" class="hpa-button is-secondary hpa-fit-toggle" id="hpa-fit-toggle" aria-pressed="false" title="Show or hide the fitted permeation curve.">Show</button>
             <div class="hpa-result-value" id="hpa-fit-value">D<sub>GTF</sub> = &hpash;</div>
             <div class="hpa-result-meta" id="hpa-fit-time">Load data to fit D and t<sub>0</sub> together.</div>
             <div class="hpa-result-note" id="hpa-fit-note"></div>
@@ -393,7 +412,7 @@
               <li>The baseline and steady-state fields define the normalization used by the analysis. If they are left blank, HPA starts from the minimum and maximum values in the loaded data.</li>
               <li>You can type baseline and steady-state values manually, or drag the reference lines directly on the plot. The values follow the currently selected display unit.</li>
               <li>The <strong>Start Time Offset</strong> control shifts the trace before analysis. A positive offset prepends baseline time and moves the transient forward. A negative offset removes early time and shifts the remaining data back to zero.</li>
-              <li>Plot Options let you change the y-axis unit, choose how low-confidence diffusion segments are drawn, turn grid lines and minor grid lines on or off, and switch the left diffusion axis between linear and logarithmic scaling.</li>
+              <li>Plot Options let you change the y-axis unit, choose colors for the main lines, decide how low-confidence diffusion segments are drawn, turn grid lines and minor grid lines on or off, and switch the diffusion axis between linear and logarithmic scaling.</li>
               <li>The <strong>Reset</strong> button restores the default plot view. The <strong>Hide/Show</strong> buttons toggle the reference markers without deleting their values.</li>
             </ul>
             <p>The plot itself is interactive. You can zoom and pan it directly, then use <strong>Reset</strong> to return to the default view. If you drag the baseline or steady-state line, HPA updates the corresponding value and reruns the analysis.</p>

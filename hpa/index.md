@@ -110,6 +110,24 @@ permalink: /hpa/
                   <option value="hide">Hide</option>
                 </select>
               </div>
+            <div class="hpa-color-grid" aria-label="Plot line colors">
+              <label class="hpa-color-control" for="hpa-color-current" title="Set the measured permeation current color.">
+                <span>Measurement</span>
+                <input type="color" id="hpa-color-current" class="hpa-color-input" value="#2563eb" />
+              </label>
+              <label class="hpa-color-control" for="hpa-color-diffusion" title="Set the diffusion coefficient color.">
+                <span>Diffusion Coefficient (<span style="font-style:italic;">D</span><sub>inv</sub>)</span>
+                <input type="color" id="hpa-color-diffusion" class="hpa-color-input" value="#111111" />
+              </label>
+              <label class="hpa-color-control" for="hpa-color-diffusion-edge" title="Set the low-confidence segment color.">
+                <span>Low Confidence Region</span>
+                <input type="color" id="hpa-color-diffusion-edge" class="hpa-color-input" value="#6b7280" />
+              </label>
+              <label class="hpa-color-control" for="hpa-color-fit" title="Set the simulated measurement color.">
+                <span>Simulated Measurement (<span style="font-style:italic;">D</span><sub>GTF</sub>)</span>
+                <input type="color" id="hpa-color-fit" class="hpa-color-input" value="#7c3aed" />
+              </label>
+            </div>
             <div class="hpa-inline-checkbox-row">
               <label class="hpa-inline-checkbox" title="Toggle the plot grid lines.">
                 <input type="checkbox" id="hpa-grid-toggle" checked />
@@ -120,9 +138,9 @@ permalink: /hpa/
                 <span>Minor</span>
               </label>
             </div>
-            <label class="hpa-inline-checkbox" title="Toggle the left diffusion axis between linear and logarithmic scaling.">
+            <label class="hpa-inline-checkbox" title="Toggle the diffusion axis between linear and logarithmic scaling.">
               <input type="checkbox" id="hpa-diffusion-scale" />
-              <span>Log left axis</span>
+              <span>Log Diffusion Axis</span>
             </label>
           </div>
         </details>
@@ -191,8 +209,9 @@ permalink: /hpa/
             <div class="hpa-result-meta" id="hpa-inverse-time">Load data to estimate the stabilized inverse window.</div>
             <div class="hpa-result-note" id="hpa-inverse-note"></div>
           </article>
-          <article class="hpa-result-card">
+          <article class="hpa-result-card hpa-result-card-fit">
             <h3>Global Transient Fit</h3>
+            <button type="button" class="hpa-button is-secondary hpa-fit-toggle" id="hpa-fit-toggle" aria-pressed="false" title="Show or hide the fitted permeation curve.">Show</button>
             <div class="hpa-result-value" id="hpa-fit-value">D<sub>GTF</sub> = &hpash;</div>
             <div class="hpa-result-meta" id="hpa-fit-time">Load data to fit D and t<sub>0</sub> together.</div>
             <div class="hpa-result-note" id="hpa-fit-note"></div>
@@ -241,7 +260,7 @@ permalink: /hpa/
           <li>Set the input current unit so HPA knows how to read the second column.</li>
           <li>Enter the membrane thickness in mm.</li>
           <li>Check the baseline and steady-state references, then drag them on the plot if needed.</li>
-          <li>Use the results cards to compare the classical methods, the inverse Fickian solve, and the global transient fit.</li>
+              <li>Use the results cards to compare the classical methods, the inverse Fickian solve, and the global transient fit.</li>
           <li>Export PNG, SVG, or the processed data table when you are done.</li>
         </ul>
       </div>
@@ -268,7 +287,7 @@ permalink: /hpa/
           <li>The baseline and steady-state fields define the normalization used by the analysis. If they are left blank, HPA starts from the minimum and maximum values in the loaded data.</li>
           <li>You can type baseline and steady-state values manually, or drag the reference lines directly on the plot. The values follow the currently selected display unit.</li>
           <li>The <strong>Start Time Offset</strong> control shifts the trace before analysis. A positive offset prepends baseline time and moves the transient forward. A negative offset removes early time and shifts the remaining data back to zero.</li>
-          <li>Plot Options let you change the y-axis unit, choose how low-confidence diffusion segments are drawn, turn grid lines and minor grid lines on or off, and switch the left diffusion axis between linear and logarithmic scaling.</li>
+              <li>Plot Options let you change the y-axis unit, choose colors for the main lines, decide how low-confidence diffusion segments are drawn, turn grid lines and minor grid lines on or off, and switch the diffusion axis between linear and logarithmic scaling.</li>
           <li>The <strong>Reset</strong> button restores the default plot view. The <strong>Hide/Show</strong> buttons toggle the reference markers without deleting their values.</li>
         </ul>
         <p>The plot itself is interactive. You can zoom and pan it directly, then use <strong>Reset</strong> to return to the default view. If you drag the baseline or steady-state line, HPA updates the corresponding value and reruns the analysis.</p>
@@ -278,14 +297,14 @@ permalink: /hpa/
         <h3>Results</h3>
         <p>HPA first normalizes the measured current with</p>
         <p><code>y(t) = (I(t) - I<sub>0</sub>) / (I<sub>ss</sub> - I<sub>0</sub>)</code></p>
-        <p>where <code>I<sub>0</sub></code> is the baseline current and <code>I<sub>ss</sub></code> is the steady-state current. That normalized curve is the common basis for the classical methods, the inverse solve, and the global fit.</p>
+            <p>where <code>I<sub>0</sub></code> is the baseline current and <code>I<sub>ss</sub></code> is the steady-state current. That normalized curve is the common basis for the classical methods, the inverse solve, and the global fit.</p>
         <p><code>D<sub>app</sub>(t)</code> is an apparent coefficient, not a claim about the true lattice diffusion constant. It is the constant <code>D</code> that the simplified 1D Fickian membrane model would need in order to reproduce the measured transient at that time point.</p>
         <ul class="hpa-help-list">
           <li><strong>Breakthrough</strong> uses the first 10% crossing of the normalized curve. It is a quick textbook estimate, but it is sensitive to the early-time shape and to any baseline error.</li>
           <li><strong>Time lag</strong> uses the 63% crossing. It assumes that the transient has a clear monotonic rise and that the steady-state level is meaningful.</li>
           <li><strong>Inflection point</strong> uses the maximum-slope point of the normalized curve. It is only useful when the curve has one clear inflection and the steady-state current is valid.</li>
           <li><strong>Inverse Fickian</strong> inverts the ideal Fickian response point by point to produce <code>D<sub>app</sub>(t)</code>. HPA then looks for a stable middle window and reports an average value when that window is robust enough.</li>
-          <li><strong>Global Transient Fit</strong> searches for one constant <code>D</code> and one <code>t<sub>0</sub></code> shift that best reproduce the normalized curve. It is useful when you want a single self-consistent fit instead of pointwise inversion.</li>
+              <li><strong>Global Transient Fit</strong> searches for one constant <code>D</code> and one <code>t<sub>0</sub></code> shift that best reproduce the normalized curve. It is useful when you want a single self-consistent fit instead of pointwise inversion.</li>
         </ul>
         <p>The preview table shows <code>D<sub>app</sub></code> in mm&sup2;/s for readability. The CSV export writes <code>D<sub>app</sub></code> in m&sup2;/s, so the exported numbers look different even though they represent the same quantity.</p>
       </div>

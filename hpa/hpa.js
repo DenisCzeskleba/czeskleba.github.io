@@ -9,7 +9,7 @@
   const DECIMAL_OPTIONS = [".", ","];
   const PLOT_WIDTH = 920;
   const PLOT_HEIGHT = 340;
-  const PLOT_MARGINS = { top: 24, right: 40, bottom: 36, left: 40 };
+  const PLOT_MARGINS = { top: 24, right: 40, bottom: 36, left: 50 };
   const SOLVER_POLICY = {
     minTerms: 3,
     maxTerms: 100,
@@ -18,6 +18,12 @@
     timeoutMs: 5000,
     dLower: 1e-16,
     dUpper: 1e-4,
+  };
+  const DEFAULT_PLOT_COLORS = {
+    current: "#2563eb",
+    diffusion: "#111111",
+    diffusionEdge: "#6b7280",
+    fit: "#7c3aed",
   };
 
   const state = {
@@ -33,6 +39,8 @@
     referenceVisibility: { baseline: true, steady: true },
     plotDiffusionScale: "linear",
     plotLowConfidenceMode: "shaded",
+    plotColors: { ...DEFAULT_PLOT_COLORS },
+    fitOverlayVisible: false,
     dragReference: null,
     dragReferenceFrame: null,
     dragReferencePending: null,
@@ -70,9 +78,14 @@
       decimal: document.getElementById("hpa-decimal"),
       plotUnit: document.getElementById("hpa-plot-unit"),
       lowConfidence: document.getElementById("hpa-low-confidence"),
+      currentColor: document.getElementById("hpa-color-current"),
+      diffusionColor: document.getElementById("hpa-color-diffusion"),
+      diffusionEdgeColor: document.getElementById("hpa-color-diffusion-edge"),
+      fitColor: document.getElementById("hpa-color-fit"),
       diffusionScale: document.getElementById("hpa-diffusion-scale"),
       gridToggle: document.getElementById("hpa-grid-toggle"),
       resetPlot: document.getElementById("hpa-reset-plot"),
+      fitToggle: document.getElementById("hpa-fit-toggle"),
       status: document.getElementById("hpa-status"),
       statusDetail: document.getElementById("hpa-status-detail"),
         issues: document.getElementById("hpa-issues"),
@@ -128,6 +141,8 @@
 
     state.plotDiffusionScale = dom.diffusionScale && dom.diffusionScale.checked ? "log" : "linear";
     state.plotLowConfidenceMode = dom.lowConfidence && dom.lowConfidence.value ? dom.lowConfidence.value : "shaded";
+    state.plotColors = readPlotColors(dom);
+    state.fitOverlayVisible = false;
 
     dom.helpOpenButtons.forEach((button) => {
       button.addEventListener("click", () => openDrawer(dom.helpDrawer));
@@ -237,6 +252,14 @@
         renderDerivedViews(dom);
       });
     }
+    [dom.currentColor, dom.diffusionColor, dom.diffusionEdgeColor, dom.fitColor].forEach((element) => {
+      if (!element) return;
+      element.addEventListener("change", () => {
+        state.plotColors = readPlotColors(dom);
+        applyPlotColorVars(dom);
+        renderDerivedViews(dom);
+      });
+    });
     if (dom.gridToggle) {
       dom.gridToggle.addEventListener("change", () => renderDerivedViews(dom));
     }
@@ -253,6 +276,14 @@
     if (dom.resetPlot) {
       dom.resetPlot.addEventListener("click", () => {
         state.plotViewport = null;
+        renderDerivedViews(dom);
+      });
+    }
+    if (dom.fitToggle) {
+      dom.fitToggle.addEventListener("click", () => {
+        if (!state.currentAnalysis || !state.currentAnalysis.fit || !state.currentAnalysis.fit.available) return;
+        state.fitOverlayVisible = !state.fitOverlayVisible;
+        syncFitToggle(dom, state.currentAnalysis.fit);
         renderDerivedViews(dom);
       });
     }
@@ -330,6 +361,9 @@
         if (dom.diffusionScale) dom.diffusionScale.checked = false;
         state.plotLowConfidenceMode = "shaded";
         if (dom.lowConfidence) dom.lowConfidence.value = "shaded";
+        state.plotColors = { ...DEFAULT_PLOT_COLORS };
+        syncPlotColorControls(dom, state.plotColors);
+        applyPlotColorVars(dom);
         clearReferenceAuto(dom.baselineValue);
         clearReferenceAuto(dom.steadyValue);
         if (dom.baselineValue) dom.baselineValue.value = "";
@@ -338,6 +372,7 @@
         if (dom.t0Offset) dom.t0Offset.value = "0";
         syncT0OffsetDisplay(dom);
         if (dom.cropRange) dom.cropRange.value = "";
+        state.fitOverlayVisible = false;
         state.diagnosticSnapshot = null;
         state.diagnosticReport = null;
         renderDiagnosticDrawer(dom, null);
@@ -351,6 +386,8 @@
     if (dom.lowConfidence) {
       dom.lowConfidence.value = "shaded";
     }
+    syncPlotColorControls(dom, state.plotColors);
+    applyPlotColorVars(dom);
     syncT0OffsetDisplay(dom);
     renderDiagnosticDrawer(dom, null);
     renderEmpty(dom, "Paste data to begin.");
@@ -636,7 +673,7 @@
     if (target.kind === "current") {
       const unit = target.unitLabel || "";
       return `
-        <strong>Measured permeation current I(t)</strong>
+        <strong>Measured Permeation Current I(t)</strong>
         <div>t = ${escapeHtml(formatAxisTick(target.x))} s</div>
         <div>I = ${escapeHtml(formatAxisTick(target.displayValue))} ${escapeHtml(unit)}</div>
       `;
@@ -714,7 +751,7 @@
     scanPolyline(
       cache.currentPoints,
       "current",
-      "Measured permeation current I(t)",
+      "Measured Permeation Current I(t)",
       cache.currentUnitLabel || "",
       (a, b, t) => a.y + (b.y - a.y) * t,
     );
@@ -1604,6 +1641,7 @@
       renderDiagnostics(dom, analysis);
       renderDiagnosticDrawer(dom, state.diagnosticReport);
       renderResults(dom, analysis);
+      syncFitToggle(dom, analysis.fit);
       renderPreview(dom, analysis);
       renderPlot(dom, analysis);
     }
@@ -1618,6 +1656,7 @@
       renderDiagnostics(dom, state.currentAnalysis);
       renderDiagnosticDrawer(dom, state.diagnosticReport);
       renderResults(dom, state.currentAnalysis);
+      syncFitToggle(dom, state.currentAnalysis.fit);
       renderPreview(dom, state.currentAnalysis);
       renderPlot(dom, state.currentAnalysis);
     }
@@ -1655,6 +1694,83 @@
       dom.steadyToggle.textContent = state.referenceVisibility.steady === false ? "Show" : "Hide";
       dom.steadyToggle.setAttribute("aria-pressed", state.referenceVisibility.steady === false ? "false" : "true");
     }
+  }
+
+  function readPlotColors(dom) {
+    return {
+      current: normalizePlotColor(dom && dom.currentColor ? dom.currentColor.value : null, DEFAULT_PLOT_COLORS.current),
+      diffusion: normalizePlotColor(dom && dom.diffusionColor ? dom.diffusionColor.value : null, DEFAULT_PLOT_COLORS.diffusion),
+      diffusionEdge: normalizePlotColor(dom && dom.diffusionEdgeColor ? dom.diffusionEdgeColor.value : null, DEFAULT_PLOT_COLORS.diffusionEdge),
+      fit: normalizePlotColor(dom && dom.fitColor ? dom.fitColor.value : null, DEFAULT_PLOT_COLORS.fit),
+    };
+  }
+
+  function syncPlotColorControls(dom, colors) {
+    if (!dom) return;
+    const next = colors || DEFAULT_PLOT_COLORS;
+    if (dom.currentColor) dom.currentColor.value = next.current || DEFAULT_PLOT_COLORS.current;
+    if (dom.diffusionColor) dom.diffusionColor.value = next.diffusion || DEFAULT_PLOT_COLORS.diffusion;
+    if (dom.diffusionEdgeColor) dom.diffusionEdgeColor.value = next.diffusionEdge || DEFAULT_PLOT_COLORS.diffusionEdge;
+    if (dom.fitColor) dom.fitColor.value = next.fit || DEFAULT_PLOT_COLORS.fit;
+  }
+
+  function applyPlotColorVars(dom) {
+    if (!dom || !dom.plot) return;
+    const colors = state.plotColors || DEFAULT_PLOT_COLORS;
+    dom.plot.style.setProperty("--hpa-plot-current-color", colors.current || DEFAULT_PLOT_COLORS.current);
+    dom.plot.style.setProperty("--hpa-plot-diffusion-color", colors.diffusion || DEFAULT_PLOT_COLORS.diffusion);
+    dom.plot.style.setProperty("--hpa-plot-diffusion-edge-color", colors.diffusionEdge || DEFAULT_PLOT_COLORS.diffusionEdge);
+    dom.plot.style.setProperty("--hpa-plot-fit-color", colors.fit || DEFAULT_PLOT_COLORS.fit);
+  }
+
+  function syncFitToggle(dom, fit) {
+    if (!dom || !dom.fitToggle) return;
+    const available = !!(fit && fit.available);
+    const visible = available && !!state.fitOverlayVisible;
+    dom.fitToggle.disabled = !available;
+    dom.fitToggle.textContent = visible ? "Hide" : "Show";
+    dom.fitToggle.setAttribute("aria-pressed", visible ? "true" : "false");
+    dom.fitToggle.title = available
+      ? "Show or hide the fitted permeation curve."
+      : "No global transient fit is available for the current data.";
+  }
+
+  function normalizePlotColor(value, fallback) {
+    const text = String(value || "").trim();
+    return text || fallback;
+  }
+
+  function buildFitOverlayPoints(analysis, fit, inputUnit, displayUnit, timeOffset, currentRanges) {
+    if (!analysis || !fit || !fit.available || !Number.isFinite(fit.diffusivity)) return [];
+    const thicknessMm = Number.isFinite(analysis.thicknessMm) ? analysis.thicknessMm : null;
+    if (!Number.isFinite(thicknessMm) || thicknessMm <= 0) return [];
+    const thicknessMeters = thicknessMm / 1000;
+    const baselineValue = analysis.baseline && Number.isFinite(analysis.baseline.value) ? analysis.baseline.value : null;
+    const steadyValue = analysis.steady && Number.isFinite(analysis.steady.value) ? analysis.steady.value : null;
+    const baselineDisplay = Number.isFinite(baselineValue) ? convertCurrentValue(baselineValue, inputUnit, displayUnit) : null;
+    const steadyDisplay = Number.isFinite(steadyValue) ? convertCurrentValue(steadyValue, inputUnit, displayUnit) : null;
+    if (!Number.isFinite(baselineDisplay) || !Number.isFinite(steadyDisplay)) return [];
+    const span = Number.isFinite(currentRanges && currentRanges.xMax) && Number.isFinite(currentRanges && currentRanges.xMin)
+      ? currentRanges.xMax - currentRanges.xMin
+      : 0;
+    const minX = Number.isFinite(currentRanges && currentRanges.xMin) ? currentRanges.xMin : 0;
+    const sampleCount = span > 0 ? Math.min(240, Math.max(80, Math.round(Math.max((analysis.rows && analysis.rows.length) || 80, 40) * 1.5))) : 1;
+    const offset = Number.isFinite(timeOffset) ? timeOffset : 0;
+    const fitOffset = Number.isFinite(fit.timeOffset) ? fit.timeOffset : Number.isFinite(fit.t0Offset) ? fit.t0Offset : 0;
+    const denom = steadyDisplay - baselineDisplay;
+    if (!Number.isFinite(denom) || denom === 0) return [];
+    const points = [];
+
+    for (let index = 0; index < sampleCount; index += 1) {
+      const x = sampleCount === 1 ? minX : minX + (span * index) / (sampleCount - 1);
+      const modelTime = x - offset + fitOffset;
+      const response = evaluateFickResponseDetailed(fit.diffusivity, modelTime, thicknessMeters);
+      const normalized = typeof response === "number" ? response : response && response.value;
+      if (!Number.isFinite(normalized)) continue;
+      points.push({ x, y: baselineDisplay + normalized * denom });
+    }
+
+    return points;
   }
 
   function updateSummary(dom, analysis) {
@@ -1792,10 +1908,10 @@
     }
 
     function buildEmptyFitResult() {
-      return {
-        available: false,
-        note: "Load data to fit D and t0 together.",
-      };
+    return {
+      available: false,
+      note: "Load data to fit D and t0 together.",
+    };
     }
 
     function solveThresholdMethod(rows, thicknessMeters, threshold, coefficient, label, formulaHtml) {
@@ -1967,6 +2083,8 @@
       return {
         available: true,
         diffusivity: best.diffusivity,
+        timeOffset: best.timeOffset,
+        t0Offset: best.timeOffset,
         timeHtml: `Best combined single fit: D<sub>app</sub> for t<sub>0</sub> = ${escapeHtml(formatFitOffset(best.timeOffset))} s`,
         note: noteParts.join(" "),
       };
@@ -2245,6 +2363,7 @@
 
   function renderPlot(dom, analysis) {
     if (!dom.plot) return;
+    applyPlotColorVars(dom);
 
     const rows = analysis && analysis.rows ? analysis.rows : [];
     if (!rows.length) {
@@ -2255,6 +2374,7 @@
     const inputUnit = dom.currentUnit ? dom.currentUnit.value : "A";
     const displayUnit = getDisplayUnit(dom);
     const currentUnitLabel = formatUnitLabel(displayUnit);
+    const plotColors = state.plotColors || DEFAULT_PLOT_COLORS;
     const showGrid = !dom.gridToggle || dom.gridToggle.checked;
     const showMinorGrid = !dom.minorGridToggle || dom.minorGridToggle.checked;
     const diffusionScaleMode = dom.diffusionScale && dom.diffusionScale.checked ? "log" : "linear";
@@ -2335,6 +2455,15 @@
         : lowConfidenceMode === "shaded"
           ? ["hpa-plot-line-diffusion-edge", "hpa-plot-line-diffusion", "hpa-plot-line-diffusion-edge"]
           : ["hpa-plot-line-diffusion", "hpa-plot-line-diffusion", "hpa-plot-line-diffusion"];
+    const fit = analysis.fit;
+    const fitVisible = !!(fit && fit.available && state.fitOverlayVisible);
+    syncFitToggle(dom, fit);
+    const fitOverlayPoints = fitVisible
+      ? buildFitOverlayPoints(analysis, fit, inputUnit, displayUnit, dom.t0Offset ? parseNumberInput(dom.t0Offset.value) || 0 : 0, currentRanges)
+      : [];
+    const fitPath = fitOverlayPoints
+      .map((point, index) => `${index === 0 ? "M" : "L"} ${scaleX(point.x).toFixed(2)} ${scaleCurrentY(point.y).toFixed(2)}`)
+      .join(" ");
 
     const parts = [];
     const chartClipId = "hpa-plot-clip";
@@ -2342,7 +2471,7 @@
     const chartY = PLOT_MARGINS.top;
     const chartWidth = innerWidth;
     const chartHeight = innerHeight;
-    const axisLabelInsetLeft = Math.max(15, PLOT_MARGINS.left - 26);
+    const axisLabelInsetLeft = Math.max(15, PLOT_MARGINS.left - 31);
     const axisLabelInsetRight = Math.max(-3, PLOT_MARGINS.right - 31);
     const yGridParts = [];
     parts.push(`<svg viewBox="0 0 ${PLOT_WIDTH} ${PLOT_HEIGHT}" role="img" aria-label="Preview of measured permeation current and diffusion coefficient">`);
@@ -2360,14 +2489,22 @@
     const legendFontSize = 10.5;
     const lowConfidenceLegendText = "Low Confidence";
     const diffusionPlotLegendText = "Apparent Diffusion Coefficient Dapp(t)";
-    const currentLegendText = "Measured permeation current I(t)";
+    const currentLegendText = "Measured Permeation Current I(t)";
+    const fitLegendText = "Global Transient Fit";
     const showLowConfidenceLegend = lowConfidenceMode === "shaded";
+    const showFitLegend = fitVisible && !!fitPath;
     const lowConfidenceLegendWidth = showLowConfidenceLegend
       ? legendLineWidth + legendTextGap + measureTextWidth(lowConfidenceLegendText, legendFontSize)
       : 0;
     const diffusionLegendWidth = legendLineWidth + legendTextGap + measureTextWidth(diffusionPlotLegendText, legendFontSize);
     const currentLegendWidth = legendLineWidth + legendTextGap + measureTextWidth(currentLegendText, legendFontSize);
-    const legendTotalWidth = (showLowConfidenceLegend ? lowConfidenceLegendWidth + legendGap : 0) + diffusionLegendWidth + legendGap + currentLegendWidth;
+    const fitLegendWidth = showFitLegend ? legendLineWidth + legendTextGap + measureTextWidth(fitLegendText, legendFontSize) : 0;
+    const legendTotalWidth =
+      (showLowConfidenceLegend ? lowConfidenceLegendWidth + legendGap : 0) +
+      diffusionLegendWidth +
+      legendGap +
+      currentLegendWidth +
+      (showFitLegend ? legendGap + fitLegendWidth : 0);
     const legendX = Math.max(0, (PLOT_WIDTH - legendTotalWidth) / 2);
     const legendY = chartY - 20;
     parts.push(`
@@ -2380,13 +2517,18 @@
         <g class="hpa-plot-legend-item hpa-plot-legend-diffusion" transform="translate(${(showLowConfidenceLegend ? lowConfidenceLegendWidth + legendGap : 0)} 0)">
           <line x1="0" y1="6" x2="18" y2="6" class="hpa-plot-legend-line"></line>
           <text x="26" y="10">
-            <tspan x="26" dy="0">Apparent Diffusion Coefficient </tspan><tspan font-style="italic">D</tspan><tspan baseline-shift="sub" font-size="8">app</tspan><tspan>(t)</tspan>
+            <tspan x="26" dy="0">Apparent Diffusion Coefficient </tspan><tspan font-style="italic">D</tspan><tspan baseline-shift="sub" font-size="8">inv</tspan><tspan>(t)</tspan>
           </text>
         </g>
         <g class="hpa-plot-legend-item hpa-plot-legend-current" transform="translate(${(showLowConfidenceLegend ? lowConfidenceLegendWidth + legendGap : 0) + diffusionLegendWidth + legendGap} 0)">
           <line x1="0" y1="6" x2="18" y2="6" class="hpa-plot-legend-line"></line>
-          <text x="26" y="10">Measured permeation current I(t)</text>
+          <text x="26" y="10">Measured Permeation Current I(t)</text>
         </g>
+        ${showFitLegend ? `
+        <g class="hpa-plot-legend-item hpa-plot-legend-fit" transform="translate(${(showLowConfidenceLegend ? lowConfidenceLegendWidth + legendGap : 0) + diffusionLegendWidth + legendGap + currentLegendWidth + legendGap} 0)">
+          <line x1="0" y1="6" x2="18" y2="6" class="hpa-plot-legend-line"></line>
+          <text x="26" y="10">${fitLegendText}</text>
+        </g>` : ""}
       </g>
     `);
 
@@ -2474,6 +2616,9 @@
     }
     if (currentPath) parts.push(`<path class="hpa-plot-line hpa-plot-line-current" d="${currentPath}"></path>`);
     parts.push(...yGridParts);
+    if (fitVisible && fitPath) {
+      parts.push(`<path class="hpa-plot-line hpa-plot-line-fit" d="${fitPath}"></path>`);
+    }
     references.forEach((entry) => {
       if (!entry.ref || !Number.isFinite(entry.ref.value)) return;
       if (state.referenceVisibility[entry.kind] === false) return;
@@ -2745,12 +2890,14 @@
       currentUnitIndex: dom.currentUnit ? dom.currentUnit.selectedIndex : 0,
       plotUnitIndex: dom.plotUnit ? dom.plotUnit.selectedIndex : 0,
       lowConfidence: dom.lowConfidence ? dom.lowConfidence.value : "shaded",
+      plotColors: { ...state.plotColors },
       diffusionScale: dom.diffusionScale ? dom.diffusionScale.checked : false,
       gridToggle: dom.gridToggle ? dom.gridToggle.checked : true,
       minorGridToggle: dom.minorGridToggle ? dom.minorGridToggle.checked : true,
       baseline: captureReferenceSnapshot(dom.baselineValue),
       steady: captureReferenceSnapshot(dom.steadyValue),
       referenceVisibility: { ...state.referenceVisibility },
+      fitOverlayVisible: state.fitOverlayVisible,
       plotViewport: state.plotViewport ? { ...state.plotViewport } : null,
       plotLowConfidenceMode: state.plotLowConfidenceMode,
       plotDiffusionScale: state.plotDiffusionScale,
@@ -2769,12 +2916,16 @@
     if (dom.decimal && snapshot.decimal) dom.decimal.value = snapshot.decimal;
     if (dom.cropRange) dom.cropRange.value = snapshot.cropRange || "";
     if (dom.lowConfidence && snapshot.lowConfidence) dom.lowConfidence.value = snapshot.lowConfidence;
+    state.plotColors = snapshot.plotColors ? { ...DEFAULT_PLOT_COLORS, ...snapshot.plotColors } : { ...DEFAULT_PLOT_COLORS };
+    syncPlotColorControls(dom, state.plotColors);
+    applyPlotColorVars(dom);
     if (dom.diffusionScale) dom.diffusionScale.checked = !!snapshot.diffusionScale;
     if (dom.gridToggle) dom.gridToggle.checked = snapshot.gridToggle !== false;
     if (dom.minorGridToggle) dom.minorGridToggle.checked = snapshot.minorGridToggle !== false;
     restoreReferenceSnapshot(dom.baselineValue, snapshot.baseline);
     restoreReferenceSnapshot(dom.steadyValue, snapshot.steady);
     state.referenceVisibility = snapshot.referenceVisibility ? { ...snapshot.referenceVisibility } : { baseline: true, steady: true };
+    state.fitOverlayVisible = !!snapshot.fitOverlayVisible;
     state.plotViewport = snapshot.plotViewport ? { ...snapshot.plotViewport } : null;
     state.plotLowConfidenceMode = snapshot.plotLowConfidenceMode || "shaded";
     state.plotDiffusionScale = snapshot.plotDiffusionScale || (dom.diffusionScale && dom.diffusionScale.checked ? "log" : "linear");
@@ -3277,6 +3428,7 @@
     renderEmptyTable(dom);
     setIssues(dom, []);
     renderResults(dom, null);
+    syncFitToggle(dom, null);
     renderPlotEmpty(dom);
     state.plotHoverCache = null;
     hidePlotTooltip();
@@ -3491,6 +3643,7 @@
     const liveGridMinor = dom.plot ? dom.plot.querySelector(".hpa-plot-grid-minor") : null;
     const liveCurrentLine = dom.plot ? dom.plot.querySelector(".hpa-plot-line-current") : null;
     const liveDiffusionLine = dom.plot ? dom.plot.querySelector(".hpa-plot-line-diffusion") : null;
+    const liveFitLine = dom.plot ? dom.plot.querySelector(".hpa-plot-line-fit") : null;
     const liveAxisLabel = dom.plot ? dom.plot.querySelector(".hpa-plot-axis-label") : null;
     const liveAxisTick = dom.plot ? dom.plot.querySelector(".hpa-plot-axis-tick") : null;
     const liveFrame = dom.plot ? dom.plot.querySelector(".hpa-plot-frame") : null;
@@ -3504,7 +3657,8 @@
     const grid = readStyleValue(liveGridMajor || liveGridMinor, "stroke", rootStyle.getPropertyValue("--hpa-plot-grid").trim() || "#e2e8f0");
     const currentColor = readStyleValue(liveCurrentLine, "stroke", "#2563eb");
     const diffusionColor = readStyleValue(liveDiffusionLine, "stroke", "#111111");
-    const diffusionEdgeColor = readStyleValue(liveLowConfidenceLine, "stroke", rootStyle.getPropertyValue("--hpa-plot-diffusion-edge").trim() || "#111111");
+    const diffusionEdgeColor = readStyleValue(liveLowConfidenceLine, "stroke", rootStyle.getPropertyValue("--hpa-plot-diffusion-edge-color").trim() || "#6b7280");
+    const fitColor = readStyleValue(liveFitLine, "stroke", rootStyle.getPropertyValue("--hpa-plot-fit-color").trim() || "#7c3aed");
     const ink = readStyleValue(liveLegendText || liveAxisLabel, "fill", rootStyle.getPropertyValue("--hpa-plot-ink").trim() || "#111827");
     const muted = readStyleValue(liveAxisTick, "stroke", rootStyle.getPropertyValue("--hpa-plot-muted").trim() || "#4b5563");
     const gridMajorWidth = readStyleValue(liveGridMajor, "stroke-width", "0.8");
@@ -3522,6 +3676,7 @@
       .hpa-plot-line{fill:none;stroke-width:${lineWidth};stroke-linejoin:round;stroke-linecap:butt}
       .hpa-plot-line-current{stroke:${currentColor}}
       .hpa-plot-line-diffusion{stroke:${diffusionColor}}
+      .hpa-plot-line-fit{stroke:${fitColor}}
       .hpa-plot-line-diffusion-edge{stroke:${diffusionEdgeColor};opacity:${lowConfidenceMode === "shaded" ? "0.45" : "1"}}
       .hpa-plot-line-diffusion-hidden{stroke:${diffusionEdgeColor};opacity:0}
       .hpa-plot-point{stroke:${bg};stroke-width:2}
@@ -3535,6 +3690,7 @@
       .hpa-plot-legend-low-confidence-line{stroke:${diffusionEdgeColor};opacity:0.45}
       .hpa-plot-legend-diffusion .hpa-plot-legend-line{stroke:${diffusionColor}}
       .hpa-plot-legend-current .hpa-plot-legend-line{stroke:${currentColor}}
+      .hpa-plot-legend-fit .hpa-plot-legend-line{stroke:${fitColor}}
       .hpa-plot-ref-hitline{stroke:transparent;stroke-width:14;fill:none}
       .hpa-plot-axis-left,.hpa-plot-value-diffusion{fill:${diffusionColor}}
       .hpa-plot-axis-right,.hpa-plot-value-current{fill:${currentColor}}

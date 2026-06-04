@@ -294,6 +294,62 @@ body.dark #hpa-diagnostic-open:focus-visible {
   min-width: 0;
 }
 
+.hpa-color-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem 0.75rem;
+  align-items: start;
+  min-width: 340px;
+  padding: 0.85rem 0;
+  margin: 0.35rem 0 0.25rem;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.hpa-color-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.hpa-color-control label {
+  min-width: 0;
+}
+
+.hpa-color-input {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: transparent;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+
+.hpa-color-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.hpa-color-input::-webkit-color-swatch {
+  border: 0;
+  border-radius: 8px;
+}
+
+.hpa-color-input::-moz-color-swatch {
+  border: 0;
+  border-radius: 8px;
+}
+
+.hpa-color-input:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 2px;
+}
+
 .hpa-select,
 .hpa-file,
 .hpa-number,
@@ -423,10 +479,23 @@ body.dark #hpa-diagnostic-open:focus-visible {
   gap: 0.35rem;
 }
 
+.hpa-result-card-fit {
+  position: relative;
+  padding-right: 5.4rem;
+}
+
 .hpa-result-card h3 {
   margin: 0;
   font-size: 0.92rem;
   line-height: 1.2;
+}
+
+.hpa-fit-toggle {
+  position: absolute;
+  top: 0.72rem;
+  right: 0.72rem;
+  min-width: 4.35rem;
+  padding-inline: 0.72rem;
 }
 
 .hpa-result-value {
@@ -775,7 +844,7 @@ body.dark #hpa-diagnostic-open:focus-visible {
   --hpa-plot-muted: #4b5563;
   --hpa-plot-grid: #e2e8f0;
   --hpa-plot-border: #111827;
-  --hpa-plot-diffusion-edge: #111111;
+  --hpa-plot-diffusion-edge-color: #6b7280;
 }
 
 .hpa-plot svg {
@@ -849,20 +918,24 @@ body.dark #hpa-diagnostic-open:focus-visible {
 }
 
 .hpa-plot-line-current {
-  stroke: #2563eb;
+  stroke: var(--hpa-plot-current-color, #2563eb);
 }
 
 .hpa-plot-line-diffusion {
-  stroke: #111111;
+  stroke: var(--hpa-plot-diffusion-color, #111111);
+}
+
+.hpa-plot-line-fit {
+  stroke: var(--hpa-plot-fit-color, #7c3aed);
 }
 
 .hpa-plot-line-diffusion-edge {
-  stroke: var(--hpa-plot-diffusion-edge);
+  stroke: var(--hpa-plot-diffusion-edge-color, #6b7280);
   opacity: 0.45;
 }
 
 .hpa-plot-line-diffusion-hidden {
-  stroke: var(--hpa-plot-diffusion-edge);
+  stroke: var(--hpa-plot-diffusion-edge-color, #6b7280);
   opacity: 0;
 }
 
@@ -882,12 +955,12 @@ body.dark #hpa-diagnostic-open:focus-visible {
 
 .hpa-plot-value-current,
 .hpa-plot-axis-right {
-  fill: #2563eb;
+  fill: var(--hpa-plot-current-color, #2563eb);
 }
 
 .hpa-plot-value-diffusion,
 .hpa-plot-axis-left {
-  fill: #111111;
+  fill: var(--hpa-plot-diffusion-color, #111111);
 }
 
 .hpa-plot-note {
@@ -953,16 +1026,20 @@ body.dark #hpa-diagnostic-open:focus-visible {
 }
 
 .hpa-plot-legend-diffusion .hpa-plot-legend-line {
-  stroke: #111111;
+  stroke: var(--hpa-plot-diffusion-color, #111111);
 }
 
 .hpa-plot-legend-low-confidence-line {
-  stroke: var(--hpa-plot-diffusion-edge);
+  stroke: var(--hpa-plot-diffusion-edge-color, #6b7280);
   opacity: 0.45;
 }
 
 .hpa-plot-legend-current .hpa-plot-legend-line {
-  stroke: #2563eb;
+  stroke: var(--hpa-plot-current-color, #2563eb);
+}
+
+.hpa-plot-legend-fit .hpa-plot-legend-line {
+  stroke: var(--hpa-plot-fit-color, #7c3aed);
 }
 
 .hpa-plot-ref-label.hpa-plot-ref-baseline,
@@ -1348,6 +1425,11 @@ body.dark #hpa-diagnostic-open:focus-visible {
   .hpa-control-grid,
   .hpa-summary-grid {
     grid-template-columns: 1fr;
+  }
+
+  .hpa-color-grid {
+    grid-template-columns: 1fr;
+    min-width: 0;
   }
 
   .hpa-inline-control {
