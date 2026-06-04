@@ -931,7 +931,7 @@ body.dark #hpa-diagnostic-open:focus-visible {
 
 .hpa-plot-line-diffusion-edge {
   stroke: var(--hpa-plot-diffusion-edge-color, #6b7280);
-  opacity: 0.45;
+  opacity: 1;
 }
 
 .hpa-plot-line-diffusion-hidden {
@@ -1031,7 +1031,7 @@ body.dark #hpa-diagnostic-open:focus-visible {
 
 .hpa-plot-legend-low-confidence-line {
   stroke: var(--hpa-plot-diffusion-edge-color, #6b7280);
-  opacity: 0.45;
+  opacity: 1;
 }
 
 .hpa-plot-legend-current .hpa-plot-legend-line {

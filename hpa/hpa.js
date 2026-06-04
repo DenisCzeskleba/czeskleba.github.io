@@ -22,7 +22,7 @@
   const DEFAULT_PLOT_COLORS = {
     current: "#2563eb",
     diffusion: "#111111",
-    diffusionEdge: "#6b7280",
+    diffusionEdge: "#acb2be",
     fit: "#7c3aed",
   };
 
@@ -254,11 +254,12 @@
     }
     [dom.currentColor, dom.diffusionColor, dom.diffusionEdgeColor, dom.fitColor].forEach((element) => {
       if (!element) return;
-      element.addEventListener("change", () => {
+      const updatePlotColors = () => {
         state.plotColors = readPlotColors(dom);
         applyPlotColorVars(dom);
-        renderDerivedViews(dom);
-      });
+      };
+      element.addEventListener("input", updatePlotColors);
+      element.addEventListener("change", updatePlotColors);
     });
     if (dom.gridToggle) {
       dom.gridToggle.addEventListener("change", () => renderDerivedViews(dom));
@@ -683,6 +684,7 @@
         <strong>Apparent diffusion coefficient D<sub>app</sub>(t)</strong>
         <div>t = ${escapeHtml(formatAxisTick(target.x))} s</div>
         <div>D = ${escapeHtml(formatScientificTick(target.displayValue))} mm²/s</div>
+        ${target.lowConfidence ? "<div>Low-confidence region: inverse problem is poorly conditioned.</div>" : ""}
       `;
     }
     return `
@@ -703,7 +705,7 @@
       best = { ...candidate, anchorX, anchorY };
     };
 
-    const scanPolyline = (points, kind, label, unitLabel, displayFn) => {
+    const scanPolyline = (points, kind, label, unitLabel, displayFn, extraFn) => {
       if (!Array.isArray(points) || points.length < 1) return;
       if (points.length === 1) {
         const point = points[0];
@@ -733,6 +735,7 @@
         const py = projection.py;
         const interpX = a.x + (b.x - a.x) * t;
         const interpValue = displayFn(a, b, t, projection);
+        const extra = extraFn ? extraFn(a, b, t, projection) : null;
         consider(
           {
             kind,
@@ -740,6 +743,7 @@
             x: interpX,
             displayValue: interpValue,
             unitLabel,
+            ...(extra || {}),
           },
           projection.distSq,
           px,
@@ -765,6 +769,9 @@
         const value = a.displayY + (b.displayY - a.displayY) * t;
         return Number.isFinite(value) ? value : null;
       },
+      (a, b) => ({
+        lowConfidence: !!(a.lowConfidence || b.lowConfidence),
+      }),
     );
 
     if (Array.isArray(cache.referenceItems)) {
@@ -822,87 +829,38 @@
       .join(" ");
   }
 
-  function buildSegmentedPolylinePaths(points, fractions, scaleX, scaleY) {
+  function buildSegmentedPolylinePaths(points, scaleX, scaleY, classifySegment) {
     if (!Array.isArray(points) || points.length < 2) return [];
-    const screenPoints = points.map((point) => ({ x: scaleX(point.x), y: scaleY(point.y) }));
-    const thresholds = (fractions || [])
-      .filter((value) => Number.isFinite(value) && value > 0 && value < 1)
-      .sort((a, b) => a - b);
-    if (!thresholds.length) {
-      return [
-        {
-          index: 0,
-          d: screenPoints.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(" "),
-        },
-      ];
-    }
+    const projectX = typeof scaleX === "function" ? scaleX : (value) => value;
+    const projectY = typeof scaleY === "function" ? scaleY : (value) => value;
+    const classify = typeof classifySegment === "function" ? classifySegment : () => false;
+    const segments = [];
+    let currentState = Boolean(classify(points[0], points[1], 0));
+    let segmentPoints = [points[0], points[1]];
 
-    const totalLength = screenPoints.reduce((sum, point, index) => {
-      if (index === 0) return 0;
-      const prev = screenPoints[index - 1];
-      return sum + Math.hypot(point.x - prev.x, point.y - prev.y);
-    }, 0);
-    if (!Number.isFinite(totalLength) || totalLength <= 0) {
-      return [
-        {
-          index: 0,
-          d: screenPoints.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(" "),
-        },
-      ];
-    }
-
-    const targets = thresholds.map((fraction) => fraction * totalLength);
-    const segmentPoints = Array.from({ length: thresholds.length + 1 }, () => []);
-
-    const pushUnique = (bucket, point) => {
-      const last = bucket[bucket.length - 1];
-      if (!last || last.x !== point.x || last.y !== point.y) {
-        bucket.push(point);
-      }
+    const pushSegment = () => {
+      if (segmentPoints.length < 2) return;
+      segments.push({
+        lowConfidence: currentState,
+        d: segmentPoints
+          .map((point, index) => `${index === 0 ? "M" : "L"} ${projectX(point.x).toFixed(2)} ${projectY(point.y).toFixed(2)}`)
+          .join(" "),
+      });
     };
 
-    const interpolatePoint = (a, b, ratio) => ({
-      x: a.x + (b.x - a.x) * ratio,
-      y: a.y + (b.y - a.y) * ratio,
-    });
-
-    let thresholdIndex = 0;
-    let currentBucket = 0;
-    let pathLength = 0;
-    pushUnique(segmentPoints[0], screenPoints[0]);
-
-    for (let i = 1; i < screenPoints.length; i += 1) {
-      const start = screenPoints[i - 1];
-      const end = screenPoints[i];
-      const edgeLength = Math.hypot(end.x - start.x, end.y - start.y);
-      if (edgeLength === 0) {
-        pushUnique(segmentPoints[currentBucket], end);
-        continue;
+    for (let index = 2; index < points.length; index += 1) {
+      const nextState = Boolean(classify(points[index - 1], points[index], index - 1));
+      if (nextState === currentState) {
+        segmentPoints.push(points[index]);
+      } else {
+        pushSegment();
+        currentState = nextState;
+        segmentPoints = [points[index - 1], points[index]];
       }
-
-      while (thresholdIndex < targets.length && targets[thresholdIndex] <= pathLength + edgeLength) {
-        const ratio = (targets[thresholdIndex] - pathLength) / edgeLength;
-        const crossing = interpolatePoint(start, end, Math.max(0, Math.min(1, ratio)));
-        pushUnique(segmentPoints[currentBucket], crossing);
-        currentBucket = thresholdIndex + 1;
-        pushUnique(segmentPoints[currentBucket], crossing);
-        thresholdIndex += 1;
-      }
-
-      pushUnique(segmentPoints[currentBucket], end);
-      pathLength += edgeLength;
     }
 
-    return segmentPoints
-      .map((segment, index) =>
-        segment.length >= 2
-          ? {
-              index,
-              d: segment.map((point, pointIndex) => `${pointIndex === 0 ? "M" : "L"} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(" "),
-            }
-          : null,
-      )
-      .filter(Boolean);
+    pushSegment();
+    return segments;
   }
 
   function startReferenceDrag(dom, kind, event, svg) {
@@ -1562,8 +1520,15 @@
         currentDisplay: convertCurrentValue(row.current, inputUnit, displayUnit),
         normalized,
         diffusivity,
+        inverseSensitivity: null,
+        lowConfidence: false,
       };
     });
+
+    const inverseConfidence =
+      normalizedAvailable && thicknessMm != null
+        ? classifyInverseConfidence(previewRows, thicknessMm / 1000, solveDeadline)
+        : { available: false, threshold: null };
 
     const classical = normalizedAvailable && thicknessMm != null ? buildClassicalResults(previewRows, thicknessMm, denom) : buildEmptyClassicalResults();
     const fit = normalizedAvailable && thicknessMm != null ? buildFitResult(fitRows, thicknessMm, baseline.value, steady.value) : buildEmptyFitResult();
@@ -1591,6 +1556,7 @@
     return {
       rows,
       previewRows,
+      inverseConfidence,
         baseline,
         steady,
         thicknessMm,
@@ -1827,7 +1793,7 @@
     if (!valueNode || !timeNode || !noteNode) return;
     const symbol = symbolHtml || "D";
     if (!result || !result.available) {
-      valueNode.innerHTML = `${symbol} = &hpash;`;
+      valueNode.innerHTML = `${symbol} = <span class="hpa-missing-value" title="This value could not be computed because it is outside the baseline-to-steady-state interval. It shows as NaN here, but exports as an empty CSV cell for Excel-friendly import.">NaN</span>`;
       timeNode.textContent = "No stable value";
       noteNode.textContent = result && result.note ? result.note : `Unable to compute ${label.toLowerCase()}.`;
       return;
@@ -1859,7 +1825,9 @@
         const currentCell = Number.isFinite(row.currentDisplay)
           ? formatNumber(row.currentDisplay)
           : formatNumber(convertCurrentValue(row.current, dom.currentUnit ? dom.currentUnit.value : "A", getDisplayUnit(dom)));
-        const diffusivityCell = Number.isFinite(row.diffusivity) ? formatDiffusivity(row.diffusivity) : "&hpash;";
+        const diffusivityCell = Number.isFinite(row.diffusivity)
+          ? formatDiffusivity(row.diffusivity)
+          : '<span class="hpa-missing-value" title="This value could not be computed because it is outside the baseline-to-steady-state interval. It shows as NaN here, but exports as an empty CSV cell for Excel-friendly import.">NaN</span>';
         return `
           <tr>
             <td>${index + 1}</td>
@@ -2383,7 +2351,12 @@
       .map((row) => ({ x: row.time, y: convertCurrentValue(row.current, inputUnit, displayUnit) }))
       .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
     const diffusionPoints = (analysis.previewRows || [])
-      .map((row) => ({ x: row.time, y: convertDiffusivityToDisplay(row.diffusivity) }))
+      .map((row) => ({
+        x: row.time,
+        y: convertDiffusivityToDisplay(row.diffusivity),
+        lowConfidence: !!row.lowConfidence,
+        inverseSensitivity: row.inverseSensitivity,
+      }))
       .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
 
     if (!currentPoints.length) {
@@ -2398,11 +2371,21 @@
     const diffusionAxis = getDiffusionAxisScale(diffusionBaseRanges);
     const diffusionRanges = getDiffusionPlotRanges(analysis, diffusionScaleMode, diffusionAxis.factor);
     const orderedScaledDiffusion = orderedDiffusion
-      .map((point) => ({ x: point.x, y: point.y / diffusionAxis.factor }))
+      .map((point) => ({
+        x: point.x,
+        y: point.y / diffusionAxis.factor,
+        lowConfidence: !!point.lowConfidence,
+        inverseSensitivity: point.inverseSensitivity,
+      }))
       .filter((point) => diffusionScaleMode !== "log" || point.y > 0);
     const diffusionPlotPoints =
       diffusionScaleMode === "log"
-        ? orderedScaledDiffusion.map((point) => ({ x: point.x, y: Math.log10(point.y) }))
+        ? orderedScaledDiffusion.map((point) => ({
+            x: point.x,
+            y: Math.log10(point.y),
+            lowConfidence: point.lowConfidence,
+            inverseSensitivity: point.inverseSensitivity,
+          }))
         : orderedScaledDiffusion;
     const xTicks = buildNiceTicks(currentRanges.xMin, currentRanges.xMax, 5);
     const xMinorTicks = buildLinearMinorTicks(currentRanges.xMin, currentRanges.xMax, xTicks, 4);
@@ -2440,21 +2423,15 @@
     const currentPath = orderedCurrent
       .map((point, index) => `${index === 0 ? "M" : "L"} ${scaleX(point.x).toFixed(2)} ${scaleCurrentY(point.y).toFixed(2)}`)
       .join(" ");
+    const lowConfidenceMode = dom.lowConfidence && dom.lowConfidence.value ? dom.lowConfidence.value : state.plotLowConfidenceMode;
+    state.plotLowConfidenceMode = lowConfidenceMode || "shaded";
+    const diffusionConfidencePaths =
+      lowConfidenceMode === "normal"
+        ? []
+        : buildSegmentedPolylinePaths(diffusionPlotPoints, scaleX, scaleDiffusionY, (a, b) => Boolean(a.lowConfidence || b.lowConfidence));
     const diffusionPath = diffusionPlotPoints
       .map((point, index) => `${index === 0 ? "M" : "L"} ${scaleX(point.x).toFixed(2)} ${scaleDiffusionY(point.y).toFixed(2)}`)
       .join(" ");
-    const lowConfidenceMode = dom.lowConfidence && dom.lowConfidence.value ? dom.lowConfidence.value : state.plotLowConfidenceMode;
-    state.plotLowConfidenceMode = lowConfidenceMode || "shaded";
-    const diffusionSegmentPaths =
-      lowConfidenceMode === "normal"
-        ? []
-        : buildSegmentedPolylinePaths(diffusionPlotPoints, [0.25, 0.75], scaleX, scaleDiffusionY);
-    const diffusionSegmentClasses =
-      lowConfidenceMode === "hide"
-        ? ["hpa-plot-line-diffusion-hidden", "hpa-plot-line-diffusion", "hpa-plot-line-diffusion-hidden"]
-        : lowConfidenceMode === "shaded"
-          ? ["hpa-plot-line-diffusion-edge", "hpa-plot-line-diffusion", "hpa-plot-line-diffusion-edge"]
-          : ["hpa-plot-line-diffusion", "hpa-plot-line-diffusion", "hpa-plot-line-diffusion"];
     const fit = analysis.fit;
     const fitVisible = !!(fit && fit.available && state.fitOverlayVisible);
     syncFitToggle(dom, fit);
@@ -2548,6 +2525,8 @@
       px: scaleX(point.x),
       py: scaleDiffusionY(point.y),
       displayY: Number.isFinite(orderedDiffusion[index]?.y) ? orderedDiffusion[index].y : null,
+      lowConfidence: !!point.lowConfidence,
+      inverseSensitivity: point.inverseSensitivity,
     }));
     const referenceHoverItems = references
       .filter((entry) => entry.ref && Number.isFinite(entry.ref.value) && state.referenceVisibility[entry.kind] !== false)
@@ -2606,16 +2585,20 @@
         );
       });
     }
-    if (diffusionSegmentPaths.length) {
-      diffusionSegmentPaths.forEach((segment) => {
-        const segmentClass = diffusionSegmentClasses[segment.index] || "hpa-plot-line-diffusion";
+    parts.push(...yGridParts);
+    if (diffusionConfidencePaths.length) {
+      diffusionConfidencePaths.forEach((segment) => {
+        const segmentClass = segment.lowConfidence
+          ? lowConfidenceMode === "hide"
+            ? "hpa-plot-line-diffusion-hidden"
+            : "hpa-plot-line-diffusion-edge"
+          : "hpa-plot-line-diffusion";
         parts.push(`<path class="hpa-plot-line ${segmentClass}" d="${segment.d}"></path>`);
       });
     } else if (diffusionPath) {
       parts.push(`<path class="hpa-plot-line hpa-plot-line-diffusion" d="${diffusionPath}"></path>`);
     }
     if (currentPath) parts.push(`<path class="hpa-plot-line hpa-plot-line-current" d="${currentPath}"></path>`);
-    parts.push(...yGridParts);
     if (fitVisible && fitPath) {
       parts.push(`<path class="hpa-plot-line hpa-plot-line-fit" d="${fitPath}"></path>`);
     }
@@ -3309,6 +3292,77 @@
     return best;
   }
 
+  function computeInverseSensitivity(normalized, timeSeconds, thicknessMeters, diffusivity, deadline) {
+    if (!Number.isFinite(normalized) || !Number.isFinite(timeSeconds) || !Number.isFinite(thicknessMeters) || !Number.isFinite(diffusivity)) {
+      return null;
+    }
+    if (timeSeconds <= 0 || thicknessMeters <= 0 || diffusivity <= 0) return null;
+    if (diffusivity <= SOLVER_POLICY.dLower * 1.001 || diffusivity >= SOLVER_POLICY.dUpper / 1.001) {
+      return Number.POSITIVE_INFINITY;
+    }
+
+    const delta = 0.08;
+    const lowerDiffusivity = clamp(diffusivity / Math.exp(delta), SOLVER_POLICY.dLower, SOLVER_POLICY.dUpper);
+    const upperDiffusivity = clamp(diffusivity * Math.exp(delta), SOLVER_POLICY.dLower, SOLVER_POLICY.dUpper);
+    const lowerEval = evaluateFickResponseDetailed(lowerDiffusivity, timeSeconds, thicknessMeters, deadline);
+    const upperEval = evaluateFickResponseDetailed(upperDiffusivity, timeSeconds, thicknessMeters, deadline);
+    if (!lowerEval || !upperEval || !Number.isFinite(lowerEval.value) || !Number.isFinite(upperEval.value)) return null;
+
+    const lowerLog = Math.log(lowerDiffusivity);
+    const upperLog = Math.log(upperDiffusivity);
+    const logSpan = upperLog - lowerLog;
+    if (!Number.isFinite(logSpan) || logSpan <= 0) return null;
+
+    const slope = (upperEval.value - lowerEval.value) / logSpan;
+    const absSlope = Math.abs(slope);
+    if (!Number.isFinite(absSlope) || absSlope <= 0) {
+      return Number.POSITIVE_INFINITY;
+    }
+    return 1 / absSlope;
+  }
+
+  function classifyInverseConfidence(rows, thicknessMeters, deadline) {
+    const validRows = [];
+    for (const row of Array.isArray(rows) ? rows : []) {
+      if (!row || row.synthetic || !Number.isFinite(row.time) || !Number.isFinite(row.normalized) || !Number.isFinite(row.diffusivity)) {
+        if (row) {
+          row.inverseSensitivity = null;
+          row.lowConfidence = false;
+        }
+        continue;
+      }
+      const inverseSensitivity = computeInverseSensitivity(row.normalized, row.time, thicknessMeters, row.diffusivity, deadline);
+      row.inverseSensitivity = inverseSensitivity;
+      row.lowConfidence = !Number.isFinite(inverseSensitivity) || inverseSensitivity <= 0;
+      if (Number.isFinite(inverseSensitivity) && inverseSensitivity > 0) {
+        validRows.push(row);
+      }
+    }
+
+    const values = validRows.map((row) => row.inverseSensitivity);
+    if (values.length < 3) {
+      validRows.forEach((row) => {
+        row.lowConfidence = !Number.isFinite(row.inverseSensitivity) || row.inverseSensitivity <= 0;
+      });
+      return { available: false, threshold: null };
+    }
+
+    const logValues = values.map((value) => Math.log10(Math.max(value, Number.EPSILON)));
+    const thresholdLog = median(logValues) + Math.max(iqr(logValues) * 0.35, 0.1);
+    const threshold = Math.pow(10, thresholdLog);
+
+    validRows.forEach((row) => {
+      row.lowConfidence = !Number.isFinite(row.inverseSensitivity) || row.inverseSensitivity >= threshold;
+    });
+
+    return {
+      available: true,
+      threshold,
+      median: Math.pow(10, median(logValues)),
+      iqr: iqr(logValues),
+    };
+  }
+
   function evaluateFickResponseDetailed(diffusivity, timeSeconds, thicknessMeters, deadline) {
     if (!Number.isFinite(diffusivity) || !Number.isFinite(timeSeconds) || !Number.isFinite(thicknessMeters)) return null;
     if (diffusivity <= 0 || timeSeconds <= 0 || thicknessMeters <= 0) return 0;
@@ -3677,7 +3731,7 @@
       .hpa-plot-line-current{stroke:${currentColor}}
       .hpa-plot-line-diffusion{stroke:${diffusionColor}}
       .hpa-plot-line-fit{stroke:${fitColor}}
-      .hpa-plot-line-diffusion-edge{stroke:${diffusionEdgeColor};opacity:${lowConfidenceMode === "shaded" ? "0.45" : "1"}}
+      .hpa-plot-line-diffusion-edge{stroke:${diffusionEdgeColor};opacity:1}
       .hpa-plot-line-diffusion-hidden{stroke:${diffusionEdgeColor};opacity:0}
       .hpa-plot-point{stroke:${bg};stroke-width:2}
       .hpa-plot-point-current{fill:${currentColor}}
@@ -3687,7 +3741,7 @@
       .hpa-plot-axis-label tspan{font-family:inherit}
       .hpa-plot-legend-group{font-size:10.5px;font-weight:400}
       .hpa-plot-legend-group text{fill:${ink};font-weight:400}
-      .hpa-plot-legend-low-confidence-line{stroke:${diffusionEdgeColor};opacity:0.45}
+      .hpa-plot-legend-low-confidence-line{stroke:${diffusionEdgeColor};opacity:1}
       .hpa-plot-legend-diffusion .hpa-plot-legend-line{stroke:${diffusionColor}}
       .hpa-plot-legend-current .hpa-plot-legend-line{stroke:${currentColor}}
       .hpa-plot-legend-fit .hpa-plot-legend-line{stroke:${fitColor}}

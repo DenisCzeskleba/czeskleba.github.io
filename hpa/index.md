@@ -103,8 +103,8 @@ permalink: /hpa/
               </select>
               </div>
               <div class="hpa-control">
-                <label for="hpa-low-confidence" title="Choose how the first and last 10% of the diffusion curve are rendered.">Low Confidence</label>
-                <select id="hpa-low-confidence" class="hpa-select" title="Choose how the first and last 10% of the diffusion curve are rendered.">
+                <label for="hpa-low-confidence" title="Low-confidence region, where the inverse problem is poorly conditioned. Check Help. Think f(x) = 1 / (1-x); as x -> 1, it blows up.">Low Confidence Region</label>
+                <select id="hpa-low-confidence" class="hpa-select" title="Low-confidence region, where the inverse problem is poorly conditioned. Check Help. Think f(x) = 1 / (1-x); as x -> 1, it blows up.">
                   <option value="normal">Normal</option>
                   <option value="shaded" selected>Shaded</option>
                   <option value="hide">Hide</option>
@@ -121,7 +121,7 @@ permalink: /hpa/
               </label>
               <label class="hpa-color-control" for="hpa-color-diffusion-edge" title="Set the low-confidence segment color.">
                 <span>Low Confidence Region</span>
-                <input type="color" id="hpa-color-diffusion-edge" class="hpa-color-input" value="#6b7280" />
+                <input type="color" id="hpa-color-diffusion-edge" class="hpa-color-input" value="#acb2be" />
               </label>
               <label class="hpa-color-control" for="hpa-color-fit" title="Set the simulated measurement color.">
                 <span>Simulated Measurement (<span style="font-style:italic;">D</span><sub>GTF</sub>)</span>
@@ -187,38 +187,38 @@ permalink: /hpa/
         <div class="hpa-results-grid" aria-label="Diffusion model results">
           <article class="hpa-result-card">
             <h3>Breakthrough</h3>
-            <div class="hpa-result-value" id="hpa-breakthrough-value">D<sub>b</sub> = &hpash;</div>
+            <div class="hpa-result-value" id="hpa-breakthrough-value">D<sub>b</sub> = NaN</div>
             <div class="hpa-result-meta" id="hpa-breakthrough-time">Load data to calculate breakthrough time.</div>
             <div class="hpa-result-note" id="hpa-breakthrough-note"></div>
           </article>
           <article class="hpa-result-card">
             <h3>Time lag</h3>
-            <div class="hpa-result-value" id="hpa-lag-value">D<sub>lag</sub> = &hpash;</div>
+            <div class="hpa-result-value" id="hpa-lag-value">D<sub>lag</sub> = NaN</div>
             <div class="hpa-result-meta" id="hpa-lag-time">Load data to calculate time lag.</div>
             <div class="hpa-result-note" id="hpa-lag-note"></div>
           </article>
           <article class="hpa-result-card">
             <h3>Inflection point</h3>
-            <div class="hpa-result-value" id="hpa-inflection-value">D<sub>IP</sub> = &hpash;</div>
+            <div class="hpa-result-value" id="hpa-inflection-value">D<sub>IP</sub> = NaN</div>
             <div class="hpa-result-meta" id="hpa-inflection-time">Load data to calculate the inflection point.</div>
             <div class="hpa-result-note" id="hpa-inflection-note"></div>
           </article>
           <article class="hpa-result-card">
             <h3>Inverse Fickian</h3>
-            <div class="hpa-result-value" id="hpa-inverse-value">D<sub>Inv</sub> = &hpash;</div>
+            <div class="hpa-result-value" id="hpa-inverse-value">D<sub>Inv</sub> = NaN</div>
             <div class="hpa-result-meta" id="hpa-inverse-time">Load data to estimate the stabilized inverse window.</div>
             <div class="hpa-result-note" id="hpa-inverse-note"></div>
           </article>
           <article class="hpa-result-card hpa-result-card-fit">
             <h3>Global Transient Fit</h3>
             <button type="button" class="hpa-button is-secondary hpa-fit-toggle" id="hpa-fit-toggle" aria-pressed="false" title="Show or hide the fitted permeation curve.">Show</button>
-            <div class="hpa-result-value" id="hpa-fit-value">D<sub>GTF</sub> = &hpash;</div>
+            <div class="hpa-result-value" id="hpa-fit-value">D<sub>GTF</sub> = NaN</div>
             <div class="hpa-result-meta" id="hpa-fit-time">Load data to fit D and t<sub>0</sub> together.</div>
             <div class="hpa-result-note" id="hpa-fit-note"></div>
           </article>
         </div>
 
-        <details class="hpa-preview-details">
+        <details class="hpa-preview-details" open>
           <summary>Data preview</summary>
         <div class="hpa-preview-wrap" aria-live="polite">
           <table class="hpa-preview-table" aria-label="Parsed data preview">
@@ -287,7 +287,7 @@ permalink: /hpa/
           <li>The baseline and steady-state fields define the normalization used by the analysis. If they are left blank, HPA starts from the minimum and maximum values in the loaded data.</li>
           <li>You can type baseline and steady-state values manually, or drag the reference lines directly on the plot. The values follow the currently selected display unit.</li>
           <li>The <strong>Start Time Offset</strong> control shifts the trace before analysis. A positive offset prepends baseline time and moves the transient forward. A negative offset removes early time and shifts the remaining data back to zero.</li>
-              <li>Plot Options let you change the y-axis unit, choose colors for the main lines, decide how low-confidence diffusion segments are drawn, turn grid lines and minor grid lines on or off, and switch the diffusion axis between linear and logarithmic scaling.</li>
+              <li>Plot Options let you change the y-axis unit, choose colors for the main lines, decide how inverse-conditioning-based low-confidence diffusion segments are drawn, turn grid lines and minor grid lines on or off, and switch the diffusion axis between linear and logarithmic scaling.</li>
           <li>The <strong>Reset</strong> button restores the default plot view. The <strong>Hide/Show</strong> buttons toggle the reference markers without deleting their values.</li>
         </ul>
         <p>The plot itself is interactive. You can zoom and pan it directly, then use <strong>Reset</strong> to return to the default view. If you drag the baseline or steady-state line, HPA updates the corresponding value and reruns the analysis.</p>
@@ -303,9 +303,10 @@ permalink: /hpa/
           <li><strong>Breakthrough</strong> uses the first 10% crossing of the normalized curve. It is a quick textbook estimate, but it is sensitive to the early-time shape and to any baseline error.</li>
           <li><strong>Time lag</strong> uses the 63% crossing. It assumes that the transient has a clear monotonic rise and that the steady-state level is meaningful.</li>
           <li><strong>Inflection point</strong> uses the maximum-slope point of the normalized curve. It is only useful when the curve has one clear inflection and the steady-state current is valid.</li>
-          <li><strong>Inverse Fickian</strong> inverts the ideal Fickian response point by point to produce <code>D<sub>app</sub>(t)</code>. HPA then looks for a stable middle window and reports an average value when that window is robust enough.</li>
-              <li><strong>Global Transient Fit</strong> searches for one constant <code>D</code> and one <code>t<sub>0</sub></code> shift that best reproduce the normalized curve. It is useful when you want a single self-consistent fit instead of pointwise inversion.</li>
+          <li><strong>Inverse Fickian</strong> inverts the ideal Fickian response point by point to produce <code>D<sub>app</sub>(t)</code>. HPA shades low-confidence regions where the inverse problem is poorly conditioned, then reports an average value when a stable middle window is robust enough.</li>
+          <li><strong>Global Transient Fit</strong> searches for one constant <code>D</code> and one <code>t<sub>0</sub></code> shift that best reproduce the normalized curve. It is useful when you want a single self-consistent fit instead of pointwise inversion.</li>
         </ul>
+        <p>The low-confidence shade is a practical proxy, not a new physics claim. A useful intuition is <code>f(x) = 1 / (1-x)</code>: as <code>x</code> approaches 1, the inverse blows up, so the flat tail is less trustworthy.</p>
         <p>The preview table shows <code>D<sub>app</sub></code> in mm&sup2;/s for readability. The CSV export writes <code>D<sub>app</sub></code> in m&sup2;/s, so the exported numbers look different even though they represent the same quantity.</p>
       </div>
 
