@@ -25,6 +25,29 @@
     diffusionEdge: "#acb2be",
     fit: "#7c3aed",
   };
+  const DEFAULT_INPUT_SMOOTHING = {
+    method: "none",
+    window: 9,
+    order: 3,
+    span: 0.35,
+    robustness: 2,
+    strength: 60,
+    degree: 4,
+  };
+  const DEFAULT_OUTPUT_SMOOTHING = {
+    method: "none",
+    window: 9,
+    order: 3,
+    span: 0.35,
+    robustness: 2,
+  };
+  const SMOOTHING_TOOLTIPS = {
+    none: "No smoothing. The raw series is passed through unchanged.",
+    "savitzky-golay": "Centered local polynomial smoothing. Fast and shape-preserving; best for regular or near-regular time steps.",
+    lowess: "Local regression with distance weights. Robust and flexible; best for irregular time steps.",
+    spline: "Penalized cubic spline smoothing. Very smooth, but stronger settings can flatten sharp features.",
+    polynomial: "Single global polynomial fit. Simple to try, but higher degrees can oscillate quickly.",
+  };
 
   const state = {
     parseTimer: null,
@@ -71,6 +94,16 @@
       steadyReset: document.getElementById("hpa-steady-reset"),
       steadyToggle: document.getElementById("hpa-steady-toggle"),
       thickness: document.getElementById("hpa-thickness"),
+      inputSmoothing: document.getElementById("hpa-input-smoothing"),
+      inputSmoothingWindow: document.getElementById("hpa-input-smoothing-window"),
+      inputSmoothingOrder: document.getElementById("hpa-input-smoothing-order"),
+      inputSmoothingSpan: document.getElementById("hpa-input-smoothing-span"),
+      inputSmoothingRobustness: document.getElementById("hpa-input-smoothing-robustness"),
+      inputSmoothingStrength: document.getElementById("hpa-input-smoothing-strength"),
+      inputSmoothingStrengthValue: document.getElementById("hpa-input-smoothing-strength-value"),
+      inputSmoothingDegree: document.getElementById("hpa-input-smoothing-degree"),
+      outputSmoothing: document.getElementById("hpa-output-smoothing"),
+      previewSmoothedHeader: document.getElementById("hpa-preview-smoothed-header"),
       t0Offset: document.getElementById("hpa-t0-offset"),
       t0OffsetValue: document.getElementById("hpa-t0-offset-value"),
       minorGridToggle: document.getElementById("hpa-minor-grid-toggle"),
@@ -236,6 +269,30 @@
       });
     }
 
+    if (dom.inputSmoothing) {
+      dom.inputSmoothing.addEventListener("change", () => {
+        syncSmoothingControls(dom);
+        scheduleParse(dom, "selection");
+      });
+    }
+    [dom.inputSmoothingWindow, dom.inputSmoothingOrder, dom.inputSmoothingSpan, dom.inputSmoothingRobustness, dom.inputSmoothingStrength, dom.inputSmoothingDegree].forEach((element) => {
+      if (!element) return;
+      element.addEventListener("input", () => scheduleParse(dom, "selection"));
+      element.addEventListener("change", () => scheduleParse(dom, "selection"));
+    });
+    if (dom.inputSmoothingStrength && dom.inputSmoothingStrengthValue) {
+      const syncStrengthValue = () => syncInputSmoothingStrengthDisplay(dom);
+      dom.inputSmoothingStrength.addEventListener("input", syncStrengthValue);
+      dom.inputSmoothingStrength.addEventListener("change", syncStrengthValue);
+      syncStrengthValue();
+    }
+    if (dom.outputSmoothing) {
+      dom.outputSmoothing.addEventListener("change", () => {
+        syncSmoothingControls(dom);
+        scheduleParse(dom, "selection");
+      });
+    }
+
     if (dom.currentUnit) {
       dom.currentUnit.addEventListener("change", () => {
         renderDerivedViews(dom);
@@ -370,8 +427,18 @@
         if (dom.baselineValue) dom.baselineValue.value = "";
         if (dom.steadyValue) dom.steadyValue.value = "";
         if (dom.thickness) dom.thickness.value = "0.50";
+        if (dom.inputSmoothing) dom.inputSmoothing.value = DEFAULT_INPUT_SMOOTHING.method;
+        if (dom.inputSmoothingWindow) dom.inputSmoothingWindow.value = String(DEFAULT_INPUT_SMOOTHING.window);
+        if (dom.inputSmoothingOrder) dom.inputSmoothingOrder.value = String(DEFAULT_INPUT_SMOOTHING.order);
+        if (dom.inputSmoothingSpan) dom.inputSmoothingSpan.value = String(Math.round(DEFAULT_INPUT_SMOOTHING.span * 100));
+        if (dom.inputSmoothingRobustness) dom.inputSmoothingRobustness.value = String(DEFAULT_INPUT_SMOOTHING.robustness);
+        if (dom.inputSmoothingStrength) dom.inputSmoothingStrength.value = String(DEFAULT_INPUT_SMOOTHING.strength);
+        if (dom.inputSmoothingDegree) dom.inputSmoothingDegree.value = String(DEFAULT_INPUT_SMOOTHING.degree);
+        if (dom.outputSmoothing) dom.outputSmoothing.value = DEFAULT_OUTPUT_SMOOTHING.method;
         if (dom.t0Offset) dom.t0Offset.value = "0";
         syncT0OffsetDisplay(dom);
+        syncSmoothingControls(dom);
+        syncInputSmoothingStrengthDisplay(dom);
         if (dom.cropRange) dom.cropRange.value = "";
         state.fitOverlayVisible = false;
         state.diagnosticSnapshot = null;
@@ -389,10 +456,10 @@
     }
     syncPlotColorControls(dom, state.plotColors);
     applyPlotColorVars(dom);
+    syncSmoothingControls(dom);
     syncT0OffsetDisplay(dom);
     renderDiagnosticDrawer(dom, null);
     renderEmpty(dom, "Paste data to begin.");
-    loadDebugDefaultInput(dom);
   }
 
   function injectHeaderBrand() {
@@ -449,6 +516,536 @@
     delete element.dataset.hpaReferenceMode;
     delete element.dataset.hpaReferenceSourceUnit;
     delete element.dataset.hpaReferenceRawValue;
+  }
+
+  function syncSmoothingControls(dom) {
+    if (!dom) return;
+    const inputMethod = normalizeSmoothingMethod(dom.inputSmoothing ? dom.inputSmoothing.value : "none");
+    const outputMethod = normalizeSmoothingMethod(dom.outputSmoothing ? dom.outputSmoothing.value : "none");
+    if (dom.inputSmoothing) {
+      dom.inputSmoothing.value = inputMethod;
+      dom.inputSmoothing.title = SMOOTHING_TOOLTIPS[inputMethod] || SMOOTHING_TOOLTIPS.none;
+    }
+    if (dom.outputSmoothing) {
+      dom.outputSmoothing.value = outputMethod;
+      dom.outputSmoothing.title = SMOOTHING_TOOLTIPS[outputMethod] || SMOOTHING_TOOLTIPS.none;
+    }
+    const panels = document.querySelectorAll("[data-input-smoothing-panel]");
+    panels.forEach((panel) => {
+      const panelMethod = normalizeSmoothingMethod(panel.getAttribute("data-input-smoothing-panel"));
+      panel.hidden = inputMethod !== panelMethod;
+    });
+  }
+
+  function syncInputSmoothingStrengthDisplay(dom) {
+    if (!dom || !dom.inputSmoothingStrength || !dom.inputSmoothingStrengthValue) return;
+    const value = clamp(parseNumberInput(dom.inputSmoothingStrength.value) ?? DEFAULT_INPUT_SMOOTHING.strength, 0, 100);
+    dom.inputSmoothingStrengthValue.textContent = `${value.toFixed(0)}%`;
+  }
+
+  function normalizeSmoothingMethod(value) {
+    const text = String(value || "none").trim().toLowerCase();
+    switch (text) {
+      case "savitzky-golay":
+      case "lowess":
+      case "spline":
+      case "polynomial":
+        return text;
+      default:
+        return "none";
+    }
+  }
+
+  function readInputSmoothingConfig(dom) {
+    const method = normalizeSmoothingMethod(dom && dom.inputSmoothing ? dom.inputSmoothing.value : "none");
+    const window = clampOddInteger(parseNumberInput(dom && dom.inputSmoothingWindow ? dom.inputSmoothingWindow.value : null) ?? DEFAULT_INPUT_SMOOTHING.window, 3, 101);
+    const order = clampInteger(parseNumberInput(dom && dom.inputSmoothingOrder ? dom.inputSmoothingOrder.value : null) ?? DEFAULT_INPUT_SMOOTHING.order, 1, 8);
+    const span = clamp((parseNumberInput(dom && dom.inputSmoothingSpan ? dom.inputSmoothingSpan.value : null) ?? DEFAULT_INPUT_SMOOTHING.span * 100) / 100, 0.05, 1);
+    const robustness = clampInteger(parseNumberInput(dom && dom.inputSmoothingRobustness ? dom.inputSmoothingRobustness.value : null) ?? DEFAULT_INPUT_SMOOTHING.robustness, 0, 5);
+    const strength = clamp(parseNumberInput(dom && dom.inputSmoothingStrength ? dom.inputSmoothingStrength.value : null) ?? DEFAULT_INPUT_SMOOTHING.strength, 0, 100);
+    const degree = clampInteger(parseNumberInput(dom && dom.inputSmoothingDegree ? dom.inputSmoothingDegree.value : null) ?? DEFAULT_INPUT_SMOOTHING.degree, 1, 12);
+    return {
+      method,
+      window,
+      order: Math.min(order, Math.max(1, window - 1)),
+      span,
+      robustness,
+      strength,
+      degree,
+    };
+  }
+
+  function readOutputSmoothingConfig(dom) {
+    const method = normalizeSmoothingMethod(dom && dom.outputSmoothing ? dom.outputSmoothing.value : "none");
+    return {
+      method,
+      window: DEFAULT_OUTPUT_SMOOTHING.window,
+      order: DEFAULT_OUTPUT_SMOOTHING.order,
+      span: DEFAULT_OUTPUT_SMOOTHING.span,
+      robustness: DEFAULT_OUTPUT_SMOOTHING.robustness,
+    };
+  }
+
+  function cloneRow(row) {
+    return row ? { ...row } : row;
+  }
+
+  function clampInteger(value, min, max) {
+    return Math.round(clamp(Number.isFinite(value) ? value : min, min, max));
+  }
+
+  function clampOddInteger(value, min, max) {
+    let next = clampInteger(value, min, max);
+    if (next % 2 === 0) {
+      next += next >= max ? -1 : 1;
+    }
+    if (next < min) next = min % 2 === 0 ? min + 1 : min;
+    if (next > max) next = max % 2 === 0 ? max - 1 : max;
+    if (next < min) next = min;
+    if (next > max) next = max;
+    return next;
+  }
+
+  function applyInputSmoothing(rows, config) {
+    const sourceRows = Array.isArray(rows) ? rows.map(cloneRow) : [];
+    const method = normalizeSmoothingMethod(config && config.method);
+    if (method === "none" || !sourceRows.length) {
+      return sourceRows;
+    }
+
+    const sourcePoints = sourceRows
+      .map((row, index) => ({
+        sourceIndex: index,
+        x: Number(row.time),
+        y: Number(row.current),
+      }))
+      .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y))
+      .sort((a, b) => a.x - b.x || a.sourceIndex - b.sourceIndex);
+
+    const evaluator = buildSmoothingEvaluator(sourcePoints, config, "current");
+    if (!evaluator) {
+      return sourceRows;
+    }
+
+    return sourceRows.map((row) => {
+      const x = Number(row.time);
+      const next = Number.isFinite(x) ? evaluator(x) : row.current;
+      return {
+        ...row,
+        current: Number.isFinite(next) ? next : row.current,
+      };
+    });
+  }
+
+  function applyOutputSmoothing(previewRows, config) {
+    const sourceRows = Array.isArray(previewRows) ? previewRows.map(cloneRow) : [];
+    const method = normalizeSmoothingMethod(config && config.method);
+    if (method === "none" || !sourceRows.length) {
+      return [];
+    }
+
+    const sourcePoints = sourceRows
+      .map((row, index) => ({
+        sourceIndex: index,
+        x: Number(row.time),
+        y: Number(row.diffusivity),
+      }))
+      .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y))
+      .sort((a, b) => a.x - b.x || a.sourceIndex - b.sourceIndex);
+
+    const evaluator = buildSmoothingEvaluator(sourcePoints, config, "diffusivity");
+    if (!evaluator) {
+      return sourceRows.map((row) => ({ ...row, smoothedDiffusivity: null }));
+    }
+
+    return sourceRows.map((row) => {
+      const x = Number(row.time);
+      const next = Number.isFinite(x) ? evaluator(x) : null;
+      return {
+        ...row,
+        smoothedDiffusivity: Number.isFinite(next) ? next : null,
+      };
+    });
+  }
+
+  function buildSmoothingEvaluator(points, config) {
+    const method = normalizeSmoothingMethod(config && config.method);
+    const source = Array.isArray(points) ? points.slice() : [];
+    if (method === "none" || source.length < 2) {
+      return null;
+    }
+
+    switch (method) {
+      case "savitzky-golay":
+        return buildLocalPolynomialEvaluator(source, {
+          window: config.window,
+          degree: config.order,
+          kernel: "uniform",
+          robustnessWeights: null,
+        });
+      case "lowess":
+        return buildLowessEvaluator(source, {
+          span: config.span,
+          robustness: config.robustness,
+        });
+      case "spline":
+        return buildSplineEvaluator(source, {
+          strength: config.strength,
+        });
+      case "polynomial":
+        return buildGlobalPolynomialEvaluator(source, {
+          degree: config.degree,
+        });
+      default:
+        return null;
+    }
+  }
+
+  function buildLocalPolynomialEvaluator(points, options) {
+    const source = Array.isArray(points) ? points.slice().sort((a, b) => a.x - b.x || a.sourceIndex - b.sourceIndex) : [];
+    const windowSize = Math.min(source.length, Math.max(3, clampInteger(options && options.window != null ? options.window : 5, 3, Math.max(3, source.length))));
+    const degree = Math.max(0, Math.min(clampInteger(options && options.degree != null ? options.degree : 1, 0, 8), windowSize - 1));
+    if (source.length <= degree) return null;
+
+    return (targetX) => {
+      const neighbors = selectNearestPoints(source, targetX, windowSize);
+      if (!neighbors.length || neighbors.length <= degree) return null;
+      const maxDistance = Math.max(...neighbors.map((point) => Math.abs(point.x - targetX)), Number.EPSILON);
+      const matrixSize = degree + 1;
+      const matrix = Array.from({ length: matrixSize }, () => new Array(matrixSize).fill(0));
+      const rhs = new Array(matrixSize).fill(0);
+
+      neighbors.forEach((point) => {
+        const distance = Math.abs(point.x - targetX);
+        const kernel = options && options.kernel === "uniform" ? 1 : tricubeWeight(distance / maxDistance);
+        if (!(kernel > 0)) return;
+        const sourceWeight = options && typeof options.weightForPoint === "function" ? Number(options.weightForPoint(point)) : 1;
+        if (!(sourceWeight > 0)) return;
+        const weight = kernel * sourceWeight;
+        if (!(weight > 0)) return;
+        const dx = point.x - targetX;
+        const basis = new Array(matrixSize);
+        basis[0] = 1;
+        for (let index = 1; index < matrixSize; index += 1) {
+          basis[index] = basis[index - 1] * dx;
+        }
+        for (let row = 0; row < matrixSize; row += 1) {
+          rhs[row] += weight * point.y * basis[row];
+          for (let col = row; col < matrixSize; col += 1) {
+            matrix[row][col] += weight * basis[row] * basis[col];
+          }
+        }
+      });
+
+      for (let row = 0; row < matrixSize; row += 1) {
+        for (let col = 0; col < row; col += 1) {
+          matrix[row][col] = matrix[col][row];
+        }
+      }
+
+      const coeffs = solveLinearSystem(matrix, rhs);
+      return coeffs ? coeffs[0] : null;
+    };
+  }
+
+  function buildLowessEvaluator(points, options) {
+    const source = Array.isArray(points) ? points.slice().sort((a, b) => a.x - b.x || a.sourceIndex - b.sourceIndex) : [];
+    const span = clamp(Number.isFinite(options && options.span) ? options.span : DEFAULT_INPUT_SMOOTHING.span, 0.05, 1);
+    const windowSize = Math.min(source.length, Math.max(3, Math.round(span * source.length)));
+    const iterations = clampInteger(options && options.robustness != null ? options.robustness : DEFAULT_INPUT_SMOOTHING.robustness, 0, 5);
+    if (source.length <= 2) return null;
+
+    let robustWeights = new Array(source.length).fill(1);
+    const localEvaluator = buildLocalPolynomialEvaluator(source, {
+      window: windowSize,
+      degree: 1,
+      kernel: "tricube",
+      weightForPoint: (point) => robustWeights[point.sourceIndex] || 0,
+    });
+    if (!localEvaluator) return null;
+
+    let fitted = source.map((point) => point.y);
+    for (let pass = 0; pass <= iterations; pass += 1) {
+      fitted = source.map((point) => localEvaluator(point.x));
+      if (pass === iterations) break;
+      const residuals = source
+        .map((point, index) => {
+          const estimate = fitted[index];
+          if (!Number.isFinite(estimate)) return null;
+          return Math.abs(point.y - estimate);
+        })
+        .filter((value) => Number.isFinite(value));
+      const scale = median(residuals) || 0;
+      if (!(scale > 0)) break;
+      robustWeights = source.map((point, index) => {
+        const estimate = fitted[index];
+        if (!Number.isFinite(estimate)) return 0;
+        const residual = Math.abs(point.y - estimate) / (6 * scale);
+        return bisquareWeight(residual);
+      });
+    }
+
+    return (targetX) => localEvaluator(targetX);
+  }
+
+  function buildGlobalPolynomialEvaluator(points, options) {
+    const source = Array.isArray(points) ? points.slice().sort((a, b) => a.x - b.x || a.sourceIndex - b.sourceIndex) : [];
+    const degree = Math.max(0, Math.min(clampInteger(options && options.degree != null ? options.degree : DEFAULT_INPUT_SMOOTHING.degree, 1, 12), Math.max(0, source.length - 1)));
+    if (source.length <= degree) return null;
+
+    const meanX = source.reduce((sum, point) => sum + point.x, 0) / source.length;
+    const scaleX = Math.max(...source.map((point) => Math.abs(point.x - meanX)), Number.EPSILON);
+    const matrixSize = degree + 1;
+    const matrix = Array.from({ length: matrixSize }, () => new Array(matrixSize).fill(0));
+    const rhs = new Array(matrixSize).fill(0);
+
+    source.forEach((point) => {
+      const x = (point.x - meanX) / scaleX;
+      const basis = new Array(matrixSize);
+      basis[0] = 1;
+      for (let index = 1; index < matrixSize; index += 1) {
+        basis[index] = basis[index - 1] * x;
+      }
+      for (let row = 0; row < matrixSize; row += 1) {
+        rhs[row] += point.y * basis[row];
+        for (let col = row; col < matrixSize; col += 1) {
+          matrix[row][col] += basis[row] * basis[col];
+        }
+      }
+    });
+
+    for (let row = 0; row < matrixSize; row += 1) {
+      for (let col = 0; col < row; col += 1) {
+        matrix[row][col] = matrix[col][row];
+      }
+    }
+
+    const coeffs = solveLinearSystem(matrix, rhs);
+    if (!coeffs) return null;
+
+    return (targetX) => {
+      const x = (targetX - meanX) / scaleX;
+      let value = 0;
+      let power = 1;
+      for (let index = 0; index < coeffs.length; index += 1) {
+        value += coeffs[index] * power;
+        power *= x;
+      }
+      return value;
+    };
+  }
+
+  function buildSplineEvaluator(points, options) {
+    const source = Array.isArray(points) ? points.slice().sort((a, b) => a.x - b.x || a.sourceIndex - b.sourceIndex) : [];
+    if (source.length < 4) return null;
+
+    const degree = 3;
+    const minX = source[0].x;
+    const maxX = source[source.length - 1].x;
+    const spanX = maxX - minX || 1;
+    const normalized = source.map((point) => ({
+      ...point,
+      xn: (point.x - minX) / spanX,
+    }));
+    const knotCount = Math.max(4, Math.min(18, Math.round(Math.max(4, normalized.length / 18))));
+    const internalKnots = [];
+    for (let index = 1; index < knotCount; index += 1) {
+      const fraction = index / knotCount;
+      const sampleIndex = Math.min(normalized.length - 1, Math.max(0, Math.round(fraction * (normalized.length - 1))));
+      internalKnots.push(normalized[sampleIndex].xn);
+    }
+    const knots = [
+      0,
+      0,
+      0,
+      0,
+      ...internalKnots,
+      1,
+      1,
+      1,
+      1,
+    ];
+    const basisCount = knots.length - degree - 1;
+    if (basisCount <= degree) return null;
+    const lambda = Math.pow(10, (clamp(Number.isFinite(options && options.strength) ? options.strength : DEFAULT_INPUT_SMOOTHING.strength, 0, 100) - 50) / 10);
+    const matrix = Array.from({ length: basisCount }, () => new Array(basisCount).fill(0));
+    const rhs = new Array(basisCount).fill(0);
+
+    normalized.forEach((point) => {
+      const basis = evaluateBSplineBasis(knots, degree, point.xn);
+      for (let row = 0; row < basisCount; row += 1) {
+        rhs[row] += point.y * basis[row];
+        for (let col = row; col < basisCount; col += 1) {
+          matrix[row][col] += basis[row] * basis[col];
+        }
+      }
+    });
+
+    const penalty = buildSecondDifferencePenalty(basisCount);
+    for (let row = 0; row < basisCount; row += 1) {
+      for (let col = 0; col < basisCount; col += 1) {
+        matrix[row][col] += lambda * penalty[row][col];
+      }
+    }
+
+    for (let row = 0; row < basisCount; row += 1) {
+      for (let col = 0; col < row; col += 1) {
+        matrix[row][col] = matrix[col][row];
+      }
+    }
+
+    const coeffs = solveLinearSystem(matrix, rhs);
+    if (!coeffs) return null;
+
+    return (targetX) => {
+      const xn = (targetX - minX) / spanX;
+      const basis = evaluateBSplineBasis(knots, degree, xn);
+      let value = 0;
+      for (let index = 0; index < coeffs.length; index += 1) {
+        value += coeffs[index] * basis[index];
+      }
+      return value;
+    };
+  }
+
+  function evaluateBSplineBasis(knots, degree, x) {
+    const lastKnot = knots[knots.length - 1];
+    const count = knots.length - degree - 1;
+    let basis = new Array(count).fill(0);
+    for (let index = 0; index < count; index += 1) {
+      const left = knots[index];
+      const right = knots[index + 1];
+      const inRange = x >= left && x < right;
+      basis[index] = inRange ? 1 : 0;
+    }
+    if (x === lastKnot) {
+      basis[count - 1] = 1;
+    }
+    for (let order = 1; order <= degree; order += 1) {
+      const next = new Array(count).fill(0);
+      for (let index = 0; index < count; index += 1) {
+        const leftDenominator = knots[index + order] - knots[index];
+        const rightDenominator = knots[index + order + 1] - knots[index + 1];
+        const leftTerm = leftDenominator > 0 ? ((x - knots[index]) / leftDenominator) * basis[index] : 0;
+        const rightTerm =
+          index + 1 < count && rightDenominator > 0 ? ((knots[index + order + 1] - x) / rightDenominator) * basis[index + 1] : 0;
+        next[index] = leftTerm + rightTerm;
+      }
+      basis = next;
+    }
+    return basis;
+  }
+
+  function buildSecondDifferencePenalty(size) {
+    const penalty = Array.from({ length: size }, () => new Array(size).fill(0));
+    for (let index = 0; index < size - 2; index += 1) {
+      const pattern = [1, -2, 1];
+      for (let row = 0; row < pattern.length; row += 1) {
+        for (let col = 0; col < pattern.length; col += 1) {
+          penalty[index + row][index + col] += pattern[row] * pattern[col];
+        }
+      }
+    }
+    return penalty;
+  }
+
+  function selectNearestPoints(points, targetX, count) {
+    if (!Array.isArray(points) || !points.length) return [];
+    const windowSize = Math.max(2, Math.min(points.length, Math.round(count || points.length)));
+    let right = lowerBoundByX(points, targetX);
+    let left = right - 1;
+    const selected = [];
+
+    while (selected.length < windowSize && (left >= 0 || right < points.length)) {
+      const leftDistance = left >= 0 ? Math.abs(points[left].x - targetX) : Number.POSITIVE_INFINITY;
+      const rightDistance = right < points.length ? Math.abs(points[right].x - targetX) : Number.POSITIVE_INFINITY;
+      if (leftDistance <= rightDistance) {
+        selected.push(points[left]);
+        left -= 1;
+      } else {
+        selected.push(points[right]);
+        right += 1;
+      }
+    }
+
+    return selected.sort((a, b) => a.x - b.x || a.sourceIndex - b.sourceIndex);
+  }
+
+  function lowerBoundByX(points, targetX) {
+    let low = 0;
+    let high = points.length;
+    while (low < high) {
+      const mid = Math.floor((low + high) / 2);
+      if (points[mid].x < targetX) {
+        low = mid + 1;
+      } else {
+        high = mid;
+      }
+    }
+    return low;
+  }
+
+  function tricubeWeight(value) {
+    const distance = Math.abs(value);
+    if (!Number.isFinite(distance) || distance >= 1) return 0;
+    const cube = 1 - distance * distance * distance;
+    return cube * cube * cube;
+  }
+
+  function bisquareWeight(value) {
+    const distance = Math.abs(value);
+    if (!Number.isFinite(distance) || distance >= 1) return 0;
+    const square = 1 - distance * distance;
+    return square * square;
+  }
+
+  function solveLinearSystem(matrix, vector) {
+    if (!Array.isArray(matrix) || !Array.isArray(vector) || matrix.length !== vector.length) return null;
+    const size = vector.length;
+    const a = matrix.map((row) => row.slice());
+    const b = vector.slice();
+
+    for (let pivotIndex = 0; pivotIndex < size; pivotIndex += 1) {
+      let bestRow = pivotIndex;
+      let bestValue = Math.abs(a[pivotIndex][pivotIndex]);
+      for (let row = pivotIndex + 1; row < size; row += 1) {
+        const value = Math.abs(a[row][pivotIndex]);
+        if (value > bestValue) {
+          bestValue = value;
+          bestRow = row;
+        }
+      }
+      if (!(bestValue > Number.EPSILON)) {
+        return null;
+      }
+      if (bestRow !== pivotIndex) {
+        [a[pivotIndex], a[bestRow]] = [a[bestRow], a[pivotIndex]];
+        [b[pivotIndex], b[bestRow]] = [b[bestRow], b[pivotIndex]];
+      }
+      const pivot = a[pivotIndex][pivotIndex];
+      for (let row = pivotIndex + 1; row < size; row += 1) {
+        const factor = a[row][pivotIndex] / pivot;
+        if (!Number.isFinite(factor) || factor === 0) continue;
+        for (let col = pivotIndex; col < size; col += 1) {
+          a[row][col] -= factor * a[pivotIndex][col];
+        }
+        b[row] -= factor * b[pivotIndex];
+      }
+    }
+
+    const result = new Array(size).fill(0);
+    for (let row = size - 1; row >= 0; row -= 1) {
+      let sum = b[row];
+      for (let col = row + 1; col < size; col += 1) {
+        sum -= a[row][col] * result[col];
+      }
+      const pivot = a[row][row];
+      if (!(Math.abs(pivot) > Number.EPSILON)) {
+        return null;
+      }
+      result[row] = sum / pivot;
+    }
+    return result;
   }
 
   function markReferenceManual(element) {
@@ -561,6 +1158,9 @@
         hidePlotTooltip();
         return;
       }
+      if (event.target && event.target.closest && event.target.closest(".hpa-plot-legend-low-confidence")) {
+        return;
+      }
       updatePlotTooltip(dom, event);
     });
     dom.plot.addEventListener("mouseleave", hidePlotTooltip);
@@ -613,8 +1213,40 @@
     tooltip.setAttribute("aria-hidden", "true");
   }
 
-  function updatePlotTooltip(dom, event) {
+  function showPlotTooltip(html, event) {
     const tooltip = ensurePlotTooltip();
+    tooltip.innerHTML = html;
+    tooltip.style.opacity = "1";
+    tooltip.setAttribute("aria-hidden", "false");
+
+    if (!event) return;
+
+    const offset = 16;
+    const gap = 8;
+    const pageLeft = window.scrollX;
+    const pageTop = window.scrollY;
+    const viewportRight = pageLeft + window.innerWidth;
+    const viewportBottom = pageTop + window.innerHeight;
+    let left = event.clientX + window.scrollX + offset;
+    let top = event.clientY + window.scrollY + offset;
+    const tooltipWidth = tooltip.offsetWidth;
+    const tooltipHeight = tooltip.offsetHeight;
+
+    if (left + tooltipWidth + gap > viewportRight) {
+      left = event.clientX + window.scrollX - tooltipWidth - offset;
+    }
+    if (top + tooltipHeight + gap > viewportBottom) {
+      top = event.clientY + window.scrollY - tooltipHeight - offset;
+    }
+
+    left = Math.max(pageLeft + gap, Math.min(left, viewportRight - tooltipWidth - gap));
+    top = Math.max(pageTop + gap, Math.min(top, viewportBottom - tooltipHeight - gap));
+
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
+  }
+
+  function updatePlotTooltip(dom, event) {
     const cache = state.plotHoverCache;
     const svg = getPlotSvg(dom, event);
     if (!cache || !svg || !state.currentAnalysis || !state.currentAnalysis.rows || !state.currentAnalysis.rows.length) {
@@ -641,32 +1273,33 @@
       return;
     }
 
-    tooltip.innerHTML = renderPlotTooltipContent(best);
-    tooltip.style.opacity = "1";
-    tooltip.setAttribute("aria-hidden", "false");
-    const offset = 16;
-    const gap = 8;
-    const pageLeft = window.scrollX;
-    const pageTop = window.scrollY;
-    const viewportRight = pageLeft + window.innerWidth;
-    const viewportBottom = pageTop + window.innerHeight;
-    let left = event.clientX + window.scrollX + offset;
-    let top = event.clientY + window.scrollY + offset;
-    const tooltipWidth = tooltip.offsetWidth;
-    const tooltipHeight = tooltip.offsetHeight;
+    showPlotTooltip(renderPlotTooltipContent(best), event);
+  }
 
-    if (left + tooltipWidth + gap > viewportRight) {
-      left = event.clientX + window.scrollX - tooltipWidth - offset;
-    }
-    if (top + tooltipHeight + gap > viewportBottom) {
-      top = event.clientY + window.scrollY - tooltipHeight - offset;
-    }
+  function renderLegendTooltipContent(title) {
+    return `
+      <strong>Low Confidence</strong>
+      <div>${escapeHtml(title || "Low-confidence region, where the inverse problem is poorly conditioned.")}</div>
+    `;
+  }
 
-    left = Math.max(pageLeft + gap, Math.min(left, viewportRight - tooltipWidth - gap));
-    top = Math.max(pageTop + gap, Math.min(top, viewportBottom - tooltipHeight - gap));
-
-    tooltip.style.left = `${left}px`;
-    tooltip.style.top = `${top}px`;
+  function bindLegendTooltip(dom) {
+    if (!dom || !dom.plot) return;
+    const legend = dom.plot.querySelector(".hpa-plot-legend-low-confidence");
+    if (!legend) return;
+    const tooltipTitle =
+      dom.lowConfidence && dom.lowConfidence.title
+        ? dom.lowConfidence.title
+        : "Low-confidence region, where the inverse problem is poorly conditioned.";
+    const showLegendTooltip = (event) => {
+      showPlotTooltip(renderLegendTooltipContent(tooltipTitle), event);
+    };
+    legend.setAttribute("tabindex", "0");
+    legend.addEventListener("pointerenter", showLegendTooltip);
+    legend.addEventListener("pointermove", showLegendTooltip);
+    legend.addEventListener("focus", showLegendTooltip);
+    legend.addEventListener("pointerleave", hidePlotTooltip);
+    legend.addEventListener("blur", hidePlotTooltip);
   }
 
   function renderPlotTooltipContent(target) {
@@ -1004,10 +1637,24 @@
     };
   }
 
+  function getDiffusionDisplayRows(analysis) {
+    const rows = [];
+    if (analysis && Array.isArray(analysis.previewRows)) {
+      rows.push(...analysis.previewRows);
+    }
+    if (analysis && Array.isArray(analysis.outputSmoothedPreviewRows) && analysis.outputSmoothedPreviewRows.length) {
+      rows.push(...analysis.outputSmoothedPreviewRows);
+    }
+    return rows;
+  }
+
   function getDiffusionBaseRanges(analysis, factor) {
-    const rows = analysis && analysis.previewRows ? analysis.previewRows : [];
+    const rows = getDiffusionDisplayRows(analysis);
     const points = rows
-      .map((row) => ({ x: row.time, y: convertDiffusivityToDisplay(row.diffusivity) }))
+      .map((row) => ({
+        x: row.time,
+        y: convertDiffusivityToDisplay(Number.isFinite(row.smoothedDiffusivity) ? row.smoothedDiffusivity : row.diffusivity),
+      }))
       .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
     if (!points.length) {
       return { xMin: 0, xMax: 1, yMin: 0, yMax: 1 };
@@ -1018,9 +1665,12 @@
   }
 
   function getDiffusionPlotRanges(analysis, scaleMode, factor) {
-    const rows = analysis && analysis.previewRows ? analysis.previewRows : [];
+    const rows = getDiffusionDisplayRows(analysis);
     const points = rows
-      .map((row) => ({ x: row.time, y: convertDiffusivityToDisplay(row.diffusivity) }))
+      .map((row) => ({
+        x: row.time,
+        y: convertDiffusivityToDisplay(Number.isFinite(row.smoothedDiffusivity) ? row.smoothedDiffusivity : row.diffusivity),
+      }))
       .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
     if (!points.length) {
       return { xMin: 0, xMax: 1, yMin: 0, yMax: 1 };
@@ -1240,7 +1890,7 @@
       state.plotViewport = null;
       setStatus(dom, "Could not find a clean two-column input in the pasted text.", "error");
       setIssues(dom, buildFailureMessages(raw, manualDecimal, parseResult.failure));
-      renderEmptyTable(dom);
+      renderEmptyTable(dom, null);
       updateSummary(dom, null);
       renderPlotEmpty(dom);
       return;
@@ -1258,12 +1908,26 @@
       if (dom.steadyValue) dom.steadyValue.value = "";
     }
 
-    state.currentParse = config;
-    state.currentAnalysis = buildAnalysis(dom, config);
+    const rawRows = config.rows.map(cloneRow);
+    const inputSmoothing = readInputSmoothingConfig(dom);
+    const outputSmoothing = readOutputSmoothingConfig(dom);
+    const activeRows = applyInputSmoothing(rawRows, inputSmoothing);
+    const workingConfig = {
+      ...config,
+      rawRows,
+      rows: activeRows,
+      smoothing: {
+        input: inputSmoothing,
+        output: outputSmoothing,
+      },
+    };
+
+    state.currentParse = workingConfig;
+    state.currentAnalysis = buildAnalysis(dom, workingConfig);
     if (source === "paste" || source === "file") {
       state.plotViewport = null;
     }
-    renderParsed(dom, config, state.currentAnalysis);
+    renderParsed(dom, workingConfig, state.currentAnalysis);
   }
 
   function bestParse(raw, forcedDecimal) {
@@ -1452,7 +2116,10 @@
     const displayUnit = getDisplayUnit(dom);
     const t0Offset = parseNumberInput(dom.t0Offset ? dom.t0Offset.value : null) || 0;
     const cropRange = parseRangeSpec(dom.cropRange ? dom.cropRange.value : "");
-    const sourceRows = config.rows.slice();
+    const sourceRows = Array.isArray(config.rows) ? config.rows.map(cloneRow) : [];
+    const rawRows = Array.isArray(config.rawRows) ? config.rawRows.map(cloneRow) : sourceRows.map(cloneRow);
+    const inputSmoothing = config.smoothing && config.smoothing.input ? { ...DEFAULT_INPUT_SMOOTHING, ...config.smoothing.input } : readInputSmoothingConfig(dom);
+    const outputSmoothing = config.smoothing && config.smoothing.output ? { ...DEFAULT_OUTPUT_SMOOTHING, ...config.smoothing.output } : readOutputSmoothingConfig(dom);
     const baseline = resolveReferenceRows(sourceRows, dom.baselineValue ? dom.baselineValue.value : null, "baseline", inputUnit, displayUnit);
     const steady = resolveReferenceRows(sourceRows, dom.steadyValue ? dom.steadyValue.value : null, "steady", inputUnit, displayUnit);
     let rows = applyTimeOffsetRows(sourceRows, t0Offset, baseline);
@@ -1479,11 +2146,15 @@
       return {
         rows: [],
         previewRows: [],
+        outputSmoothedPreviewRows: [],
         baseline,
         steady,
         thicknessMm: null,
         normalizedAvailable: false,
         diagnostics,
+        inputSmoothing,
+        outputSmoothing,
+        rawRows,
         issues,
         notes,
       };
@@ -1524,6 +2195,7 @@
         lowConfidence: false,
       };
     });
+    const outputSmoothedPreviewRows = applyOutputSmoothing(previewRows, outputSmoothing);
 
     const inverseConfidence =
       normalizedAvailable && thicknessMm != null
@@ -1556,18 +2228,22 @@
     return {
       rows,
       previewRows,
+      outputSmoothedPreviewRows,
       inverseConfidence,
-        baseline,
-        steady,
-        thicknessMm,
-        normalizedAvailable,
-        diagnostics,
-        classical,
-        fit,
-        issues,
-        notes,
-      };
-    }
+      baseline,
+      steady,
+      thicknessMm,
+      normalizedAvailable,
+      diagnostics,
+      classical,
+      fit,
+      inputSmoothing,
+      outputSmoothing,
+      rawRows,
+      issues,
+      notes,
+    };
+  }
 
   function recordSolverDiagnostics(diagnostics, evalResult) {
     if (!diagnostics || !evalResult) return;
@@ -1592,8 +2268,8 @@
     }
   }
 
-    function renderParsed(dom, config, analysis) {
-      setStatus(dom, "Loaded data.", "ok");
+  function renderParsed(dom, config, analysis) {
+    setStatus(dom, "Loaded data.", "ok");
 
     const warnings = [];
     if (config.headerLikely) {
@@ -1602,30 +2278,31 @@
     warnings.push(...analysis.notes);
     setIssues(dom, dedupe([...warnings, ...analysis.issues]).filter(Boolean));
 
-      syncReferenceControls(dom, analysis);
-      updateSummary(dom, analysis);
-      renderDiagnostics(dom, analysis);
-      renderDiagnosticDrawer(dom, state.diagnosticReport);
-      renderResults(dom, analysis);
-      syncFitToggle(dom, analysis.fit);
-      renderPreview(dom, analysis);
-      renderPlot(dom, analysis);
-    }
+    syncReferenceControls(dom, analysis);
+    updateSummary(dom, analysis);
+    renderDiagnostics(dom, analysis);
+    renderDiagnosticDrawer(dom, state.diagnosticReport);
+    renderResults(dom, analysis);
+    syncFitToggle(dom, analysis.fit);
+    renderPreview(dom, analysis);
+    renderPlot(dom, analysis);
+  }
 
   function renderDerivedViews(dom) {
     if (!state.currentAnalysis || !state.currentParse) {
       renderEmpty(dom, "Paste data to begin.");
       return;
-      }
-      syncReferenceControls(dom, state.currentAnalysis);
-      updateSummary(dom, state.currentAnalysis);
-      renderDiagnostics(dom, state.currentAnalysis);
-      renderDiagnosticDrawer(dom, state.diagnosticReport);
-      renderResults(dom, state.currentAnalysis);
-      syncFitToggle(dom, state.currentAnalysis.fit);
-      renderPreview(dom, state.currentAnalysis);
-      renderPlot(dom, state.currentAnalysis);
     }
+
+    syncReferenceControls(dom, state.currentAnalysis);
+    updateSummary(dom, state.currentAnalysis);
+    renderDiagnostics(dom, state.currentAnalysis);
+    renderDiagnosticDrawer(dom, state.diagnosticReport);
+    renderResults(dom, state.currentAnalysis);
+    syncFitToggle(dom, state.currentAnalysis.fit);
+    renderPreview(dom, state.currentAnalysis);
+    renderPlot(dom, state.currentAnalysis);
+  }
 
   function syncReferenceControls(dom, analysis) {
     const baselineValue = analysis && analysis.baseline && Number.isFinite(analysis.baseline.value) ? analysis.baseline.value : null;
@@ -1815,25 +2492,34 @@
   function renderPreview(dom, analysis) {
     const previewRows = analysis && analysis.previewRows ? analysis.previewRows : [];
     if (!previewRows.length) {
-      renderEmptyTable(dom);
+      renderEmptyTable(dom, analysis);
       return;
     }
 
     const unitLabel = formatUnitLabel(getDisplayUnit(dom));
+    const showSmoothed = !!(analysis && Array.isArray(analysis.outputSmoothedPreviewRows) && analysis.outputSmoothedPreviewRows.length);
+    const smoothedRows = showSmoothed ? analysis.outputSmoothedPreviewRows : [];
     dom.previewBody.innerHTML = previewRows
       .map((row, index) => {
+        const smoothedRow = smoothedRows[index] || null;
         const currentCell = Number.isFinite(row.currentDisplay)
           ? formatNumber(row.currentDisplay)
           : formatNumber(convertCurrentValue(row.current, dom.currentUnit ? dom.currentUnit.value : "A", getDisplayUnit(dom)));
         const diffusivityCell = Number.isFinite(row.diffusivity)
           ? formatDiffusivity(row.diffusivity)
           : '<span class="hpa-missing-value" title="This value could not be computed because it is outside the baseline-to-steady-state interval. It shows as NaN here, but exports as an empty CSV cell for Excel-friendly import.">NaN</span>';
+        const smoothedDiffusivityCell = showSmoothed
+          ? Number.isFinite(smoothedRow && smoothedRow.smoothedDiffusivity)
+            ? formatDiffusivity(smoothedRow.smoothedDiffusivity)
+            : '<span class="hpa-missing-value" title="This value could not be computed because it is outside the baseline-to-steady-state interval. It shows as NaN here, but exports as an empty CSV cell for Excel-friendly import.">NaN</span>'
+          : "";
         return `
           <tr>
             <td>${index + 1}</td>
             <td>${formatNumber(row.time)}</td>
             <td>${currentCell}</td>
             <td>${diffusivityCell}</td>
+            ${showSmoothed ? `<td>${smoothedDiffusivityCell}</td>` : ""}
           </tr>
         `;
       })
@@ -1841,12 +2527,15 @@
 
     const table = dom.previewBody.closest("table");
     const headerCells = table ? table.querySelectorAll("thead th") : null;
-      if (headerCells && headerCells[2]) {
-        headerCells[2].textContent = `Current [${unitLabel}]`;
-      }
+    if (headerCells && headerCells[2]) {
+      headerCells[2].textContent = `Current [${unitLabel}]`;
     }
+    if (dom.previewSmoothedHeader) {
+      dom.previewSmoothedHeader.hidden = !showSmoothed;
+    }
+  }
 
-    function buildClassicalResults(previewRows, thicknessMm, iMax) {
+  function buildClassicalResults(previewRows, thicknessMm, iMax) {
       const thicknessMeters = thicknessMm / 1000;
       const rows = (previewRows || [])
         .map((row) => ({
@@ -1864,23 +2553,23 @@
       const inverseFickian = solveInverseFickianWindow(previewRows, thicknessMeters);
 
       return { breakthrough, timeLag, inflection, inverseFickian };
-    }
+  }
 
-    function buildEmptyClassicalResults() {
+  function buildEmptyClassicalResults() {
       return {
         breakthrough: { available: false, note: "Load data to calculate breakthrough time." },
         timeLag: { available: false, note: "Load data to calculate time lag." },
         inflection: { available: false, note: "Load data to calculate the inflection point." },
         inverseFickian: { available: false, note: "Load data to estimate the inverse Fickian window." },
       };
-    }
+  }
 
-    function buildEmptyFitResult() {
+  function buildEmptyFitResult() {
     return {
       available: false,
       note: "Load data to fit D and t0 together.",
     };
-    }
+  }
 
     function solveThresholdMethod(rows, thicknessMeters, threshold, coefficient, label, formulaHtml) {
       const crossing = findCrossingTime(rows, threshold);
@@ -2358,6 +3047,12 @@
         inverseSensitivity: row.inverseSensitivity,
       }))
       .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
+    const smoothedDiffusionPoints = (analysis.outputSmoothedPreviewRows || [])
+      .map((row) => ({
+        x: row.time,
+        y: convertDiffusivityToDisplay(row.smoothedDiffusivity),
+      }))
+      .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
 
     if (!currentPoints.length) {
       renderPlotEmpty(dom);
@@ -2366,6 +3061,7 @@
 
     const orderedCurrent = currentPoints.slice().sort((a, b) => a.x - b.x);
     const orderedDiffusion = diffusionPoints.slice().sort((a, b) => a.x - b.x);
+    const orderedSmoothedDiffusion = smoothedDiffusionPoints.slice().sort((a, b) => a.x - b.x);
     const currentRanges = getCurrentPlotRanges(analysis, inputUnit, displayUnit);
     const diffusionBaseRanges = getDiffusionBaseRanges(analysis);
     const diffusionAxis = getDiffusionAxisScale(diffusionBaseRanges);
@@ -2387,6 +3083,19 @@
             inverseSensitivity: point.inverseSensitivity,
           }))
         : orderedScaledDiffusion;
+    const orderedScaledSmoothedDiffusion = orderedSmoothedDiffusion
+      .map((point) => ({
+        x: point.x,
+        y: point.y / diffusionAxis.factor,
+      }))
+      .filter((point) => diffusionScaleMode !== "log" || point.y > 0);
+    const smoothedDiffusionPlotPoints =
+      diffusionScaleMode === "log"
+        ? orderedScaledSmoothedDiffusion.map((point) => ({
+            x: point.x,
+            y: Math.log10(point.y),
+          }))
+        : orderedScaledSmoothedDiffusion;
     const xTicks = buildNiceTicks(currentRanges.xMin, currentRanges.xMax, 5);
     const xMinorTicks = buildLinearMinorTicks(currentRanges.xMin, currentRanges.xMax, xTicks, 4);
     const currentTicks = buildNiceTicks(currentRanges.yMin, currentRanges.yMax, 5);
@@ -2432,6 +3141,9 @@
     const diffusionPath = diffusionPlotPoints
       .map((point, index) => `${index === 0 ? "M" : "L"} ${scaleX(point.x).toFixed(2)} ${scaleDiffusionY(point.y).toFixed(2)}`)
       .join(" ");
+    const smoothedDiffusionPath = smoothedDiffusionPlotPoints
+      .map((point, index) => `${index === 0 ? "M" : "L"} ${scaleX(point.x).toFixed(2)} ${scaleDiffusionY(point.y).toFixed(2)}`)
+      .join(" ");
     const fit = analysis.fit;
     const fitVisible = !!(fit && fit.available && state.fitOverlayVisible);
     syncFitToggle(dom, fit);
@@ -2465,20 +3177,29 @@
     const legendTextGap = 12;
     const legendFontSize = 10.5;
     const lowConfidenceLegendText = "Low Confidence";
+    const lowConfidenceLegendTitle = dom.lowConfidence && dom.lowConfidence.title
+      ? dom.lowConfidence.title
+      : "Low-confidence region, where the inverse problem is poorly conditioned.";
     const diffusionPlotLegendText = "Apparent Diffusion Coefficient Dapp(t)";
+    const smoothedDiffusionPlotLegendText = "Smoothed Dapp(t)";
     const currentLegendText = "Measured Permeation Current I(t)";
     const fitLegendText = "Global Transient Fit";
     const showLowConfidenceLegend = lowConfidenceMode === "shaded";
+    const showSmoothedLegend = !!smoothedDiffusionPath;
     const showFitLegend = fitVisible && !!fitPath;
     const lowConfidenceLegendWidth = showLowConfidenceLegend
       ? legendLineWidth + legendTextGap + measureTextWidth(lowConfidenceLegendText, legendFontSize)
       : 0;
     const diffusionLegendWidth = legendLineWidth + legendTextGap + measureTextWidth(diffusionPlotLegendText, legendFontSize);
+    const smoothedDiffusionLegendWidth = showSmoothedLegend
+      ? legendLineWidth + legendTextGap + measureTextWidth(smoothedDiffusionPlotLegendText, legendFontSize)
+      : 0;
     const currentLegendWidth = legendLineWidth + legendTextGap + measureTextWidth(currentLegendText, legendFontSize);
     const fitLegendWidth = showFitLegend ? legendLineWidth + legendTextGap + measureTextWidth(fitLegendText, legendFontSize) : 0;
     const legendTotalWidth =
       (showLowConfidenceLegend ? lowConfidenceLegendWidth + legendGap : 0) +
       diffusionLegendWidth +
+      (showSmoothedLegend ? legendGap + smoothedDiffusionLegendWidth : 0) +
       legendGap +
       currentLegendWidth +
       (showFitLegend ? legendGap + fitLegendWidth : 0);
@@ -2487,22 +3208,29 @@
     parts.push(`
       <g class="hpa-plot-legend-group" transform="translate(${legendX} ${legendY})">
         ${showLowConfidenceLegend ? `
-        <g class="hpa-plot-legend-item hpa-plot-legend-low-confidence">
+        <g class="hpa-plot-legend-item hpa-plot-legend-low-confidence" aria-label="${escapeHtml(lowConfidenceLegendTitle)}">
           <line x1="0" y1="6" x2="18" y2="6" class="hpa-plot-legend-line hpa-plot-legend-low-confidence-line"></line>
           <text x="26" y="10">${lowConfidenceLegendText}</text>
         </g>` : ""}
         <g class="hpa-plot-legend-item hpa-plot-legend-diffusion" transform="translate(${(showLowConfidenceLegend ? lowConfidenceLegendWidth + legendGap : 0)} 0)">
           <line x1="0" y1="6" x2="18" y2="6" class="hpa-plot-legend-line"></line>
           <text x="26" y="10">
-            <tspan x="26" dy="0">Apparent Diffusion Coefficient </tspan><tspan font-style="italic">D</tspan><tspan baseline-shift="sub" font-size="8">inv</tspan><tspan>(t)</tspan>
+            <tspan x="26" dy="0">Apparent Diffusion Coefficient </tspan><tspan font-style="italic">D</tspan><tspan baseline-shift="sub" font-size="8">app</tspan><tspan>(t)</tspan>
           </text>
         </g>
-        <g class="hpa-plot-legend-item hpa-plot-legend-current" transform="translate(${(showLowConfidenceLegend ? lowConfidenceLegendWidth + legendGap : 0) + diffusionLegendWidth + legendGap} 0)">
+        ${showSmoothedLegend ? `
+        <g class="hpa-plot-legend-item hpa-plot-legend-diffusion-smoothed" transform="translate(${(showLowConfidenceLegend ? lowConfidenceLegendWidth + legendGap : 0) + diffusionLegendWidth + legendGap} 0)">
+          <line x1="0" y1="6" x2="18" y2="6" class="hpa-plot-legend-line"></line>
+          <text x="26" y="10">
+            <tspan x="26" dy="0">Smoothed </tspan><tspan font-style="italic">D</tspan><tspan baseline-shift="sub" font-size="8">app</tspan><tspan>(t)</tspan>
+          </text>
+        </g>` : ""}
+        <g class="hpa-plot-legend-item hpa-plot-legend-current" transform="translate(${(showLowConfidenceLegend ? lowConfidenceLegendWidth + legendGap : 0) + diffusionLegendWidth + (showSmoothedLegend ? legendGap + smoothedDiffusionLegendWidth : 0) + legendGap} 0)">
           <line x1="0" y1="6" x2="18" y2="6" class="hpa-plot-legend-line"></line>
           <text x="26" y="10">Measured Permeation Current I(t)</text>
         </g>
         ${showFitLegend ? `
-        <g class="hpa-plot-legend-item hpa-plot-legend-fit" transform="translate(${(showLowConfidenceLegend ? lowConfidenceLegendWidth + legendGap : 0) + diffusionLegendWidth + legendGap + currentLegendWidth + legendGap} 0)">
+        <g class="hpa-plot-legend-item hpa-plot-legend-fit" transform="translate(${(showLowConfidenceLegend ? lowConfidenceLegendWidth + legendGap : 0) + diffusionLegendWidth + (showSmoothedLegend ? legendGap + smoothedDiffusionLegendWidth : 0) + legendGap + currentLegendWidth + legendGap} 0)">
           <line x1="0" y1="6" x2="18" y2="6" class="hpa-plot-legend-line"></line>
           <text x="26" y="10">${fitLegendText}</text>
         </g>` : ""}
@@ -2598,6 +3326,9 @@
     } else if (diffusionPath) {
       parts.push(`<path class="hpa-plot-line hpa-plot-line-diffusion" d="${diffusionPath}"></path>`);
     }
+    if (smoothedDiffusionPath) {
+      parts.push(`<path class="hpa-plot-line hpa-plot-line-diffusion-smoothed" d="${smoothedDiffusionPath}"></path>`);
+    }
     if (currentPath) parts.push(`<path class="hpa-plot-line hpa-plot-line-current" d="${currentPath}"></path>`);
     if (fitVisible && fitPath) {
       parts.push(`<path class="hpa-plot-line hpa-plot-line-fit" d="${fitPath}"></path>`);
@@ -2680,6 +3411,7 @@
 
     dom.plot.innerHTML = parts.join("");
     hidePlotTooltip();
+    bindLegendTooltip(dom);
   }
 
   function renderPlotEmpty(dom) {
@@ -2867,6 +3599,14 @@
       currentUnit: dom.currentUnit ? dom.currentUnit.value : "A",
       plotUnit: dom.plotUnit ? dom.plotUnit.value : "uA",
       thickness: dom.thickness ? dom.thickness.value : "",
+      inputSmoothing: dom.inputSmoothing ? dom.inputSmoothing.value : DEFAULT_INPUT_SMOOTHING.method,
+      inputSmoothingWindow: dom.inputSmoothingWindow ? dom.inputSmoothingWindow.value : String(DEFAULT_INPUT_SMOOTHING.window),
+      inputSmoothingOrder: dom.inputSmoothingOrder ? dom.inputSmoothingOrder.value : String(DEFAULT_INPUT_SMOOTHING.order),
+      inputSmoothingSpan: dom.inputSmoothingSpan ? dom.inputSmoothingSpan.value : String(Math.round(DEFAULT_INPUT_SMOOTHING.span * 100)),
+      inputSmoothingRobustness: dom.inputSmoothingRobustness ? dom.inputSmoothingRobustness.value : String(DEFAULT_INPUT_SMOOTHING.robustness),
+      inputSmoothingStrength: dom.inputSmoothingStrength ? dom.inputSmoothingStrength.value : String(DEFAULT_INPUT_SMOOTHING.strength),
+      inputSmoothingDegree: dom.inputSmoothingDegree ? dom.inputSmoothingDegree.value : String(DEFAULT_INPUT_SMOOTHING.degree),
+      outputSmoothing: dom.outputSmoothing ? dom.outputSmoothing.value : DEFAULT_OUTPUT_SMOOTHING.method,
       t0Offset: dom.t0Offset ? dom.t0Offset.value : "0",
       decimal: dom.decimal ? dom.decimal.value : ".",
       cropRange: dom.cropRange ? dom.cropRange.value : "",
@@ -2895,6 +3635,14 @@
     if (dom.currentUnit && snapshot.currentUnit) dom.currentUnit.value = snapshot.currentUnit;
     if (dom.plotUnit && snapshot.plotUnit) dom.plotUnit.value = snapshot.plotUnit;
     if (dom.thickness && snapshot.thickness != null) dom.thickness.value = snapshot.thickness;
+    if (dom.inputSmoothing && snapshot.inputSmoothing) dom.inputSmoothing.value = snapshot.inputSmoothing;
+    if (dom.inputSmoothingWindow && snapshot.inputSmoothingWindow != null) dom.inputSmoothingWindow.value = snapshot.inputSmoothingWindow;
+    if (dom.inputSmoothingOrder && snapshot.inputSmoothingOrder != null) dom.inputSmoothingOrder.value = snapshot.inputSmoothingOrder;
+    if (dom.inputSmoothingSpan && snapshot.inputSmoothingSpan != null) dom.inputSmoothingSpan.value = snapshot.inputSmoothingSpan;
+    if (dom.inputSmoothingRobustness && snapshot.inputSmoothingRobustness != null) dom.inputSmoothingRobustness.value = snapshot.inputSmoothingRobustness;
+    if (dom.inputSmoothingStrength && snapshot.inputSmoothingStrength != null) dom.inputSmoothingStrength.value = snapshot.inputSmoothingStrength;
+    if (dom.inputSmoothingDegree && snapshot.inputSmoothingDegree != null) dom.inputSmoothingDegree.value = snapshot.inputSmoothingDegree;
+    if (dom.outputSmoothing && snapshot.outputSmoothing) dom.outputSmoothing.value = snapshot.outputSmoothing;
     if (dom.t0Offset && snapshot.t0Offset != null) dom.t0Offset.value = snapshot.t0Offset;
     if (dom.decimal && snapshot.decimal) dom.decimal.value = snapshot.decimal;
     if (dom.cropRange) dom.cropRange.value = snapshot.cropRange || "";
@@ -2912,6 +3660,8 @@
     state.plotViewport = snapshot.plotViewport ? { ...snapshot.plotViewport } : null;
     state.plotLowConfidenceMode = snapshot.plotLowConfidenceMode || "shaded";
     state.plotDiffusionScale = snapshot.plotDiffusionScale || (dom.diffusionScale && dom.diffusionScale.checked ? "log" : "linear");
+    syncSmoothingControls(dom);
+    syncInputSmoothingStrengthDisplay(dom);
     syncT0OffsetDisplay(dom);
     scheduleParse(dom, "selection");
   }
@@ -3479,7 +4229,7 @@
   function renderEmpty(dom, message) {
     setStatus(dom, message, "");
     renderDiagnostics(dom, null);
-    renderEmptyTable(dom);
+    renderEmptyTable(dom, state.currentAnalysis);
     setIssues(dom, []);
     renderResults(dom, null);
     syncFitToggle(dom, null);
@@ -3488,23 +4238,12 @@
     hidePlotTooltip();
   }
 
-  async function loadDebugDefaultInput(dom) {
-    if (!dom || !dom.input || String(dom.input.value || "").trim()) return;
-    try {
-      const response = await fetch(encodeURI("./default val for debug.md"), { cache: "no-store" });
-      if (!response.ok) return;
-      const text = await response.text();
-      const trimmed = text.trimEnd();
-      if (!trimmed || String(dom.input.value || "").trim()) return;
-      dom.input.value = trimmed;
-      scheduleParse(dom, "paste");
-    } catch {
-      // Optional debug seed only.
+  function renderEmptyTable(dom, analysis) {
+    const showSmoothed = !!(analysis && Array.isArray(analysis.outputSmoothedPreviewRows) && analysis.outputSmoothedPreviewRows.length);
+    dom.previewBody.innerHTML = `<tr><td colspan="${showSmoothed ? 5 : 4}" class="hpa-empty">No valid rows parsed yet.</td></tr>`;
+    if (dom.previewSmoothedHeader) {
+      dom.previewSmoothedHeader.hidden = !showSmoothed;
     }
-  }
-
-  function renderEmptyTable(dom) {
-    dom.previewBody.innerHTML = `<tr><td colspan="4" class="hpa-empty">No valid rows parsed yet.</td></tr>`;
   }
 
   function parseRangeSpec(raw) {
@@ -3669,12 +4408,21 @@
     const inputUnit = dom.currentUnit ? dom.currentUnit.value : "A";
     const displayUnit = getDisplayUnit(dom);
     const exportRows = Array.isArray(analysis.previewRows) && analysis.previewRows.length ? analysis.previewRows : analysis.rows;
+    const showSmoothed = !!(analysis && Array.isArray(analysis.outputSmoothedPreviewRows) && analysis.outputSmoothedPreviewRows.length);
+    const smoothedRows = showSmoothed ? analysis.outputSmoothedPreviewRows : [];
     const rows = [
-      ["Time [s]", `Current [${formatUnitLabel(displayUnit)}]`, "D_app [m^2/s]"],
-      ...exportRows.map((row) => {
+      showSmoothed
+        ? ["Time [s]", `Current [${formatUnitLabel(displayUnit)}]`, "D_app [m^2/s]", "Smoothed D_app [m^2/s]"]
+        : ["Time [s]", `Current [${formatUnitLabel(displayUnit)}]`, "D_app [m^2/s]"],
+      ...exportRows.map((row, index) => {
         const current = convertCurrentValue(row.current, inputUnit, displayUnit);
         const diffusivity = Number.isFinite(row.diffusivity) ? row.diffusivity : null;
-        return [row.time, current, diffusivity];
+        if (!showSmoothed) {
+          return [row.time, current, diffusivity];
+        }
+        const smoothedRow = smoothedRows[index] || null;
+        const smoothedDiffusivity = Number.isFinite(smoothedRow && smoothedRow.smoothedDiffusivity) ? smoothedRow.smoothedDiffusivity : null;
+        return [row.time, current, diffusivity, smoothedDiffusivity];
       }),
     ];
     return rows
@@ -3697,6 +4445,7 @@
     const liveGridMinor = dom.plot ? dom.plot.querySelector(".hpa-plot-grid-minor") : null;
     const liveCurrentLine = dom.plot ? dom.plot.querySelector(".hpa-plot-line-current") : null;
     const liveDiffusionLine = dom.plot ? dom.plot.querySelector(".hpa-plot-line-diffusion") : null;
+    const liveSmoothedDiffusionLine = dom.plot ? dom.plot.querySelector(".hpa-plot-line-diffusion-smoothed") : null;
     const liveFitLine = dom.plot ? dom.plot.querySelector(".hpa-plot-line-fit") : null;
     const liveAxisLabel = dom.plot ? dom.plot.querySelector(".hpa-plot-axis-label") : null;
     const liveAxisTick = dom.plot ? dom.plot.querySelector(".hpa-plot-axis-tick") : null;
@@ -3711,6 +4460,7 @@
     const grid = readStyleValue(liveGridMajor || liveGridMinor, "stroke", rootStyle.getPropertyValue("--hpa-plot-grid").trim() || "#e2e8f0");
     const currentColor = readStyleValue(liveCurrentLine, "stroke", "#2563eb");
     const diffusionColor = readStyleValue(liveDiffusionLine, "stroke", "#111111");
+    const smoothedDiffusionColor = readStyleValue(liveSmoothedDiffusionLine, "stroke", diffusionColor);
     const diffusionEdgeColor = readStyleValue(liveLowConfidenceLine, "stroke", rootStyle.getPropertyValue("--hpa-plot-diffusion-edge-color").trim() || "#6b7280");
     const fitColor = readStyleValue(liveFitLine, "stroke", rootStyle.getPropertyValue("--hpa-plot-fit-color").trim() || "#7c3aed");
     const ink = readStyleValue(liveLegendText || liveAxisLabel, "fill", rootStyle.getPropertyValue("--hpa-plot-ink").trim() || "#111827");
@@ -3730,6 +4480,7 @@
       .hpa-plot-line{fill:none;stroke-width:${lineWidth};stroke-linejoin:round;stroke-linecap:butt}
       .hpa-plot-line-current{stroke:${currentColor}}
       .hpa-plot-line-diffusion{stroke:${diffusionColor}}
+      .hpa-plot-line-diffusion-smoothed{stroke:${smoothedDiffusionColor};stroke-dasharray:5 3;opacity:0.72}
       .hpa-plot-line-fit{stroke:${fitColor}}
       .hpa-plot-line-diffusion-edge{stroke:${diffusionEdgeColor};opacity:1}
       .hpa-plot-line-diffusion-hidden{stroke:${diffusionEdgeColor};opacity:0}
@@ -3743,6 +4494,7 @@
       .hpa-plot-legend-group text{fill:${ink};font-weight:400}
       .hpa-plot-legend-low-confidence-line{stroke:${diffusionEdgeColor};opacity:1}
       .hpa-plot-legend-diffusion .hpa-plot-legend-line{stroke:${diffusionColor}}
+      .hpa-plot-legend-diffusion-smoothed .hpa-plot-legend-line{stroke:${smoothedDiffusionColor};stroke-dasharray:5 3}
       .hpa-plot-legend-current .hpa-plot-legend-line{stroke:${currentColor}}
       .hpa-plot-legend-fit .hpa-plot-legend-line{stroke:${fitColor}}
       .hpa-plot-ref-hitline{stroke:transparent;stroke-width:14;fill:none}

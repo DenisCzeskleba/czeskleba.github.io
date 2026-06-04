@@ -15,7 +15,7 @@ permalink: /hpa/
           </div>
         <div class="hpa-intro-actions">
           <button type="button" class="hpa-button is-secondary" id="hpa-clear" title="Clear pasted data and reset the preview.">Clear</button>
-          <button type="button" class="hpa-button is-secondary" id="hpa-upload-trigger" title="Upload a CSV or TXT file into the same parser.">File Upload</button>
+          <button type="button" class="hpa-button is-secondary" id="hpa-upload-trigger" title="Upload a plain two-column file with time first and current second. No headers.">File Upload</button>
           <button type="button" class="hpa-button is-accent hpa-help-open" data-action="open-help" title="Open the short usage guide.">Help</button>
         </div>
       </div>
@@ -61,12 +61,77 @@ permalink: /hpa/
             <input id="hpa-thickness" class="hpa-number" type="text" inputmode="decimal" lang="en-US" value="0.50" placeholder="0.50" title="Enter the membrane thickness in millimeters." />
             </div>
           </div>
-          <div class="hpa-control" style="margin-top:0.75rem;">
-            <label for="hpa-t0-offset" title="Set the start time offset. Negative values remove early time; positive values prepend baseline time.">Start Time Offset (t<sub>0</sub>)</label>
-            <input id="hpa-t0-offset" type="range" min="-180" max="180" step="0.1" value="0" title="Set the start time offset. Negative values remove early time; positive values prepend baseline time." />
-            <div class="hpa-slider-value" id="hpa-t0-offset-value">0.0 s</div>
-          </div>
         </section>
+
+        <div class="hpa-control" style="margin-top:0.25rem;">
+          <label for="hpa-t0-offset" title="Set the start time offset. Negative values remove early time; positive values prepend baseline time.">Start Time Offset (t<sub>0</sub>)</label>
+          <input id="hpa-t0-offset" type="range" min="-180" max="180" step="0.1" value="0" title="Set the start time offset. Negative values remove early time; positive values prepend baseline time." />
+          <div class="hpa-slider-value" id="hpa-t0-offset-value">0.0 s</div>
+        </div>
+
+        <details class="hpa-section hpa-smoothing-section">
+          <summary>
+            <h3>EXPERIMENTAL: SMOOTHING</h3>
+          </summary>
+          <div class="hpa-section-divider" aria-hidden="true"></div>
+          <div class="hpa-control">
+            <label for="hpa-input-smoothing" title="Choose how to smooth the measured input data before analysis.">Measured Current Smoothing</label>
+            <select id="hpa-input-smoothing" class="hpa-select" title="Choose how to smooth the measured input data before analysis.">
+              <option value="none" selected title="No smoothing.">None</option>
+              <option value="savitzky-golay" title="Fast, shape-preserving local polynomial smoothing.">Savitzky-Golay</option>
+              <option value="lowess" title="Robust local regression; good for irregular time steps.">LOWESS</option>
+              <option value="spline" title="Smooth penalized fit; can flatten sharp features.">Smoothing spline</option>
+              <option value="polynomial" title="Global polynomial fit; simple but can oscillate.">Polynomial</option>
+            </select>
+          </div>
+          <div class="hpa-smoothing-panels">
+            <div class="hpa-smoothing-panel" data-input-smoothing-panel="savitzky-golay" hidden>
+              <div class="hpa-control-grid">
+                <div class="hpa-control">
+                  <label for="hpa-input-smoothing-window" title="Savitzky-Golay window size in samples.">Window</label>
+                  <input id="hpa-input-smoothing-window" class="hpa-number" type="number" min="3" max="101" step="2" value="9" title="Savitzky-Golay window size in samples." />
+                </div>
+                <div class="hpa-control">
+                  <label for="hpa-input-smoothing-order" title="Polynomial order used inside each local window.">Polynomial Order</label>
+                  <input id="hpa-input-smoothing-order" class="hpa-number" type="number" min="1" max="8" step="1" value="3" title="Polynomial order used inside each local window." />
+                </div>
+              </div>
+            </div>
+            <div class="hpa-smoothing-panel" data-input-smoothing-panel="lowess" hidden>
+              <div class="hpa-control-grid">
+                <div class="hpa-control">
+                  <label for="hpa-input-smoothing-span" title="LOWESS span in percent of the trace.">Span [%]</label>
+                  <input id="hpa-input-smoothing-span" class="hpa-number" type="number" min="5" max="100" step="1" value="35" title="LOWESS span in percent of the trace." />
+                </div>
+                <div class="hpa-control">
+                  <label for="hpa-input-smoothing-robustness" title="Robustness iterations for LOWESS.">Robustness Iterations</label>
+                  <input id="hpa-input-smoothing-robustness" class="hpa-number" type="number" min="0" max="5" step="1" value="2" title="Robustness iterations for LOWESS." />
+                </div>
+              </div>
+            </div>
+            <div class="hpa-smoothing-panel" data-input-smoothing-panel="spline" hidden>
+              <div class="hpa-control">
+                <label for="hpa-input-smoothing-strength" title="Spline smoothing strength. Higher values are smoother.">Smoothing Strength</label>
+                <input id="hpa-input-smoothing-strength" type="range" min="0" max="100" step="1" value="60" title="Spline smoothing strength. Higher values are smoother." />
+                <div class="hpa-slider-value" id="hpa-input-smoothing-strength-value">60%</div>
+              </div>
+            </div>
+            <div class="hpa-smoothing-panel" data-input-smoothing-panel="polynomial" hidden>
+              <div class="hpa-control">
+                <label for="hpa-input-smoothing-degree" title="Global polynomial degree used for smoothing.">Degree</label>
+                <input id="hpa-input-smoothing-degree" class="hpa-number" type="number" min="1" max="12" step="1" value="4" title="Global polynomial degree used for smoothing." />
+              </div>
+            </div>
+          </div>
+          <div class="hpa-control">
+            <label for="hpa-output-smoothing" title="Choose how to smooth the apparent diffusion output for display and export.">Apparent Diffusion Smoothing</label>
+            <select id="hpa-output-smoothing" class="hpa-select" title="Choose how to smooth the apparent diffusion output for display and export.">
+              <option value="none" selected title="No smoothing.">None</option>
+              <option value="savitzky-golay" title="Fast, shape-preserving local polynomial smoothing.">Savitzky-Golay</option>
+              <option value="lowess" title="Robust local regression; good for irregular time steps.">LOWESS</option>
+            </select>
+          </div>
+        </details>
 
         <input
           id="hpa-file"
@@ -74,7 +139,7 @@ permalink: /hpa/
           hidden
           type="file"
           accept=".csv,.txt,.tsv,text/plain,text/csv"
-          title="Upload a CSV or TXT file into the same parser."
+          title="Upload a plain two-column file with time first and current second. No headers."
         />
       </div>
 
@@ -227,7 +292,8 @@ permalink: /hpa/
                 <th>#</th>
                 <th>Time [s]</th>
                 <th>Current</th>
-                      <th>Apparent Diffusion Coefficient D<sub>app</sub> [mm&sup2;/s]</th>
+                <th>Apparent Diffusion Coefficient D<sub>app</sub> [mm&sup2;/s]</th>
+                <th id="hpa-preview-smoothed-header" hidden>Smoothed D<sub>app</sub> [mm&sup2;/s]</th>
               </tr>
             </thead>
             <tbody id="hpa-preview-body">
@@ -287,10 +353,23 @@ permalink: /hpa/
           <li>The baseline and steady-state fields define the normalization used by the analysis. If they are left blank, HPA starts from the minimum and maximum values in the loaded data.</li>
           <li>You can type baseline and steady-state values manually, or drag the reference lines directly on the plot. The values follow the currently selected display unit.</li>
           <li>The <strong>Start Time Offset</strong> control shifts the trace before analysis. A positive offset prepends baseline time and moves the transient forward. A negative offset removes early time and shifts the remaining data back to zero.</li>
-              <li>Plot Options let you change the y-axis unit, choose colors for the main lines, decide how inverse-conditioning-based low-confidence diffusion segments are drawn, turn grid lines and minor grid lines on or off, and switch the diffusion axis between linear and logarithmic scaling.</li>
+          <li>Plot Options let you change the y-axis unit, choose colors for the main lines, decide how inverse-conditioning-based low-confidence diffusion segments are drawn, turn grid lines and minor grid lines on or off, and switch the diffusion axis between linear and logarithmic scaling.</li>
           <li>The <strong>Reset</strong> button restores the default plot view. The <strong>Hide/Show</strong> buttons toggle the reference markers without deleting their values.</li>
         </ul>
         <p>The plot itself is interactive. You can zoom and pan it directly, then use <strong>Reset</strong> to return to the default view. If you drag the baseline or steady-state line, HPA updates the corresponding value and reruns the analysis.</p>
+      </div>
+
+      <div>
+        <h3>Smoothing</h3>
+        <p>Smoothing is experimental. The input smoother changes the active series that analysis reads, while the output smoother only changes how the apparent diffusivity is shown and exported.</p>
+        <ul class="hpa-help-list">
+          <li><strong>Savitzky-Golay</strong> is a centered local polynomial smoother. It is fast and shape-preserving, so it is a good first choice when the time steps are regular or close to regular.</li>
+          <li><strong>LOWESS</strong> is a local regression smoother with distance weighting. It is more robust to irregular spacing and local noise, but it is slower than Savitzky-Golay.</li>
+          <li><strong>Smoothing spline</strong> fits a smooth curve through the input while penalizing roughness. It can work well on coarse or uneven traces, but stronger settings can flatten sharp transients.</li>
+          <li><strong>Polynomial</strong> fits one global polynomial to the full trace. It is simple and easy to try, but higher degrees can oscillate and distort the curve if the trace is long or noisy.</li>
+          <li>The short tooltips on each dropdown repeat the one-line version of these tradeoffs so you do not have to open Help every time.</li>
+          <li>If output smoothing is enabled, the preview table and CSV export show both the raw and smoothed <code>D<sub>app</sub></code> values.</li>
+        </ul>
       </div>
 
       <div>
@@ -315,7 +394,7 @@ permalink: /hpa/
         <ul class="hpa-help-list">
           <li><strong>PNG</strong> saves the current plot as an image.</li>
           <li><strong>SVG</strong> saves the current plot as a vector graphic.</li>
-          <li><strong>Data</strong> exports the processed table with time, current, and <code>D<sub>app</sub></code>.</li>
+          <li><strong>Data</strong> exports the processed table with time, current, and <code>D<sub>app</sub></code>. If output smoothing is enabled, the export also includes the smoothed <code>D<sub>app</sub></code> column.</li>
         </ul>
         <p>The export always reflects the current display settings, including the selected plot unit, reference values, and plot view. If you change the plot or the controls, export again to capture the updated state.</p>
       </div>
