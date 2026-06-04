@@ -14,7 +14,7 @@ permalink: /hpa/
             <h2>Input</h2>
           </div>
         <div class="hpa-intro-actions">
-          <button type="button" class="hpa-button is-secondary" id="hpa-clear" title="Clear pasted data and reset the preview.">Clear</button>
+          <button type="button" class="hpa-button is-secondary" id="hpa-example" title="Load the permeation example input.">Example</button>
           <button type="button" class="hpa-button is-secondary" id="hpa-upload-trigger" title="Upload a plain two-column file with time first and current second. No headers.">File Upload</button>
           <button type="button" class="hpa-button is-accent hpa-help-open" data-action="open-help" title="Open the short usage guide.">Help</button>
         </div>

@@ -160,7 +160,7 @@
         diagnosticCandidates: document.getElementById("hpa-diagnostic-candidates"),
         diagnosticNotes: document.getElementById("hpa-diagnostic-notes"),
         downloadButtons: root.querySelectorAll("[data-download]"),
-        clearButton: document.getElementById("hpa-clear"),
+      exampleButton: document.getElementById("hpa-example"),
     };
 
     if (!dom.input || !dom.file || !dom.decimal || !dom.status || !dom.issues || !dom.previewBody || !dom.plot) {
@@ -396,56 +396,8 @@
     attachPlotInteractions(dom);
     ensurePlotTooltip();
 
-    if (dom.clearButton) {
-      dom.clearButton.addEventListener("click", () => {
-        dom.input.value = "";
-        dom.file.value = "";
-        state.currentFileName = null;
-        state.currentParse = null;
-        state.currentAnalysis = null;
-        state.referenceVisibility.baseline = true;
-        state.referenceVisibility.steady = true;
-        state.dragReference = null;
-        state.dragReferenceFrame = null;
-        state.dragReferencePending = null;
-        state.dragPlot = null;
-        state.plotViewport = null;
-        dom.decimal.value = ".";
-        if (dom.currentUnit) dom.currentUnit.value = "A";
-        if (dom.plotUnit) dom.plotUnit.value = "uA";
-        if (dom.gridToggle) dom.gridToggle.checked = true;
-        if (dom.minorGridToggle) dom.minorGridToggle.checked = true;
-        state.plotDiffusionScale = "linear";
-        if (dom.diffusionScale) dom.diffusionScale.checked = false;
-        state.plotLowConfidenceMode = "shaded";
-        if (dom.lowConfidence) dom.lowConfidence.value = "shaded";
-        state.plotColors = { ...DEFAULT_PLOT_COLORS };
-        syncPlotColorControls(dom, state.plotColors);
-        applyPlotColorVars(dom);
-        clearReferenceAuto(dom.baselineValue);
-        clearReferenceAuto(dom.steadyValue);
-        if (dom.baselineValue) dom.baselineValue.value = "";
-        if (dom.steadyValue) dom.steadyValue.value = "";
-        if (dom.thickness) dom.thickness.value = "0.50";
-        if (dom.inputSmoothing) dom.inputSmoothing.value = DEFAULT_INPUT_SMOOTHING.method;
-        if (dom.inputSmoothingWindow) dom.inputSmoothingWindow.value = String(DEFAULT_INPUT_SMOOTHING.window);
-        if (dom.inputSmoothingOrder) dom.inputSmoothingOrder.value = String(DEFAULT_INPUT_SMOOTHING.order);
-        if (dom.inputSmoothingSpan) dom.inputSmoothingSpan.value = String(Math.round(DEFAULT_INPUT_SMOOTHING.span * 100));
-        if (dom.inputSmoothingRobustness) dom.inputSmoothingRobustness.value = String(DEFAULT_INPUT_SMOOTHING.robustness);
-        if (dom.inputSmoothingStrength) dom.inputSmoothingStrength.value = String(DEFAULT_INPUT_SMOOTHING.strength);
-        if (dom.inputSmoothingDegree) dom.inputSmoothingDegree.value = String(DEFAULT_INPUT_SMOOTHING.degree);
-        if (dom.outputSmoothing) dom.outputSmoothing.value = DEFAULT_OUTPUT_SMOOTHING.method;
-        if (dom.t0Offset) dom.t0Offset.value = "0";
-        syncT0OffsetDisplay(dom);
-        syncSmoothingControls(dom);
-        syncInputSmoothingStrengthDisplay(dom);
-        if (dom.cropRange) dom.cropRange.value = "";
-        state.fitOverlayVisible = false;
-        state.diagnosticSnapshot = null;
-        state.diagnosticReport = null;
-        renderDiagnosticDrawer(dom, null);
-        renderEmpty(dom, "Paste data to begin.");
-      });
+    if (dom.exampleButton) {
+      dom.exampleButton.addEventListener("click", () => loadExampleInput(dom));
     }
 
     if (dom.plotUnit) {
@@ -1868,6 +1820,34 @@
       renderPlotEmpty(dom);
     };
     reader.readAsText(file);
+  }
+
+  function loadExampleInput(dom) {
+    if (!dom || !dom.input) return;
+    fetch(encodeURI("./Permeation Example.md"), { cache: "no-store" })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        return response.text();
+      })
+      .then((text) => {
+        const value = String(text || "").trimEnd();
+        if (!value) {
+          setStatus(dom, "Could not load the permeation example.", "error");
+          setIssues(dom, ["Permeation Example.md is empty or missing."]);
+          return;
+        }
+        state.currentFileName = "Permeation Example.md";
+        if (dom.file) dom.file.value = "";
+        dom.input.value = value;
+        dom.decimal.value = ".";
+        dom.input.dispatchEvent(new Event("input", { bubbles: true }));
+      })
+      .catch(() => {
+        setStatus(dom, "Could not load the permeation example.", "error");
+        setIssues(dom, ["Permeation Example.md could not be loaded."]);
+      });
   }
 
   function parseAndRender(dom, source) {
