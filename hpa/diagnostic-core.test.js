@@ -55,6 +55,10 @@ function buildFickSeries({
   return rows;
 }
 
+function maxCurrent(rows) {
+  return Math.max(...rows.map((row) => row.current));
+}
+
 test("diagnostic finds a nonzero time-zero correction when the transient is delayed", () => {
   const rows = buildFickSeries({ delay: 40, duration: 720 });
   const report = core.analyzeDiagnostic({
@@ -119,6 +123,44 @@ test("diagnostic notes when the plateau has not been reached", () => {
   assert.ok(report.best);
   assert.ok(report.best.fit);
   assert.ok(/steady state is not fully reached/i.test(report.best.fit.note));
+});
+
+test("diagnostic warns when the tail is still rising and suggests a higher steady state", () => {
+  const rows = buildFickSeries({ duration: 120 });
+  const report = core.analyzeDiagnostic({
+    rows,
+    thicknessMm: 0.5,
+    baselineValue: 0,
+    steadyValue: 1,
+    t0Offset: 0,
+  });
+
+  const observedMax = maxCurrent(rows);
+  assert.ok(report.rawChecks.tailStillRising, "expected the rising-tail warning to trigger");
+  assert.ok(
+    Number.isFinite(report.rawChecks.risingTailSuggestedSteadyValue) &&
+      report.rawChecks.risingTailSuggestedSteadyValue > observedMax,
+    `expected suggested steady state above measured max ${observedMax}, got ${report.rawChecks.risingTailSuggestedSteadyValue}`,
+  );
+  assert.ok(report.findings.some((finding) => finding.title === "Steady state" && /rising/i.test(finding.text)));
+  assert.ok(report.recommendations.some((line) => /steady state .* above the measured maximum/i.test(line)));
+  assert.ok(report.recommendations.some((line) => /stopped too early/i.test(line)));
+  assert.ok(report.recommendations.some((line) => /steady-state threshold higher/i.test(line)));
+});
+
+test("diagnostic stays quiet about a rising tail when the trace is settled", () => {
+  const rows = buildFickSeries({ duration: 2400, noise: 0.0004 });
+  const report = core.analyzeDiagnostic({
+    rows,
+    thicknessMm: 0.5,
+    baselineValue: 0,
+    steadyValue: 1,
+    t0Offset: 0,
+  });
+
+  assert.equal(report.rawChecks.tailStillRising, false);
+  assert.equal(report.rawChecks.risingTailSuggestedSteadyValue, null);
+  assert.ok(!report.findings.some((finding) => finding.title === "Steady state"));
 });
 
 test("diagnostic distinguishes a drifting transient from a self-consistent one", () => {

@@ -140,8 +140,9 @@
       notes.push("The time series contains large gaps.");
     }
 
-    const baselineCandidate = finiteOrFallback(currentState.baselineValue, minCurrent(cleanRows));
-    const steadyCandidate = finiteOrFallback(currentState.steadyValue, maxCurrent(cleanRows));
+    const trend = analyzeTailTrend(cleanRows, currentState);
+    const baselineCandidate = trend.baselineCandidate;
+    const steadyCandidate = trend.steadyCandidate;
     const denom = steadyCandidate - baselineCandidate;
     const normalizedRows = cleanRows
       .map((row) => ({
@@ -171,17 +172,17 @@
     }
     negativeDerivativeFraction = smoothedCount > 0 ? smoothedDrops / smoothedCount : 0;
 
-    const firstWindow = windowSlice(cleanRows, 0, Math.max(5, Math.ceil(cleanRows.length * 0.12)));
-    const lastWindow = windowSlice(cleanRows, Math.max(0, cleanRows.length - Math.max(5, Math.ceil(cleanRows.length * 0.12))), cleanRows.length);
-    const firstSlope = linearSlope(firstWindow);
-    const lastSlope = linearSlope(lastWindow);
+    const firstWindow = trend.firstWindow;
+    const lastWindow = trend.lastWindow;
+    const firstSlope = trend.firstSlope;
+    const lastSlope = trend.lastSlope;
     const baselineNoise = stddev(firstWindow.map((row) => row.current));
-    const signalSpan = Math.abs(steadyCandidate - baselineCandidate);
+    const signalSpan = trend.signalSpan;
     const snr = baselineNoise > 0 ? signalSpan / baselineNoise : Number.POSITIVE_INFINITY;
-    const baselineWindowSpan = firstWindow.length > 1 ? firstWindow[firstWindow.length - 1].time - firstWindow[0].time : 0;
-    const steadyWindowSpan = lastWindow.length > 1 ? lastWindow[lastWindow.length - 1].time - lastWindow[0].time : 0;
-    const baselineRelativeSlope = signalSpan > 0 ? Math.abs(firstSlope) * Math.max(baselineWindowSpan, 1) / signalSpan : 0;
-    const steadyRelativeSlope = signalSpan > 0 ? Math.abs(lastSlope) * Math.max(steadyWindowSpan, 1) / signalSpan : 0;
+    const baselineWindowSpan = trend.baselineWindowSpan;
+    const steadyWindowSpan = trend.steadyWindowSpan;
+    const baselineRelativeSlope = trend.baselineRelativeSlope;
+    const steadyRelativeSlope = trend.steadyRelativeSlope;
 
     if (baselineNoise > 0 && snr < 5) {
       warnings.push("The signal is only weakly above the baseline noise.");
@@ -189,8 +190,8 @@
     if (baselineRelativeSlope > 0.05) {
       notes.push("The baseline segment still has measurable slope.");
     }
-    if (steadyRelativeSlope > 0.05) {
-      notes.push("The tail segment is not perfectly flat.");
+    if (steadyRelativeSlope > 0.03) {
+      notes.push(trend.tailStillRising ? "The tail segment is still rising." : "The tail segment is not perfectly flat.");
     }
     if (belowZero || aboveOne) {
       warnings.push("The normalized curve extends outside the physical 0 to 1 range.");
@@ -218,6 +219,10 @@
       aboveOneCount: aboveOne,
       negativeDerivativeFraction,
       signalSpan,
+      tailStillRising: trend.tailStillRising,
+      risingTailSuggestedSteadyValue: trend.risingTailSuggestedSteadyValue,
+      risingTailSuggestedSteadyDelta: trend.risingTailSuggestedSteadyDelta,
+      risingTailSuggestedSteadyPercent: trend.risingTailSuggestedSteadyPercent,
       gapNote,
       issues,
       warnings,
@@ -231,6 +236,57 @@
     };
   }
 
+  function analyzeTailTrend(rows, currentState) {
+    const cleanRows = sortRows((Array.isArray(rows) ? rows : []).filter((row) => Number.isFinite(row.time) && Number.isFinite(row.current)));
+    const baselineCandidate = finiteOrFallback(currentState && currentState.baselineValue, minCurrent(cleanRows));
+    const steadyCandidate = finiteOrFallback(currentState && currentState.steadyValue, maxCurrent(cleanRows));
+    const firstWindowSize = Math.max(5, Math.ceil(cleanRows.length * 0.12));
+    const lastWindowSize = Math.max(5, Math.ceil(cleanRows.length * 0.12));
+    const firstWindow = windowSlice(cleanRows, 0, firstWindowSize);
+    const lastWindow = windowSlice(cleanRows, Math.max(0, cleanRows.length - lastWindowSize), cleanRows.length);
+    const firstSlope = linearSlope(firstWindow, "current");
+    const lastSlope = linearSlope(lastWindow, "current");
+    const signalSpan = Number.isFinite(steadyCandidate) && Number.isFinite(baselineCandidate) ? Math.abs(steadyCandidate - baselineCandidate) : 0;
+    const baselineWindowSpan = firstWindow.length > 1 ? firstWindow[firstWindow.length - 1].time - firstWindow[0].time : 0;
+    const steadyWindowSpan = lastWindow.length > 1 ? lastWindow[lastWindow.length - 1].time - lastWindow[0].time : 0;
+    const baselineRelativeSlope = signalSpan > 0 ? Math.abs(firstSlope) * Math.max(baselineWindowSpan, 1) / signalSpan : 0;
+    const steadyRelativeSlope = signalSpan > 0 ? Math.abs(lastSlope) * Math.max(steadyWindowSpan, 1) / signalSpan : 0;
+    const tailRiseFraction = signalSpan > 0 ? Math.max(lastSlope * Math.max(steadyWindowSpan, 1), 0) / signalSpan : 0;
+    const tailStillRising = Number.isFinite(lastSlope) && lastSlope > 0 && (steadyRelativeSlope > 0.03 || tailRiseFraction > 0.03);
+    const maxValue = maxCurrent(cleanRows);
+    let risingTailSuggestedSteadyValue = null;
+    let risingTailSuggestedSteadyDelta = null;
+    let risingTailSuggestedSteadyPercent = null;
+
+    if (tailStillRising && Number.isFinite(maxValue)) {
+      const projectedIncrease = Math.max(lastSlope * Math.max(steadyWindowSpan, 1) * 1.5, 0);
+      const minIncrease = signalSpan > 0 ? signalSpan * 0.02 : 0;
+      const maxIncrease = signalSpan > 0 ? Math.max(signalSpan * 0.2, minIncrease) : projectedIncrease;
+      const suggestedIncrease = signalSpan > 0 ? clamp(projectedIncrease, minIncrease, maxIncrease) : projectedIncrease;
+      risingTailSuggestedSteadyValue = maxValue + suggestedIncrease;
+      risingTailSuggestedSteadyDelta = suggestedIncrease;
+      risingTailSuggestedSteadyPercent = maxValue !== 0 ? (suggestedIncrease / Math.abs(maxValue)) * 100 : null;
+    }
+
+    return {
+      baselineCandidate,
+      steadyCandidate,
+      firstWindow,
+      lastWindow,
+      firstSlope,
+      lastSlope,
+      signalSpan,
+      baselineWindowSpan,
+      steadyWindowSpan,
+      baselineRelativeSlope,
+      steadyRelativeSlope,
+      tailStillRising,
+      risingTailSuggestedSteadyValue,
+      risingTailSuggestedSteadyDelta,
+      risingTailSuggestedSteadyPercent,
+    };
+  }
+
   function buildCandidateStates(rows, currentState) {
     const current = {
       label: "current",
@@ -240,14 +296,18 @@
     };
 
     const values = rows.map((row) => row.current).filter(Number.isFinite);
-    const firstWindow = rows.slice(0, Math.max(5, Math.ceil(rows.length * 0.12)));
-    const lastWindow = rows.slice(Math.max(0, rows.length - Math.max(5, Math.ceil(rows.length * 0.12))));
+    const trend = analyzeTailTrend(rows, currentState);
+    const firstWindow = trend.firstWindow;
+    const lastWindow = trend.lastWindow;
     const firstMean = mean(firstWindow.map((row) => row.current));
     const lastMean = mean(lastWindow.map((row) => row.current));
     const firstTrimmed = trimmedMean(firstWindow.map((row) => row.current));
     const lastTrimmed = trimmedMean(lastWindow.map((row) => row.current));
     const minValue = minCurrent(rows);
     const maxValue = maxCurrent(rows);
+    const risingTailCandidate = trend.tailStillRising && Number.isFinite(trend.risingTailSuggestedSteadyValue) && trend.risingTailSuggestedSteadyValue > maxValue
+      ? trend.risingTailSuggestedSteadyValue
+      : null;
     const baselineCandidates = uniqueFinite([
       currentState.baselineValue,
       minValue,
@@ -261,6 +321,7 @@
       percentile(values, 0.95),
       lastMean,
       lastTrimmed,
+      risingTailCandidate,
     ]);
     const t0Candidates = uniqueFinite(buildT0Candidates(rows, currentState.t0Offset));
     const candidates = [];
@@ -507,8 +568,8 @@
 
     const firstWindow = windowSlice(clean, 0, Math.max(5, Math.ceil(clean.length * 0.12)));
     const lastWindow = windowSlice(clean, Math.max(0, clean.length - Math.max(5, Math.ceil(clean.length * 0.12))), clean.length);
-    const tailSlope = linearSlope(lastWindow);
-    const headSlope = linearSlope(firstWindow);
+    const tailSlope = linearSlope(lastWindow, "current");
+    const headSlope = linearSlope(firstWindow, "current");
     const signal = Math.abs(steadyValue - baselineValue);
     const baselineNoise = stddev(firstWindow.map((row) => row.current));
     const snr = baselineNoise > 0 ? signal / baselineNoise : Number.POSITIVE_INFINITY;
@@ -526,7 +587,7 @@
       note:
         snr < 5
           ? "The signal only weakly exceeds the baseline noise."
-          : relativeTailSlope > 0.05
+          : relativeTailSlope > 0.03
             ? "The tail is still drifting and may not have reached a true plateau."
             : null,
     };
@@ -638,6 +699,9 @@
     if (best && best.monotonicity && best.monotonicity.note) {
       findings.push(makeFinding(best.monotonicity.negativeFraction < 0.1 ? "ok" : "warning", "Monotonicity", best.monotonicity.note));
     }
+    if (raw && raw.tailStillRising) {
+      findings.push(makeFinding("warning", "Steady state", buildRisingTailNote(raw)));
+    }
 
     const currentSummary = summarizeCandidate(current, false);
     const bestSummary = summarizeCandidate(best, true);
@@ -681,6 +745,10 @@
       aboveOneCount: raw.aboveOneCount || 0,
       negativeDerivativeFraction: raw.negativeDerivativeFraction || 0,
       signalSpan: raw.signalSpan || 0,
+      tailStillRising: !!raw.tailStillRising,
+      risingTailSuggestedSteadyValue: raw.risingTailSuggestedSteadyValue || null,
+      risingTailSuggestedSteadyDelta: raw.risingTailSuggestedSteadyDelta || null,
+      risingTailSuggestedSteadyPercent: raw.risingTailSuggestedSteadyPercent || null,
       gapNote: raw.gapNote || null,
     };
   }
@@ -699,11 +767,14 @@
 
   function buildRecommendations(current, best, raw) {
     const messages = [];
+    if (raw && raw.tailStillRising) {
+      messages.push(buildRisingTailNote(raw));
+    }
     if (!best) return messages;
     if (raw && Number.isFinite(raw.baselineRelativeSlope) && raw.baselineRelativeSlope > 0.05) {
       messages.push(`The baseline segment still shows measurable slope (${formatSigned(raw.baselineSlope)} current units per second).`);
     }
-    if (raw && Number.isFinite(raw.steadyRelativeSlope) && raw.steadyRelativeSlope > 0.05) {
+    if (raw && Number.isFinite(raw.steadyRelativeSlope) && raw.steadyRelativeSlope > 0.03) {
       messages.push(`The tail segment still shows measurable slope (${formatSigned(raw.steadySlope)} current units per second).`);
     }
     if (Math.abs(best.t0Offset - (current ? current.t0Offset : 0)) > 0.5) {
@@ -743,6 +814,9 @@
       return "No stable diagnostic candidate could be found.";
     }
     const parts = [];
+    if (raw && raw.tailStillRising) {
+      parts.push("The tail is still rising, so the steady-state level may be above the measured maximum.");
+    }
     if (Math.abs(best.t0Offset) > 0.5) {
       parts.push(`Best time offset ${formatSigned(best.t0Offset)} s.`);
     } else {
@@ -752,6 +826,22 @@
     if (best.flatness && best.flatness.note) parts.push(best.flatness.note);
     if (raw && raw.snr < 5) parts.push("Baseline noise remains high relative to the signal span.");
     return parts.join(" ");
+  }
+
+  function buildRisingTailNote(raw) {
+    if (!raw || !raw.tailStillRising) {
+      return "We estimate the steady state is above the measured maximum. The experiment may have been stopped too early. Consider setting the steady-state threshold higher.";
+    }
+    const percent = Number.isFinite(raw.risingTailSuggestedSteadyPercent) ? raw.risingTailSuggestedSteadyPercent : null;
+    const suggested = Number.isFinite(raw.risingTailSuggestedSteadyValue) ? raw.risingTailSuggestedSteadyValue : null;
+    if (percent != null) {
+      const suggestionText = suggested != null ? ` Suggested steady-state threshold: ${formatNumber(suggested)} current units.` : "";
+      return `We estimate the steady state is about ${formatNumber(percent)}% above the measured maximum.${suggestionText} The experiment may have been stopped too early. Consider setting the steady-state threshold higher.`;
+    }
+    if (suggested != null) {
+      return `We estimate the steady state is above the measured maximum. Suggested steady-state threshold: ${formatNumber(suggested)} current units. The experiment may have been stopped too early. Consider setting the steady-state threshold higher.`;
+    }
+    return "We estimate the steady state is above the measured maximum. The experiment may have been stopped too early. Consider setting the steady-state threshold higher.";
   }
 
   function summarizeCandidate(candidate, isBest) {
@@ -1425,17 +1515,18 @@
     return q3 - q1;
   }
 
-  function linearSlope(points) {
-    const filtered = points.filter((point) => Number.isFinite(point.time) && Number.isFinite(point.diffusivity));
+  function linearSlope(points, valueKey) {
+    const key = valueKey || "diffusivity";
+    const filtered = points.filter((point) => Number.isFinite(point.time) && Number.isFinite(point[key]));
     if (filtered.length < 2) return 0;
     const n = filtered.length;
     const meanX = filtered.reduce((sum, point) => sum + point.time, 0) / n;
-    const meanY = filtered.reduce((sum, point) => sum + point.diffusivity, 0) / n;
+    const meanY = filtered.reduce((sum, point) => sum + point[key], 0) / n;
     let numerator = 0;
     let denominator = 0;
     filtered.forEach((point) => {
       const dx = point.time - meanX;
-      numerator += dx * (point.diffusivity - meanY);
+      numerator += dx * (point[key] - meanY);
       denominator += dx * dx;
     });
     return denominator === 0 ? 0 : numerator / denominator;

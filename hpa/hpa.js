@@ -2184,6 +2184,29 @@
 
     const classical = normalizedAvailable && thicknessMm != null ? buildClassicalResults(previewRows, thicknessMm, denom) : buildEmptyClassicalResults();
     const fit = normalizedAvailable && thicknessMm != null ? buildFitResult(fitRows, thicknessMm, baseline.value, steady.value) : buildEmptyFitResult();
+    const tailWindowSize = Math.max(5, Math.ceil(rows.length * 0.12));
+    const firstWindow = rows.slice(0, tailWindowSize);
+    const lastWindow = rows.slice(Math.max(0, rows.length - tailWindowSize));
+    const lastSlope = linearSlope(lastWindow, "current");
+    const firstSlope = linearSlope(firstWindow, "current");
+    const measuredMin = rows.reduce((min, row) => (Number.isFinite(row.current) ? Math.min(min, row.current) : min), Number.POSITIVE_INFINITY);
+    const measuredMax = rows.reduce((max, row) => (Number.isFinite(row.current) ? Math.max(max, row.current) : max), Number.NEGATIVE_INFINITY);
+    const measuredSpan = Number.isFinite(measuredMin) && Number.isFinite(measuredMax) ? Math.abs(measuredMax - measuredMin) : 0;
+    const baselineSpan = Number.isFinite(baseline.value) && Number.isFinite(steady.value) ? Math.abs(steady.value - baseline.value) : 0;
+    const signalSpan = measuredSpan > 0 ? measuredSpan : baselineSpan;
+    const baselineWindowSpan = firstWindow.length > 1 ? firstWindow[firstWindow.length - 1].time - firstWindow[0].time : 0;
+    const steadyWindowSpan = lastWindow.length > 1 ? lastWindow[lastWindow.length - 1].time - lastWindow[0].time : 0;
+    const steadyRelativeSlope = signalSpan > 0 ? Math.abs(lastSlope) * Math.max(steadyWindowSpan, 1) / signalSpan : 0;
+    const tailRiseFraction = signalSpan > 0 ? Math.max(lastSlope * Math.max(steadyWindowSpan, 1), 0) / signalSpan : 0;
+    const tailStillRising = Number.isFinite(lastSlope) && lastSlope > 0 && (steadyRelativeSlope > 0.03 || tailRiseFraction > 0.03);
+    const projectedIncrease = tailStillRising ? Math.max(lastSlope * Math.max(steadyWindowSpan, 1) * 1.5, 0) : null;
+    const suggestedSteadyValue = tailStillRising && Number.isFinite(measuredMax)
+      ? measuredMax + Math.min(Math.max(projectedIncrease, measuredSpan * 0.02), Math.max(measuredSpan * 0.2, measuredSpan * 0.02))
+      : null;
+    const suggestedSteadyDelta = tailStillRising ? suggestedSteadyValue - measuredMax : null;
+    const suggestedSteadyPercent = tailStillRising && Number.isFinite(suggestedSteadyDelta) && measuredMax !== 0
+      ? (suggestedSteadyDelta / Math.abs(measuredMax)) * 100
+      : null;
 
     for (let i = 1; i < rows.length; i += 1) {
       if (rows[i].time <= rows[i - 1].time) {
@@ -2217,6 +2240,11 @@
       diagnostics,
       classical,
       fit,
+      tailStillRising,
+      risingTailMeasuredMax: Number.isFinite(measuredMax) ? measuredMax : null,
+      risingTailSuggestedSteadyValue: suggestedSteadyValue,
+      risingTailSuggestedSteadyDelta: suggestedSteadyDelta,
+      risingTailSuggestedSteadyPercent: suggestedSteadyPercent,
       inputSmoothing,
       outputSmoothing,
       rawRows,
@@ -2258,6 +2286,7 @@
     warnings.push(...analysis.notes);
     setIssues(dom, dedupe([...warnings, ...analysis.issues]).filter(Boolean));
 
+    updateParsedStatus(dom, analysis);
     syncReferenceControls(dom, analysis);
     updateSummary(dom, analysis);
     renderDiagnostics(dom, analysis);
@@ -2276,6 +2305,7 @@
 
     syncReferenceControls(dom, state.currentAnalysis);
     updateSummary(dom, state.currentAnalysis);
+    updateParsedStatus(dom, state.currentAnalysis);
     renderDiagnostics(dom, state.currentAnalysis);
     renderDiagnosticDrawer(dom, state.diagnosticReport);
     renderResults(dom, state.currentAnalysis);
@@ -2373,19 +2403,22 @@
     const baselineDisplay = Number.isFinite(baselineValue) ? convertCurrentValue(baselineValue, inputUnit, displayUnit) : null;
     const steadyDisplay = Number.isFinite(steadyValue) ? convertCurrentValue(steadyValue, inputUnit, displayUnit) : null;
     if (!Number.isFinite(baselineDisplay) || !Number.isFinite(steadyDisplay)) return [];
-    const span = Number.isFinite(currentRanges && currentRanges.xMax) && Number.isFinite(currentRanges && currentRanges.xMin)
-      ? currentRanges.xMax - currentRanges.xMin
-      : 0;
-    const minX = Number.isFinite(currentRanges && currentRanges.xMin) ? currentRanges.xMin : 0;
-    const sampleCount = span > 0 ? Math.min(240, Math.max(80, Math.round(Math.max((analysis.rows && analysis.rows.length) || 80, 40) * 1.5))) : 1;
     const offset = Number.isFinite(timeOffset) ? timeOffset : 0;
     const fitOffset = Number.isFinite(fit.timeOffset) ? fit.timeOffset : Number.isFinite(fit.t0Offset) ? fit.t0Offset : 0;
     const denom = steadyDisplay - baselineDisplay;
     if (!Number.isFinite(denom) || denom === 0) return [];
     const points = [];
+    const xMin = Number.isFinite(currentRanges && currentRanges.xMin) ? currentRanges.xMin : 0;
+    const xMax = Number.isFinite(currentRanges && currentRanges.xMax) ? currentRanges.xMax : xMin;
+    const fittedStartX = offset - fitOffset;
+    const startX = Math.max(xMin, fittedStartX);
+    if (!(xMax > startX)) return [];
 
-    for (let index = 0; index < sampleCount; index += 1) {
-      const x = sampleCount === 1 ? minX : minX + (span * index) / (sampleCount - 1);
+    const plotSpan = xMax - startX;
+    const nextSampleCount = plotSpan > 0 ? Math.min(240, Math.max(80, Math.round(Math.max((analysis.rows && analysis.rows.length) || 80, 40) * 1.5))) : 1;
+
+    for (let index = 0; index < nextSampleCount; index += 1) {
+      const x = nextSampleCount === 1 ? startX : startX + (plotSpan * index) / (nextSampleCount - 1);
       const modelTime = x - offset + fitOffset;
       const response = evaluateFickResponseDetailed(fit.diffusivity, modelTime, thicknessMeters);
       const normalized = typeof response === "number" ? response : response && response.value;
@@ -2967,21 +3000,22 @@
       return q3 - q1;
     }
 
-    function linearSlope(points) {
-      const filtered = points.filter((point) => Number.isFinite(point.time) && Number.isFinite(point.diffusivity));
-      if (filtered.length < 2) return 0;
-      const n = filtered.length;
-      const meanX = filtered.reduce((sum, point) => sum + point.time, 0) / n;
-      const meanY = filtered.reduce((sum, point) => sum + point.diffusivity, 0) / n;
-      let numerator = 0;
-      let denominator = 0;
-      filtered.forEach((point) => {
-        const dx = point.time - meanX;
-        numerator += dx * (point.diffusivity - meanY);
-        denominator += dx * dx;
-      });
-      return denominator === 0 ? 0 : numerator / denominator;
-    }
+  function linearSlope(points, valueKey) {
+    const key = valueKey || "diffusivity";
+    const filtered = points.filter((point) => Number.isFinite(point.time) && Number.isFinite(point[key]));
+    if (filtered.length < 2) return 0;
+    const n = filtered.length;
+    const meanX = filtered.reduce((sum, point) => sum + point.time, 0) / n;
+    const meanY = filtered.reduce((sum, point) => sum + point[key], 0) / n;
+    let numerator = 0;
+    let denominator = 0;
+    filtered.forEach((point) => {
+      const dx = point.time - meanX;
+      numerator += dx * (point[key] - meanY);
+      denominator += dx * dx;
+    });
+    return denominator === 0 ? 0 : numerator / denominator;
+  }
 
   function formatDiffusivity(value) {
     if (!Number.isFinite(value)) return "—";
@@ -3413,7 +3447,7 @@
     if (abs >= 1000 || abs < 0.001) {
       return Number(value.toExponential(3)).toString();
     }
-    return Number(value.toPrecision(6)).toString();
+    return Number(value.toPrecision(3)).toString();
   }
 
   function formatFixedNumber(value, digits) {
@@ -3491,9 +3525,10 @@
 
   function setStatus(dom, message, tone) {
     dom.status.textContent = message;
-    dom.status.classList.remove("is-error", "is-ok");
+    dom.status.classList.remove("is-error", "is-ok", "is-warning");
     if (tone === "error") dom.status.classList.add("is-error");
     if (tone === "ok") dom.status.classList.add("is-ok");
+    if (tone === "warning") dom.status.classList.add("is-warning");
   }
 
   function renderDiagnostics(dom, analysis) {
@@ -3535,6 +3570,94 @@
     dom.statusDetail.textContent = parts.length
       ? `Diagnostics: ${parts.join(" · ")}.`
       : "Diagnostics are unavailable for this dataset.";
+  }
+
+  function formatCurrentDiagnosticValue(dom, value) {
+    if (!Number.isFinite(value)) return null;
+    const inputUnit = dom && dom.currentUnit && dom.currentUnit.value ? dom.currentUnit.value : "A";
+    const displayUnit = getDisplayUnit(dom);
+    const converted = convertCurrentValue(value, inputUnit, displayUnit);
+    if (!Number.isFinite(converted)) return null;
+    return `${formatDiagnosticNumber(converted)} ${displayUnit}`;
+  }
+
+  function getTailWarningText(dom, analysis) {
+    if (!analysis || !analysis.tailStillRising) return "";
+    const percent = Number.isFinite(analysis.risingTailSuggestedSteadyPercent) ? analysis.risingTailSuggestedSteadyPercent : null;
+    const suggestedValue = Number.isFinite(analysis.risingTailSuggestedSteadyValue) ? analysis.risingTailSuggestedSteadyValue : null;
+    const measuredMax = Number.isFinite(analysis.risingTailMeasuredMax) ? analysis.risingTailMeasuredMax : null;
+    const suggestedDisplay = formatCurrentDiagnosticValue(dom, suggestedValue);
+    if (percent != null) {
+      const lead = `We estimate the steady state is about ${formatDiagnosticNumber(percent)}% above the measured maximum.`;
+      const follow = suggestedDisplay
+        ? ` The experiment may have been stopped too early. Consider setting the steady-state threshold higher; suggested value: ${suggestedDisplay}.`
+        : " The experiment may have been stopped too early. Consider setting the steady-state threshold higher.";
+      return `${lead}${follow}`;
+    }
+    if (suggestedDisplay) {
+      const lead = measuredMax != null
+        ? `We estimate the steady state is above the measured maximum (${formatCurrentDiagnosticValue(dom, measuredMax) || "unknown"}).`
+        : "We estimate the steady state is above the measured maximum.";
+      return `${lead} The experiment may have been stopped too early. Consider setting the steady-state threshold higher; suggested value: ${suggestedDisplay}.`;
+    }
+    return "We estimate the steady state is above the measured maximum. The experiment may have been stopped too early. Consider setting the steady-state threshold higher.";
+  }
+
+  function updateParsedStatus(dom, analysis) {
+    if (!dom || !dom.status) return;
+    if (!analysis || !analysis.rows || !analysis.rows.length) return;
+    if (analysis.tailStillRising) {
+      setStatus(dom, "Warning: steady state may still be rising.", "warning");
+      return;
+    }
+    setStatus(dom, "Loaded data.", "ok");
+  }
+
+  function renderDiagnostics(dom, analysis) {
+    if (!dom.statusDetail) return;
+    if (!analysis || !analysis.previewRows || !analysis.previewRows.length) {
+      dom.statusDetail.textContent = "Diagnostics appear after data is parsed.";
+      dom.statusDetail.classList.remove("has-warning");
+      return;
+    }
+
+    const diagnostics = analysis.diagnostics || {};
+    const rowsSolved = Number.isFinite(diagnostics.rowsSolved) ? diagnostics.rowsSolved : 0;
+    const avgTerms = rowsSolved > 0 ? diagnostics.totalTermsUsed / rowsSolved : null;
+    const maxTerms = Number.isFinite(diagnostics.maxTermsUsed) ? diagnostics.maxTermsUsed : null;
+    const lastTerms = Number.isFinite(diagnostics.lastTermsUsed) ? diagnostics.lastTermsUsed : null;
+    const lastContribution = Number.isFinite(diagnostics.lastTermContribution) ? diagnostics.lastTermContribution : null;
+    const lastDelta = Number.isFinite(diagnostics.lastDelta) ? diagnostics.lastDelta : null;
+    const lastTolerance = Number.isFinite(diagnostics.lastTolerance) ? diagnostics.lastTolerance : null;
+    const parts = [];
+
+    if (rowsSolved > 0) {
+      parts.push(`${rowsSolved} inverse solves`);
+    }
+    if (avgTerms != null) {
+      parts.push(`avg ${formatDiagnosticNumber(avgTerms)} terms`);
+    }
+    if (maxTerms != null) {
+      parts.push(`max ${maxTerms} terms`);
+    }
+    if (lastTerms != null) {
+      parts.push(`last ${lastTerms} terms`);
+    }
+    if (lastContribution != null) {
+      parts.push(`last term ${formatDiagnosticNumber(lastContribution)}`);
+    }
+    if (lastDelta != null && lastTolerance != null) {
+      parts.push(`last Δ ${formatDiagnosticNumber(lastDelta)} / tol ${formatDiagnosticNumber(lastTolerance)}`);
+    }
+
+    const summaryText = parts.length
+      ? `Diagnostics: ${parts.join(" · ")}.`
+      : "Diagnostics are unavailable for this dataset.";
+    const warningText = getTailWarningText(dom, analysis);
+    dom.statusDetail.classList.toggle("has-warning", !!warningText);
+    dom.statusDetail.innerHTML = warningText
+      ? `<div class="hpa-status-detail-alert">${escapeHtml(warningText)}</div><div class="hpa-status-detail-meta">${escapeHtml(summaryText)}</div>`
+      : `<div class="hpa-status-detail-meta">${escapeHtml(summaryText)}</div>`;
   }
 
   function getDiagnosticCore() {
@@ -3752,14 +3875,14 @@
     if (!Number.isFinite(value)) return "—";
     const abs = Math.abs(value);
     if (abs >= 1000 || (abs > 0 && abs < 0.001)) {
-      return value.toExponential(3);
+      return Number(value.toExponential(3)).toString();
     }
-    return formatNumber(value);
+    return Number(value.toPrecision(3)).toString();
   }
 
   function formatDiagnosticScore(value) {
     if (!Number.isFinite(value)) return "—";
-    return formatNumber(value);
+    return formatDiagnosticNumber(value);
   }
 
   function renderDiagnosticDrawer(dom, report) {
@@ -4536,5 +4659,20 @@
   function capitalize(value) {
     if (!value) return "";
     return value.charAt(0).toUpperCase() + value.slice(1);
+  }
+
+  function formatDiagnosticNumber(value) {
+    if (!Number.isFinite(value)) return "";
+    const abs = Math.abs(value);
+    if (abs === 0) return "0";
+    if (abs >= 1000 || abs < 0.001) {
+      return Number(value.toExponential(3)).toString();
+    }
+    return Number(value.toPrecision(3)).toString();
+  }
+
+  function formatDiagnosticScore(value) {
+    if (!Number.isFinite(value)) return "—";
+    return formatDiagnosticNumber(value);
   }
 })();
