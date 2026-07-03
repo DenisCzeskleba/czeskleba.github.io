@@ -59,6 +59,31 @@ function maxCurrent(rows) {
   return Math.max(...rows.map((row) => row.current));
 }
 
+function breakthroughTimeFromDiffusivity(diffusivity, thicknessMm) {
+  const thicknessMeters = thicknessMm / 1000;
+  return (thicknessMeters * thicknessMeters) / (15.3 * diffusivity);
+}
+
+function findInterpolatedCrossingTime(rows, threshold) {
+  if (!rows.length) return null;
+  if (Number.isFinite(rows[0].normalized) && rows[0].normalized >= threshold) {
+    return rows[0].time;
+  }
+  for (let index = 1; index < rows.length; index += 1) {
+    const previous = rows[index - 1];
+    const current = rows[index];
+    if (!Number.isFinite(previous.normalized) || !Number.isFinite(current.normalized)) continue;
+    if (previous.normalized === threshold) return previous.time;
+    if ((previous.normalized < threshold && current.normalized >= threshold) || (previous.normalized > threshold && current.normalized <= threshold)) {
+      const span = current.normalized - previous.normalized;
+      if (span === 0) return current.time;
+      const ratio = (threshold - previous.normalized) / span;
+      return previous.time + ratio * (current.time - previous.time);
+    }
+  }
+  return null;
+}
+
 test("diagnostic finds a nonzero time-zero correction when the transient is delayed", () => {
   const rows = buildFickSeries({ delay: 40, duration: 720 });
   const report = core.analyzeDiagnostic({
@@ -184,7 +209,7 @@ test("diagnostic distinguishes a drifting transient from a self-consistent one",
   );
 });
 
-test("classical breakthrough uses ISO-style linear extrapolation on a baseline-corrected transient", () => {
+test("classical breakthrough uses the 9.6% normalized criterion on a baseline-corrected transient", () => {
   const thicknessMm = 0.5;
   const diffusivity = 5e-10;
   const baseline = 2;
@@ -202,15 +227,71 @@ test("classical breakthrough uses ISO-style linear extrapolation on a baseline-c
     current: row.current,
     normalized: (row.current - baseline) / (steady - baseline),
   }));
+  const expectedTime = findInterpolatedCrossingTime(normalizedRows, 0.096);
 
   const classical = core.buildClassicalResults(normalizedRows, thicknessMm / 1000, steady - baseline);
 
   assert.ok(classical.breakthrough.available, "expected breakthrough result");
-  assert.ok(/ISO 17081/i.test(classical.breakthrough.note || classical.breakthrough.noteHtml || ""));
+  assert.ok(/9\.6%/i.test(classical.breakthrough.note || classical.breakthrough.noteHtml || ""));
+  assert.ok(Number.isFinite(expectedTime), "expected a valid 9.6% crossing time");
   assert.ok(
-    Math.abs(classical.breakthrough.diffusivity - diffusivity) / diffusivity < 0.25,
-    `expected breakthrough diffusivity near ${diffusivity}, got ${classical.breakthrough.diffusivity}`,
+    Math.abs(breakthroughTimeFromDiffusivity(classical.breakthrough.diffusivity, thicknessMm) - expectedTime) < 1e-9,
+    `expected breakthrough time ${expectedTime}, got ${breakthroughTimeFromDiffusivity(classical.breakthrough.diffusivity, thicknessMm)}`,
   );
+});
+
+test("classical breakthrough linearly interpolates the 9.6% threshold crossing", () => {
+  const thicknessMm = 0.5;
+  const normalizedRows = [
+    { time: 0, current: 0, normalized: 0.0 },
+    { time: 10, current: 0.08, normalized: 0.08 },
+    { time: 20, current: 0.12, normalized: 0.12 },
+    { time: 30, current: 0.3, normalized: 0.3 },
+  ];
+
+  const classical = core.buildClassicalResults(normalizedRows, thicknessMm / 1000, 1);
+  const breakthroughTime = breakthroughTimeFromDiffusivity(classical.breakthrough.diffusivity, thicknessMm);
+
+  assert.ok(classical.breakthrough.available, "expected breakthrough result");
+  assert.ok(Math.abs(breakthroughTime - 14) < 1e-9, `expected interpolated breakthrough time 14 s, got ${breakthroughTime}`);
+});
+
+test("classical breakthrough stays positive on a delayed transient once the 9.6% threshold is reached", () => {
+  const thicknessMm = 0.5;
+  const rows = buildFickSeries({
+    thicknessMm,
+    diffusivity: 5e-10,
+    baseline: 2,
+    steady: 7,
+    step: 2,
+    duration: 1200,
+    delay: 20,
+  });
+  const normalizedRows = rows.map((row) => ({
+    time: row.time,
+    current: row.current,
+    normalized: (row.current - 2) / 5,
+  }));
+
+  const classical = core.buildClassicalResults(normalizedRows, thicknessMm / 1000, 5);
+  const breakthroughTime = breakthroughTimeFromDiffusivity(classical.breakthrough.diffusivity, thicknessMm);
+
+  assert.ok(classical.breakthrough.available, "expected breakthrough result");
+  assert.ok(breakthroughTime > 0, `expected positive breakthrough time, got ${breakthroughTime}`);
+});
+
+test("classical breakthrough stays unavailable when the 9.6% normalized threshold is never reached", () => {
+  const normalizedRows = [
+    { time: 0, current: 0, normalized: 0.0 },
+    { time: 10, current: 0.02, normalized: 0.02 },
+    { time: 20, current: 0.05, normalized: 0.05 },
+    { time: 30, current: 0.09, normalized: 0.09 },
+  ];
+
+  const classical = core.buildClassicalResults(normalizedRows, 0.0005, 1);
+
+  assert.equal(classical.breakthrough.available, false);
+  assert.ok(/9\.6% normalized criterion/i.test(classical.breakthrough.note || ""));
 });
 
 test("positive t0 prepends dense baseline rows on the inferred cadence without duplicating the join time", () => {

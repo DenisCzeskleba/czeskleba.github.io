@@ -371,7 +371,7 @@
 
         <div class="hpa-results-grid" aria-label="Diffusion model results">
           <article class="hpa-result-card">
-            <h3>Breakthrough <span class="hpa-result-hint" tabindex="0" title="Shown for reference. Diagnostic confidence and Global Transient Fit seeding currently exclude breakthrough because the ISO linear-rise extrapolation is still quite brittle. This method is often reported as less reliable and remains a work in progress here.">?</span></h3>
+            <h3>Breakthrough <span class="hpa-result-hint" tabindex="0" title="Shown for reference. Breakthrough is excluded from the diagnostic confidence score and global-fit seeding because it is less reliable than the other evaluation methods for this transient.">?</span></h3>
             <div class="hpa-result-value" id="hpa-breakthrough-value">D<sub>b</sub> = NaN</div>
             <div class="hpa-result-meta" id="hpa-breakthrough-time">Load data to calculate breakthrough time.</div>
             <div class="hpa-result-note" id="hpa-breakthrough-note"></div>
@@ -506,7 +506,7 @@
             <p>where <code>I<sub>0</sub></code> is the baseline current and <code>I<sub>ss</sub></code> is the steady-state current. That normalized curve is the common basis for the classical methods, the inverse solve, and the global fit.</p>
             <p><code>D<sub>app</sub>(t)</code> is an apparent coefficient, not a claim about the true lattice diffusion constant. It is the constant <code>D</code> that the simplified 1D Fickian membrane model would need in order to reproduce the measured transient at that time point.</p>
             <ul class="hpa-help-list">
-              <li><strong>Breakthrough</strong> follows the ISO 17081 definition: it extrapolates the approximately linear rising part of the transient back to zero permeation signal. In this implementation the fit is evaluated on the baseline-corrected, normalized curve, which is equivalent to extrapolating the raw permeation current above baseline. The reported value is shown for reference, but the diagnostic confidence and the global-fit seed do not use it because the linear-rise extrapolation is still quite sensitive to rise-window selection.</li>
+            <li><strong>Breakthrough</strong> uses the 9.6% normalized criterion: HPA finds when the baseline-corrected transient reaches 9.6% of the steady-state span and linearly interpolates that crossing time between the surrounding measured points. The reported value is shown for reference, but the diagnostic confidence and the global-fit seed do not use it because breakthrough remains less reliable than the other evaluation methods for this transient.</li>
               <li><strong>Time lag</strong> uses the 63% crossing. It assumes that the transient has a clear monotonic rise and that the steady-state level is meaningful.</li>
               <li><strong>Inflection point</strong> uses the maximum-slope point of the normalized curve. It is only useful when the curve has one clear inflection and the steady-state current is valid.</li>
             <li><strong>Inverse Fickian</strong> inverts the ideal Fickian response point by point to produce <code>D<sub>app</sub>(t)</code>. HPA shades low-confidence regions where the inverse problem is poorly conditioned, then reports an average value when a stable middle window is robust enough.</li>

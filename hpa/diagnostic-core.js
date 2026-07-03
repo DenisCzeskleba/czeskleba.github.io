@@ -21,6 +21,7 @@
     candidateLimit: 120,
     minCentralFraction: 0.4,
   };
+  const BREAKTHROUGH_NORMALIZED_THRESHOLD = 0.096;
   const ROW_ORIGIN_MEASURED = "measured";
   const ROW_ORIGIN_PREPENDED_BASELINE = "prepended_baseline";
 
@@ -976,7 +977,7 @@
   function solveBreakthroughMethod(rows, thicknessMeters) {
     const breakthrough = findBreakthroughTime(rows);
     if (!breakthrough) {
-      return { available: false, note: "No linear breakthrough segment could be identified." };
+      return { available: false, note: "Breakthrough time not found at the 9.6% normalized criterion." };
     }
     const diffusivity = (thicknessMeters * thicknessMeters) / (15.3 * breakthrough.time);
     return {
@@ -984,8 +985,8 @@
       diffusivity,
       timeText: `Breakthrough: t = ${formatNumber(breakthrough.time)} s`,
       noteHtml:
-        '<span class="hpa-formula-note"><span class="hpa-formula-title">ISO 17081 linear-rise extrapolation</span><span class="hpa-formula-display"><span class="hpa-formula-equals">D =</span> <span class="hpa-formula-expression">L<sup>2</sup> / (15.3 t<sub>b</sub>)</span></span></span>',
-      note: "ISO 17081 linear-rise extrapolation.",
+        '<span class="hpa-formula-note"><span class="hpa-formula-title">9.6% normalized criterion</span><span class="hpa-formula-display"><span class="hpa-formula-equals">D =</span> <span class="hpa-formula-expression">L<sup>2</sup> / (15.3 t<sub>b</sub>)</span></span></span>',
+      note: "Breakthrough uses the 9.6% normalized criterion.",
     };
   }
 
@@ -1445,70 +1446,9 @@
   }
 
   function findBreakthroughTime(rows) {
-    const points = sampleEvenly(
-      sortRows((rows || []).filter((row) => Number.isFinite(row.time) && Number.isFinite(row.normalized))),
-      120,
-    );
-    if (points.length < 4) return null;
-
-    const totalSpan = Math.max(points[points.length - 1].time - points[0].time, Number.EPSILON);
-    const minWindowSize = Math.min(points.length, Math.max(4, Math.ceil(points.length * 0.12)));
-    const maxWindowSize = Math.min(points.length, Math.max(minWindowSize, Math.ceil(points.length * 0.45)));
-    let best = null;
-
-    for (let windowSize = maxWindowSize; windowSize >= minWindowSize; windowSize -= 1) {
-      for (let start = 0; start <= points.length - windowSize; start += 1) {
-        const candidate = points.slice(start, start + windowSize);
-        const fit = fitLine(candidate, "normalized");
-        if (!fit || !Number.isFinite(fit.slope) || fit.slope <= 0) continue;
-
-        const startValue = fit.intercept + fit.slope * candidate[0].time;
-        const endValue = fit.intercept + fit.slope * candidate[candidate.length - 1].time;
-        const valueSpan = endValue - startValue;
-        if (!Number.isFinite(valueSpan) || valueSpan < 0.12) continue;
-
-        const normalizedMedian = median(candidate.map((point) => point.normalized));
-        if (!Number.isFinite(normalizedMedian) || normalizedMedian <= 0.1 || normalizedMedian >= 0.85) continue;
-
-        const interceptTime = -fit.intercept / fit.slope;
-        if (!Number.isFinite(interceptTime) || interceptTime >= candidate[0].time || interceptTime < points[0].time - totalSpan * 0.5) {
-          continue;
-        }
-
-        const normalizedRmse = fit.rmse / Math.max(Math.abs(valueSpan), Number.EPSILON);
-        if (!Number.isFinite(normalizedRmse) || normalizedRmse > 0.12) continue;
-
-        const spanFraction = Math.min(1, valueSpan / 0.45);
-        const countFraction = candidate.length / points.length;
-        const midpointFraction = ((candidate[0].time + candidate[candidate.length - 1].time) / 2 - points[0].time) / totalSpan;
-        const score =
-          normalizedRmse * 1.8 +
-          Math.abs(normalizedMedian - 0.5) * 0.16 +
-          (1 - spanFraction) * 0.35 +
-          (1 - countFraction) * 0.18 +
-          Math.abs(midpointFraction - 0.45) * 0.08;
-
-        if (!best || score < best.score || (Math.abs(score - best.score) < 0.003 && candidate.length > best.points.length)) {
-          best = { time: interceptTime, score, points: candidate };
-        }
-      }
-    }
-
-    if (best) {
-      return { time: best.time };
-    }
-
-    return fitBreakthroughBand(points, 0.15, 0.75) || fitBreakthroughBand(points, 0.1, 0.8);
-  }
-
-  function fitBreakthroughBand(points, low, high) {
-    const band = points.filter((point) => point.normalized >= low && point.normalized <= high);
-    if (band.length < 4) return null;
-    const fit = fitLine(band, "normalized");
-    if (!fit || !Number.isFinite(fit.slope) || fit.slope <= 0) return null;
-    const interceptTime = -fit.intercept / fit.slope;
-    if (!Number.isFinite(interceptTime) || interceptTime >= band[0].time) return null;
-    return { time: interceptTime };
+    const points = sortRows((rows || []).filter((row) => Number.isFinite(row.time) && Number.isFinite(row.normalized)));
+    if (points.length < 2) return null;
+    return findCrossingTime(points, BREAKTHROUGH_NORMALIZED_THRESHOLD);
   }
 
   function findInflectionPoint(rows, target) {
