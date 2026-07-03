@@ -261,7 +261,7 @@ test("positive t0 uses the median early dt for irregular traces", () => {
   );
 });
 
-test("global transient fit ignores prepended baseline rows when estimating t0", () => {
+test("global transient fit keeps the current t0 fixed and ignores prepended baseline rows", () => {
   const rows = buildFickSeries({
     thicknessMm: 0.5,
     diffusivity: 5e-10,
@@ -278,12 +278,55 @@ test("global transient fit ignores prepended baseline rows when estimating t0", 
 
   assert.ok(fitFromRaw.available, "expected fit on raw rows");
   assert.ok(fitFromPrepended.available, "expected fit on prepended rows");
-  assert.ok(Number.isFinite(fitFromRaw.totalTimeOffset), "expected raw total t0");
-  assert.ok(Number.isFinite(fitFromPrepended.totalTimeOffset), "expected prepended total t0");
+  assert.equal(fitFromRaw.timeOffset, 0);
+  assert.equal(fitFromPrepended.timeOffset, 0);
+  assert.equal(fitFromRaw.totalTimeOffset, 0);
+  assert.equal(fitFromPrepended.totalTimeOffset, 20);
   assert.ok(
-    Math.abs(fitFromRaw.totalTimeOffset - fitFromPrepended.totalTimeOffset) < 8,
-    `expected similar total t0, got raw ${fitFromRaw.totalTimeOffset} vs prepended ${fitFromPrepended.totalTimeOffset}`,
+    Math.abs(fitFromRaw.diffusivity - fitFromPrepended.diffusivity) / fitFromRaw.diffusivity < 0.08,
+    `expected similar fitted D, got raw ${fitFromRaw.diffusivity} vs prepended ${fitFromPrepended.diffusivity}`,
   );
+});
+
+test("explicit t0 optimization is deterministic and scores total t0 by RMSE", () => {
+  const rawRows = buildFickSeries({
+    thicknessMm: 0.5,
+    diffusivity: 5e-10,
+    baseline: 0,
+    steady: 1,
+    step: 5,
+    duration: 720,
+  }).map((row) => ({
+    time: row.time + 24,
+    current: row.current,
+  }));
+
+  const first = core.optimizeFitT0({
+    rows: rawRows,
+    thicknessMm: 0.5,
+    baselineValue: 0,
+    steadyValue: 1,
+    minOffset: -60,
+    maxOffset: 60,
+    coarseStep: 1,
+    fineStep: 0.1,
+  });
+  const second = core.optimizeFitT0({
+    rows: rawRows,
+    thicknessMm: 0.5,
+    baselineValue: 0,
+    steadyValue: 1,
+    minOffset: -60,
+    maxOffset: 60,
+    coarseStep: 1,
+    fineStep: 0.1,
+  });
+
+  assert.ok(first, "expected a t0 optimization result");
+  assert.ok(second, "expected a second t0 optimization result");
+  assert.ok(Math.abs(first.totalTimeOffset + 24) <= 1.5, `expected t0 near -24 s, got ${first.totalTimeOffset}`);
+  assert.ok(Math.abs(first.totalTimeOffset - second.totalTimeOffset) <= 0.2, `expected deterministic t0, got ${first.totalTimeOffset} vs ${second.totalTimeOffset}`);
+  assert.ok(Math.abs(first.rmse - second.rmse) <= 1e-9, `expected deterministic RMSE, got ${first.rmse} vs ${second.rmse}`);
 });
 
 test("snapshot helpers preserve and restore pre-diagnostic state objects", () => {

@@ -970,7 +970,7 @@
   }
 
   function buildEmptyFitResult() {
-    return { available: false, note: "Load data to fit D and t0 together." };
+    return { available: false, note: "Load data to fit D for the current Start Time Offset." };
   }
 
   function solveBreakthroughMethod(rows, thicknessMeters) {
@@ -1092,6 +1092,112 @@
 
   function buildFitResult(fitRows, thicknessMm, baselineValue, steadyValue, currentT0Offset) {
     const thicknessMeters = thicknessMm / 1000;
+    if (!Number.isFinite(thicknessMeters) || thicknessMeters <= 0) {
+      return { available: false, note: "The fit requires a valid membrane thickness." };
+    }
+
+    const prepared = prepareFitRows(fitRows, baselineValue, steadyValue);
+    if (prepared.error) {
+      return { available: false, note: prepared.error };
+    }
+
+    const best = solveFixedFit(prepared, thicknessMeters, Date.now() + SOLVER_POLICY.timeoutMs);
+    if (!best) {
+      return { available: false, note: "No stable D fit could be found for the current Start Time Offset." };
+    }
+
+    const rmse = Math.sqrt(best.sse / Math.max(best.count, 1));
+    const note =
+      Number.isFinite(prepared.lastNormalized) && prepared.lastNormalized < 0.9
+        ? "Steady state is not fully reached, so the fit extrapolates the asymptote from the fixed references."
+        : "";
+
+    return {
+      available: true,
+      diffusivity: best.diffusivity,
+      totalTimeOffset: Number.isFinite(currentT0Offset) ? currentT0Offset : 0,
+      timeText: `RMSE over ${best.count} points: ${formatFitRmsePercent(rmse)} (${describeFitQuality(rmse)})`,
+      note,
+      rmse,
+      count: best.count,
+      timeOffset: 0,
+    };
+  }
+
+  function optimizeFitT0(options) {
+    const rows = Array.isArray(options && options.rows) ? options.rows : [];
+    const thicknessMm = options && Number.isFinite(options.thicknessMm) ? options.thicknessMm : null;
+    const baselineValue = options ? options.baselineValue : null;
+    const steadyValue = options ? options.steadyValue : null;
+    const cropRange = options && options.cropRange ? options.cropRange : null;
+    const minOffset = options && Number.isFinite(options.minOffset) ? options.minOffset : -180;
+    const maxOffset = options && Number.isFinite(options.maxOffset) ? options.maxOffset : 180;
+    const coarseStep = options && Number.isFinite(options.coarseStep) && options.coarseStep > 0 ? options.coarseStep : 1;
+    const fineStep = options && Number.isFinite(options.fineStep) && options.fineStep > 0 ? options.fineStep : 0.1;
+    const deadline = options && Number.isFinite(options.deadline) ? options.deadline : null;
+    if (!rows.length || !Number.isFinite(thicknessMm) || thicknessMm <= 0) return null;
+
+    let best = null;
+    let lastSeed = null;
+    for (let totalTimeOffset = minOffset; totalTimeOffset <= maxOffset + 1e-9; totalTimeOffset += coarseStep) {
+      if (deadline && Date.now() > deadline) break;
+      const candidate = evaluateFitTimeOffsetCandidate(
+        rows,
+        thicknessMm,
+        baselineValue,
+        steadyValue,
+        cropRange,
+        roundToStep(totalTimeOffset, coarseStep),
+        deadline,
+        lastSeed,
+      );
+      if (candidate) lastSeed = { diffusivity: candidate.diffusivity };
+      if (!best || (candidate && candidate.rmse < best.rmse)) {
+        best = candidate;
+      }
+    }
+    if (!best) return null;
+
+    const refineRadius = Math.max(coarseStep, 1);
+    const refineLower = Math.max(minOffset, best.totalTimeOffset - refineRadius);
+    const refineUpper = Math.min(maxOffset, best.totalTimeOffset + refineRadius);
+    for (let totalTimeOffset = refineLower; totalTimeOffset <= refineUpper + 1e-9; totalTimeOffset += fineStep) {
+      if (deadline && Date.now() > deadline) break;
+      const candidate = evaluateFitTimeOffsetCandidate(
+        rows,
+        thicknessMm,
+        baselineValue,
+        steadyValue,
+        cropRange,
+        roundToStep(totalTimeOffset, fineStep),
+        deadline,
+        { diffusivity: best.diffusivity },
+      );
+      if (!best || (candidate && candidate.rmse < best.rmse)) {
+        best = candidate;
+      }
+    }
+
+    return best;
+  }
+
+  function evaluateFitTimeOffsetCandidate(rows, thicknessMm, baselineValue, steadyValue, cropRange, totalTimeOffset, deadline, seed) {
+    let transformedRows = applyTimeOffsetRows(rows, totalTimeOffset, baselineValue);
+    if (cropRange) transformedRows = transformedRows.filter((row) => row.time >= cropRange.start && row.time <= cropRange.end);
+    const prepared = prepareFitRows(transformedRows, baselineValue, steadyValue);
+    if (prepared.error) return null;
+    const best = solveFixedFit(prepared, thicknessMm / 1000, deadline, seed);
+    if (!best) return null;
+    return {
+      diffusivity: best.diffusivity,
+      count: best.count,
+      sse: best.sse,
+      rmse: Math.sqrt(best.sse / Math.max(best.count, 1)),
+      totalTimeOffset,
+    };
+  }
+
+  function prepareFitRows(fitRows, baselineValue, steadyValue) {
     const rows = sortRows(
       (fitRows || [])
         .map((row) => ({ time: row.time, current: row.current, origin: rowOrigin(row, ROW_ORIGIN_MEASURED) }))
@@ -1104,14 +1210,14 @@
     );
 
     if (rows.length < 4) {
-      return { available: false, note: "Not enough points to fit D and t0 together." };
+      return { error: "Not enough measured points to fit D for the current Start Time Offset." };
     }
     if (!Number.isFinite(baselineValue) || !Number.isFinite(steadyValue)) {
-      return { available: false, note: "The fit requires fixed baseline and steady-state values." };
+      return { error: "The fit requires fixed baseline and steady-state values." };
     }
     const denom = steadyValue - baselineValue;
     if (!Number.isFinite(denom) || denom <= 0) {
-      return { available: false, note: "The fit requires a positive baseline-to-steady-state span." };
+      return { error: "The fit requires a positive baseline-to-steady-state span." };
     }
 
     const normalizedRows = rows
@@ -1119,102 +1225,65 @@
       .filter((row) => Number.isFinite(row.time) && Number.isFinite(row.normalized));
 
     if (normalizedRows.length < 4) {
-      return { available: false, note: "Not enough normalized points to fit D and t0 together." };
-    }
-
-    const sampledRows = sampleEvenly(normalizedRows, 160);
-    const deadline = Date.now() + SOLVER_POLICY.timeoutMs;
-    const seed = estimateFitSeed(sampledRows, thicknessMeters);
-    const best = optimizeFitSearch(sampledRows, thicknessMeters, seed, deadline);
-    if (!best) {
-      return { available: false, note: "No stable D and t0 fit could be found." };
-    }
-
-    const rmse = Math.sqrt(best.sse / Math.max(best.count, 1));
-    const relativeOffset = best.timeOffset;
-    const totalOffset = (Number.isFinite(currentT0Offset) ? currentT0Offset : 0) + relativeOffset;
-    const noteParts = [];
-    if (Number.isFinite(rmse)) noteParts.push(`Error (RMSE) over ${best.count} points - ${formatFitRmsePercent(rmse)} (${describeFitQuality(rmse)}).`);
-    const lastNormalized = normalizedRows[normalizedRows.length - 1]?.normalized;
-    if (Number.isFinite(lastNormalized) && lastNormalized < 0.9) {
-      noteParts.push("Steady state is not fully reached, so the fit extrapolates the asymptote from the fixed references.");
+      return { error: "Not enough normalized measured points to fit D for the current Start Time Offset." };
     }
 
     return {
-      available: true,
-      diffusivity: best.diffusivity,
-      totalTimeOffset: totalOffset,
-      timeHtml: `Best combined single fit:<br>t<sub>0</sub> = ${escapeHtml(formatFitOffset(relativeOffset))} s (relative)`,
-      note: noteParts.join(" "),
-      rmse,
-      count: best.count,
-      timeOffset: best.timeOffset,
+      rows,
+      normalizedRows,
+      sampledRows: sampleEvenly(normalizedRows, 160),
+      lastNormalized: normalizedRows[normalizedRows.length - 1]?.normalized,
     };
   }
 
-  function optimizeFitSearch(rows, thicknessMeters, seed, deadline) {
+  function solveFixedFit(prepared, thicknessMeters, deadline, seed) {
+    if (!prepared || !Array.isArray(prepared.sampledRows) || !prepared.sampledRows.length) return null;
+    if (!Number.isFinite(thicknessMeters) || thicknessMeters <= 0) return null;
+    const nextSeed = seed && Number.isFinite(seed.diffusivity) ? seed : estimateFitSeed(prepared.sampledRows, thicknessMeters);
+    return optimizeDiffusivitySearch(prepared.sampledRows, thicknessMeters, nextSeed, deadline);
+  }
+
+  function optimizeDiffusivitySearch(rows, thicknessMeters, seed, deadline) {
     if (!rows.length || !Number.isFinite(thicknessMeters) || thicknessMeters <= 0) return null;
 
     const minLog = Math.log10(SOLVER_POLICY.dLower);
     const maxLog = Math.log10(SOLVER_POLICY.dUpper);
-    const timeMin = rows[0].time;
-    const timeMax = rows[rows.length - 1].time;
-    const timeSpan = Math.max(1, timeMax - timeMin);
-    const timeLower = timeMin - timeSpan;
-    const timeUpper = timeMax + timeSpan;
-
     let logCenter = seed && Number.isFinite(seed.diffusivity) ? Math.log10(clamp(seed.diffusivity, SOLVER_POLICY.dLower, SOLVER_POLICY.dUpper)) : (minLog + maxLog) / 2;
-    let timeCenter = seed && Number.isFinite(seed.timeOffset) ? seed.timeOffset : timeMin;
     let logHalfRange = seed && Number.isFinite(seed.diffusivity) ? 1.0 : (maxLog - minLog) / 2;
-    let timeHalfRange = seed && Number.isFinite(seed.timeOffset) ? Math.max(timeSpan * 0.5, 1) : Math.max(timeSpan, 1);
     let best = null;
 
-    const stages = [
-      { logSteps: 11, timeSteps: 11 },
-      { logSteps: 9, timeSteps: 9 },
-      { logSteps: 7, timeSteps: 7 },
-    ];
-
-    for (const stage of stages) {
+    const stages = [17, 13, 9, 7];
+    for (const steps of stages) {
       const stageLogLower = clamp(logCenter - logHalfRange, minLog, maxLog);
       const stageLogUpper = clamp(logCenter + logHalfRange, minLog, maxLog);
-      const stageTimeLower = clamp(timeCenter - timeHalfRange, timeLower, timeUpper);
-      const stageTimeUpper = clamp(timeCenter + timeHalfRange, timeLower, timeUpper);
       let stageBest = null;
 
-      for (let i = 0; i < stage.logSteps; i += 1) {
+      for (let index = 0; index < steps; index += 1) {
         if (deadline && Date.now() > deadline) return best || stageBest;
-        const logD = stage.logSteps === 1 ? logCenter : stageLogLower + ((stageLogUpper - stageLogLower) * i) / (stage.logSteps - 1);
-        const diffusivity = Math.pow(10, logD);
-        for (let j = 0; j < stage.timeSteps; j += 1) {
-          if (deadline && Date.now() > deadline) return best || stageBest;
-          const timeOffset = stage.timeSteps === 1 ? timeCenter : stageTimeLower + ((stageTimeUpper - stageTimeLower) * j) / (stage.timeSteps - 1);
-          const candidate = scoreFitCandidate(rows, thicknessMeters, diffusivity, timeOffset, deadline);
-          if (!candidate) continue;
-          if (!stageBest || candidate.score < stageBest.score) {
-            stageBest = candidate;
-          }
+        const logD = steps === 1 ? logCenter : stageLogLower + ((stageLogUpper - stageLogLower) * index) / (steps - 1);
+        const candidate = scoreFitCandidate(rows, thicknessMeters, Math.pow(10, logD), deadline);
+        if (!candidate) continue;
+        if (!stageBest || candidate.score < stageBest.score) {
+          stageBest = candidate;
         }
       }
 
       if (!stageBest) break;
       best = stageBest;
       logCenter = Math.log10(stageBest.diffusivity);
-      timeCenter = stageBest.timeOffset;
-      logHalfRange = Math.max(logHalfRange * 0.35, 0.03);
-      timeHalfRange = Math.max(timeHalfRange * 0.35, timeSpan * 0.01, 0.05);
+      logHalfRange = Math.max(logHalfRange * 0.35, 0.02);
     }
 
     return best;
   }
 
-  function scoreFitCandidate(rows, thicknessMeters, diffusivity, timeOffset, deadline) {
-    if (!Number.isFinite(diffusivity) || diffusivity <= 0 || !Number.isFinite(timeOffset)) return null;
+  function scoreFitCandidate(rows, thicknessMeters, diffusivity, deadline) {
+    if (!Number.isFinite(diffusivity) || diffusivity <= 0) return null;
     let sumSquares = 0;
     let count = 0;
     for (const row of rows) {
       if (deadline && Date.now() > deadline) return null;
-      const model = evaluateFickResponseDetailed(diffusivity, row.time + timeOffset, thicknessMeters, deadline);
+      const model = evaluateFickResponseDetailed(diffusivity, row.time, thicknessMeters, deadline);
       const predicted = typeof model === "number" ? model : model && model.value;
       if (!Number.isFinite(predicted) || !Number.isFinite(row.normalized)) return null;
       const residual = predicted - row.normalized;
@@ -1224,7 +1293,6 @@
     if (count < 4) return null;
     return {
       diffusivity,
-      timeOffset,
       count,
       sse: sumSquares,
       score: Math.sqrt(sumSquares / count),
@@ -1815,6 +1883,13 @@
     return Math.min(max, Math.max(min, value));
   }
 
+  function roundToStep(value, step) {
+    if (!Number.isFinite(value) || !Number.isFinite(step) || step <= 0) return value;
+    const decimals = step >= 1 ? 0 : Math.min(6, Math.ceil(Math.abs(Math.log10(step))) + 1);
+    const rounded = Math.round(value / step) * step;
+    return Number(rounded.toFixed(decimals));
+  }
+
   return {
     analyzeDiagnostic,
     buildEmptyClassicalResults,
@@ -1822,6 +1897,7 @@
     buildEmptyFitResult,
     applyTimeOffsetRows,
     buildFitResult,
+    optimizeFitT0,
     buildClassicalResults,
     evaluateFickResponseDetailed,
     solveApparentDiffusivity,
