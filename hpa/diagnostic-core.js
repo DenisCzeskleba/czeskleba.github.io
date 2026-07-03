@@ -948,7 +948,7 @@
 
   function buildClassicalResults(rows, thicknessMeters, iMax) {
     const sorted = sortRows(rows.filter((row) => Number.isFinite(row.time) && Number.isFinite(row.normalized) && Number.isFinite(row.current)));
-    const breakthrough = solveThresholdMethod(sorted, thicknessMeters, 0.1, 15.3, "Breakthrough (10%)", "D = L<sup>2</sup> / (15.3 t<sub>b</sub>)");
+    const breakthrough = solveBreakthroughMethod(sorted, thicknessMeters);
     const timeLag = solveThresholdMethod(sorted, thicknessMeters, 0.63, 6, "Time lag (63%)", "D = L<sup>2</sup> / (6 t<sub>lag</sub>)");
     const inflection = solveInflectionMethod(sorted, thicknessMeters, iMax);
     const inverseFickian = solveInverseFickianWindow(sorted, thicknessMeters);
@@ -970,6 +970,21 @@
 
   function buildEmptyFitResult() {
     return { available: false, note: "Load data to fit D and t0 together." };
+  }
+
+  function solveBreakthroughMethod(rows, thicknessMeters) {
+    const breakthrough = findBreakthroughTime(rows);
+    if (!breakthrough) {
+      return { available: false, note: "No linear breakthrough segment could be identified." };
+    }
+    const diffusivity = (thicknessMeters * thicknessMeters) / (15.3 * breakthrough.time);
+    return {
+      available: Number.isFinite(diffusivity) && diffusivity > 0,
+      diffusivity,
+      timeText: `Breakthrough: t = ${formatNumber(breakthrough.time)} s`,
+      noteHtml: "ISO 17081 linear-rise extrapolation, D = L<sup>2</sup> / (15.3 t<sub>b</sub>).",
+      note: "ISO 17081 linear-rise extrapolation.",
+    };
   }
 
   function solveThresholdMethod(rows, thicknessMeters, threshold, coefficient, label, formulaHtml) {
@@ -1207,7 +1222,7 @@
 
   function estimateFitSeed(rows, thicknessMeters) {
     if (!rows.length || !Number.isFinite(thicknessMeters) || thicknessMeters <= 0) return null;
-    const breakthrough = findCrossingTime(rows, 0.1);
+    const breakthrough = findBreakthroughTime(rows);
     const timeLag = findCrossingTime(rows, 0.63);
     if (!breakthrough || !timeLag || !Number.isFinite(breakthrough.time) || !Number.isFinite(timeLag.time) || timeLag.time <= breakthrough.time) {
       return null;
@@ -1351,6 +1366,73 @@
       }
     }
     return null;
+  }
+
+  function findBreakthroughTime(rows) {
+    const points = sampleEvenly(
+      sortRows((rows || []).filter((row) => Number.isFinite(row.time) && Number.isFinite(row.normalized))),
+      120,
+    );
+    if (points.length < 4) return null;
+
+    const totalSpan = Math.max(points[points.length - 1].time - points[0].time, Number.EPSILON);
+    const minWindowSize = Math.min(points.length, Math.max(4, Math.ceil(points.length * 0.12)));
+    const maxWindowSize = Math.min(points.length, Math.max(minWindowSize, Math.ceil(points.length * 0.45)));
+    let best = null;
+
+    for (let windowSize = maxWindowSize; windowSize >= minWindowSize; windowSize -= 1) {
+      for (let start = 0; start <= points.length - windowSize; start += 1) {
+        const candidate = points.slice(start, start + windowSize);
+        const fit = fitLine(candidate, "normalized");
+        if (!fit || !Number.isFinite(fit.slope) || fit.slope <= 0) continue;
+
+        const startValue = fit.intercept + fit.slope * candidate[0].time;
+        const endValue = fit.intercept + fit.slope * candidate[candidate.length - 1].time;
+        const valueSpan = endValue - startValue;
+        if (!Number.isFinite(valueSpan) || valueSpan < 0.12) continue;
+
+        const normalizedMedian = median(candidate.map((point) => point.normalized));
+        if (!Number.isFinite(normalizedMedian) || normalizedMedian <= 0.1 || normalizedMedian >= 0.85) continue;
+
+        const interceptTime = -fit.intercept / fit.slope;
+        if (!Number.isFinite(interceptTime) || interceptTime >= candidate[0].time || interceptTime < points[0].time - totalSpan * 0.5) {
+          continue;
+        }
+
+        const normalizedRmse = fit.rmse / Math.max(Math.abs(valueSpan), Number.EPSILON);
+        if (!Number.isFinite(normalizedRmse) || normalizedRmse > 0.12) continue;
+
+        const spanFraction = Math.min(1, valueSpan / 0.45);
+        const countFraction = candidate.length / points.length;
+        const midpointFraction = ((candidate[0].time + candidate[candidate.length - 1].time) / 2 - points[0].time) / totalSpan;
+        const score =
+          normalizedRmse * 1.8 +
+          Math.abs(normalizedMedian - 0.5) * 0.16 +
+          (1 - spanFraction) * 0.35 +
+          (1 - countFraction) * 0.18 +
+          Math.abs(midpointFraction - 0.45) * 0.08;
+
+        if (!best || score < best.score || (Math.abs(score - best.score) < 0.003 && candidate.length > best.points.length)) {
+          best = { time: interceptTime, score, points: candidate };
+        }
+      }
+    }
+
+    if (best) {
+      return { time: best.time };
+    }
+
+    return fitBreakthroughBand(points, 0.15, 0.75) || fitBreakthroughBand(points, 0.1, 0.8);
+  }
+
+  function fitBreakthroughBand(points, low, high) {
+    const band = points.filter((point) => point.normalized >= low && point.normalized <= high);
+    if (band.length < 4) return null;
+    const fit = fitLine(band, "normalized");
+    if (!fit || !Number.isFinite(fit.slope) || fit.slope <= 0) return null;
+    const interceptTime = -fit.intercept / fit.slope;
+    if (!Number.isFinite(interceptTime) || interceptTime >= band[0].time) return null;
+    return { time: interceptTime };
   }
 
   function findInflectionPoint(rows, target) {
@@ -1513,6 +1595,32 @@
     const q1 = filtered[Math.floor((filtered.length - 1) * 0.25)];
     const q3 = filtered[Math.floor((filtered.length - 1) * 0.75)];
     return q3 - q1;
+  }
+
+  function fitLine(points, valueKey) {
+    const key = valueKey || "normalized";
+    const filtered = points.filter((point) => Number.isFinite(point.time) && Number.isFinite(point[key]));
+    if (filtered.length < 2) return null;
+    const n = filtered.length;
+    const meanX = filtered.reduce((sum, point) => sum + point.time, 0) / n;
+    const meanY = filtered.reduce((sum, point) => sum + point[key], 0) / n;
+    let numerator = 0;
+    let denominator = 0;
+    for (const point of filtered) {
+      const dx = point.time - meanX;
+      numerator += dx * (point[key] - meanY);
+      denominator += dx * dx;
+    }
+    if (denominator === 0) return null;
+    const slope = numerator / denominator;
+    const intercept = meanY - slope * meanX;
+    const rmse = Math.sqrt(
+      filtered.reduce((sum, point) => {
+        const error = intercept + slope * point.time - point[key];
+        return sum + error * error;
+      }, 0) / n,
+    );
+    return { intercept, slope, rmse };
   }
 
   function linearSlope(points, valueKey) {

@@ -184,6 +184,35 @@ test("diagnostic distinguishes a drifting transient from a self-consistent one",
   );
 });
 
+test("classical breakthrough uses ISO-style linear extrapolation on a baseline-corrected transient", () => {
+  const thicknessMm = 0.5;
+  const diffusivity = 5e-10;
+  const baseline = 2;
+  const steady = 7;
+  const rows = buildFickSeries({
+    thicknessMm,
+    diffusivity,
+    baseline,
+    steady,
+    step: 5,
+    duration: 600,
+  });
+  const normalizedRows = rows.map((row) => ({
+    time: row.time,
+    current: row.current,
+    normalized: (row.current - baseline) / (steady - baseline),
+  }));
+
+  const classical = core.buildClassicalResults(normalizedRows, thicknessMm / 1000, steady - baseline);
+
+  assert.ok(classical.breakthrough.available, "expected breakthrough result");
+  assert.ok(/ISO 17081/i.test(classical.breakthrough.note || classical.breakthrough.noteHtml || ""));
+  assert.ok(
+    Math.abs(classical.breakthrough.diffusivity - diffusivity) / diffusivity < 0.25,
+    `expected breakthrough diffusivity near ${diffusivity}, got ${classical.breakthrough.diffusivity}`,
+  );
+});
+
 test("snapshot helpers preserve and restore pre-diagnostic state objects", () => {
   const snapshot = {
     inputValue: "0 1",
