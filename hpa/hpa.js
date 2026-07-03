@@ -2637,7 +2637,7 @@
         available: Number.isFinite(diffusivity) && diffusivity > 0,
         diffusivity,
         timeText: `t = ${formatNumber(inflection.time)} s`,
-        noteHtml: "Inflection-point estimate (ideal solution) at I/I<sub>max</sub> ≈ 0.2442",
+        noteHtml: "D = 0.04124 L<sup>2</sup> (dI/dt) / [0.2442 (I<sub>max</sub> - I<sub>min</sub>)]",
       };
     }
 
