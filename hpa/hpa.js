@@ -2683,7 +2683,7 @@
       return {
         available: Number.isFinite(diffusivity) && diffusivity > 0,
         diffusivity,
-        timeText: `Breakthrough: t = ${formatNumber(breakthrough.time)} s`,
+        timeText: `Breakthrough: t = ${formatRoundedSeconds(breakthrough.time)} s`,
         noteHtml:
           '<span class="hpa-formula-note"><span class="hpa-formula-title">9.6% normalized criterion</span><span class="hpa-formula-display"><span class="hpa-formula-equals">D =</span> <span class="hpa-formula-expression">L<sup>2</sup> / (15.3 t<sub>b</sub>)</span></span></span>',
       };
@@ -2701,7 +2701,7 @@
       return {
         available: Number.isFinite(diffusivity) && diffusivity > 0,
         diffusivity,
-        timeText: `${label}: t = ${formatNumber(crossing.time)} s`,
+        timeText: `${label}: t = ${formatRoundedSeconds(crossing.time)} s`,
         noteHtml: formulaHtml || `${label} threshold ${Math.round(threshold * 100)}%.`,
       };
     }
@@ -2724,7 +2724,7 @@
       return {
         available: Number.isFinite(diffusivity) && diffusivity > 0,
         diffusivity,
-        timeText: `t = ${formatNumber(inflection.time)} s`,
+        timeText: `t = ${formatRoundedSeconds(inflection.time)} s`,
         noteHtml:
           '<span class="hpa-formula-display"><span class="hpa-formula-equals">D =</span><span class="hpa-formula-fraction"><span class="hpa-formula-numerator">0.04124 L<sup>2</sup> (dI/dt)</span><span class="hpa-formula-denominator">0.2442 (I<sub>max</sub> - I<sub>min</sub>)</span></span></span>',
       };
@@ -2759,9 +2759,9 @@
         available: true,
         diffusivity: robustValue,
         timeHtml: Number.isFinite(span)
-          ? `<span><span style="font-style:italic;">D</span><sub>Inv</sub> stable over ${escapeHtml(formatNumber(span))} s</span>`
+          ? `<span><span style="font-style:italic;">D</span><sub>Inv</sub> stable over ${escapeHtml(formatRoundedSeconds(span))} s</span>`
           : `<span><span style="font-style:italic;">D</span><sub>Inv</sub> stable over detected window</span>`,
-        note: `Detected stable inverse window: ${formatNumber(window.points[0].time)} to ${formatNumber(window.points[window.points.length - 1].time)} s`,
+        note: `Detected stable window: ${formatRoundedSeconds(window.points[0].time)} to ${formatRoundedSeconds(window.points[window.points.length - 1].time)} s`,
       };
     }
 
@@ -3664,6 +3664,11 @@
     if (!Number.isFinite(value)) return "";
     const text = Number(value.toPrecision(12)).toString();
     return text;
+  }
+
+  function formatRoundedSeconds(value) {
+    if (!Number.isFinite(value)) return "";
+    return String(Math.round(value));
   }
 
   function formatDiagnosticNumber(value) {
