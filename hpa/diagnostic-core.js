@@ -622,7 +622,6 @@
 
   function evaluateMethodAgreement(classical, fit) {
     const values = [];
-    if (classical && classical.breakthrough && classical.breakthrough.available) values.push(classical.breakthrough.diffusivity);
     if (classical && classical.timeLag && classical.timeLag.available) values.push(classical.timeLag.diffusivity);
     if (classical && classical.inflection && classical.inflection.available) values.push(classical.inflection.diffusivity);
     if (classical && classical.inverseFickian && classical.inverseFickian.available) values.push(classical.inverseFickian.diffusivity);
@@ -640,10 +639,10 @@
       ratio,
       note:
         spread < 0.08
-          ? "The classical diffusivity estimates cluster tightly."
+          ? "The diagnostic diffusivity estimates cluster tightly."
           : spread < 0.2
-            ? "The classical diffusivity estimates are moderately consistent."
-            : "The classical diffusivity estimates disagree substantially.",
+            ? "The diagnostic diffusivity estimates are moderately consistent."
+            : "The diagnostic diffusivity estimates disagree substantially.",
     };
   }
 
@@ -982,7 +981,8 @@
       available: Number.isFinite(diffusivity) && diffusivity > 0,
       diffusivity,
       timeText: `Breakthrough: t = ${formatNumber(breakthrough.time)} s`,
-      noteHtml: "ISO 17081 linear-rise extrapolation, D = L<sup>2</sup> / (15.3 t<sub>b</sub>).",
+      noteHtml:
+        '<span class="hpa-formula-note"><span class="hpa-formula-title">ISO 17081 linear-rise extrapolation</span><span class="hpa-formula-display"><span class="hpa-formula-equals">D =</span> <span class="hpa-formula-expression">L<sup>2</sup> / (15.3 t<sub>b</sub>)</span></span></span>',
       note: "ISO 17081 linear-rise extrapolation.",
     };
   }
@@ -1014,7 +1014,8 @@
       available: Number.isFinite(diffusivity) && diffusivity > 0,
       diffusivity,
       timeText: `t = ${formatNumber(inflection.time)} s`,
-      noteHtml: "D = 0.04124 L<sup>2</sup> (dI/dt) / [0.2442 (I<sub>max</sub> - I<sub>min</sub>)]",
+      noteHtml:
+        '<span class="hpa-formula-display"><span class="hpa-formula-equals">D =</span><span class="hpa-formula-fraction"><span class="hpa-formula-numerator">0.04124 L<sup>2</sup> (dI/dt)</span><span class="hpa-formula-denominator">0.2442 (I<sub>max</sub> - I<sub>min</sub>)</span></span></span>',
       note: "D = 0.04124 L^2 (dI/dt) / [0.2442 (I_max - I_min)]",
     };
   }
@@ -1222,17 +1223,14 @@
 
   function estimateFitSeed(rows, thicknessMeters) {
     if (!rows.length || !Number.isFinite(thicknessMeters) || thicknessMeters <= 0) return null;
-    const breakthrough = findBreakthroughTime(rows);
     const timeLag = findCrossingTime(rows, 0.63);
-    if (!breakthrough || !timeLag || !Number.isFinite(breakthrough.time) || !Number.isFinite(timeLag.time) || timeLag.time <= breakthrough.time) {
+    if (!timeLag || !Number.isFinite(timeLag.time) || timeLag.time <= 0) {
       return null;
     }
 
-    const span = timeLag.time - breakthrough.time;
-    const coefficient = (1 / 6) - (1 / 15.3);
-    const diffusivity = (thicknessMeters * thicknessMeters * coefficient) / span;
+    const diffusivity = (thicknessMeters * thicknessMeters) / (6 * timeLag.time);
     if (!Number.isFinite(diffusivity) || diffusivity <= 0) return null;
-    const timeOffset = (thicknessMeters * thicknessMeters) / (6 * diffusivity) - timeLag.time;
+    const timeOffset = 0;
     if (!Number.isFinite(timeOffset)) return null;
 
     return {

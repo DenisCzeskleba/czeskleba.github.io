@@ -560,6 +560,23 @@ body.dark #hpa-diagnostic-open:focus-visible {
   line-height: 1.2;
 }
 
+.hpa-result-hint {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  margin-left: 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--muted);
+  cursor: help;
+  vertical-align: middle;
+}
+
 .hpa-fit-toggle {
   position: absolute;
   top: 0.72rem;
@@ -591,6 +608,51 @@ body.dark #hpa-diagnostic-open:focus-visible {
 
 .hpa-result-note {
   color: color-mix(in srgb, #475569 72%, var(--muted));
+}
+
+.hpa-formula-note {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.hpa-formula-title {
+  display: block;
+}
+
+.hpa-formula-display {
+  display: flex;
+  align-items: center;
+  gap: 0.28rem;
+  flex-wrap: wrap;
+}
+
+.hpa-formula-expression {
+  white-space: nowrap;
+}
+
+.hpa-formula-equals {
+  font-style: italic;
+}
+
+.hpa-formula-fraction {
+  display: inline-grid;
+  justify-items: center;
+  line-height: 1.15;
+}
+
+.hpa-formula-numerator,
+.hpa-formula-denominator {
+  display: block;
+  white-space: nowrap;
+}
+
+.hpa-formula-numerator {
+  padding: 0 0.16rem 0.08rem;
+  border-bottom: 1px solid currentColor;
+}
+
+.hpa-formula-denominator {
+  padding: 0.08rem 0.16rem 0;
 }
 
 @media (max-width: 1180px) {
