@@ -21,6 +21,8 @@
     candidateLimit: 120,
     minCentralFraction: 0.4,
   };
+  const ROW_ORIGIN_MEASURED = "measured";
+  const ROW_ORIGIN_PREPENDED_BASELINE = "prepended_baseline";
 
   function analyzeDiagnostic(input) {
     const sourceRows = sortRows(Array.isArray(input && input.rows) ? input.rows : []);
@@ -398,7 +400,7 @@
     const centralWindow = selectCentralWindow(normalizedValid);
     const thicknessAvailable = Number.isFinite(thicknessMeters) && thicknessMeters > 0;
     const classical = normalizedAvailable && thicknessAvailable ? buildClassicalResults(normalizedRows, thicknessMeters, denom, baselineValue) : buildEmptyClassicalResults();
-    const fit = normalizedAvailable && thicknessAvailable ? buildFitResult(candidateRows, thicknessMm, baselineValue, steadyValue) : buildEmptyFitResult();
+    const fit = normalizedAvailable && thicknessAvailable ? buildFitResult(candidateRows, thicknessMm, baselineValue, steadyValue, t0Offset) : buildEmptyFitResult();
     const flatness = normalizedAvailable && thicknessAvailable ? evaluateFlatness(normalizedRows, thicknessMeters, centralWindow) : buildEmptyFlatness();
     const plateau = evaluatePlateau(candidateRows, baselineValue, steadyValue);
     const monotonicity = evaluateMonotonicity(candidateRows);
@@ -1043,10 +1045,10 @@
     return {
       available: true,
       diffusivity: robustValue,
-      timeText: Number.isFinite(span)
-        ? `Average over ${window.points.length} points / ${formatNumber(span)} s`
-        : `Average over ${window.points.length} points`,
-      note: `Robust inverse window from ${formatNumber(window.points[0].time)} to ${formatNumber(window.points[window.points.length - 1].time)} s.`,
+      timeHtml: Number.isFinite(span)
+        ? `<span><span style="font-style:italic;">D</span><sub>Inv</sub> stable over ${escapeHtml(formatNumber(span))} s</span>`
+        : `<span><span style="font-style:italic;">D</span><sub>Inv</sub> stable over detected window</span>`,
+      note: `Detected stable inverse window: ${formatNumber(window.points[0].time)} to ${formatNumber(window.points[window.points.length - 1].time)} s.`,
     };
   }
 
@@ -1088,12 +1090,17 @@
     return best;
   }
 
-  function buildFitResult(fitRows, thicknessMm, baselineValue, steadyValue) {
+  function buildFitResult(fitRows, thicknessMm, baselineValue, steadyValue, currentT0Offset) {
     const thicknessMeters = thicknessMm / 1000;
     const rows = sortRows(
       (fitRows || [])
-        .map((row) => ({ time: row.time, current: row.current }))
-        .filter((row) => Number.isFinite(row.time) && Number.isFinite(row.current)),
+        .map((row) => ({ time: row.time, current: row.current, origin: rowOrigin(row, ROW_ORIGIN_MEASURED) }))
+        .filter(
+          (row) =>
+            Number.isFinite(row.time) &&
+            Number.isFinite(row.current) &&
+            row.origin !== ROW_ORIGIN_PREPENDED_BASELINE,
+        ),
     );
 
     if (rows.length < 4) {
@@ -1124,6 +1131,8 @@
     }
 
     const rmse = Math.sqrt(best.sse / Math.max(best.count, 1));
+    const relativeOffset = best.timeOffset;
+    const totalOffset = (Number.isFinite(currentT0Offset) ? currentT0Offset : 0) + relativeOffset;
     const noteParts = [];
     if (Number.isFinite(rmse)) noteParts.push(`Error (RMSE) over ${best.count} points - ${formatFitRmsePercent(rmse)} (${describeFitQuality(rmse)}).`);
     const lastNormalized = normalizedRows[normalizedRows.length - 1]?.normalized;
@@ -1134,7 +1143,8 @@
     return {
       available: true,
       diffusivity: best.diffusivity,
-      timeHtml: `Best combined single fit: D<sub>app</sub> for t<sub>0</sub> = ${escapeHtml(formatFitOffset(best.timeOffset))} s`,
+      totalTimeOffset: totalOffset,
+      timeHtml: `Best combined single fit:<br>t<sub>0</sub> = ${escapeHtml(formatFitOffset(relativeOffset))} s (relative)`,
       note: noteParts.join(" "),
       rmse,
       count: best.count,
@@ -1487,22 +1497,93 @@
   function applyTimeOffsetRows(rows, t0Offset, baselineValue) {
     const sourceRows = Array.isArray(rows) ? rows : [];
     if (!sourceRows.length || !Number.isFinite(t0Offset) || t0Offset === 0) {
-      return sourceRows.map((row) => ({ ...row }));
+      return sourceRows.map((row) => cloneOffsetRow(row, rowOrigin(row, ROW_ORIGIN_MEASURED)));
     }
 
     if (t0Offset < 0) {
       const shift = Math.abs(t0Offset);
       return sourceRows
         .filter((row) => Number.isFinite(row.time) && row.time >= shift)
-        .map((row) => ({ ...row, time: row.time - shift }));
+        .map((row) => cloneOffsetRow(row, rowOrigin(row, ROW_ORIGIN_MEASURED), { time: row.time - shift }));
     }
 
     const shift = t0Offset;
     const firstCurrentRow = sourceRows.find((row) => Number.isFinite(row.current));
     const baseline = Number.isFinite(baselineValue) ? baselineValue : firstCurrentRow ? firstCurrentRow.current : null;
-    const shiftedRows = sourceRows.filter((row) => Number.isFinite(row.time)).map((row) => ({ ...row, time: row.time + shift }));
+    const shiftedRows = sourceRows
+      .filter((row) => Number.isFinite(row.time))
+      .map((row) => cloneOffsetRow(row, rowOrigin(row, ROW_ORIGIN_MEASURED), { time: row.time + shift }));
     if (!Number.isFinite(baseline)) return shiftedRows;
-    return [{ time: 0, current: baseline, synthetic: true }, { time: shift, current: baseline, synthetic: true }].concat(shiftedRows);
+
+    const firstShiftedTime = shiftedRows.reduce(
+      (minimum, row) => (Number.isFinite(row.time) ? Math.min(minimum, row.time) : minimum),
+      Number.POSITIVE_INFINITY,
+    );
+    if (!Number.isFinite(firstShiftedTime) || firstShiftedTime <= 0) {
+      return shiftedRows;
+    }
+
+    const prependStep = inferPrependTimeStep(sourceRows, shift);
+    const syntheticRows = [];
+    const epsilon = Math.max(Math.abs(prependStep), Math.abs(firstShiftedTime), 1) * 1e-9;
+    const maxRows = Math.max(1, Math.ceil(firstShiftedTime / prependStep) + 1);
+    for (let index = 0; index < maxRows; index += 1) {
+      const time = roundTimeValue(index * prependStep);
+      if (!(time < firstShiftedTime - epsilon)) break;
+      syntheticRows.push({
+        lineNumber: 0,
+        time,
+        current: baseline,
+        origin: ROW_ORIGIN_PREPENDED_BASELINE,
+        synthetic: true,
+      });
+    }
+
+    return syntheticRows.concat(shiftedRows);
+  }
+
+  function cloneOffsetRow(row, origin, overrides) {
+    const base = row ? { ...row } : {};
+    const nextOrigin = origin || rowOrigin(base, ROW_ORIGIN_MEASURED);
+    return {
+      ...base,
+      ...(overrides || {}),
+      origin: nextOrigin,
+      synthetic: nextOrigin === ROW_ORIGIN_PREPENDED_BASELINE,
+    };
+  }
+
+  function rowOrigin(row, fallback) {
+    if (row && typeof row.origin === "string" && row.origin) return row.origin;
+    return fallback || ROW_ORIGIN_MEASURED;
+  }
+
+  function inferPrependTimeStep(rows, shift) {
+    const ordered = sortRows((rows || []).filter((row) => Number.isFinite(row.time)));
+    const deltas = [];
+    for (let index = 1; index < ordered.length && deltas.length < 12; index += 1) {
+      const delta = ordered[index].time - ordered[index - 1].time;
+      if (Number.isFinite(delta) && delta > 1e-9) {
+        deltas.push(delta);
+      }
+    }
+
+    const medianDelta = median(deltas);
+    if (Number.isFinite(medianDelta) && medianDelta > 0) return medianDelta;
+
+    if (ordered.length > 1) {
+      const span = ordered[ordered.length - 1].time - ordered[0].time;
+      const approximate = span / Math.max(ordered.length - 1, 1);
+      if (Number.isFinite(approximate) && approximate > 0) return approximate;
+    }
+
+    if (shift >= 1) return 1;
+    if (shift >= 0.1) return 0.1;
+    return shift > 0 ? shift : 1;
+  }
+
+  function roundTimeValue(value) {
+    return Number(Number(value).toFixed(9));
   }
 
   function sortRows(rows) {

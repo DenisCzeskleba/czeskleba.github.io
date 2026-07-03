@@ -41,6 +41,8 @@
     span: 0.35,
     robustness: 2,
   };
+  const ROW_ORIGIN_MEASURED = "measured";
+  const ROW_ORIGIN_PREPENDED_BASELINE = "prepended_baseline";
   const SMOOTHING_TOOLTIPS = {
     none: "No smoothing. The raw series is passed through unchanged.",
     "savitzky-golay": "Centered local polynomial smoothing. Fast and shape-preserving; best for regular or near-regular time steps.",
@@ -119,6 +121,7 @@
       gridToggle: document.getElementById("hpa-grid-toggle"),
       resetPlot: document.getElementById("hpa-reset-plot"),
       fitToggle: document.getElementById("hpa-fit-toggle"),
+      fitApply: document.getElementById("hpa-fit-apply"),
       status: document.getElementById("hpa-status"),
       statusDetail: document.getElementById("hpa-status-detail"),
         issues: document.getElementById("hpa-issues"),
@@ -344,6 +347,9 @@
         syncFitToggle(dom, state.currentAnalysis.fit);
         renderDerivedViews(dom);
       });
+    }
+    if (dom.fitApply) {
+      dom.fitApply.addEventListener("click", () => applyFitT0(dom));
     }
       const stagePanels = root.querySelectorAll(".hpa-stage-controls .hpa-tool-panel");
       stagePanels.forEach((panel) => {
@@ -2108,7 +2114,7 @@
       notes.push(
         t0Offset < 0
           ? `Start time applied: removed the first ${formatNumber(Math.abs(t0Offset))} s of data and shifted the remaining times back to zero.`
-          : `Start time applied: prepended ${formatNumber(t0Offset)} s of baseline time and shifted the data forward.`,
+          : `Start time applied: reconstructed ${formatNumber(t0Offset)} s of prepended baseline and shifted the measured data forward.`,
       );
     }
 
@@ -2116,10 +2122,6 @@
       rows = rows.filter((row) => row.time >= cropRange.start && row.time <= cropRange.end);
       notes.push(`Crop range applied: ${formatNumber(cropRange.start)} to ${formatNumber(cropRange.end)} s.`);
     }
-
-    const fitRows = cropRange
-      ? sourceRows.filter((row) => row.time >= cropRange.start && row.time <= cropRange.end)
-      : sourceRows.slice();
 
     if (!rows.length) {
       issues.push("No rows remain after cropping.");
@@ -2153,18 +2155,23 @@
     }
 
     const solveDeadline = performance.now() + SOLVER_POLICY.timeoutMs;
-    let outOfRangeCount = 0;
+    let outsidePhysicalCount = 0;
+    let boundaryOmissionCount = 0;
     const normalizedEpsilon = 1e-9;
     const previewRows = rows.map((row) => {
       const normalized = normalizedAvailable ? (row.current - baseline.value) / denom : null;
       const normalizedInRange =
         Number.isFinite(normalized) && normalized > normalizedEpsilon && normalized < 1 - normalizedEpsilon;
       const diffusivity =
-        !row.synthetic && normalizedAvailable && thicknessMm != null && normalizedInRange
+        normalizedAvailable && thicknessMm != null && normalizedInRange
           ? solveApparentDiffusivity(normalized, row.time, thicknessMm / 1000, solveDeadline, diagnostics)
           : null;
       if (normalizedAvailable && Number.isFinite(normalized) && !normalizedInRange) {
-        outOfRangeCount += 1;
+        if (normalized < -normalizedEpsilon || normalized > 1 + normalizedEpsilon) {
+          outsidePhysicalCount += 1;
+        } else {
+          boundaryOmissionCount += 1;
+        }
       }
       return {
         ...row,
@@ -2183,7 +2190,7 @@
         : { available: false, threshold: null };
 
     const classical = normalizedAvailable && thicknessMm != null ? buildClassicalResults(previewRows, thicknessMm, denom) : buildEmptyClassicalResults();
-    const fit = normalizedAvailable && thicknessMm != null ? buildFitResult(fitRows, thicknessMm, baseline.value, steady.value) : buildEmptyFitResult();
+    const fit = normalizedAvailable && thicknessMm != null ? buildFitResult(rows, thicknessMm, baseline.value, steady.value, t0Offset) : buildEmptyFitResult();
     const tailWindowSize = Math.max(5, Math.ceil(rows.length * 0.12));
     const firstWindow = rows.slice(0, tailWindowSize);
     const lastWindow = rows.slice(Math.max(0, rows.length - tailWindowSize));
@@ -2216,8 +2223,10 @@
     }
 
     if (normalizedAvailable) {
-      if (outOfRangeCount) {
+      if (outsidePhysicalCount) {
         notes.push("Some normalized values fall outside the physical 0 to 1 range. D_app is omitted for those rows.");
+      } else if (boundaryOmissionCount) {
+        notes.push("D_app is omitted at the flat baseline and steady-state limits because the inverse is not informative there.");
       } else {
         const outsideRange = previewRows.filter(
           (row) => Number.isFinite(row.normalized) && (row.normalized < -0.25 || row.normalized > 1.25),
@@ -2386,6 +2395,38 @@
     dom.fitToggle.title = available
       ? "Show or hide the fitted permeation curve."
       : "No global transient fit is available for the current data.";
+    if (dom.fitApply) {
+      dom.fitApply.disabled = !available;
+      dom.fitApply.title = available
+        ? "Apply the current Global Transient Fit t0 correction to the Start Time Offset slider."
+        : "No global transient fit is available for the current data.";
+    }
+  }
+
+  function applyFitT0(dom) {
+    if (!dom || !dom.t0Offset) return;
+    const analysis = state.currentAnalysis;
+    const fit = analysis && analysis.fit;
+    if (!fit || !fit.available || !Number.isFinite(fit.timeOffset)) return;
+
+    const currentOffset = parseNumberInput(dom.t0Offset.value) || 0;
+    const nextOffset = currentOffset + fit.timeOffset;
+    const minimum = parseNumberInput(dom.t0Offset.min);
+    const maximum = parseNumberInput(dom.t0Offset.max);
+    const clampedOffset = clamp(
+      nextOffset,
+      Number.isFinite(minimum) ? minimum : nextOffset,
+      Number.isFinite(maximum) ? maximum : nextOffset,
+    );
+
+    dom.t0Offset.value = String(clampedOffset);
+    syncT0OffsetDisplay(dom);
+    setStatus(
+      dom,
+      `Applied Global Transient Fit correction ${formatFitOffset(fit.timeOffset)} s. New Start Time Offset ${formatFitOffset(clampedOffset)} s.`,
+      "ok",
+    );
+    scheduleParse(dom, "selection");
   }
 
   function normalizePlotColor(value, fallback) {
@@ -2393,7 +2434,7 @@
     return text || fallback;
   }
 
-  function buildFitOverlayPoints(analysis, fit, inputUnit, displayUnit, timeOffset, currentRanges) {
+  function buildFitOverlayPoints(analysis, fit, inputUnit, displayUnit, currentRanges) {
     if (!analysis || !fit || !fit.available || !Number.isFinite(fit.diffusivity)) return [];
     const thicknessMm = Number.isFinite(analysis.thicknessMm) ? analysis.thicknessMm : null;
     if (!Number.isFinite(thicknessMm) || thicknessMm <= 0) return [];
@@ -2403,14 +2444,13 @@
     const baselineDisplay = Number.isFinite(baselineValue) ? convertCurrentValue(baselineValue, inputUnit, displayUnit) : null;
     const steadyDisplay = Number.isFinite(steadyValue) ? convertCurrentValue(steadyValue, inputUnit, displayUnit) : null;
     if (!Number.isFinite(baselineDisplay) || !Number.isFinite(steadyDisplay)) return [];
-    const offset = Number.isFinite(timeOffset) ? timeOffset : 0;
     const fitOffset = Number.isFinite(fit.timeOffset) ? fit.timeOffset : Number.isFinite(fit.t0Offset) ? fit.t0Offset : 0;
     const denom = steadyDisplay - baselineDisplay;
     if (!Number.isFinite(denom) || denom === 0) return [];
     const points = [];
     const xMin = Number.isFinite(currentRanges && currentRanges.xMin) ? currentRanges.xMin : 0;
     const xMax = Number.isFinite(currentRanges && currentRanges.xMax) ? currentRanges.xMax : xMin;
-    const fittedStartX = offset - fitOffset;
+    const fittedStartX = Math.max(0, -fitOffset);
     const startX = Math.max(xMin, fittedStartX);
     if (!(xMax > startX)) return [];
 
@@ -2419,7 +2459,7 @@
 
     for (let index = 0; index < nextSampleCount; index += 1) {
       const x = nextSampleCount === 1 ? startX : startX + (plotSpan * index) / (nextSampleCount - 1);
-      const modelTime = x - offset + fitOffset;
+      const modelTime = x + fitOffset;
       const response = evaluateFickResponseDetailed(fit.diffusivity, modelTime, thicknessMeters);
       const normalized = typeof response === "number" ? response : response && response.value;
       if (!Number.isFinite(normalized)) continue;
@@ -2489,7 +2529,7 @@
       return;
     }
 
-    valueNode.innerHTML = `${symbol} = ${escapeHtml(formatDiffusivity(result.diffusivity))} <span class="hpa-result-unit">mm&sup2;/s</span>`;
+    valueNode.innerHTML = `${symbol} = ${formatDiffusivityHtml(result.diffusivity)} <span class="hpa-result-unit">mm&sup2;/s</span>`;
     if (result.timeHtml) {
       timeNode.innerHTML = result.timeHtml;
     } else {
@@ -2518,6 +2558,7 @@
         const currentCell = Number.isFinite(row.currentDisplay)
           ? formatNumber(row.currentDisplay)
           : formatNumber(convertCurrentValue(row.current, dom.currentUnit ? dom.currentUnit.value : "A", getDisplayUnit(dom)));
+        const originCell = escapeHtml(formatRowOriginLabel(row));
         const diffusivityCell = Number.isFinite(row.diffusivity)
           ? formatDiffusivity(row.diffusivity)
           : '<span class="hpa-missing-value" title="This value could not be computed because it is outside the baseline-to-steady-state interval. It shows as NaN here, but exports as an empty CSV cell for Excel-friendly import.">NaN</span>';
@@ -2530,6 +2571,7 @@
           <tr>
             <td>${index + 1}</td>
             <td>${formatNumber(row.time)}</td>
+            <td>${originCell}</td>
             <td>${currentCell}</td>
             <td>${diffusivityCell}</td>
             ${showSmoothed ? `<td>${smoothedDiffusivityCell}</td>` : ""}
@@ -2540,8 +2582,8 @@
 
     const table = dom.previewBody.closest("table");
     const headerCells = table ? table.querySelectorAll("thead th") : null;
-    if (headerCells && headerCells[2]) {
-      headerCells[2].textContent = `Current [${unitLabel}]`;
+    if (headerCells && headerCells[3]) {
+      headerCells[3].textContent = `Current [${unitLabel}]`;
     }
     if (dom.previewSmoothedHeader) {
       dom.previewSmoothedHeader.hidden = !showSmoothed;
@@ -2667,15 +2709,14 @@
         };
       }
       const span = window.points[window.points.length - 1].time - window.points[0].time;
-      const note = `Robust inverse window from ${formatNumber(window.points[0].time)} to ${formatNumber(window.points[window.points.length - 1].time)} s`;
       void thicknessMeters;
       return {
         available: true,
         diffusivity: robustValue,
-        timeText: Number.isFinite(span)
-          ? `Average over ${window.points.length} points / ${formatNumber(span)} s`
-          : `Average over ${window.points.length} points`,
-        note,
+        timeHtml: Number.isFinite(span)
+          ? `<span><span style="font-style:italic;">D</span><sub>Inv</sub> stable over ${escapeHtml(formatNumber(span))} s</span>`
+          : `<span><span style="font-style:italic;">D</span><sub>Inv</sub> stable over detected window</span>`,
+        note: `Detected stable inverse window: ${formatNumber(window.points[0].time)} to ${formatNumber(window.points[window.points.length - 1].time)} s`,
       };
     }
 
@@ -2719,14 +2760,20 @@
       return best;
     }
 
-    function buildFitResult(fitRows, thicknessMm, baselineValue, steadyValue) {
+    function buildFitResult(fitRows, thicknessMm, baselineValue, steadyValue, currentT0Offset) {
       const thicknessMeters = thicknessMm / 1000;
       const rows = (fitRows || [])
         .map((row) => ({
           time: row.time,
           current: row.current,
+          origin: rowOrigin(row, ROW_ORIGIN_MEASURED),
         }))
-        .filter((row) => Number.isFinite(row.time) && Number.isFinite(row.current))
+        .filter(
+          (row) =>
+            Number.isFinite(row.time) &&
+            Number.isFinite(row.current) &&
+            row.origin !== ROW_ORIGIN_PREPENDED_BASELINE,
+        )
         .sort((a, b) => a.time - b.time);
 
       if (rows.length < 4) {
@@ -2760,6 +2807,8 @@
       }
 
       const rmse = Math.sqrt(best.sse / Math.max(best.count, 1));
+      const relativeOffset = best.timeOffset;
+      const totalOffset = (Number.isFinite(currentT0Offset) ? currentT0Offset : 0) + relativeOffset;
       const noteParts = [];
       if (Number.isFinite(rmse)) {
         noteParts.push(`Error (RMSE) over ${best.count} points: ${formatFitRmsePercent(rmse)} (${describeFitQuality(rmse)})`);
@@ -2774,7 +2823,8 @@
         diffusivity: best.diffusivity,
         timeOffset: best.timeOffset,
         t0Offset: best.timeOffset,
-        timeHtml: `Best combined single fit: D<sub>app</sub> for t<sub>0</sub> = ${escapeHtml(formatFitOffset(best.timeOffset))} s`,
+        totalTimeOffset: totalOffset,
+        timeHtml: `Best combined single fit:<br>t<sub>0</sub> = ${escapeHtml(formatFitOffset(relativeOffset))} s (relative)`,
         note: noteParts.join(" "),
       };
     }
@@ -3138,6 +3188,16 @@
     return formatNumber(mm2PerS);
   }
 
+  function formatDiffusivityHtml(value) {
+    if (!Number.isFinite(value)) return "â€”";
+    const mm2PerS = convertDiffusivityToDisplay(value);
+    const abs = Math.abs(mm2PerS);
+    if (abs >= 1000 || (abs > 0 && abs < 0.001)) {
+      return formatScientificHtml(mm2PerS);
+    }
+    return escapeHtml(formatNumber(mm2PerS));
+  }
+
   function convertDiffusivityToDisplay(value) {
     if (!Number.isFinite(value)) return null;
     return value * 1e6;
@@ -3273,7 +3333,7 @@
     const fitVisible = !!(fit && fit.available && state.fitOverlayVisible);
     syncFitToggle(dom, fit);
     const fitOverlayPoints = fitVisible
-      ? buildFitOverlayPoints(analysis, fit, inputUnit, displayUnit, dom.t0Offset ? parseNumberInput(dom.t0Offset.value) || 0 : 0, currentRanges)
+      ? buildFitOverlayPoints(analysis, fit, inputUnit, displayUnit, currentRanges)
       : [];
     const fitPath = fitOverlayPoints
       .map((point, index) => `${index === 0 ? "M" : "L"} ${scaleX(point.x).toFixed(2)} ${scaleCurrentY(point.y).toFixed(2)}`)
@@ -3597,6 +3657,15 @@
     const mantissa = parts[0];
     const exponent = Number(parts[1]);
     return `${mantissa}×10${exponent < 0 ? "⁻" : ""}${Math.abs(exponent)}`;
+  }
+
+  function formatScientificHtml(value) {
+    if (!Number.isFinite(value)) return "";
+    if (value === 0) return "0";
+    const parts = Number(value).toExponential(2).split("e");
+    const mantissa = Number(parts[0]).toString();
+    const exponent = Number(parts[1]);
+    return `${escapeHtml(mantissa)}&times;10<sup>${escapeHtml(String(exponent))}</sup>`;
   }
 
   function formatLogTick(value) {
@@ -4288,7 +4357,7 @@
   function classifyInverseConfidence(rows, thicknessMeters, deadline) {
     const validRows = [];
     for (const row of Array.isArray(rows) ? rows : []) {
-      if (!row || row.synthetic || !Number.isFinite(row.time) || !Number.isFinite(row.normalized) || !Number.isFinite(row.diffusivity)) {
+      if (!row || !Number.isFinite(row.time) || !Number.isFinite(row.normalized) || !Number.isFinite(row.diffusivity)) {
         if (row) {
           row.inverseSensitivity = null;
           row.lowConfidence = false;
@@ -4454,7 +4523,7 @@
 
   function renderEmptyTable(dom, analysis) {
     const showSmoothed = !!(analysis && Array.isArray(analysis.outputSmoothedPreviewRows) && analysis.outputSmoothedPreviewRows.length);
-    dom.previewBody.innerHTML = `<tr><td colspan="${showSmoothed ? 5 : 4}" class="hpa-empty">No valid rows parsed yet.</td></tr>`;
+    dom.previewBody.innerHTML = `<tr><td colspan="${showSmoothed ? 6 : 5}" class="hpa-empty">No valid rows parsed yet.</td></tr>`;
     if (dom.previewSmoothedHeader) {
       dom.previewSmoothedHeader.hidden = !showSmoothed;
     }
@@ -4513,16 +4582,26 @@
   }
 
   function applyTimeOffsetRows(rows, t0Offset, baseline) {
+    const core = getDiagnosticCore();
+    if (core && typeof core.applyTimeOffsetRows === "function") {
+      const baselineValue = baseline && Number.isFinite(baseline.value) ? baseline.value : null;
+      return core.applyTimeOffsetRows(rows, t0Offset, baselineValue);
+    }
+
+    return applyTimeOffsetRowsFallback(rows, t0Offset, baseline);
+  }
+
+  function applyTimeOffsetRowsFallback(rows, t0Offset, baseline) {
     const sourceRows = Array.isArray(rows) ? rows : [];
     if (!sourceRows.length || !Number.isFinite(t0Offset) || t0Offset === 0) {
-      return sourceRows.map((row) => ({ ...row }));
+      return sourceRows.map((row) => cloneOffsetRow(row, rowOrigin(row, ROW_ORIGIN_MEASURED)));
     }
 
     if (t0Offset < 0) {
       const shift = Math.abs(t0Offset);
       return sourceRows
         .filter((row) => Number.isFinite(row.time) && row.time >= shift)
-        .map((row) => ({ ...row, time: row.time - shift }));
+        .map((row) => cloneOffsetRow(row, rowOrigin(row, ROW_ORIGIN_MEASURED), { time: row.time - shift }));
     }
 
     const shift = t0Offset;
@@ -4531,17 +4610,89 @@
 
     const shiftedRows = sourceRows
       .filter((row) => Number.isFinite(row.time))
-      .map((row) => ({ ...row, time: row.time + shift }));
+      .map((row) => cloneOffsetRow(row, rowOrigin(row, ROW_ORIGIN_MEASURED), { time: row.time + shift }));
 
     if (!Number.isFinite(baselineValue)) {
       return shiftedRows;
     }
 
-    const syntheticRows = [
-      { lineNumber: 0, time: 0, current: baselineValue, synthetic: true },
-      { lineNumber: 0, time: shift, current: baselineValue, synthetic: true },
-    ];
+    const firstShiftedTime = shiftedRows.reduce(
+      (minimum, row) => (Number.isFinite(row.time) ? Math.min(minimum, row.time) : minimum),
+      Number.POSITIVE_INFINITY,
+    );
+    if (!Number.isFinite(firstShiftedTime) || firstShiftedTime <= 0) {
+      return shiftedRows;
+    }
+
+    const prependStep = inferPrependTimeStep(sourceRows, shift);
+    const syntheticRows = [];
+    const epsilon = Math.max(Math.abs(prependStep), Math.abs(firstShiftedTime), 1) * 1e-9;
+    const maxRows = Math.max(1, Math.ceil(firstShiftedTime / prependStep) + 1);
+    for (let index = 0; index < maxRows; index += 1) {
+      const time = roundTimeValue(index * prependStep);
+      if (!(time < firstShiftedTime - epsilon)) break;
+      syntheticRows.push({
+        lineNumber: 0,
+        time,
+        current: baselineValue,
+        origin: ROW_ORIGIN_PREPENDED_BASELINE,
+        synthetic: true,
+      });
+    }
+
     return syntheticRows.concat(shiftedRows);
+  }
+
+  function cloneOffsetRow(row, origin, overrides) {
+    const base = row ? { ...row } : {};
+    const nextOrigin = origin || rowOrigin(base, ROW_ORIGIN_MEASURED);
+    return {
+      ...base,
+      ...(overrides || {}),
+      origin: nextOrigin,
+      synthetic: nextOrigin === ROW_ORIGIN_PREPENDED_BASELINE,
+    };
+  }
+
+  function rowOrigin(row, fallback) {
+    if (row && typeof row.origin === "string" && row.origin) return row.origin;
+    return fallback || ROW_ORIGIN_MEASURED;
+  }
+
+  function formatRowOriginLabel(row) {
+    const origin = rowOrigin(row, ROW_ORIGIN_MEASURED);
+    return origin === ROW_ORIGIN_PREPENDED_BASELINE ? "Prepended baseline" : "Measured";
+  }
+
+  function inferPrependTimeStep(rows, shift) {
+    const ordered = (rows || [])
+      .filter((row) => Number.isFinite(row.time))
+      .slice()
+      .sort((a, b) => a.time - b.time);
+    const deltas = [];
+    for (let index = 1; index < ordered.length && deltas.length < 12; index += 1) {
+      const delta = ordered[index].time - ordered[index - 1].time;
+      if (Number.isFinite(delta) && delta > 1e-9) {
+        deltas.push(delta);
+      }
+    }
+
+    const medianDelta = median(deltas);
+    if (Number.isFinite(medianDelta) && medianDelta > 0) return medianDelta;
+
+    if (ordered.length > 1) {
+      const span = ordered[ordered.length - 1].time - ordered[0].time;
+      const approximate = span / Math.max(ordered.length - 1, 1);
+      if (Number.isFinite(approximate) && approximate > 0) return approximate;
+    }
+
+    if (shift >= 1) return 1;
+    if (shift >= 0.1) return 0.1;
+    return shift > 0 ? shift : 1;
+  }
+
+  function roundTimeValue(value) {
+    return Number(Number(value).toFixed(9));
   }
 
   function formatUnitLabel(value) {
@@ -4626,17 +4777,18 @@
     const smoothedRows = showSmoothed ? analysis.outputSmoothedPreviewRows : [];
     const rows = [
       showSmoothed
-        ? ["Time [s]", `Current [${formatUnitLabel(displayUnit)}]`, "D_app [m^2/s]", "Smoothed D_app [m^2/s]"]
-        : ["Time [s]", `Current [${formatUnitLabel(displayUnit)}]`, "D_app [m^2/s]"],
+        ? ["Time [s]", "Origin", `Current [${formatUnitLabel(displayUnit)}]`, "D_app [m^2/s]", "Smoothed D_app [m^2/s]"]
+        : ["Time [s]", "Origin", `Current [${formatUnitLabel(displayUnit)}]`, "D_app [m^2/s]"],
       ...exportRows.map((row, index) => {
         const current = convertCurrentValue(row.current, inputUnit, displayUnit);
         const diffusivity = Number.isFinite(row.diffusivity) ? row.diffusivity : null;
+        const origin = rowOrigin(row, ROW_ORIGIN_MEASURED);
         if (!showSmoothed) {
-          return [row.time, current, diffusivity];
+          return [row.time, origin, current, diffusivity];
         }
         const smoothedRow = smoothedRows[index] || null;
         const smoothedDiffusivity = Number.isFinite(smoothedRow && smoothedRow.smoothedDiffusivity) ? smoothedRow.smoothedDiffusivity : null;
-        return [row.time, current, diffusivity, smoothedDiffusivity];
+        return [row.time, origin, current, diffusivity, smoothedDiffusivity];
       }),
     ];
     return rows

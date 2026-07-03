@@ -64,8 +64,8 @@ permalink: /hpa/
         </section>
 
         <div class="hpa-control" style="margin-top:0.25rem;">
-          <label for="hpa-t0-offset" title="Set the start time offset. Negative values remove early time; positive values prepend baseline time.">Start Time Offset (t<sub>0</sub>)</label>
-          <input id="hpa-t0-offset" type="range" min="-180" max="180" step="0.1" value="0" title="Set the start time offset. Negative values remove early time; positive values prepend baseline time." />
+          <label for="hpa-t0-offset" title="Set the start time offset. Negative values remove early time; positive values reconstruct prepended baseline time.">Start Time Offset (t<sub>0</sub>)</label>
+          <input id="hpa-t0-offset" type="range" min="-180" max="180" step="0.1" value="0" title="Set the start time offset. Negative values remove early time; positive values reconstruct prepended baseline time." />
           <div class="hpa-slider-value" id="hpa-t0-offset-value">0.0 s</div>
         </div>
 
@@ -277,6 +277,7 @@ permalink: /hpa/
           <article class="hpa-result-card hpa-result-card-fit">
             <h3>Global Transient Fit</h3>
             <button type="button" class="hpa-button is-secondary hpa-fit-toggle" id="hpa-fit-toggle" aria-pressed="false" title="Show or hide the fitted permeation curve.">Show</button>
+            <button type="button" class="hpa-button is-secondary hpa-fit-apply" id="hpa-fit-apply" title="Apply the current Global Transient Fit t0 correction to the Start Time Offset slider.">Apply t0</button>
             <div class="hpa-result-value" id="hpa-fit-value">D<sub>GTF</sub> = NaN</div>
             <div class="hpa-result-meta" id="hpa-fit-time">Load data to fit D and t<sub>0</sub> together.</div>
             <div class="hpa-result-note" id="hpa-fit-note"></div>
@@ -291,6 +292,7 @@ permalink: /hpa/
               <tr>
                 <th>#</th>
                 <th>Time [s]</th>
+                <th>Origin</th>
                 <th>Current</th>
                 <th>Apparent Diffusion Coefficient D<sub>app</sub> [mm&sup2;/s]</th>
                 <th id="hpa-preview-smoothed-header" hidden>Smoothed D<sub>app</sub> [mm&sup2;/s]</th>
@@ -298,7 +300,7 @@ permalink: /hpa/
             </thead>
             <tbody id="hpa-preview-body">
               <tr>
-                <td colspan="4" class="hpa-empty">No data loaded.</td>
+                <td colspan="5" class="hpa-empty">No data loaded.</td>
               </tr>
             </tbody>
           </table>
@@ -352,7 +354,7 @@ permalink: /hpa/
           <li>The membrane thickness is entered in mm. It matters because all diffusion coefficients scale with <code>L<sup>2</sup></code>, so a unit mistake changes every result by a large factor.</li>
           <li>The baseline and steady-state fields define the normalization used by the analysis. If they are left blank, HPA starts from the minimum and maximum values in the loaded data.</li>
           <li>You can type baseline and steady-state values manually, or drag the reference lines directly on the plot. The values follow the currently selected display unit.</li>
-          <li>The <strong>Start Time Offset</strong> control shifts the trace before analysis. A positive offset prepends baseline time and moves the transient forward. A negative offset removes early time and shifts the remaining data back to zero.</li>
+          <li>The <strong>Start Time Offset</strong> control shifts the trace before analysis. A positive offset reconstructs a dense baseline segment before the transient and moves the measured data forward. A negative offset removes early time and shifts the remaining data back to zero.</li>
           <li>Plot Options let you change the y-axis unit, choose colors for the main lines, decide how inverse-conditioning-based low-confidence diffusion segments are drawn, turn grid lines and minor grid lines on or off, and switch the diffusion axis between linear and logarithmic scaling.</li>
           <li>The <strong>Reset</strong> button restores the default plot view. The <strong>Hide/Show</strong> buttons toggle the reference markers without deleting their values.</li>
         </ul>
@@ -368,7 +370,7 @@ permalink: /hpa/
           <li><strong>Smoothing spline</strong> fits a smooth curve through the input while penalizing roughness. It can work well on coarse or uneven traces, but stronger settings can flatten sharp transients.</li>
           <li><strong>Polynomial</strong> fits one global polynomial to the full trace. It is simple and easy to try, but higher degrees can oscillate and distort the curve if the trace is long or noisy.</li>
           <li>The short tooltips on each dropdown repeat the one-line version of these tradeoffs so you do not have to open Help every time.</li>
-          <li>If output smoothing is enabled, the preview table and CSV export show both the raw and smoothed <code>D<sub>app</sub></code> values.</li>
+          <li>If output smoothing is enabled, the preview table and CSV export show both the raw and smoothed <code>D<sub>app</sub></code> values. When positive <code>t<sub>0</sub></code> is used, both also show whether a row is measured data or reconstructed prepended baseline.</li>
         </ul>
       </div>
 
@@ -383,10 +385,10 @@ permalink: /hpa/
           <li><strong>Time lag</strong> uses the 63% crossing. It assumes that the transient has a clear monotonic rise and that the steady-state level is meaningful.</li>
           <li><strong>Inflection point</strong> uses the maximum-slope point of the normalized curve. It is only useful when the curve has one clear inflection and the steady-state current is valid.</li>
           <li><strong>Inverse Fickian</strong> inverts the ideal Fickian response point by point to produce <code>D<sub>app</sub>(t)</code>. HPA shades low-confidence regions where the inverse problem is poorly conditioned, then reports an average value when a stable middle window is robust enough.</li>
-          <li><strong>Global Transient Fit</strong> searches for one constant <code>D</code> and one <code>t<sub>0</sub></code> shift that best reproduce the normalized curve. It is useful when you want a single self-consistent fit instead of pointwise inversion.</li>
+          <li><strong>Global Transient Fit</strong> searches for one constant <code>D</code> and one relative <code>t<sub>0</sub></code> correction on top of the current <strong>Start Time Offset</strong>. The card reports that correction as a relative value, and <strong>Apply t0</strong> adds it to the current slider setting.</li>
         </ul>
         <p>The low-confidence shade is a practical proxy, not a new physics claim. A useful intuition is <code>f(x) = 1 / (1-x)</code>: as <code>x</code> approaches 1, the inverse blows up, so the flat tail is less trustworthy.</p>
-        <p>The preview table shows <code>D<sub>app</sub></code> in mm&sup2;/s for readability. The CSV export writes <code>D<sub>app</sub></code> in m&sup2;/s, so the exported numbers look different even though they represent the same quantity.</p>
+        <p>The preview table shows <code>D<sub>app</sub></code> in mm&sup2;/s for readability and includes an <strong>Origin</strong> column that distinguishes measured rows from reconstructed prepended baseline. The CSV export writes <code>D<sub>app</sub></code> in m&sup2;/s, so the exported numbers look different even though they represent the same quantity.</p>
       </div>
 
       <div>
@@ -394,7 +396,7 @@ permalink: /hpa/
         <ul class="hpa-help-list">
           <li><strong>PNG</strong> saves the current plot as an image.</li>
           <li><strong>SVG</strong> saves the current plot as a vector graphic.</li>
-          <li><strong>Data</strong> exports the processed table with time, current, and <code>D<sub>app</sub></code>. If output smoothing is enabled, the export also includes the smoothed <code>D<sub>app</sub></code> column.</li>
+          <li><strong>Data</strong> exports the processed table with time, origin, current, and <code>D<sub>app</sub></code>. If output smoothing is enabled, the export also includes the smoothed <code>D<sub>app</sub></code> column.</li>
         </ul>
         <p>The export always reflects the current display settings, including the selected plot unit, reference values, and plot view. If you change the plot or the controls, export again to capture the updated state.</p>
       </div>

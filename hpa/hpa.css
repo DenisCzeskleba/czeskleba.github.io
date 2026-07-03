@@ -551,7 +551,7 @@ body.dark #hpa-diagnostic-open:focus-visible {
 
 .hpa-result-card-fit {
   position: relative;
-  padding-right: 5.4rem;
+  padding-right: 6.3rem;
 }
 
 .hpa-result-card h3 {
@@ -580,6 +580,14 @@ body.dark #hpa-diagnostic-open:focus-visible {
 .hpa-fit-toggle {
   position: absolute;
   top: 0.72rem;
+  right: 0.72rem;
+  min-width: 4.35rem;
+  padding-inline: 0.72rem;
+}
+
+.hpa-fit-apply {
+  position: absolute;
+  top: 3.15rem;
   right: 0.72rem;
   min-width: 4.35rem;
   padding-inline: 0.72rem;

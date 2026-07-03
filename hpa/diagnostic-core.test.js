@@ -213,6 +213,79 @@ test("classical breakthrough uses ISO-style linear extrapolation on a baseline-c
   );
 });
 
+test("positive t0 prepends dense baseline rows on the inferred cadence without duplicating the join time", () => {
+  const rows = [
+    { time: 0, current: 5 },
+    { time: 1, current: 6 },
+    { time: 2, current: 7 },
+  ];
+  const shifted = core.applyTimeOffsetRows(rows, 20, 5);
+
+  assert.equal(shifted.length, 23);
+  assert.deepStrictEqual(
+    shifted.slice(0, 20).map((row) => row.time),
+    Array.from({ length: 20 }, (_, index) => index),
+  );
+  assert.ok(shifted.slice(0, 20).every((row) => row.current === 5));
+  assert.ok(shifted.slice(0, 20).every((row) => row.origin === "prepended_baseline"));
+  assert.ok(shifted.slice(0, 20).every((row) => row.synthetic === true));
+  assert.deepStrictEqual(
+    shifted.slice(20).map((row) => ({ time: row.time, current: row.current, origin: row.origin, synthetic: row.synthetic })),
+    [
+      { time: 20, current: 5, origin: "measured", synthetic: false },
+      { time: 21, current: 6, origin: "measured", synthetic: false },
+      { time: 22, current: 7, origin: "measured", synthetic: false },
+    ],
+  );
+  assert.equal(shifted.filter((row) => row.time === 20).length, 1);
+});
+
+test("positive t0 uses the median early dt for irregular traces", () => {
+  const rows = [
+    { time: 0, current: 4 },
+    { time: 0.8, current: 4.1 },
+    { time: 1.6, current: 4.2 },
+    { time: 4.0, current: 4.5 },
+  ];
+  const shifted = core.applyTimeOffsetRows(rows, 2, 4);
+  const prepended = shifted.filter((row) => row.origin === "prepended_baseline");
+
+  assert.deepStrictEqual(
+    prepended.map((row) => row.time),
+    [0, 0.8, 1.6],
+  );
+  assert.equal(shifted.filter((row) => row.time === 2).length, 1);
+  assert.deepStrictEqual(
+    shifted.filter((row) => row.origin === "measured").map((row) => row.time),
+    [2, 2.8, 3.6, 6],
+  );
+});
+
+test("global transient fit ignores prepended baseline rows when estimating t0", () => {
+  const rows = buildFickSeries({
+    thicknessMm: 0.5,
+    diffusivity: 5e-10,
+    baseline: 0,
+    steady: 1,
+    step: 5,
+    duration: 720,
+    delay: 40,
+  });
+
+  const fitFromRaw = core.buildFitResult(rows, 0.5, 0, 1, 0);
+  const shiftedRows = core.applyTimeOffsetRows(rows, 20, 0);
+  const fitFromPrepended = core.buildFitResult(shiftedRows, 0.5, 0, 1, 20);
+
+  assert.ok(fitFromRaw.available, "expected fit on raw rows");
+  assert.ok(fitFromPrepended.available, "expected fit on prepended rows");
+  assert.ok(Number.isFinite(fitFromRaw.totalTimeOffset), "expected raw total t0");
+  assert.ok(Number.isFinite(fitFromPrepended.totalTimeOffset), "expected prepended total t0");
+  assert.ok(
+    Math.abs(fitFromRaw.totalTimeOffset - fitFromPrepended.totalTimeOffset) < 8,
+    `expected similar total t0, got raw ${fitFromRaw.totalTimeOffset} vs prepended ${fitFromPrepended.totalTimeOffset}`,
+  );
+});
+
 test("snapshot helpers preserve and restore pre-diagnostic state objects", () => {
   const snapshot = {
     inputValue: "0 1",
