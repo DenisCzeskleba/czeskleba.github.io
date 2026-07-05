@@ -8,6 +8,14 @@ solution to the one-dimensional Fickian membrane model.
 The live tool is published at:
 https://czeskleba.com/hpa/
 
+## Repository Note
+
+This repository is maintained as the citeable HPA software mirror.
+
+- Day-to-day editing happens in the `czeskleba.com` website repository under `hpa/`.
+- Changes are mirrored here automatically by GitHub Actions.
+- GitHub releases in this repository are the releases intended for Zenodo archiving and DOI-based citation.
+
 ## What HPA does
 
 - Paste or upload a two-column transient file with time first and current second.
@@ -21,10 +29,4 @@ HPA runs in the browser. Nothing is sent to a backend during analysis.
 
 ## License
 
-MIT
-
-## Repository Note
-
-This repository is maintained as the citeable HPA software mirror. The main
-editing workflow currently lives in the website repository for
-`czeskleba.com`, and changes under `hpa/` are mirrored here automatically.
+This software is released under the MIT License. See `LICENSE` for the full text.
