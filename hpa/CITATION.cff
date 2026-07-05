@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use Hydrogen Permeation Analyzer, please cite this software."
+title: "Hydrogen Permeation Analyzer"
+type: software
+authors:
+  - family-names: "Czeskleba"
+    given-names: "Denis"
+license: "MIT"
+url: "https://czeskleba.com/hpa/"
+repository-code: "https://github.com/DenisCzeskleba/Hydrogen-Permeation-Analyzer"
+abstract: "Browser-only software for analyzing hydrogen permeation transient data and comparing common evaluation methods."
+keywords:
+  - hydrogen permeation
+  - diffusion
+  - electrochemistry
+  - materials science

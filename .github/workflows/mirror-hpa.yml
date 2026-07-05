@@ -1,0 +1,39 @@
+name: Mirror HPA Repo
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "hpa/**"
+      - ".github/workflows/mirror-hpa.yml"
+  workflow_dispatch:
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check mirror token
+        run: |
+          if [ -z "${{ secrets.HPA_MIRROR_TOKEN }}" ]; then
+            echo "Missing repository secret HPA_MIRROR_TOKEN."
+            exit 1
+          fi
+
+      - name: Checkout source repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Split hpa subtree
+        run: git subtree split --prefix hpa --branch hpa-mirror
+
+      - name: Push mirror branch
+        run: |
+          git remote add hpa-mirror-target "https://x-access-token:${{ secrets.HPA_MIRROR_TOKEN }}@github.com/DenisCzeskleba/Hydrogen-Permeation-Analyzer.git"
+          git push --force hpa-mirror-target hpa-mirror:main
