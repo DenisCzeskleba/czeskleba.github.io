@@ -8,3 +8,4 @@ scripts/validate_hdd_public_bundle.py
 # Local-only assets
 /assets/HDD.B Logo selection.png
 /mda/plan.md
+/hpa/RELEASING.md
