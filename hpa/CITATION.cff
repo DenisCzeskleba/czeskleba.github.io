@@ -1,10 +1,13 @@
 cff-version: 1.2.0
-message: "If you use Hydrogen Permeation Analyzer, please cite this software."
+message: "If you use Hydrogen Permeation Analyzer, please cite the released software version you used."
 title: "Hydrogen Permeation Analyzer"
 type: software
 authors:
   - family-names: "Czeskleba"
     given-names: "Denis"
+version: "v1.0.0"
+date-released: 2026-07-05
+doi: "10.5281/zenodo.21204365"
 license: "MIT"
 url: "https://czeskleba.com/hpa/"
 repository-code: "https://github.com/DenisCzeskleba/Hydrogen-Permeation-Analyzer"

@@ -231,6 +231,20 @@ permalink: /hpa/
             </div>
           </details>
           <details class="hpa-tool-panel">
+            <summary class="hpa-button is-secondary">Cite</summary>
+            <div class="hpa-tool-panel-body">
+              <div class="hpa-citation-note">
+                <strong>Latest citeable release</strong>
+                <a id="hpa-citation-doi-link" class="hpa-citation-link" href="#" target="_blank" rel="noopener">Loading DOI...</a>
+              </div>
+              <div class="hpa-export-row hpa-citation-actions">
+                <a class="hpa-button is-accent" id="hpa-citation-bibtex" download> BibTeX </a>
+                <a class="hpa-button is-accent" id="hpa-citation-ris" download> RIS </a>
+                <a class="hpa-button is-accent" id="hpa-citation-plain" download> Plain Text </a>
+              </div>
+            </div>
+          </details>
+          <details class="hpa-tool-panel">
             <summary class="hpa-button is-secondary">Export</summary>
             <div class="hpa-tool-panel-body">
               <div class="hpa-export-row">
@@ -403,6 +417,12 @@ permalink: /hpa/
           <li><strong>Data</strong> exports the processed table with time, origin, current, and <code>D<sub>app</sub></code>. If output smoothing is enabled, the export also includes the smoothed <code>D<sub>app</sub></code> column.</li>
         </ul>
         <p>The export always reflects the current display settings, including the selected plot unit, reference values, and plot view. If you change the plot or the controls, export again to capture the updated state.</p>
+      </div>
+
+      <div>
+        <h3>Citation</h3>
+        <p>Use the <strong>Cite</strong> panel to download BibTeX, RIS, or plain-text citation metadata for the latest released HPA version.</p>
+        <p>The current citeable release is <strong id="hpa-help-citation-version">Loading version...</strong>: <a id="hpa-help-citation-doi" class="hpa-citation-link" href="#" target="_blank" rel="noopener">Loading DOI...</a></p>
       </div>
 
       <div>

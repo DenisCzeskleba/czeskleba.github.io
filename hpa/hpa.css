@@ -893,6 +893,37 @@ body.dark #hpa-diagnostic-open:focus-visible {
   min-width: 0;
 }
 
+.hpa-citation-note {
+  display: grid;
+  gap: 0.2rem;
+  max-width: 22rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.hpa-citation-note strong {
+  color: var(--ink);
+}
+
+.hpa-citation-link {
+  color: var(--accent);
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.hpa-citation-link:hover,
+.hpa-citation-link:focus-visible {
+  text-decoration: underline;
+}
+
+.hpa-citation-actions .hpa-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
 .hpa-inline-details {
   border-top: 1px solid var(--line);
   padding-top: 10px;

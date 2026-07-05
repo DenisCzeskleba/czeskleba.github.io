@@ -74,6 +74,15 @@
     spline: "Penalized cubic spline smoothing. Very smooth, but stronger settings can flatten sharp features.",
     polynomial: "Single global polynomial fit. Simple to try, but higher degrees can oscillate quickly.",
   };
+  const HPA_CITATION = Object.freeze({
+    title: "Hydrogen Permeation Analyzer",
+    authors: ["Czeskleba, Denis"],
+    version: "v1.0.0",
+    releaseDate: "2026-07-05",
+    publisher: "Zenodo",
+    doi: "10.5281/zenodo.21204365",
+    liveUrl: "https://czeskleba.com/hpa/",
+  });
 
   const state = {
     parseTimer: null,
@@ -190,6 +199,12 @@
         diagnosticFindings: document.getElementById("hpa-diagnostic-findings"),
         diagnosticCandidates: document.getElementById("hpa-diagnostic-candidates"),
         diagnosticNotes: document.getElementById("hpa-diagnostic-notes"),
+        citationDoiLink: document.getElementById("hpa-citation-doi-link"),
+        citationBibtex: document.getElementById("hpa-citation-bibtex"),
+        citationRis: document.getElementById("hpa-citation-ris"),
+        citationPlain: document.getElementById("hpa-citation-plain"),
+        helpCitationVersion: document.getElementById("hpa-help-citation-version"),
+        helpCitationDoi: document.getElementById("hpa-help-citation-doi"),
         downloadButtons: root.querySelectorAll("[data-download]"),
       exampleButton: document.getElementById("hpa-example"),
     };
@@ -449,6 +464,7 @@
     }
     syncPlotColorControls(dom, state.plotColors);
     applyPlotColorVars(dom);
+    syncCitationMetadata(dom);
     syncSmoothingControls(dom);
     syncT0OffsetDisplay(dom);
     renderDiagnosticDrawer(dom, null);
@@ -4869,6 +4885,85 @@
 
   function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
+  }
+
+  function normalizeDoiValue(value) {
+    if (typeof value !== "string") return "";
+    let doi = value.trim();
+    if (!doi) return "";
+    doi = doi.replace(/^doi:\s*/i, "");
+    doi = doi.replace(/^https?:\/\/(?:dx\.)?doi\.org\//i, "");
+    doi = doi.replace(/^doi\.org\//i, "");
+    return doi.trim();
+  }
+
+  function toDoiUrl(value) {
+    const normalized = normalizeDoiValue(value);
+    if (!normalized) return "";
+    return `https://doi.org/${normalized}`;
+  }
+
+  function syncCitationMetadata(dom) {
+    const doiUrl = toDoiUrl(HPA_CITATION.doi);
+    if (dom.citationDoiLink) {
+      dom.citationDoiLink.href = doiUrl || "#";
+      dom.citationDoiLink.textContent = doiUrl || HPA_CITATION.doi;
+    }
+    if (dom.helpCitationVersion) {
+      dom.helpCitationVersion.textContent = HPA_CITATION.version;
+    }
+    if (dom.helpCitationDoi) {
+      dom.helpCitationDoi.href = doiUrl || "#";
+      dom.helpCitationDoi.textContent = doiUrl || HPA_CITATION.doi;
+    }
+    updateCitationDownloads(dom);
+  }
+
+  function updateCitationDownloads(dom) {
+    const doiUrl = toDoiUrl(HPA_CITATION.doi);
+    const authors = Array.isArray(HPA_CITATION.authors) ? HPA_CITATION.authors : [];
+    const plainText = `${authors.join(", ")} (${HPA_CITATION.releaseDate.slice(0, 4)}). ${HPA_CITATION.title} (Version ${HPA_CITATION.version}) [Computer software]. ${HPA_CITATION.publisher}. ${doiUrl}`;
+    const bibtexLines = [
+      "@software{czeskleba_hpa_v1_0_0,",
+      authors.length ? `  author = {${authors.join(" and ")}},` : null,
+      `  title = {${HPA_CITATION.title}},`,
+      `  version = {${HPA_CITATION.version}},`,
+      `  year = {${HPA_CITATION.releaseDate.slice(0, 4)}},`,
+      `  publisher = {${HPA_CITATION.publisher}},`,
+      HPA_CITATION.doi ? `  doi = {${normalizeDoiValue(HPA_CITATION.doi)}},` : null,
+      doiUrl ? `  url = {${doiUrl}},` : null,
+      "}",
+    ].filter(Boolean);
+    const bibtex = bibtexLines.join("\n");
+    const risLines = [
+      "TY  - COMP",
+      ...authors.map((author) => `AU  - ${author}`),
+      `TI  - ${HPA_CITATION.title}`,
+      `ET  - ${HPA_CITATION.version}`,
+      `PY  - ${HPA_CITATION.releaseDate.slice(0, 4)}`,
+      `DA  - ${HPA_CITATION.releaseDate}`,
+      `PB  - ${HPA_CITATION.publisher}`,
+      HPA_CITATION.doi ? `DO  - ${normalizeDoiValue(HPA_CITATION.doi)}` : null,
+      doiUrl ? `UR  - ${doiUrl}` : null,
+      "ER  -",
+    ].filter(Boolean);
+    const ris = risLines.join("\n");
+
+    setCitationDownload(dom.citationPlain, "hpa-citation.txt", "text/plain", plainText);
+    setCitationDownload(dom.citationBibtex, "hpa-citation.bib", "text/x-bibtex", bibtex);
+    setCitationDownload(dom.citationRis, "hpa-citation.ris", "application/x-research-info-systems", ris);
+  }
+
+  function setCitationDownload(element, filename, mimeType, content) {
+    if (!element) return;
+    if (element.dataset?.objectUrl) {
+      URL.revokeObjectURL(element.dataset.objectUrl);
+    }
+    const blob = new Blob([content], { type: `${mimeType};charset=utf-8` });
+    const objectUrl = URL.createObjectURL(blob);
+    element.href = objectUrl;
+    element.download = filename;
+    element.dataset.objectUrl = objectUrl;
   }
 
   function handleDownload(dom, type) {

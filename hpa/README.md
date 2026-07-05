@@ -1,4 +1,4 @@
-# Hydrogen Permeation Analyzer
+# Hydrogen Permeation Analyzer <a href="https://doi.org/10.5281/zenodo.21204365"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.21204365.svg" alt="DOI"></a>
 
 Hydrogen Permeation Analyzer (HPA) is a browser-only tool for analyzing hydrogen
 permeation transients. It is designed for users who want to compare the common
@@ -22,6 +22,17 @@ This repository is maintained as the citeable HPA software mirror.
 - Compare classical evaluation methods, inverse Fickian analysis, and global
   transient fitting.
 - Inspect the plot in the browser and export PNG, SVG, or processed CSV output.
+
+## How to cite
+
+If you use HPA, cite the specific released version you used.
+
+**Current citeable release: v1.0.0**  
+DOI: https://doi.org/10.5281/zenodo.21204365
+
+The Zenodo record provides ready-to-import citation formats, and the live website
+also exposes BibTeX, RIS, and plain-text citation downloads through the `Cite`
+panel.
 
 ## Privacy
 
