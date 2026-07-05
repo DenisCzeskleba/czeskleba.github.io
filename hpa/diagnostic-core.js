@@ -22,6 +22,29 @@
     minCentralFraction: 0.4,
   };
   const BREAKTHROUGH_NORMALIZED_THRESHOLD = 0.096;
+  const DEFAULT_TIME_LAG_MODE = "analytic";
+  const TIME_LAG_MODES = {
+    analytic: {
+      id: "analytic",
+      label: "Analytic",
+      threshold: 0.617,
+      thresholdText: "61.7%",
+      resultLabel: "Time Lag (61.7%)",
+      noteTitle: "61.7% analytic criterion",
+      tooltip:
+        "Analytic uses the 61.7% crossing from the ideal Fickian solution for a planar membrane.",
+    },
+    historic: {
+      id: "historic",
+      label: "Historic",
+      threshold: 0.63,
+      thresholdText: "63%",
+      resultLabel: "Time Lag (63%)",
+      noteTitle: "63% historic criterion",
+      tooltip:
+        "Historic uses the 63% crossing commonly used in the electrochemical permeation literature.",
+    },
+  };
   const ROW_ORIGIN_MEASURED = "measured";
   const ROW_ORIGIN_PREPENDED_BASELINE = "prepended_baseline";
 
@@ -39,6 +62,7 @@
       candidate: currentState,
       label: "current",
       detailLevel: "search",
+      timeLagMode: input && input.timeLagMode,
     });
     const rawChecks = analyzeRawChecks(sourceRows, currentState, cropRange, thicknessMeters);
     const candidates = buildCandidateStates(sourceRows, currentState);
@@ -52,6 +76,7 @@
         candidate,
         label: candidate.label,
         detailLevel: "search",
+        timeLagMode: input && input.timeLagMode,
       });
       if (result) evaluated.push(result);
     });
@@ -400,8 +425,9 @@
     const normalizedWithin = normalizedValid.filter((row) => row.normalized >= 0.02 && row.normalized <= 0.98);
     const centralWindow = selectCentralWindow(normalizedValid);
     const thicknessAvailable = Number.isFinite(thicknessMeters) && thicknessMeters > 0;
-    const classical = normalizedAvailable && thicknessAvailable ? buildClassicalResults(normalizedRows, thicknessMeters, denom, baselineValue) : buildEmptyClassicalResults();
-    const fit = normalizedAvailable && thicknessAvailable ? buildFitResult(candidateRows, thicknessMm, baselineValue, steadyValue, t0Offset) : buildEmptyFitResult();
+    const timeLagMode = getTimeLagModeConfig(options.timeLagMode);
+    const classical = normalizedAvailable && thicknessAvailable ? buildClassicalResults(normalizedRows, thicknessMeters, denom, timeLagMode.id) : buildEmptyClassicalResults();
+    const fit = normalizedAvailable && thicknessAvailable ? buildFitResult(candidateRows, thicknessMm, baselineValue, steadyValue, t0Offset, timeLagMode.id) : buildEmptyFitResult();
     const flatness = normalizedAvailable && thicknessAvailable ? evaluateFlatness(normalizedRows, thicknessMeters, centralWindow) : buildEmptyFlatness();
     const plateau = evaluatePlateau(candidateRows, baselineValue, steadyValue);
     const monotonicity = evaluateMonotonicity(candidateRows);
@@ -948,10 +974,18 @@
     return list;
   }
 
-  function buildClassicalResults(rows, thicknessMeters, iMax) {
+  function buildClassicalResults(rows, thicknessMeters, iMax, timeLagMode) {
     const sorted = sortRows(rows.filter((row) => Number.isFinite(row.time) && Number.isFinite(row.normalized) && Number.isFinite(row.current)));
     const breakthrough = solveBreakthroughMethod(sorted, thicknessMeters);
-    const timeLag = solveThresholdMethod(sorted, thicknessMeters, 0.63, 6, "Time lag (63%)", "D = L<sup>2</sup> / (6 t<sub>lag</sub>)");
+    const mode = getTimeLagModeConfig(timeLagMode);
+    const timeLag = solveThresholdMethod(
+      sorted,
+      thicknessMeters,
+      mode.threshold,
+      6,
+      mode.resultLabel,
+      `<span class="hpa-formula-note"><span class="hpa-formula-title">${mode.noteTitle}</span><span class="hpa-formula-display"><span class="hpa-formula-equals">D =</span> <span class="hpa-formula-expression">L<sup>2</sup> / (6 t<sub>lag</sub>)</span></span></span>`,
+    );
     const inflection = solveInflectionMethod(sorted, thicknessMeters, iMax);
     const inverseFickian = solveInverseFickianWindow(sorted, thicknessMeters);
     return { breakthrough, timeLag, inflection, inverseFickian };
@@ -1091,7 +1125,7 @@
     return best;
   }
 
-  function buildFitResult(fitRows, thicknessMm, baselineValue, steadyValue, currentT0Offset) {
+  function buildFitResult(fitRows, thicknessMm, baselineValue, steadyValue, currentT0Offset, timeLagMode) {
     const thicknessMeters = thicknessMm / 1000;
     if (!Number.isFinite(thicknessMeters) || thicknessMeters <= 0) {
       return { available: false, note: "The fit requires a valid membrane thickness." };
@@ -1102,7 +1136,7 @@
       return { available: false, note: prepared.error };
     }
 
-    const best = solveFixedFit(prepared, thicknessMeters, Date.now() + SOLVER_POLICY.timeoutMs);
+    const best = solveFixedFit(prepared, thicknessMeters, Date.now() + SOLVER_POLICY.timeoutMs, null, timeLagMode);
     if (!best) {
       return { available: false, note: "No stable D fit could be found for the current Start Time Offset." };
     }
@@ -1182,12 +1216,12 @@
     return best;
   }
 
-  function evaluateFitTimeOffsetCandidate(rows, thicknessMm, baselineValue, steadyValue, cropRange, totalTimeOffset, deadline, seed) {
+  function evaluateFitTimeOffsetCandidate(rows, thicknessMm, baselineValue, steadyValue, cropRange, totalTimeOffset, deadline, seed, timeLagMode) {
     let transformedRows = applyTimeOffsetRows(rows, totalTimeOffset, baselineValue);
     if (cropRange) transformedRows = transformedRows.filter((row) => row.time >= cropRange.start && row.time <= cropRange.end);
     const prepared = prepareFitRows(transformedRows, baselineValue, steadyValue);
     if (prepared.error) return null;
-    const best = solveFixedFit(prepared, thicknessMm / 1000, deadline, seed);
+    const best = solveFixedFit(prepared, thicknessMm / 1000, deadline, seed, timeLagMode);
     if (!best) return null;
     return {
       diffusivity: best.diffusivity,
@@ -1237,10 +1271,10 @@
     };
   }
 
-  function solveFixedFit(prepared, thicknessMeters, deadline, seed) {
+  function solveFixedFit(prepared, thicknessMeters, deadline, seed, timeLagMode) {
     if (!prepared || !Array.isArray(prepared.sampledRows) || !prepared.sampledRows.length) return null;
     if (!Number.isFinite(thicknessMeters) || thicknessMeters <= 0) return null;
-    const nextSeed = seed && Number.isFinite(seed.diffusivity) ? seed : estimateFitSeed(prepared.sampledRows, thicknessMeters);
+    const nextSeed = seed && Number.isFinite(seed.diffusivity) ? seed : estimateFitSeed(prepared.sampledRows, thicknessMeters, timeLagMode);
     return optimizeDiffusivitySearch(prepared.sampledRows, thicknessMeters, nextSeed, deadline);
   }
 
@@ -1300,9 +1334,10 @@
     };
   }
 
-  function estimateFitSeed(rows, thicknessMeters) {
+  function estimateFitSeed(rows, thicknessMeters, timeLagMode) {
     if (!rows.length || !Number.isFinite(thicknessMeters) || thicknessMeters <= 0) return null;
-    const timeLag = findCrossingTime(rows, 0.63);
+    const mode = getTimeLagModeConfig(timeLagMode);
+    const timeLag = findCrossingTime(rows, mode.threshold);
     if (!timeLag || !Number.isFinite(timeLag.time) || timeLag.time <= 0) {
       return null;
     }
@@ -1835,6 +1870,11 @@
     return Number(rounded.toFixed(decimals));
   }
 
+  function getTimeLagModeConfig(modeId) {
+    if (modeId && TIME_LAG_MODES[modeId]) return TIME_LAG_MODES[modeId];
+    return TIME_LAG_MODES[DEFAULT_TIME_LAG_MODE];
+  }
+
   return {
     analyzeDiagnostic,
     buildEmptyClassicalResults,
@@ -1849,5 +1889,8 @@
     cloneState,
     applyRecommendationToState,
     sortRows,
+    DEFAULT_TIME_LAG_MODE,
+    TIME_LAG_MODES,
+    getTimeLagModeConfig,
   };
 });

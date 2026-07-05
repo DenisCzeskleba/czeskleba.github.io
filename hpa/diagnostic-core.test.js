@@ -64,6 +64,11 @@ function breakthroughTimeFromDiffusivity(diffusivity, thicknessMm) {
   return (thicknessMeters * thicknessMeters) / (15.3 * diffusivity);
 }
 
+function timeLagFromDiffusivity(diffusivity, thicknessMm) {
+  const thicknessMeters = thicknessMm / 1000;
+  return (thicknessMeters * thicknessMeters) / (6 * diffusivity);
+}
+
 function findInterpolatedCrossingTime(rows, threshold) {
   if (!rows.length) return null;
   if (Number.isFinite(rows[0].normalized) && rows[0].normalized >= threshold) {
@@ -294,6 +299,40 @@ test("classical breakthrough stays unavailable when the 9.6% normalized threshol
   assert.ok(/9\.6% normalized criterion/i.test(classical.breakthrough.note || ""));
 });
 
+test("classical time lag respects the analytic 61.7% threshold", () => {
+  const thicknessMm = 0.5;
+  const normalizedRows = [
+    { time: 0, current: 0, normalized: 0.0 },
+    { time: 10, current: 0.55, normalized: 0.55 },
+    { time: 20, current: 0.62, normalized: 0.62 },
+    { time: 30, current: 0.68, normalized: 0.68 },
+  ];
+  const expectedTime = findInterpolatedCrossingTime(normalizedRows, 0.617);
+  const classical = core.buildClassicalResults(normalizedRows, thicknessMm / 1000, 1, "analytic");
+  const lagTime = timeLagFromDiffusivity(classical.timeLag.diffusivity, thicknessMm);
+
+  assert.ok(classical.timeLag.available, "expected analytic time-lag result");
+  assert.ok(/61\.7%/i.test(classical.timeLag.noteHtml || ""));
+  assert.ok(Math.abs(lagTime - expectedTime) < 1e-9, `expected analytic time lag ${expectedTime} s, got ${lagTime}`);
+});
+
+test("classical time lag respects the historic 63% threshold", () => {
+  const thicknessMm = 0.5;
+  const normalizedRows = [
+    { time: 0, current: 0, normalized: 0.0 },
+    { time: 10, current: 0.55, normalized: 0.55 },
+    { time: 20, current: 0.62, normalized: 0.62 },
+    { time: 30, current: 0.68, normalized: 0.68 },
+  ];
+  const expectedTime = findInterpolatedCrossingTime(normalizedRows, 0.63);
+  const classical = core.buildClassicalResults(normalizedRows, thicknessMm / 1000, 1, "historic");
+  const lagTime = timeLagFromDiffusivity(classical.timeLag.diffusivity, thicknessMm);
+
+  assert.ok(classical.timeLag.available, "expected historic time-lag result");
+  assert.ok(/63%/i.test(classical.timeLag.noteHtml || ""));
+  assert.ok(Math.abs(lagTime - expectedTime) < 1e-9, `expected historic time lag ${expectedTime} s, got ${lagTime}`);
+});
+
 test("positive t0 prepends dense baseline rows on the inferred cadence without duplicating the join time", () => {
   const rows = [
     { time: 0, current: 5 },
@@ -367,6 +406,24 @@ test("global transient fit keeps the current t0 fixed and ignores prepended base
     Math.abs(fitFromRaw.diffusivity - fitFromPrepended.diffusivity) / fitFromRaw.diffusivity < 0.08,
     `expected similar fitted D, got raw ${fitFromRaw.diffusivity} vs prepended ${fitFromPrepended.diffusivity}`,
   );
+});
+
+test("global transient fit seed follows the selected time-lag mode", () => {
+  const rows = [
+    { time: 0, current: 0 },
+    { time: 10, current: 0.55 },
+    { time: 20, current: 0.62 },
+    { time: 30, current: 0.68 },
+    { time: 40, current: 0.74 },
+    { time: 50, current: 0.79 },
+  ];
+
+  const analytic = core.buildFitResult(rows, 0.5, 0, 1, 0, "analytic");
+  const historic = core.buildFitResult(rows, 0.5, 0, 1, 0, "historic");
+
+  assert.ok(analytic.available, "expected analytic fit result");
+  assert.ok(historic.available, "expected historic fit result");
+  assert.notEqual(analytic.diffusivity, historic.diffusivity, "expected the selected threshold to change the fit seed path");
 });
 
 test("explicit t0 optimization is deterministic and scores total t0 by RMSE", () => {

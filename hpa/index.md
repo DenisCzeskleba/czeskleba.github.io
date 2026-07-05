@@ -256,14 +256,18 @@ permalink: /hpa/
             <div class="hpa-result-meta" id="hpa-breakthrough-time">Load data to calculate breakthrough time.</div>
             <div class="hpa-result-note" id="hpa-breakthrough-note"></div>
           </article>
-          <article class="hpa-result-card">
-            <h3>Time lag</h3>
+          <article class="hpa-result-card hpa-result-card-time-lag">
+            <h3>Time Lag</h3>
+            <div class="hpa-time-lag-mode" role="group" aria-label="Time Lag threshold mode">
+              <button type="button" class="hpa-button is-accent hpa-time-lag-mode-button" id="hpa-time-lag-analytic" aria-pressed="true" title="Analytic: use the 61.7% crossing from the ideal Fickian solution for a planar membrane.">Analytic</button>
+              <button type="button" class="hpa-button is-secondary hpa-time-lag-mode-button" id="hpa-time-lag-historic" aria-pressed="false" title="Historic: use the 63% crossing commonly used in the electrochemical permeation literature.">Historic</button>
+            </div>
             <div class="hpa-result-value" id="hpa-lag-value">D<sub>lag</sub> = NaN</div>
             <div class="hpa-result-meta" id="hpa-lag-time">Load data to calculate time lag.</div>
             <div class="hpa-result-note" id="hpa-lag-note"></div>
           </article>
           <article class="hpa-result-card">
-            <h3>Inflection point</h3>
+            <h3>Inflection Point</h3>
             <div class="hpa-result-value" id="hpa-inflection-value">D<sub>IP</sub> = NaN</div>
             <div class="hpa-result-meta" id="hpa-inflection-time">Load data to calculate the inflection point.</div>
             <div class="hpa-result-note" id="hpa-inflection-note"></div>
@@ -382,8 +386,8 @@ permalink: /hpa/
         <p><code>D<sub>app</sub>(t)</code> is an apparent coefficient, not a claim about the true lattice diffusion constant. It is the constant <code>D</code> that the simplified 1D Fickian membrane model would need in order to reproduce the measured transient at that time point.</p>
         <ul class="hpa-help-list">
           <li><strong>Breakthrough</strong> uses the 9.6% normalized criterion: HPA finds when the baseline-corrected transient reaches 9.6% of the steady-state span and linearly interpolates that crossing time between the surrounding measured points. The reported value is shown for reference, but the diagnostic confidence and the global-fit seed do not use it because breakthrough remains less reliable than the other evaluation methods for this transient.</li>
-          <li><strong>Time lag</strong> uses the 63% crossing. It assumes that the transient has a clear monotonic rise and that the steady-state level is meaningful.</li>
-          <li><strong>Inflection point</strong> uses the maximum-slope point of the normalized curve. It is only useful when the curve has one clear inflection and the steady-state current is valid.</li>
+          <li><strong>Time Lag</strong> can use either the <strong>Analytic</strong> 61.7% crossing from the ideal planar Fickian solution or the <strong>Historic</strong> 63% crossing widely used in the permeation literature. The selected button changes every place HPA uses the time-lag threshold, including diagnostics and global-fit seeding. See <a href="https://doi.org/10.1098/rspa.1920.0034">10.1098/rspa.1920.0034</a> for the analytic solution and <a href="https://doi.org/10.1149/1.2425894">10.1149/1.2425894</a> for the historic 63% convention.</li>
+          <li><strong>Inflection Point</strong> uses the maximum-slope point of the normalized curve. It is only useful when the curve has one clear inflection and the steady-state current is valid.</li>
           <li><strong>Inverse Fickian</strong> inverts the ideal Fickian response point by point to produce <code>D<sub>app</sub>(t)</code>. HPA shades low-confidence regions where the inverse problem is poorly conditioned, then reports an average value when a stable middle window is robust enough.</li>
           <li><strong>Global Transient Fit</strong> fits one constant <code>D</code> for the current <strong>Start Time Offset</strong> slider value. <strong>Optimize D<sub>GTF</sub></strong> runs a slower full-range search for the best total <code>t<sub>0</sub></code> and refitted <code>D</code> by RMSE, then applies that total offset to the slider.</li>
         </ul>

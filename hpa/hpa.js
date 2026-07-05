@@ -42,6 +42,29 @@
     robustness: 2,
   };
   const BREAKTHROUGH_NORMALIZED_THRESHOLD = 0.096;
+  const DEFAULT_TIME_LAG_MODE = "analytic";
+  const TIME_LAG_MODES = {
+    analytic: {
+      id: "analytic",
+      label: "Analytic",
+      threshold: 0.617,
+      thresholdText: "61.7%",
+      resultLabel: "Time Lag (61.7%)",
+      noteTitle: "61.7% analytic criterion",
+      tooltip:
+        "Analytic uses the 61.7% crossing from the ideal Fickian solution for a planar membrane.",
+    },
+    historic: {
+      id: "historic",
+      label: "Historic",
+      threshold: 0.63,
+      thresholdText: "63%",
+      resultLabel: "Time Lag (63%)",
+      noteTitle: "63% historic criterion",
+      tooltip:
+        "Historic uses the 63% crossing commonly used in the electrochemical permeation literature.",
+    },
+  };
   const ROW_ORIGIN_MEASURED = "measured";
   const ROW_ORIGIN_PREPENDED_BASELINE = "prepended_baseline";
   const SMOOTHING_TOOLTIPS = {
@@ -68,6 +91,7 @@
     plotLowConfidenceMode: "shaded",
     plotColors: { ...DEFAULT_PLOT_COLORS },
     fitOverlayVisible: false,
+    timeLagMode: DEFAULT_TIME_LAG_MODE,
     dragReference: null,
     dragReferenceFrame: null,
     dragReferencePending: null,
@@ -124,6 +148,8 @@
       resetPlot: document.getElementById("hpa-reset-plot"),
       fitToggle: document.getElementById("hpa-fit-toggle"),
       fitOptimize: document.getElementById("hpa-fit-optimize"),
+      timeLagAnalytic: document.getElementById("hpa-time-lag-analytic"),
+      timeLagHistoric: document.getElementById("hpa-time-lag-historic"),
       status: document.getElementById("hpa-status"),
       statusDetail: document.getElementById("hpa-status-detail"),
         issues: document.getElementById("hpa-issues"),
@@ -177,6 +203,7 @@
       if (dom.diagnosticRunButton) dom.diagnosticRunButton.disabled = true;
     }
 
+    state.timeLagMode = DEFAULT_TIME_LAG_MODE;
     state.plotDiffusionScale = dom.diffusionScale && dom.diffusionScale.checked ? "log" : "linear";
     state.plotLowConfidenceMode = dom.lowConfidence && dom.lowConfidence.value ? dom.lowConfidence.value : "shaded";
     state.plotColors = readPlotColors(dom);
@@ -352,6 +379,12 @@
     }
     if (dom.fitOptimize) {
       dom.fitOptimize.addEventListener("click", () => optimizeFitT0(dom));
+    }
+    if (dom.timeLagAnalytic) {
+      dom.timeLagAnalytic.addEventListener("click", () => setTimeLagMode(dom, "analytic"));
+    }
+    if (dom.timeLagHistoric) {
+      dom.timeLagHistoric.addEventListener("click", () => setTimeLagMode(dom, "historic"));
     }
       const stagePanels = root.querySelectorAll(".hpa-stage-controls .hpa-tool-panel");
       stagePanels.forEach((panel) => {
@@ -2106,6 +2139,7 @@
     const cropRange = parseRangeSpec(dom.cropRange ? dom.cropRange.value : "");
     const sourceRows = Array.isArray(config.rows) ? config.rows.map(cloneRow) : [];
     const rawRows = Array.isArray(config.rawRows) ? config.rawRows.map(cloneRow) : sourceRows.map(cloneRow);
+    const timeLagMode = getTimeLagModeConfig(config.timeLagMode || state.timeLagMode);
     const inputSmoothing = config.smoothing && config.smoothing.input ? { ...DEFAULT_INPUT_SMOOTHING, ...config.smoothing.input } : readInputSmoothingConfig(dom);
     const outputSmoothing = config.smoothing && config.smoothing.output ? { ...DEFAULT_OUTPUT_SMOOTHING, ...config.smoothing.output } : readOutputSmoothingConfig(dom);
     const baseline = resolveReferenceRows(sourceRows, dom.baselineValue ? dom.baselineValue.value : null, "baseline", inputUnit, displayUnit);
@@ -2138,6 +2172,7 @@
         diagnostics,
         inputSmoothing,
         outputSmoothing,
+        timeLagMode: timeLagMode.id,
         rawRows,
         issues,
         notes,
@@ -2191,8 +2226,8 @@
         ? classifyInverseConfidence(previewRows, thicknessMm / 1000, solveDeadline)
         : { available: false, threshold: null };
 
-    const classical = normalizedAvailable && thicknessMm != null ? buildClassicalResults(previewRows, thicknessMm, denom) : buildEmptyClassicalResults();
-    const fit = normalizedAvailable && thicknessMm != null ? buildFitResult(rows, thicknessMm, baseline.value, steady.value, t0Offset) : buildEmptyFitResult();
+    const classical = normalizedAvailable && thicknessMm != null ? buildClassicalResults(previewRows, thicknessMm, denom, timeLagMode.id) : buildEmptyClassicalResults();
+    const fit = normalizedAvailable && thicknessMm != null ? buildFitResult(rows, thicknessMm, baseline.value, steady.value, t0Offset, timeLagMode.id) : buildEmptyFitResult();
     const fitOptimizable = !!(
       Array.isArray(sourceRows) &&
       sourceRows.filter((row) => Number.isFinite(row.time) && Number.isFinite(row.current)).length >= 4 &&
@@ -2261,6 +2296,7 @@
       classical,
       fit,
       fitOptimizable,
+      timeLagMode: timeLagMode.id,
       tailStillRising,
       risingTailMeasuredMax: Number.isFinite(measuredMax) ? measuredMax : null,
       risingTailSuggestedSteadyValue: suggestedSteadyValue,
@@ -2446,6 +2482,7 @@
           thicknessMm,
           baselineValue,
           steadyValue,
+          timeLagMode: state.timeLagMode,
           cropRange,
           minOffset: coarseLower,
           maxOffset: coarseUpper,
@@ -2556,12 +2593,43 @@
   function renderResults(dom, analysis) {
     const classical = analysis && analysis.classical ? analysis.classical : buildEmptyClassicalResults();
     const fit = analysis && analysis.fit ? analysis.fit : buildEmptyFitResult();
+    renderTimeLagModeButtons(dom, analysis && analysis.timeLagMode);
 
     setResultCard(dom.breakthroughValue, dom.breakthroughTime, dom.breakthroughNote, classical.breakthrough, "Breakthrough", "D<sub>b</sub>");
-    setResultCard(dom.lagValue, dom.lagTime, dom.lagNote, classical.timeLag, "Time lag", "D<sub>lag</sub>");
-    setResultCard(dom.inflectionValue, dom.inflectionTime, dom.inflectionNote, classical.inflection, "Inflection", "D<sub>IP</sub>");
+    setResultCard(dom.lagValue, dom.lagTime, dom.lagNote, classical.timeLag, "Time Lag", "D<sub>lag</sub>");
+    setResultCard(dom.inflectionValue, dom.inflectionTime, dom.inflectionNote, classical.inflection, "Inflection Point", "D<sub>IP</sub>");
     setResultCard(dom.inverseValue, dom.inverseTime, dom.inverseNote, classical.inverseFickian, "Inverse Fickian", "D<sub>Inv</sub>");
     setResultCard(dom.fitValue, dom.fitTime, dom.fitNote, fit, "Global Transient Fit", "D<sub>GTF</sub>");
+  }
+
+  function renderTimeLagModeButtons(dom, modeId) {
+    const activeMode = getTimeLagModeConfig(modeId);
+    [
+      { node: dom.timeLagAnalytic, mode: "analytic" },
+      { node: dom.timeLagHistoric, mode: "historic" },
+    ].forEach(({ node, mode }) => {
+      if (!node) return;
+      const pressed = activeMode.id === mode;
+      node.setAttribute("aria-pressed", pressed ? "true" : "false");
+      node.classList.toggle("is-accent", pressed);
+      node.classList.toggle("is-secondary", !pressed);
+    });
+  }
+
+  function setTimeLagMode(dom, modeId) {
+    const mode = getTimeLagModeConfig(modeId);
+    if (state.timeLagMode === mode.id) return;
+    state.timeLagMode = mode.id;
+    renderTimeLagModeButtons(dom, mode.id);
+    if (state.currentParse) {
+      const nextParse = {
+        ...state.currentParse,
+        timeLagMode: mode.id,
+      };
+      state.currentParse = nextParse;
+      state.currentAnalysis = buildAnalysis(dom, nextParse);
+      renderParsed(dom, nextParse, state.currentAnalysis);
+    }
   }
 
   function setResultCard(valueNode, timeNode, noteNode, result, label, symbolHtml) {
@@ -2635,8 +2703,9 @@
     }
   }
 
-  function buildClassicalResults(previewRows, thicknessMm, iMax) {
+  function buildClassicalResults(previewRows, thicknessMm, iMax, timeLagMode) {
       const thicknessMeters = thicknessMm / 1000;
+      const mode = getTimeLagModeConfig(timeLagMode);
       const rows = (previewRows || [])
         .map((row) => ({
           time: row.time,
@@ -2648,7 +2717,14 @@
         .sort((a, b) => a.time - b.time);
 
       const breakthrough = solveBreakthroughMethod(rows, thicknessMeters);
-      const timeLag = solveThresholdMethod(rows, thicknessMeters, 0.63, 6, "Time lag (63%)", "D = L<sup>2</sup> / (6 t<sub>lag</sub>)");
+      const timeLag = solveThresholdMethod(
+        rows,
+        thicknessMeters,
+        mode.threshold,
+        6,
+        mode.resultLabel,
+        `<span class="hpa-formula-note"><span class="hpa-formula-title">${mode.noteTitle}</span><span class="hpa-formula-display"><span class="hpa-formula-equals">D =</span> <span class="hpa-formula-expression">L<sup>2</sup> / (6 t<sub>lag</sub>)</span></span></span>`,
+      );
       const inflection = solveInflectionMethod(rows, thicknessMeters, iMax);
       const inverseFickian = solveInverseFickianWindow(previewRows, thicknessMeters);
 
@@ -2805,7 +2881,7 @@
       return best;
     }
 
-    function buildFitResult(fitRows, thicknessMm, baselineValue, steadyValue, currentT0Offset) {
+    function buildFitResult(fitRows, thicknessMm, baselineValue, steadyValue, currentT0Offset, timeLagMode) {
       const thicknessMeters = thicknessMm / 1000;
       if (!Number.isFinite(thicknessMeters) || thicknessMeters <= 0) {
         return { available: false, note: "The fit requires a valid membrane thickness." };
@@ -2816,7 +2892,7 @@
         return { available: false, note: prepared.error };
       }
 
-      const best = solveFixedFit(prepared, thicknessMeters, performance.now() + SOLVER_POLICY.timeoutMs);
+      const best = solveFixedFit(prepared, thicknessMeters, performance.now() + SOLVER_POLICY.timeoutMs, null, timeLagMode);
       if (!best) {
         return { available: false, note: "No stable D fit could be found for the current Start Time Offset." };
       }
@@ -2845,6 +2921,7 @@
       const thicknessMm = options && Number.isFinite(options.thicknessMm) ? options.thicknessMm : null;
       const baselineValue = options ? options.baselineValue : null;
       const steadyValue = options ? options.steadyValue : null;
+      const timeLagMode = options ? options.timeLagMode : null;
       const cropRange = options && options.cropRange ? options.cropRange : null;
       const minOffset = options && Number.isFinite(options.minOffset) ? options.minOffset : -180;
       const maxOffset = options && Number.isFinite(options.maxOffset) ? options.maxOffset : 180;
@@ -2866,6 +2943,7 @@
           roundToStep(totalTimeOffset, coarseStep),
           deadline,
           lastSeed,
+          timeLagMode,
         );
         if (candidate) lastSeed = { diffusivity: candidate.diffusivity };
         if (!best || (candidate && candidate.rmse < best.rmse)) {
@@ -2889,6 +2967,7 @@
           roundedOffset,
           deadline,
           { diffusivity: best.diffusivity },
+          timeLagMode,
         );
         if (!best || (candidate && candidate.rmse < best.rmse)) {
           best = candidate;
@@ -2898,14 +2977,14 @@
       return best;
     }
 
-    function evaluateFitTimeOffsetCandidate(rows, thicknessMm, baselineValue, steadyValue, cropRange, totalTimeOffset, deadline, seed) {
+    function evaluateFitTimeOffsetCandidate(rows, thicknessMm, baselineValue, steadyValue, cropRange, totalTimeOffset, deadline, seed, timeLagMode) {
       let transformedRows = applyTimeOffsetRows(rows, totalTimeOffset, baselineValue);
       if (cropRange) {
         transformedRows = transformedRows.filter((row) => row.time >= cropRange.start && row.time <= cropRange.end);
       }
       const prepared = prepareFitRows(transformedRows, baselineValue, steadyValue);
       if (prepared.error) return null;
-      const best = solveFixedFit(prepared, thicknessMm / 1000, deadline, seed);
+      const best = solveFixedFit(prepared, thicknessMm / 1000, deadline, seed, timeLagMode);
       if (!best) return null;
       return {
         diffusivity: best.diffusivity,
@@ -2961,10 +3040,10 @@
       };
     }
 
-    function solveFixedFit(prepared, thicknessMeters, deadline, seed) {
+    function solveFixedFit(prepared, thicknessMeters, deadline, seed, timeLagMode) {
       if (!prepared || !Array.isArray(prepared.sampledRows) || !prepared.sampledRows.length) return null;
       if (!Number.isFinite(thicknessMeters) || thicknessMeters <= 0) return null;
-      const nextSeed = seed && Number.isFinite(seed.diffusivity) ? seed : estimateFitSeed(prepared.sampledRows, thicknessMeters);
+      const nextSeed = seed && Number.isFinite(seed.diffusivity) ? seed : estimateFitSeed(prepared.sampledRows, thicknessMeters, timeLagMode);
       return optimizeDiffusivitySearch(prepared.sampledRows, thicknessMeters, nextSeed, deadline);
     }
 
@@ -3024,9 +3103,10 @@
       };
     }
 
-    function estimateFitSeed(rows, thicknessMeters) {
+    function estimateFitSeed(rows, thicknessMeters, timeLagMode) {
       if (!rows.length || !Number.isFinite(thicknessMeters) || thicknessMeters <= 0) return null;
-      const timeLag = findCrossingTime(rows, 0.63);
+      const mode = getTimeLagModeConfig(timeLagMode);
+      const timeLag = findCrossingTime(rows, mode.threshold);
       if (!timeLag || !Number.isFinite(timeLag.time) || timeLag.time <= 0) {
         return null;
       }
@@ -3912,6 +3992,11 @@
     return window.HPADiagnosticCore || null;
   }
 
+  function getTimeLagModeConfig(modeId) {
+    if (modeId && TIME_LAG_MODES[modeId]) return TIME_LAG_MODES[modeId];
+    return TIME_LAG_MODES[DEFAULT_TIME_LAG_MODE];
+  }
+
   function captureReferenceSnapshot(element) {
     if (!element) return null;
     return {
@@ -3971,6 +4056,7 @@
       steady: captureReferenceSnapshot(dom.steadyValue),
       referenceVisibility: { ...state.referenceVisibility },
       fitOverlayVisible: state.fitOverlayVisible,
+      timeLagMode: state.timeLagMode,
       plotViewport: state.plotViewport ? { ...state.plotViewport } : null,
       plotLowConfidenceMode: state.plotLowConfidenceMode,
       plotDiffusionScale: state.plotDiffusionScale,
@@ -4007,6 +4093,8 @@
     restoreReferenceSnapshot(dom.steadyValue, snapshot.steady);
     state.referenceVisibility = snapshot.referenceVisibility ? { ...snapshot.referenceVisibility } : { baseline: true, steady: true };
     state.fitOverlayVisible = !!snapshot.fitOverlayVisible;
+    state.timeLagMode = getTimeLagModeConfig(snapshot.timeLagMode).id;
+    renderTimeLagModeButtons(dom, state.timeLagMode);
     state.plotViewport = snapshot.plotViewport ? { ...snapshot.plotViewport } : null;
     state.plotLowConfidenceMode = snapshot.plotLowConfidenceMode || "shaded";
     state.plotDiffusionScale = snapshot.plotDiffusionScale || (dom.diffusionScale && dom.diffusionScale.checked ? "log" : "linear");
@@ -4106,6 +4194,7 @@
             steadyValue: steady,
             t0Offset: parseNumberInput(dom.t0Offset ? dom.t0Offset.value : null) || 0,
             cropRange: parseRangeSpec(dom.cropRange ? dom.cropRange.value : ""),
+            timeLagMode: state.timeLagMode,
           });
           finish(report, report && report.best ? "ok" : "error", report && report.best ? "Diagnostic complete." : "Diagnostic complete with limited confidence.");
         } catch (error) {
