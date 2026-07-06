@@ -2242,7 +2242,7 @@
         ? classifyInverseConfidence(previewRows, thicknessMm / 1000, solveDeadline)
         : { available: false, threshold: null };
 
-    const classical = normalizedAvailable && thicknessMm != null ? buildClassicalResults(previewRows, thicknessMm, denom, timeLagMode.id) : buildEmptyClassicalResults();
+    const classical = normalizedAvailable && thicknessMm != null ? buildClassicalResults(previewRows, thicknessMm, timeLagMode.id) : buildEmptyClassicalResults();
     const fit = normalizedAvailable && thicknessMm != null ? buildFitResult(rows, thicknessMm, baseline.value, steady.value, t0Offset, timeLagMode.id) : buildEmptyFitResult();
     const fitOptimizable = !!(
       Array.isArray(sourceRows) &&
@@ -2719,7 +2719,7 @@
     }
   }
 
-  function buildClassicalResults(previewRows, thicknessMm, iMax, timeLagMode) {
+  function buildClassicalResults(previewRows, thicknessMm, timeLagMode) {
       const thicknessMeters = thicknessMm / 1000;
       const mode = getTimeLagModeConfig(timeLagMode);
       const rows = (previewRows || [])
@@ -2729,7 +2729,7 @@
           normalized: row.normalized,
           diffusivity: row.diffusivity,
         }))
-        .filter((row) => Number.isFinite(row.time) && Number.isFinite(row.normalized) && Number.isFinite(row.current))
+        .filter((row) => Number.isFinite(row.time) && Number.isFinite(row.normalized))
         .sort((a, b) => a.time - b.time);
 
       const breakthrough = solveBreakthroughMethod(rows, thicknessMeters);
@@ -2741,7 +2741,7 @@
         mode.resultLabel,
         `<span class="hpa-formula-note"><span class="hpa-formula-title">${mode.noteTitle}</span><span class="hpa-formula-display"><span class="hpa-formula-equals">D =</span> <span class="hpa-formula-expression">L<sup>2</sup> / (6 t<sub>lag</sub>)</span></span></span>`,
       );
-      const inflection = solveInflectionMethod(rows, thicknessMeters, iMax);
+      const inflection = solveInflectionMethod(rows, thicknessMeters);
       const inverseFickian = solveInverseFickianWindow(previewRows, thicknessMeters);
 
       return { breakthrough, timeLag, inflection, inverseFickian };
@@ -2798,7 +2798,7 @@
       };
     }
 
-    function solveInflectionMethod(rows, thicknessMeters, iMax) {
+    function solveInflectionMethod(rows, thicknessMeters) {
       const inflection = findInflectionPoint(rows, 0.2442);
       if (!inflection) {
         return {
@@ -2806,19 +2806,13 @@
           note: "No clear inflection point could be detected.",
         };
       }
-      if (!Number.isFinite(iMax) || iMax <= 0) {
-        return {
-          available: false,
-          note: "Inflection-point method requires a valid steady-state current.",
-        };
-      }
-      const diffusivity = (0.04124 * thicknessMeters * thicknessMeters * inflection.slope) / (0.2442 * iMax);
+      const diffusivity = (0.04124 / 0.2442) * thicknessMeters * thicknessMeters * inflection.normalizedSlope;
       return {
         available: Number.isFinite(diffusivity) && diffusivity > 0,
         diffusivity,
         timeText: `t = ${formatRoundedSeconds(inflection.time)} s`,
         noteHtml:
-          '<span class="hpa-formula-display"><span class="hpa-formula-equals">D =</span><span class="hpa-formula-fraction"><span class="hpa-formula-numerator">0.04124 L<sup>2</sup> (dI/dt)</span><span class="hpa-formula-denominator">0.2442 (I<sub>max</sub> - I<sub>min</sub>)</span></span></span>',
+          '<span class="hpa-formula-note"><span class="hpa-formula-title">Normalized inflection-slope form</span><span class="hpa-formula-display"><span class="hpa-formula-equals">D =</span> <span class="hpa-formula-expression">(0.04124 / 0.2442) L<sup>2</sup> a<sub>norm</sub></span></span></span>',
       };
     }
 
@@ -3188,7 +3182,7 @@
     function findInflectionPoint(rows, target) {
       if (rows.length < 3 || !Number.isFinite(target)) return null;
       const sorted = rows
-        .filter((row) => Number.isFinite(row.time) && Number.isFinite(row.normalized) && Number.isFinite(row.current))
+        .filter((row) => Number.isFinite(row.time) && Number.isFinite(row.normalized))
         .sort((a, b) => a.time - b.time);
       if (sorted.length < 3) return null;
 
@@ -3230,10 +3224,10 @@
       const windowStart = Math.max(0, leftIndex - 2);
       const windowEnd = Math.min(sorted.length, rightIndex + 3);
       const window = sorted.slice(windowStart, windowEnd);
-      const slope = linearSlope(window.map((row) => ({ time: row.time, diffusivity: row.current })));
-      if (!Number.isFinite(slope)) return null;
+      const normalizedSlope = linearSlope(window, "normalized");
+      if (!Number.isFinite(normalizedSlope)) return null;
 
-      return { time, slope };
+      return { time, normalizedSlope };
     }
 
     function median(values) {

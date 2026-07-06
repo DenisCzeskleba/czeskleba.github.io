@@ -234,7 +234,7 @@ test("classical breakthrough uses the 9.6% normalized criterion on a baseline-co
   }));
   const expectedTime = findInterpolatedCrossingTime(normalizedRows, 0.096);
 
-  const classical = core.buildClassicalResults(normalizedRows, thicknessMm / 1000, steady - baseline);
+  const classical = core.buildClassicalResults(normalizedRows, thicknessMm / 1000);
 
   assert.ok(classical.breakthrough.available, "expected breakthrough result");
   assert.ok(/9\.6%/i.test(classical.breakthrough.note || classical.breakthrough.noteHtml || ""));
@@ -254,7 +254,7 @@ test("classical breakthrough linearly interpolates the 9.6% threshold crossing",
     { time: 30, current: 0.3, normalized: 0.3 },
   ];
 
-  const classical = core.buildClassicalResults(normalizedRows, thicknessMm / 1000, 1);
+  const classical = core.buildClassicalResults(normalizedRows, thicknessMm / 1000);
   const breakthroughTime = breakthroughTimeFromDiffusivity(classical.breakthrough.diffusivity, thicknessMm);
 
   assert.ok(classical.breakthrough.available, "expected breakthrough result");
@@ -278,7 +278,7 @@ test("classical breakthrough stays positive on a delayed transient once the 9.6%
     normalized: (row.current - 2) / 5,
   }));
 
-  const classical = core.buildClassicalResults(normalizedRows, thicknessMm / 1000, 5);
+  const classical = core.buildClassicalResults(normalizedRows, thicknessMm / 1000);
   const breakthroughTime = breakthroughTimeFromDiffusivity(classical.breakthrough.diffusivity, thicknessMm);
 
   assert.ok(classical.breakthrough.available, "expected breakthrough result");
@@ -293,7 +293,7 @@ test("classical breakthrough stays unavailable when the 9.6% normalized threshol
     { time: 30, current: 0.09, normalized: 0.09 },
   ];
 
-  const classical = core.buildClassicalResults(normalizedRows, 0.0005, 1);
+  const classical = core.buildClassicalResults(normalizedRows, 0.0005);
 
   assert.equal(classical.breakthrough.available, false);
   assert.ok(/9\.6% normalized criterion/i.test(classical.breakthrough.note || ""));
@@ -308,7 +308,7 @@ test("classical time lag respects the analytic 61.7% threshold", () => {
     { time: 30, current: 0.68, normalized: 0.68 },
   ];
   const expectedTime = findInterpolatedCrossingTime(normalizedRows, 0.617);
-  const classical = core.buildClassicalResults(normalizedRows, thicknessMm / 1000, 1, "analytic");
+  const classical = core.buildClassicalResults(normalizedRows, thicknessMm / 1000, "analytic");
   const lagTime = timeLagFromDiffusivity(classical.timeLag.diffusivity, thicknessMm);
 
   assert.ok(classical.timeLag.available, "expected analytic time-lag result");
@@ -325,12 +325,41 @@ test("classical time lag respects the historic 63% threshold", () => {
     { time: 30, current: 0.68, normalized: 0.68 },
   ];
   const expectedTime = findInterpolatedCrossingTime(normalizedRows, 0.63);
-  const classical = core.buildClassicalResults(normalizedRows, thicknessMm / 1000, 1, "historic");
+  const classical = core.buildClassicalResults(normalizedRows, thicknessMm / 1000, "historic");
   const lagTime = timeLagFromDiffusivity(classical.timeLag.diffusivity, thicknessMm);
 
   assert.ok(classical.timeLag.available, "expected historic time-lag result");
   assert.ok(/63%/i.test(classical.timeLag.noteHtml || ""));
   assert.ok(Math.abs(lagTime - expectedTime) < 1e-9, `expected historic time lag ${expectedTime} s, got ${lagTime}`);
+});
+
+test("classical inflection uses the normalized slope form directly", () => {
+  const thicknessMm = 0.5;
+  const normalizedRowsA = [
+    { time: 0, current: 2, normalized: 0.0 },
+    { time: 10, current: 3, normalized: 0.1221 },
+    { time: 20, current: 5, normalized: 0.2442 },
+    { time: 30, current: 8, normalized: 0.3663 },
+    { time: 40, current: 13, normalized: 0.4884 },
+  ];
+  const normalizedRowsB = [
+    { time: 0, current: 20, normalized: 0.0 },
+    { time: 10, current: 55, normalized: 0.1221 },
+    { time: 20, current: 120, normalized: 0.2442 },
+    { time: 30, current: 260, normalized: 0.3663 },
+    { time: 40, current: 600, normalized: 0.4884 },
+  ];
+
+  const classicalA = core.buildClassicalResults(normalizedRowsA, thicknessMm / 1000);
+  const classicalB = core.buildClassicalResults(normalizedRowsB, thicknessMm / 1000);
+  const expectedSlope = 0.01221;
+  const expectedDiffusivity = (0.04124 / 0.2442) * Math.pow(thicknessMm / 1000, 2) * expectedSlope;
+
+  assert.ok(classicalA.inflection.available, "expected inflection result");
+  assert.ok(classicalB.inflection.available, "expected inflection result");
+  assert.ok(/a<sub>norm<\/sub>/i.test(classicalA.inflection.noteHtml || ""));
+  assert.ok(Math.abs(classicalA.inflection.diffusivity - expectedDiffusivity) < 1e-16, `expected normalized-form diffusivity ${expectedDiffusivity}, got ${classicalA.inflection.diffusivity}`);
+  assert.ok(Math.abs(classicalA.inflection.diffusivity - classicalB.inflection.diffusivity) < 1e-20, "expected inflection result to depend on normalized slope, not current scaling");
 });
 
 test("positive t0 prepends dense baseline rows on the inferred cadence without duplicating the join time", () => {
