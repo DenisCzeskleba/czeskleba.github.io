@@ -872,6 +872,22 @@ body.dark #hpa-diagnostic-open:focus-visible {
   white-space: nowrap;
 }
 
+.hpa-export-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+  width: 100%;
+}
+
+.hpa-export-grid .hpa-control {
+  min-width: 0;
+}
+
+.hpa-export-grid .hpa-number,
+.hpa-export-grid .hpa-select {
+  width: 100%;
+}
+
 .hpa-tool-panel .hpa-button,
 .hpa-tool-panel button {
   min-width: 0;
@@ -891,6 +907,12 @@ body.dark #hpa-diagnostic-open:focus-visible {
 
 .hpa-tool-panel .hpa-export-row {
   min-width: 0;
+}
+
+@media (max-width: 720px) {
+  .hpa-export-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .hpa-citation-note {

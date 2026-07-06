@@ -10,6 +10,18 @@
   const PLOT_WIDTH = 920;
   const PLOT_HEIGHT = 340;
   const PLOT_MARGINS = { top: 24, right: 40, bottom: 36, left: 50 };
+  const DEFAULT_EXPORT_PRESET = "screen";
+  const EXPORT_DIMENSION_LIMITS = Object.freeze({
+    width: Object.freeze({ min: 480, max: 1600 }),
+    height: Object.freeze({ min: 300, max: 1200 }),
+  });
+  const EXPORT_PRESETS = Object.freeze({
+    screen: Object.freeze({ id: "screen", width: PLOT_WIDTH, height: PLOT_HEIGHT, legendPlacement: "above" }),
+    "paper-wide": Object.freeze({ id: "paper-wide", width: 760, height: 420, legendPlacement: "above" }),
+    "single-column": Object.freeze({ id: "single-column", width: 560, height: 460, legendPlacement: "below" }),
+    "paper-tall": Object.freeze({ id: "paper-tall", width: 560, height: 560, legendPlacement: "below" }),
+    custom: Object.freeze({ id: "custom", width: PLOT_WIDTH, height: PLOT_HEIGHT, legendPlacement: "auto" }),
+  });
   const SOLVER_POLICY = {
     minTerms: 3,
     maxTerms: 100,
@@ -207,6 +219,9 @@
         citationPlain: document.getElementById("hpa-citation-plain"),
         helpCitationVersion: document.getElementById("hpa-help-citation-version"),
         helpCitationDoi: document.getElementById("hpa-help-citation-doi"),
+        exportPreset: document.getElementById("hpa-export-preset"),
+        exportWidth: document.getElementById("hpa-export-width"),
+        exportHeight: document.getElementById("hpa-export-height"),
         downloadButtons: root.querySelectorAll("[data-download]"),
       exampleButton: document.getElementById("hpa-example"),
     };
@@ -342,6 +357,28 @@
         scheduleParse(dom, "selection");
       });
     }
+    if (dom.exportPreset) {
+      dom.exportPreset.addEventListener("change", () => {
+        applySelectedExportPreset(dom);
+        syncExportControls(dom);
+      });
+    }
+    [dom.exportWidth, dom.exportHeight].forEach((element) => {
+      if (!element) return;
+      element.addEventListener("input", () => {
+        markExportPresetCustom(dom);
+        syncExportControls(dom);
+      });
+      element.addEventListener("change", () => {
+        markExportPresetCustom(dom);
+        normalizeExportInputs(dom);
+        syncExportControls(dom);
+      });
+      element.addEventListener("blur", () => {
+        normalizeExportInputs(dom);
+        syncExportControls(dom);
+      });
+    });
 
     if (dom.currentUnit) {
       dom.currentUnit.addEventListener("change", () => {
@@ -479,6 +516,7 @@
     syncSignalRepresentationControls(dom);
     syncPlotColorControls(dom, state.plotColors);
     applyPlotColorVars(dom);
+    syncExportControls(dom);
     syncCitationMetadata(dom);
     syncSmoothingControls(dom);
     syncT0OffsetDisplay(dom);
@@ -3384,7 +3422,7 @@
     return value * 1e6;
   }
 
-  function renderPlot(dom, analysis) {
+  function renderPlotLegacy(dom, analysis) {
     if (!dom.plot) return;
     applyPlotColorVars(dom);
 
@@ -3803,10 +3841,606 @@
     bindLegendTooltip(dom);
   }
 
+  function buildPlotMetrics(width, height, profile) {
+    const baseArea = Math.max(PLOT_WIDTH * PLOT_HEIGHT, 1);
+    const areaScale = Math.sqrt((Math.max(width, 1) * Math.max(height, 1)) / baseArea);
+    const exportScale = profile === "live" ? 1 : clamp(areaScale, 0.94, 1.16);
+    const compactScale = profile === "live" ? 1 : clamp(Math.min(width / PLOT_WIDTH, height / PLOT_HEIGHT), 0.9, 1.1);
+    return {
+      axisLabelFontSize: roundToStep(11 * (profile === "live" ? 1 : clamp(exportScale, 0.97, 1.08)), 0.1),
+      axisSubFontSize: roundToStep(8 * (profile === "live" ? 1 : clamp(exportScale, 0.96, 1.08)), 0.1),
+      valueFontSize: roundToStep(11 * (profile === "live" ? 1 : clamp(compactScale, 0.98, 1.06)), 0.1),
+      noteFontSize: roundToStep(11 * (profile === "live" ? 1 : clamp(compactScale, 0.98, 1.06)), 0.1),
+      legendFontSize: roundToStep(10.5 * (profile === "live" ? 1 : clamp(exportScale, 0.97, 1.08)), 0.1),
+      legendSubFontSize: roundToStep(8 * (profile === "live" ? 1 : clamp(exportScale, 0.96, 1.08)), 0.1),
+      lineWidth: roundToStep(2.4 * (profile === "live" ? 1 : clamp(exportScale, 0.96, 1.1)), 0.1),
+      legendLineStrokeWidth: roundToStep(2.2 * (profile === "live" ? 1 : clamp(exportScale, 0.96, 1.1)), 0.1),
+      refLineWidth: roundToStep(1 * (profile === "live" ? 1 : clamp(exportScale, 0.96, 1.08)), 0.1),
+      frameWidth: roundToStep(0.5 * (profile === "live" ? 1 : clamp(exportScale, 0.96, 1.12)), 0.1),
+      gridMajorWidth: roundToStep((profile === "live" ? 0.6 : 0.7) * (profile === "live" ? 1 : clamp(exportScale, 0.96, 1.08)), 0.1),
+      gridMinorWidth: roundToStep((profile === "live" ? 0.5 : 0.55) * (profile === "live" ? 1 : clamp(exportScale, 0.96, 1.08)), 0.1),
+      gridMajorOpacity: profile === "live" ? 0.95 : 0.9,
+      gridMinorOpacity: profile === "live" ? 0.4 : 0.58,
+      legendLineWidth: roundToStep(18 * (profile === "live" ? 1 : clamp(exportScale, 0.96, 1.06)), 0.1),
+      legendTextGap: roundToStep(8 * (profile === "live" ? 1 : clamp(exportScale, 0.96, 1.06)), 0.1),
+      legendGap: profile === "live" ? 60 : Math.round(clamp(width * 0.03, 18, 28)),
+      legendRowGap: profile === "live" ? 0 : Math.round(clamp(8 * exportScale, 6, 12)),
+      legendLineY: roundToStep(6 * (profile === "live" ? 1 : clamp(exportScale, 0.96, 1.08)), 0.1),
+      legendTextY: roundToStep(10 * (profile === "live" ? 1 : clamp(exportScale, 0.96, 1.08)), 0.1),
+      legendRowHeight: roundToStep(Math.max(14, 10 * (profile === "live" ? 1 : clamp(exportScale, 0.96, 1.08)) + 4), 0.1),
+      tickMinorLength: profile === "live" ? 4 : Math.round(clamp(4 * compactScale, 4, 6)),
+      tickMajorLength: profile === "live" ? 6 : Math.round(clamp(6 * compactScale, 6, 8)),
+      leftMinorTickLength: profile === "live" ? 3 : Math.round(clamp(3 * compactScale, 3, 5)),
+      leftMajorTickLength: profile === "live" ? 4 : Math.round(clamp(4 * compactScale, 4, 6)),
+      rightTickLength: profile === "live" ? 4 : Math.round(clamp(4 * compactScale, 4, 6)),
+      clipId: profile === "live" ? "hpa-plot-clip" : "hpa-export-plot-clip",
+    };
+  }
+
+  function getPlotStyleTokens(dom) {
+    const plotStyle = dom && dom.plot ? getComputedStyle(dom.plot) : null;
+    const rootStyle = getComputedStyle(document.documentElement);
+    const colors = state.plotColors || DEFAULT_PLOT_COLORS;
+    const read = (property, fallback) => {
+      if (plotStyle) {
+        const value = plotStyle.getPropertyValue(property).trim();
+        if (value) return value;
+      }
+      const rootValue = rootStyle.getPropertyValue(property).trim();
+      return rootValue || fallback;
+    };
+    return {
+      bg: read("--hpa-plot-bg", "#ffffff"),
+      border: read("--hpa-plot-border", "#cfd8e3"),
+      grid: read("--hpa-plot-grid", "#e2e8f0"),
+      ink: read("--hpa-plot-ink", "#111827"),
+      muted: read("--hpa-plot-muted", "#4b5563"),
+      currentColor: read("--hpa-plot-current-color", colors.current || DEFAULT_PLOT_COLORS.current),
+      diffusionColor: read("--hpa-plot-diffusion-color", colors.diffusion || DEFAULT_PLOT_COLORS.diffusion),
+      diffusionEdgeColor: read("--hpa-plot-diffusion-edge-color", colors.diffusionEdge || DEFAULT_PLOT_COLORS.diffusionEdge),
+      fitColor: read("--hpa-plot-fit-color", colors.fit || DEFAULT_PLOT_COLORS.fit),
+    };
+  }
+
+  function buildLegendItems(metrics, signalMeta, lowConfidenceLegendTitle, showLowConfidenceLegend, showSmoothedLegend, showFitLegend) {
+    const lineWidth = metrics.legendLineWidth;
+    const textX = roundToStep(lineWidth + metrics.legendTextGap, 0.1);
+    const lineY = metrics.legendLineY;
+    const textY = metrics.legendTextY;
+    const subFontSize = metrics.legendSubFontSize;
+    const buildTextItem = (className, plainText, labelMarkup, ariaLabel) => ({
+      className,
+      ariaLabel: ariaLabel || "",
+      width: lineWidth + metrics.legendTextGap + measureTextWidth(plainText, metrics.legendFontSize),
+      markup: `
+        <line x1="0" y1="${lineY}" x2="${lineWidth}" y2="${lineY}" class="hpa-plot-legend-line"></line>
+        <text x="${textX}" y="${textY}">${labelMarkup}</text>
+      `,
+    });
+    const items = [];
+    if (showLowConfidenceLegend) {
+      items.push({
+        className: "hpa-plot-legend-low-confidence",
+        ariaLabel: lowConfidenceLegendTitle,
+        width: lineWidth + metrics.legendTextGap + measureTextWidth("Low Confidence", metrics.legendFontSize),
+        markup: `
+          <line x1="0" y1="${lineY}" x2="${lineWidth}" y2="${lineY}" class="hpa-plot-legend-line hpa-plot-legend-low-confidence-line"></line>
+          <text x="${textX}" y="${textY}">Low Confidence</text>
+        `,
+      });
+    }
+    items.push(
+      buildTextItem(
+        "hpa-plot-legend-diffusion",
+        "Apparent Diffusion Coefficient Dapp",
+        `<tspan x="${textX}" dy="0">Apparent Diffusion Coefficient </tspan><tspan font-style="italic">D</tspan><tspan baseline-shift="sub" font-size="${subFontSize}">app</tspan>`,
+      ),
+    );
+    if (showSmoothedLegend) {
+      items.push(
+        buildTextItem(
+          "hpa-plot-legend-diffusion-smoothed",
+          "Smoothed Dapp",
+          `<tspan x="${textX}" dy="0">Smoothed </tspan><tspan font-style="italic">D</tspan><tspan baseline-shift="sub" font-size="${subFontSize}">app</tspan>`,
+        ),
+      );
+    }
+    items.push(buildTextItem("hpa-plot-legend-current", signalMeta.legendText, escapeHtml(signalMeta.legendText)));
+    if (showFitLegend) {
+      items.push(buildTextItem("hpa-plot-legend-fit", "Global Transient Fit", "Global Transient Fit"));
+    }
+    return items;
+  }
+
+  function packLegendRows(items, maxWidth, gap) {
+    if (!Array.isArray(items) || !items.length) return [];
+    const rows = [];
+    let currentItems = [];
+    let currentWidth = 0;
+    items.forEach((item) => {
+      const nextWidth = currentItems.length ? currentWidth + gap + item.width : item.width;
+      if (currentItems.length && nextWidth > maxWidth) {
+        rows.push({ items: currentItems, width: currentWidth });
+        currentItems = [item];
+        currentWidth = item.width;
+        return;
+      }
+      currentItems.push(item);
+      currentWidth = nextWidth;
+    });
+    if (currentItems.length) {
+      rows.push({ items: currentItems, width: currentWidth });
+    }
+    return rows;
+  }
+
+  function resolveLivePlotLayout(width, height, legendItems, metrics) {
+    const chartX = PLOT_MARGINS.left;
+    const chartY = PLOT_MARGINS.top;
+    const chartWidth = width - PLOT_MARGINS.left - PLOT_MARGINS.right;
+    const chartHeight = height - PLOT_MARGINS.top - PLOT_MARGINS.bottom;
+    const legendRows = legendItems.length
+      ? [{
+          items: legendItems,
+          width: legendItems.reduce((sum, item, index) => sum + item.width + (index > 0 ? metrics.legendGap : 0), 0),
+        }]
+      : [];
+    return {
+      chartX,
+      chartY,
+      chartWidth,
+      chartHeight,
+      legendRows: legendRows.map((row) => ({
+        items: row.items,
+        width: row.width,
+        x: Math.max(0, (width - row.width) / 2),
+        y: chartY - 20,
+      })),
+      axisLabelLeftX: Math.max(15, PLOT_MARGINS.left - 31),
+      axisLabelRightX: width - Math.max(-3, PLOT_MARGINS.right - 31),
+      xTickLabelY: height - 18,
+      xAxisLabelY: height - 5,
+    };
+  }
+
+  function resolveExportPlotLayout(width, height, legendItems, metrics, legendPlacement) {
+    const compact = width < 680 || width / Math.max(height, 1) < 1.75;
+    const left = Math.round(clamp(compact ? width * 0.13 : width * 0.095, 58, 84));
+    const right = Math.round(clamp(compact ? width * 0.12 : width * 0.08, 50, 74));
+    const topPadding = Math.round(clamp(height * 0.055, 18, 32));
+    const tickReserve = Math.round(clamp(metrics.valueFontSize + metrics.tickMajorLength + 8, 22, 30));
+    const xLabelReserve = Math.round(clamp(metrics.axisLabelFontSize + 10, 20, 30));
+    const legendRowsPacked = packLegendRows(legendItems, Math.max(220, width - 32), metrics.legendGap);
+    const legendBlockHeight = legendRowsPacked.length
+      ? legendRowsPacked.length * metrics.legendRowHeight + (legendRowsPacked.length - 1) * metrics.legendRowGap
+      : 0;
+    const baseBottomReserve = tickReserve + xLabelReserve + 10;
+    const legendBelow = legendPlacement === "below";
+    const chartY = legendBelow ? topPadding : topPadding + legendBlockHeight + 10;
+    const bottomReserve = legendBelow ? baseBottomReserve + legendBlockHeight + 16 : baseBottomReserve;
+    const chartWidth = width - left - right;
+    const chartHeight = height - chartY - bottomReserve;
+    const legendStartY = legendBelow ? height - legendBlockHeight - 8 : topPadding + 2;
+    return {
+      chartX: left,
+      chartY,
+      chartWidth,
+      chartHeight,
+      legendRows: legendRowsPacked.map((row, index) => ({
+        items: row.items,
+        width: row.width,
+        x: Math.max(8, (width - row.width) / 2),
+        y: legendStartY + index * (metrics.legendRowHeight + metrics.legendRowGap),
+      })),
+      axisLabelLeftX: Math.max(metrics.axisLabelFontSize + 6, left - (metrics.axisLabelFontSize + 18)),
+      axisLabelRightX: width - Math.max(6, right - (metrics.axisLabelFontSize + 18)),
+      xTickLabelY: chartY + chartHeight + tickReserve - 5,
+      xAxisLabelY: legendBelow ? height - legendBlockHeight - 14 : height - 6,
+    };
+  }
+
+  function buildLegendMarkup(legendRows, metrics) {
+    if (!legendRows.length) return "";
+    const parts = ['<g class="hpa-plot-legend-group">'];
+    legendRows.forEach((row) => {
+      let offset = 0;
+      row.items.forEach((item, index) => {
+        parts.push(
+          `<g class="hpa-plot-legend-item ${item.className}"${item.ariaLabel ? ` aria-label="${escapeHtml(item.ariaLabel)}"` : ""} transform="translate(${roundToStep(row.x + offset, 0.1)} ${roundToStep(row.y, 0.1)})">${item.markup}</g>`,
+        );
+        offset += item.width + (index < row.items.length - 1 ? metrics.legendGap : 0);
+      });
+    });
+    parts.push("</g>");
+    return parts.join("");
+  }
+
+  function buildStandalonePlotStyles(tokens, metrics) {
+    return `
+      <style>
+        .hpa-plot-grid{stroke:${tokens.grid};stroke-linecap:butt;fill:none;shape-rendering:crispEdges}
+        .hpa-plot-grid-major{stroke-width:${metrics.gridMajorWidth};opacity:${metrics.gridMajorOpacity}}
+        .hpa-plot-grid-minor{stroke-width:${metrics.gridMinorWidth};opacity:${metrics.gridMinorOpacity}}
+        .hpa-plot-line{fill:none;stroke-width:${metrics.lineWidth};stroke-linejoin:round;stroke-linecap:butt}
+        .hpa-plot-line-current{stroke:${tokens.currentColor}}
+        .hpa-plot-line-diffusion{stroke:${tokens.diffusionColor}}
+        .hpa-plot-line-diffusion-smoothed{stroke:${tokens.diffusionColor};stroke-dasharray:5 3;opacity:0.72}
+        .hpa-plot-line-fit{stroke:${tokens.fitColor}}
+        .hpa-plot-line-diffusion-edge{stroke:${tokens.diffusionEdgeColor};opacity:1}
+        .hpa-plot-line-diffusion-hidden{stroke:${tokens.diffusionEdgeColor};opacity:0}
+        .hpa-plot-axis-label,.hpa-plot-value,.hpa-plot-note,.hpa-plot-ref-label,.hpa-plot-legend-group{font-family:Arial,"Segoe UI",sans-serif;font-weight:400}
+        .hpa-plot-axis-label{font-size:${metrics.axisLabelFontSize}px;fill:${tokens.ink}}
+        .hpa-plot-value,.hpa-plot-note{font-size:${metrics.valueFontSize}px}
+        .hpa-plot-value{fill:${tokens.ink}}
+        .hpa-plot-note{fill:${tokens.muted}}
+        .hpa-plot-legend-group{font-size:${metrics.legendFontSize}px}
+        .hpa-plot-legend-group text{fill:${tokens.ink};font-weight:400}
+        .hpa-plot-legend-line{stroke-width:${metrics.legendLineStrokeWidth};stroke-linecap:butt}
+        .hpa-plot-legend-diffusion .hpa-plot-legend-line{stroke:${tokens.diffusionColor}}
+        .hpa-plot-legend-diffusion-smoothed .hpa-plot-legend-line{stroke:${tokens.diffusionColor};stroke-dasharray:5 3}
+        .hpa-plot-legend-current .hpa-plot-legend-line{stroke:${tokens.currentColor}}
+        .hpa-plot-legend-fit .hpa-plot-legend-line{stroke:${tokens.fitColor}}
+        .hpa-plot-legend-low-confidence-line{stroke:${tokens.diffusionEdgeColor};opacity:1}
+        .hpa-plot-axis-left,.hpa-plot-value-diffusion{fill:${tokens.diffusionColor}}
+        .hpa-plot-axis-right,.hpa-plot-value-current{fill:${tokens.currentColor}}
+        .hpa-plot-frame{fill:${tokens.bg};stroke:${tokens.border};stroke-width:${metrics.frameWidth};pointer-events:none}
+        .hpa-plot-ref-line{stroke-width:${metrics.refLineWidth};stroke-linecap:round;fill:none}
+        .hpa-plot-ref-line.hpa-plot-ref-baseline,.hpa-plot-ref-label.hpa-plot-ref-baseline{stroke:#4b5563;fill:#4b5563;color:#4b5563}
+        .hpa-plot-ref-line.hpa-plot-ref-steady,.hpa-plot-ref-label.hpa-plot-ref-steady{stroke:#111111;fill:#111111;color:#111111}
+        .hpa-plot-axis-tick{stroke:${tokens.muted};stroke-width:1;fill:none;shape-rendering:crispEdges}
+        .hpa-plot-axis-tick-minor{stroke-width:0.75;opacity:0.8}
+      </style>
+    `;
+  }
+
+  function buildPlotScene(dom, analysis, config) {
+    const width = Number.isFinite(config && config.width) ? config.width : PLOT_WIDTH;
+    const height = Number.isFinite(config && config.height) ? config.height : PLOT_HEIGHT;
+    const profile = config && config.profile === "export" && config.presetId !== "screen" ? "export" : "live";
+    const interactive = config && config.interactive === false ? false : true;
+    const includeInlineStyles = !!(config && config.includeInlineStyles);
+    const rows = analysis && analysis.rows ? analysis.rows : [];
+    if (!rows.length) {
+      return { markup: "", hoverCache: null };
+    }
+
+    const inputUnit = dom.currentUnit ? dom.currentUnit.value : "A";
+    const displayUnit = getDisplayUnit(dom);
+    const signalMode = getPlotSignalMode(dom);
+    const currentUnitLabel = formatUnitLabel(displayUnit);
+    const signalMeta = getSignalPlotMetadata(signalMode, currentUnitLabel);
+    const showGrid = !dom.gridToggle || dom.gridToggle.checked;
+    const showMinorGrid = !dom.minorGridToggle || dom.minorGridToggle.checked;
+    const diffusionScaleMode = dom.diffusionScale && dom.diffusionScale.checked ? "log" : "linear";
+    const signalPoints = getSignalPlotPoints(analysis, inputUnit, displayUnit, signalMode);
+    if (!signalPoints.length) {
+      return { markup: "", hoverCache: null };
+    }
+
+    const diffusionPoints = (analysis.previewRows || [])
+      .map((row) => ({
+        x: row.time,
+        y: convertDiffusivityToDisplay(row.diffusivity),
+        lowConfidence: !!row.lowConfidence,
+        inverseSensitivity: row.inverseSensitivity,
+      }))
+      .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
+    const smoothedDiffusionPoints = (analysis.outputSmoothedPreviewRows || [])
+      .map((row) => ({
+        x: row.time,
+        y: convertDiffusivityToDisplay(row.smoothedDiffusivity),
+      }))
+      .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
+    const orderedSignal = signalPoints.slice().sort((a, b) => a.x - b.x);
+    const orderedDiffusion = diffusionPoints.slice().sort((a, b) => a.x - b.x);
+    const orderedSmoothedDiffusion = smoothedDiffusionPoints.slice().sort((a, b) => a.x - b.x);
+    const signalRanges = getSignalPlotRanges(analysis, inputUnit, displayUnit, signalMode);
+    const diffusionBaseRanges = getDiffusionBaseRanges(analysis);
+    const diffusionAxis = getDiffusionAxisScale(diffusionBaseRanges);
+    const diffusionRanges = getDiffusionPlotRanges(analysis, diffusionScaleMode, diffusionAxis.factor);
+    const orderedScaledDiffusion = orderedDiffusion
+      .map((point) => ({
+        x: point.x,
+        y: point.y / diffusionAxis.factor,
+        lowConfidence: !!point.lowConfidence,
+        inverseSensitivity: point.inverseSensitivity,
+      }))
+      .filter((point) => diffusionScaleMode !== "log" || point.y > 0);
+    const diffusionPlotPoints =
+      diffusionScaleMode === "log"
+        ? orderedScaledDiffusion.map((point) => ({
+            x: point.x,
+            y: Math.log10(point.y),
+            lowConfidence: point.lowConfidence,
+            inverseSensitivity: point.inverseSensitivity,
+          }))
+        : orderedScaledDiffusion;
+    const orderedScaledSmoothedDiffusion = orderedSmoothedDiffusion
+      .map((point) => ({
+        x: point.x,
+        y: point.y / diffusionAxis.factor,
+      }))
+      .filter((point) => diffusionScaleMode !== "log" || point.y > 0);
+    const smoothedDiffusionPlotPoints =
+      diffusionScaleMode === "log"
+        ? orderedScaledSmoothedDiffusion.map((point) => ({
+            x: point.x,
+            y: Math.log10(point.y),
+          }))
+        : orderedScaledSmoothedDiffusion;
+    const xTicks = buildNiceTicks(signalRanges.xMin, signalRanges.xMax, 5);
+    const xMinorTicks = buildLinearMinorTicks(signalRanges.xMin, signalRanges.xMax, xTicks, 4);
+    const signalTicks = buildNiceTicks(signalRanges.yMin, signalRanges.yMax, 5);
+    const diffusionMajorTicks =
+      diffusionScaleMode === "log"
+        ? buildLogTicks(diffusionRanges.yMin, diffusionRanges.yMax)
+        : buildNiceTicks(diffusionRanges.yMin, diffusionRanges.yMax, 5);
+    const diffusionMinorTicks =
+      diffusionScaleMode === "log"
+        ? buildLogMinorTicks(diffusionRanges.yMin, diffusionRanges.yMax)
+        : buildLinearMinorTicks(diffusionRanges.yMin, diffusionRanges.yMax, diffusionMajorTicks, 4);
+    const within = (value, min, max) => Number.isFinite(value) && value >= min - 1e-9 && value <= max + 1e-9;
+    const xTicksVisible = xTicks.filter((value) => within(value, signalRanges.xMin, signalRanges.xMax));
+    const xMinorTicksVisible = xMinorTicks.filter((value) => within(value, signalRanges.xMin, signalRanges.xMax));
+    const signalTicksVisible = signalTicks.filter((value) => within(value, signalRanges.yMin, signalRanges.yMax));
+    const diffusionMajorTicksVisible = diffusionMajorTicks.filter((value) => within(value, diffusionRanges.yMin, diffusionRanges.yMax));
+    const diffusionMinorTicksVisible = diffusionMinorTicks.filter((value) => within(value, diffusionRanges.yMin, diffusionRanges.yMax));
+    const fit = analysis.fit;
+    const fitVisible = !!(fit && fit.available && state.fitOverlayVisible);
+    const fitOverlayPoints = fitVisible
+      ? buildFitOverlayPoints(analysis, fit, signalMode, inputUnit, displayUnit, signalRanges)
+      : [];
+    const metrics = buildPlotMetrics(width, height, profile);
+    const lowConfidenceMode = dom.lowConfidence && dom.lowConfidence.value ? dom.lowConfidence.value : state.plotLowConfidenceMode;
+    state.plotLowConfidenceMode = lowConfidenceMode || "shaded";
+    const lowConfidenceLegendTitle = dom.lowConfidence && dom.lowConfidence.title
+      ? dom.lowConfidence.title
+      : "Low-confidence region, where the inverse problem is poorly conditioned.";
+    const showLowConfidenceLegend = lowConfidenceMode === "shaded";
+    const showSmoothedLegend = smoothedDiffusionPlotPoints.length > 0;
+    const showFitLegend = fitVisible && fitOverlayPoints.length > 0;
+    const legendItems = buildLegendItems(metrics, signalMeta, lowConfidenceLegendTitle, showLowConfidenceLegend, showSmoothedLegend, showFitLegend);
+    const layout =
+      profile === "live"
+        ? resolveLivePlotLayout(width, height, legendItems, metrics)
+        : resolveExportPlotLayout(width, height, legendItems, metrics, config && config.legendPlacement ? config.legendPlacement : "above");
+    const chartX = layout.chartX;
+    const chartY = layout.chartY;
+    const chartWidth = layout.chartWidth;
+    const chartHeight = layout.chartHeight;
+    const chartRight = chartX + chartWidth;
+    const chartBottom = chartY + chartHeight;
+    const scaleX = (value) => chartX + ((value - signalRanges.xMin) / (signalRanges.xMax - signalRanges.xMin)) * chartWidth;
+    const scaleSignalY = (value) => chartY + (1 - (value - signalRanges.yMin) / (signalRanges.yMax - signalRanges.yMin)) * chartHeight;
+    const scaleDiffusionY = (value) => chartY + (1 - (value - diffusionRanges.yMin) / (diffusionRanges.yMax - diffusionRanges.yMin)) * chartHeight;
+    const signalPath = orderedSignal
+      .map((point, index) => `${index === 0 ? "M" : "L"} ${scaleX(point.x).toFixed(2)} ${scaleSignalY(point.y).toFixed(2)}`)
+      .join(" ");
+    const diffusionConfidencePaths =
+      lowConfidenceMode === "normal"
+        ? []
+        : buildSegmentedPolylinePaths(diffusionPlotPoints, scaleX, scaleDiffusionY, (a, b) => Boolean(a.lowConfidence || b.lowConfidence));
+    const diffusionPath = diffusionPlotPoints
+      .map((point, index) => `${index === 0 ? "M" : "L"} ${scaleX(point.x).toFixed(2)} ${scaleDiffusionY(point.y).toFixed(2)}`)
+      .join(" ");
+    const smoothedDiffusionPath = smoothedDiffusionPlotPoints
+      .map((point, index) => `${index === 0 ? "M" : "L"} ${scaleX(point.x).toFixed(2)} ${scaleDiffusionY(point.y).toFixed(2)}`)
+      .join(" ");
+    const fitPath = fitOverlayPoints
+      .map((point, index) => `${index === 0 ? "M" : "L"} ${scaleX(point.x).toFixed(2)} ${scaleSignalY(point.y).toFixed(2)}`)
+      .join(" ");
+    const references =
+      signalMode === "normalized"
+        ? [
+            { kind: "baseline", label: "Baseline", className: "hpa-plot-ref-baseline", plotValue: 0, displayValue: 0, unitLabel: "%", valueLabel: "y", draggable: false },
+            { kind: "steady", label: "Steady State", className: "hpa-plot-ref-steady", plotValue: 100, displayValue: 100, unitLabel: "%", valueLabel: "y", draggable: false },
+          ]
+        : [
+            {
+              kind: "baseline",
+              label: "Baseline",
+              className: "hpa-plot-ref-baseline",
+              plotValue: analysis.baseline && Number.isFinite(analysis.baseline.value) ? convertCurrentValue(analysis.baseline.value, inputUnit, displayUnit) : null,
+              displayValue: analysis.baseline && Number.isFinite(analysis.baseline.value) ? convertCurrentValue(analysis.baseline.value, inputUnit, displayUnit) : null,
+              unitLabel: currentUnitLabel,
+              valueLabel: "I",
+              draggable: true,
+            },
+            {
+              kind: "steady",
+              label: "Steady State",
+              className: "hpa-plot-ref-steady",
+              plotValue: analysis.steady && Number.isFinite(analysis.steady.value) ? convertCurrentValue(analysis.steady.value, inputUnit, displayUnit) : null,
+              displayValue: analysis.steady && Number.isFinite(analysis.steady.value) ? convertCurrentValue(analysis.steady.value, inputUnit, displayUnit) : null,
+              unitLabel: currentUnitLabel,
+              valueLabel: "I",
+              draggable: true,
+            },
+          ];
+    const parts = [];
+    parts.push(`<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(signalMeta.ariaLabel)}">`);
+    parts.push(`
+      <defs>
+        <clipPath id="${metrics.clipId}">
+          <rect x="${chartX}" y="${chartY}" width="${chartWidth}" height="${chartHeight}"></rect>
+        </clipPath>
+      </defs>
+    `);
+    if (includeInlineStyles) {
+      parts.push(buildStandalonePlotStyles(getPlotStyleTokens(dom), metrics));
+    }
+    parts.push(`<rect class="hpa-plot-frame" x="${chartX}" y="${chartY}" width="${chartWidth}" height="${chartHeight}"></rect>`);
+    parts.push(buildLegendMarkup(layout.legendRows, metrics));
+    parts.push(`<g class="hpa-plot-chart" clip-path="url(#${metrics.clipId})">`);
+    if (showGrid) {
+      diffusionMajorTicksVisible.forEach((value) => {
+        const y = scaleDiffusionY(value);
+        parts.push(`<line class="hpa-plot-grid hpa-plot-grid-major" x1="${chartX}" y1="${y.toFixed(2)}" x2="${chartRight}" y2="${y.toFixed(2)}"></line>`);
+      });
+      xTicksVisible.forEach((value) => {
+        const x = scaleX(value);
+        parts.push(`<line class="hpa-plot-grid hpa-plot-grid-major" x1="${x.toFixed(2)}" y1="${chartY}" x2="${x.toFixed(2)}" y2="${chartBottom}"></line>`);
+      });
+    }
+    if (showMinorGrid) {
+      diffusionMinorTicksVisible.forEach((value) => {
+        const y = scaleDiffusionY(value);
+        parts.push(`<line class="hpa-plot-grid hpa-plot-grid-minor" x1="${chartX}" y1="${y.toFixed(2)}" x2="${chartRight}" y2="${y.toFixed(2)}"></line>`);
+      });
+      xMinorTicksVisible.forEach((value) => {
+        const x = scaleX(value);
+        parts.push(`<line class="hpa-plot-grid hpa-plot-grid-minor" x1="${x.toFixed(2)}" y1="${chartY}" x2="${x.toFixed(2)}" y2="${chartBottom}"></line>`);
+      });
+    }
+    if (diffusionConfidencePaths.length) {
+      diffusionConfidencePaths.forEach((segment) => {
+        const segmentClass = segment.lowConfidence
+          ? lowConfidenceMode === "hide"
+            ? "hpa-plot-line-diffusion-hidden"
+            : "hpa-plot-line-diffusion-edge"
+          : "hpa-plot-line-diffusion";
+        parts.push(`<path class="hpa-plot-line ${segmentClass}" d="${segment.d}"></path>`);
+      });
+    } else if (diffusionPath) {
+      parts.push(`<path class="hpa-plot-line hpa-plot-line-diffusion" d="${diffusionPath}"></path>`);
+    }
+    if (smoothedDiffusionPath) {
+      parts.push(`<path class="hpa-plot-line hpa-plot-line-diffusion-smoothed" d="${smoothedDiffusionPath}"></path>`);
+    }
+    if (signalPath) {
+      parts.push(`<path class="hpa-plot-line hpa-plot-line-current" d="${signalPath}"></path>`);
+    }
+    if (fitVisible && fitPath) {
+      parts.push(`<path class="hpa-plot-line hpa-plot-line-fit" d="${fitPath}"></path>`);
+    }
+    references.forEach((entry) => {
+      if (!Number.isFinite(entry.plotValue) || state.referenceVisibility[entry.kind] === false) return;
+      const y = scaleSignalY(entry.plotValue);
+      const staticCursor = entry.draggable && interactive ? "" : ' style="cursor:default"';
+      if (interactive) {
+        parts.push(`<line class="hpa-plot-ref-hitline" data-ref-kind="${entry.kind}"${staticCursor} x1="${chartX}" y1="${y.toFixed(2)}" x2="${chartRight}" y2="${y.toFixed(2)}"></line>`);
+      }
+      parts.push(`<line class="hpa-plot-ref-line ${entry.className}" data-ref-kind="${entry.kind}"${staticCursor} x1="${chartX}" y1="${y.toFixed(2)}" x2="${chartRight}" y2="${y.toFixed(2)}"></line>`);
+    });
+    parts.push("</g>");
+    signalTicksVisible.forEach((value) => {
+      const y = scaleSignalY(value);
+      parts.push(
+        `<line class="hpa-plot-axis-tick hpa-plot-axis-tick-right" x1="${chartRight}" y1="${y.toFixed(2)}" x2="${chartRight + metrics.rightTickLength}" y2="${y.toFixed(2)}"></line>`,
+        `<text class="hpa-plot-value hpa-plot-value-current" x="${chartRight + metrics.rightTickLength}" y="${(y + 3).toFixed(2)}" text-anchor="start">${escapeHtml(formatAxisTick(value))}</text>`,
+      );
+    });
+    diffusionMinorTicksVisible.forEach((value) => {
+      const y = scaleDiffusionY(value);
+      parts.push(`<line class="hpa-plot-axis-tick hpa-plot-axis-tick-left hpa-plot-axis-tick-minor" x1="${chartX - metrics.leftMinorTickLength}" y1="${y.toFixed(2)}" x2="${chartX}" y2="${y.toFixed(2)}"></line>`);
+    });
+    diffusionMajorTicksVisible.forEach((value) => {
+      const y = scaleDiffusionY(value);
+      parts.push(`<line class="hpa-plot-axis-tick hpa-plot-axis-tick-left" x1="${chartX - metrics.leftMajorTickLength}" y1="${y.toFixed(2)}" x2="${chartX}" y2="${y.toFixed(2)}"></line>`);
+      parts.push(
+        `<text class="hpa-plot-value hpa-plot-value-diffusion" x="${chartX - metrics.leftMajorTickLength}" y="${(y + 3).toFixed(2)}" text-anchor="end">${escapeHtml(
+          diffusionScaleMode === "log" ? formatLogTick(Math.pow(10, value) * diffusionAxis.factor) : formatAxisTick(value),
+        )}</text>`,
+      );
+    });
+    xMinorTicksVisible.forEach((value) => {
+      const x = scaleX(value);
+      parts.push(`<line class="hpa-plot-axis-tick hpa-plot-axis-tick-bottom hpa-plot-axis-tick-minor" x1="${x.toFixed(2)}" y1="${chartBottom}" x2="${x.toFixed(2)}" y2="${chartBottom + metrics.tickMinorLength}"></line>`);
+    });
+    xTicksVisible.forEach((value) => {
+      const x = scaleX(value);
+      parts.push(`<line class="hpa-plot-axis-tick hpa-plot-axis-tick-bottom" x1="${x.toFixed(2)}" y1="${chartBottom}" x2="${x.toFixed(2)}" y2="${chartBottom + metrics.tickMajorLength}"></line>`);
+      parts.push(`<text class="hpa-plot-value" x="${x.toFixed(2)}" y="${layout.xTickLabelY}" text-anchor="middle">${escapeHtml(formatAxisTick(value))}</text>`);
+    });
+    parts.push(
+      diffusionScaleMode === "log"
+        ? `
+      <text class="hpa-plot-axis-label hpa-plot-axis-left" transform="translate(${layout.axisLabelLeftX} ${height / 2}) rotate(-90)" text-anchor="middle">
+        <tspan>Apparent Diffusion Coefficient </tspan><tspan font-style="italic">D</tspan><tspan baseline-shift="sub" font-size="${metrics.axisSubFontSize}">app</tspan><tspan> [mm²/s]</tspan>
+      </text>
+    `
+        : `
+      <text class="hpa-plot-axis-label hpa-plot-axis-left" transform="translate(${layout.axisLabelLeftX} ${height / 2}) rotate(-90)" text-anchor="middle">
+        <tspan>Apparent Diffusion Coefficient </tspan><tspan font-style="italic">D</tspan><tspan baseline-shift="sub" font-size="${metrics.axisSubFontSize}">app</tspan><tspan> [10</tspan><tspan baseline-shift="super" font-size="${metrics.axisSubFontSize}">${diffusionAxis.exponent}</tspan><tspan> mm²/s]</tspan>
+      </text>
+    `,
+    );
+    parts.push(`
+      <text class="hpa-plot-axis-label hpa-plot-axis-right" transform="translate(${layout.axisLabelRightX} ${height / 2}) rotate(270)" text-anchor="middle">
+        <tspan>${escapeHtml(signalMeta.axisLabel)}</tspan>
+      </text>
+    `);
+    parts.push(`<text class="hpa-plot-axis-label hpa-plot-axis-x" x="${width / 2}" y="${layout.xAxisLabelY}" text-anchor="middle">Time [s]</text>`);
+    parts.push("</svg>");
+    const hoverCache = !interactive
+      ? null
+      : {
+          chartX,
+          chartY,
+          chartWidth,
+          chartHeight,
+          signalTitle: signalMeta.tooltipTitle,
+          signalUnitLabel: signalMeta.unitLabel,
+          signalValueLabel: signalMeta.valueLabel,
+          diffusionScaleMode,
+          diffusionAxis,
+          signalPoints: orderedSignal.map((point) => ({
+            x: point.x,
+            y: point.y,
+            px: scaleX(point.x),
+            py: scaleSignalY(point.y),
+          })),
+          diffusionPoints: diffusionPlotPoints.map((point, index) => ({
+            x: point.x,
+            y: point.y,
+            px: scaleX(point.x),
+            py: scaleDiffusionY(point.y),
+            displayY: Number.isFinite(orderedDiffusion[index] && orderedDiffusion[index].y) ? orderedDiffusion[index].y : null,
+            lowConfidence: !!point.lowConfidence,
+            inverseSensitivity: point.inverseSensitivity,
+          })),
+          referenceItems: references
+            .filter((entry) => Number.isFinite(entry.plotValue) && state.referenceVisibility[entry.kind] !== false)
+            .map((entry) => ({
+              kind: entry.kind,
+              label: entry.label,
+              displayValue: entry.displayValue,
+              px: chartRight,
+              py: scaleSignalY(entry.plotValue),
+              unitLabel: entry.unitLabel,
+              valueLabel: entry.valueLabel,
+            })),
+        };
+    return { markup: parts.join(""), hoverCache };
+  }
+
+  function renderPlot(dom, analysis) {
+    if (!dom.plot) return;
+    applyPlotColorVars(dom);
+    syncFitToggle(dom, analysis && analysis.fit);
+    const scene = buildPlotScene(dom, analysis, {
+      profile: "live",
+      interactive: true,
+      includeInlineStyles: false,
+      presetId: "screen",
+    });
+    if (!scene.markup) {
+      state.plotHoverCache = null;
+      hidePlotTooltip();
+      renderPlotEmpty(dom);
+      return;
+    }
+    dom.plot.innerHTML = scene.markup;
+    state.plotHoverCache = scene.hoverCache;
+    hidePlotTooltip();
+    bindLegendTooltip(dom);
+  }
+
   function renderPlotEmpty(dom) {
     if (dom.plot) {
       dom.plot.innerHTML = `<div class="hpa-plot-empty">Paste data to see the preview plot.</div>`;
     }
+    state.plotHoverCache = null;
   }
 
   function formatNumber(value) {
@@ -4524,6 +5158,128 @@
     }
   }
 
+  function getExportPresetDefinition(presetId) {
+    return EXPORT_PRESETS[presetId] || EXPORT_PRESETS[DEFAULT_EXPORT_PRESET];
+  }
+
+  function getExportDownloadButtons(dom) {
+    if (!dom || !dom.downloadButtons || !dom.downloadButtons.length) return [];
+    return Array.from(dom.downloadButtons).filter((button) => {
+      const type = button.getAttribute("data-download");
+      return type === "png" || type === "svg";
+    });
+  }
+
+  function markExportPresetCustom(dom) {
+    if (!dom || !dom.exportPreset) return;
+    const current = dom.exportPreset.value || DEFAULT_EXPORT_PRESET;
+    if (current !== "custom") {
+      dom.exportPreset.value = "custom";
+    }
+  }
+
+  function applySelectedExportPreset(dom) {
+    if (!dom || !dom.exportPreset) return;
+    const preset = getExportPresetDefinition(dom.exportPreset.value);
+    if (preset.id === "custom") return;
+    if (dom.exportWidth) dom.exportWidth.value = String(preset.width);
+    if (dom.exportHeight) dom.exportHeight.value = String(preset.height);
+  }
+
+  function parseIntegerValue(raw) {
+    const text = String(raw == null ? "" : raw).trim();
+    if (!text || !/^[+-]?\d+$/.test(text)) return null;
+    const value = Number(text);
+    return Number.isSafeInteger(value) ? value : null;
+  }
+
+  function normalizeExportDimensionInput(element, limits) {
+    if (!element || !limits) return;
+    const parsed = parseIntegerValue(element.value);
+    if (parsed == null) return;
+    const clamped = clamp(parsed, limits.min, limits.max);
+    element.value = String(clamped);
+  }
+
+  function normalizeExportInputs(dom) {
+    normalizeExportDimensionInput(dom && dom.exportWidth, EXPORT_DIMENSION_LIMITS.width);
+    normalizeExportDimensionInput(dom && dom.exportHeight, EXPORT_DIMENSION_LIMITS.height);
+  }
+
+  function readExportDimension(element, limits) {
+    const parsed = parseIntegerValue(element ? element.value : "");
+    if (parsed == null) {
+      return {
+        raw: element ? String(element.value || "") : "",
+        value: null,
+        valid: false,
+      };
+    }
+    return {
+      raw: String(parsed),
+      value: parsed,
+      valid: parsed >= limits.min && parsed <= limits.max,
+    };
+  }
+
+  function getExportSettings(dom) {
+    const presetId = dom && dom.exportPreset && dom.exportPreset.value ? dom.exportPreset.value : DEFAULT_EXPORT_PRESET;
+    const preset = getExportPresetDefinition(presetId);
+    const width = readExportDimension(dom && dom.exportWidth, EXPORT_DIMENSION_LIMITS.width);
+    const height = readExportDimension(dom && dom.exportHeight, EXPORT_DIMENSION_LIMITS.height);
+    const valid = width.valid && height.valid;
+    return {
+      presetId: preset.id,
+      width: width.value,
+      height: height.value,
+      valid,
+      legendPlacement: preset.legendPlacement,
+    };
+  }
+
+  function syncExportControls(dom) {
+    if (!dom) return;
+    const settings = getExportSettings(dom);
+    const title = settings.valid
+      ? ""
+      : `Enter whole-pixel export dimensions. Width must be ${EXPORT_DIMENSION_LIMITS.width.min}-${EXPORT_DIMENSION_LIMITS.width.max}px and height must be ${EXPORT_DIMENSION_LIMITS.height.min}-${EXPORT_DIMENSION_LIMITS.height.max}px.`;
+    getExportDownloadButtons(dom).forEach((button) => {
+      button.disabled = !settings.valid;
+      if (title) {
+        button.title = title;
+      } else if (button.getAttribute("data-download") === "png") {
+        button.title = "Download the current plot as a PNG image.";
+      } else if (button.getAttribute("data-download") === "svg") {
+        button.title = "Download the current plot as an SVG file.";
+      }
+    });
+  }
+
+  function resolveExportLegendPlacement(settings) {
+    if (!settings) return "above";
+    if (settings.legendPlacement && settings.legendPlacement !== "auto") {
+      return settings.legendPlacement;
+    }
+    if (!Number.isFinite(settings.width) || !Number.isFinite(settings.height) || settings.height <= 0) {
+      return "above";
+    }
+    return settings.width < 680 || settings.width / settings.height < 1.75 ? "below" : "above";
+  }
+
+  function buildExportRenderConfig(dom) {
+    const settings = getExportSettings(dom);
+    if (!settings.valid) return null;
+    return {
+      width: settings.width,
+      height: settings.height,
+      includeInlineStyles: true,
+      interactive: false,
+      legendPlacement: resolveExportLegendPlacement(settings),
+      profile: "export",
+      presetId: settings.presetId,
+    };
+  }
+
   function getSignalPlotMetadata(signalMode, currentUnitLabel) {
     if (signalMode === "normalized") {
       return {
@@ -5116,22 +5872,28 @@
       return;
     }
 
+    const exportConfig = buildExportRenderConfig(dom);
+    if (!exportConfig) {
+      alert(`Enter whole-pixel export dimensions. Width must be ${EXPORT_DIMENSION_LIMITS.width.min}-${EXPORT_DIMENSION_LIMITS.width.max}px and height must be ${EXPORT_DIMENSION_LIMITS.height.min}-${EXPORT_DIMENSION_LIMITS.height.max}px.`);
+      return;
+    }
+
     if (type === "svg") {
-      const svg = buildExportSvg(dom, analysis);
+      const svg = buildExportSvg(dom, analysis, exportConfig);
       downloadBlob(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }), "hpa-plot.svg");
       return;
     }
 
     if (type === "png") {
-      const svg = buildExportSvg(dom, analysis);
+      const svg = buildExportSvg(dom, analysis, exportConfig);
       const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const image = new Image();
       image.onload = () => {
         const exportScale = Math.max(300 / 96, window.devicePixelRatio || 1);
         const canvas = document.createElement("canvas");
-        canvas.width = Math.round(PLOT_WIDTH * exportScale);
-        canvas.height = Math.round(PLOT_HEIGHT * exportScale);
+        canvas.width = Math.round(exportConfig.width * exportScale);
+        canvas.height = Math.round(exportConfig.height * exportScale);
         const ctx = canvas.getContext("2d");
         if (!ctx) {
           URL.revokeObjectURL(url);
@@ -5255,88 +6017,11 @@
     return row.lowConfidence ? "low-confidence" : "trusted";
   }
 
-  function buildExportSvg(dom, analysis) {
-    const svg = dom.plot ? dom.plot.querySelector("svg") : null;
-    if (!svg) {
-      return "";
-    }
-    const clone = svg.cloneNode(true);
-    clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-    clone.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
-    clone.setAttribute("version", "1.1");
-
-    const style = document.createElementNS("http://www.w3.org/2000/svg", "style");
-    const liveGridMajor = dom.plot ? dom.plot.querySelector(".hpa-plot-grid-major") : null;
-    const liveGridMinor = dom.plot ? dom.plot.querySelector(".hpa-plot-grid-minor") : null;
-    const liveCurrentLine = dom.plot ? dom.plot.querySelector(".hpa-plot-line-current") : null;
-    const liveDiffusionLine = dom.plot ? dom.plot.querySelector(".hpa-plot-line-diffusion") : null;
-    const liveSmoothedDiffusionLine = dom.plot ? dom.plot.querySelector(".hpa-plot-line-diffusion-smoothed") : null;
-    const liveFitLine = dom.plot ? dom.plot.querySelector(".hpa-plot-line-fit") : null;
-    const liveAxisLabel = dom.plot ? dom.plot.querySelector(".hpa-plot-axis-label") : null;
-    const liveAxisTick = dom.plot ? dom.plot.querySelector(".hpa-plot-axis-tick") : null;
-    const liveFrame = dom.plot ? dom.plot.querySelector(".hpa-plot-frame") : null;
-    const liveLegendText = dom.plot ? dom.plot.querySelector(".hpa-plot-legend-group text") : null;
-    const liveRefLine = dom.plot ? dom.plot.querySelector(".hpa-plot-ref-line") : null;
-    const liveLowConfidenceLine = dom.plot ? dom.plot.querySelector(".hpa-plot-line-diffusion-edge, .hpa-plot-line-diffusion-hidden") : null;
-    const lowConfidenceMode = dom.lowConfidence && dom.lowConfidence.value ? dom.lowConfidence.value : state.plotLowConfidenceMode;
-    const rootStyle = getComputedStyle(document.documentElement);
-    const bg = readStyleValue(liveFrame, "fill", rootStyle.getPropertyValue("--hpa-plot-bg").trim() || "#ffffff");
-    const border = readStyleValue(liveFrame, "stroke", rootStyle.getPropertyValue("--hpa-plot-border").trim() || "#cfd8e3");
-    const grid = readStyleValue(liveGridMajor || liveGridMinor, "stroke", rootStyle.getPropertyValue("--hpa-plot-grid").trim() || "#e2e8f0");
-    const currentColor = readStyleValue(liveCurrentLine, "stroke", "#2563eb");
-    const diffusionColor = readStyleValue(liveDiffusionLine, "stroke", "#111111");
-    const smoothedDiffusionColor = readStyleValue(liveSmoothedDiffusionLine, "stroke", diffusionColor);
-    const diffusionEdgeColor = readStyleValue(liveLowConfidenceLine, "stroke", rootStyle.getPropertyValue("--hpa-plot-diffusion-edge-color").trim() || "#6b7280");
-    const fitColor = readStyleValue(liveFitLine, "stroke", rootStyle.getPropertyValue("--hpa-plot-fit-color").trim() || "#7c3aed");
-    const ink = readStyleValue(liveLegendText || liveAxisLabel, "fill", rootStyle.getPropertyValue("--hpa-plot-ink").trim() || "#111827");
-    const muted = readStyleValue(liveAxisTick, "stroke", rootStyle.getPropertyValue("--hpa-plot-muted").trim() || "#4b5563");
-    const gridMajorWidth = readStyleValue(liveGridMajor, "stroke-width", "0.8");
-    const gridMajorOpacity = readStyleValue(liveGridMajor, "opacity", "0.95");
-    const gridMinorWidth = readStyleValue(liveGridMinor, "stroke-width", "0.6");
-    const gridMinorOpacity = readStyleValue(liveGridMinor, "opacity", "0.7");
-    const gridMinorDasharray = readStyleValue(liveGridMinor, "stroke-dasharray", "");
-    const lineWidth = readStyleValue(liveCurrentLine, "stroke-width", "2.4");
-    const refLineWidth = readStyleValue(liveRefLine, "stroke-width", "1");
-    const frameWidth = readStyleValue(liveFrame, "stroke-width", "0.5");
-    style.textContent = `
-      .hpa-plot-grid{stroke:${grid};stroke-linecap:butt;fill:none;shape-rendering:crispEdges}
-      .hpa-plot-grid-major{stroke-width:${gridMajorWidth};opacity:${gridMajorOpacity}}
-      .hpa-plot-grid-minor{stroke-width:${gridMinorWidth};opacity:${gridMinorOpacity}${gridMinorDasharray ? `;stroke-dasharray:${gridMinorDasharray}` : ""}}
-      .hpa-plot-line{fill:none;stroke-width:${lineWidth};stroke-linejoin:round;stroke-linecap:butt}
-      .hpa-plot-line-current{stroke:${currentColor}}
-      .hpa-plot-line-diffusion{stroke:${diffusionColor}}
-      .hpa-plot-line-diffusion-smoothed{stroke:${smoothedDiffusionColor};stroke-dasharray:5 3;opacity:0.72}
-      .hpa-plot-line-fit{stroke:${fitColor}}
-      .hpa-plot-line-diffusion-edge{stroke:${diffusionEdgeColor};opacity:1}
-      .hpa-plot-line-diffusion-hidden{stroke:${diffusionEdgeColor};opacity:0}
-      .hpa-plot-point{stroke:${bg};stroke-width:2}
-      .hpa-plot-point-current{fill:${currentColor}}
-      .hpa-plot-point-diffusion{fill:${diffusionColor}}
-      .hpa-plot-axis-label,.hpa-plot-value,.hpa-plot-note,.hpa-plot-ref-label,.hpa-plot-legend-group{font-family:Arial,"Segoe UI",sans-serif}
-      .hpa-plot-axis-label,.hpa-plot-value,.hpa-plot-note{font-size:11px;font-weight:400}
-      .hpa-plot-axis-label tspan{font-family:inherit}
-      .hpa-plot-legend-group{font-size:10.5px;font-weight:400}
-      .hpa-plot-legend-group text{fill:${ink};font-weight:400}
-      .hpa-plot-legend-low-confidence-line{stroke:${diffusionEdgeColor};opacity:1}
-      .hpa-plot-legend-diffusion .hpa-plot-legend-line{stroke:${diffusionColor}}
-      .hpa-plot-legend-diffusion-smoothed .hpa-plot-legend-line{stroke:${smoothedDiffusionColor};stroke-dasharray:5 3}
-      .hpa-plot-legend-current .hpa-plot-legend-line{stroke:${currentColor}}
-      .hpa-plot-legend-fit .hpa-plot-legend-line{stroke:${fitColor}}
-      .hpa-plot-ref-hitline{stroke:transparent;stroke-width:14;fill:none}
-      .hpa-plot-axis-left,.hpa-plot-value-diffusion{fill:${diffusionColor}}
-      .hpa-plot-axis-right,.hpa-plot-value-current{fill:${currentColor}}
-      .hpa-plot-note{fill:${muted}}
-      .hpa-plot-ref-line{stroke:${ink};fill:none}
-      .hpa-plot-ref-label{fill:${ink}}
-      .hpa-plot-ref-line{stroke-width:${refLineWidth};stroke-linecap:butt}
-      .hpa-plot-ref-handle{stroke:${bg};stroke-width:2}
-      .hpa-plot-ref-label{font-size:10px;font-weight:400;paint-order:normal;stroke:none}
-      .hpa-plot-frame{fill:${bg};stroke:${border};stroke-width:${frameWidth};pointer-events:none}
-      .hpa-plot-axis-tick{stroke:${muted};stroke-width:1;fill:none;shape-rendering:crispEdges}
-      .hpa-plot-axis-tick-minor{stroke-width:0.75;opacity:0.8}
-    `;
-    clone.insertBefore(style, clone.firstChild);
-    return new XMLSerializer().serializeToString(clone);
+  function buildExportSvg(dom, analysis, exportConfig) {
+    const config = exportConfig || buildExportRenderConfig(dom);
+    if (!config) return "";
+    const scene = buildPlotScene(dom, analysis, config);
+    return scene.markup || "";
   }
 
   function csvCell(value) {

@@ -254,6 +254,26 @@ permalink: /hpa/
           <details class="hpa-tool-panel">
             <summary class="hpa-button is-secondary">Export</summary>
             <div class="hpa-tool-panel-body">
+              <div class="hpa-export-grid">
+                <div class="hpa-control">
+                  <label for="hpa-export-preset" title="Choose a publication export layout preset or switch to Custom after editing the dimensions.">Preset</label>
+                  <select id="hpa-export-preset" class="hpa-select" title="Choose a publication export layout preset or switch to Custom after editing the dimensions.">
+                    <option value="screen" selected>Screen (current)</option>
+                    <option value="paper-wide">Paper wide</option>
+                    <option value="single-column">Single-column</option>
+                    <option value="paper-tall">Paper tall</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                </div>
+                <div class="hpa-control">
+                  <label for="hpa-export-width" title="Set the export width in pixels. Publication exports recompute the layout for this width.">Width</label>
+                  <input id="hpa-export-width" class="hpa-number" type="number" min="480" max="1600" step="1" value="920" inputmode="numeric" title="Set the export width in pixels. Publication exports recompute the layout for this width." />
+                </div>
+                <div class="hpa-control">
+                  <label for="hpa-export-height" title="Set the export height in pixels. Publication exports recompute the layout for this height.">Height</label>
+                  <input id="hpa-export-height" class="hpa-number" type="number" min="300" max="1200" step="1" value="340" inputmode="numeric" title="Set the export height in pixels. Publication exports recompute the layout for this height." />
+                </div>
+              </div>
               <div class="hpa-export-row">
                 <button type="button" class="hpa-button is-secondary" data-download="png">PNG</button>
                 <button type="button" class="hpa-button is-secondary" data-download="svg">SVG</button>
@@ -419,8 +439,9 @@ permalink: /hpa/
       <div>
         <h3>Export</h3>
         <ul class="hpa-help-list">
-          <li><strong>PNG</strong> saves the current plot as an image.</li>
-          <li><strong>SVG</strong> saves the current plot as a vector graphic.</li>
+          <li><strong>Preset</strong>, <strong>Width</strong>, and <strong>Height</strong> control the publication export layout. The presets seed paper-friendly dimensions, and manual edits switch the export to <strong>Custom</strong>.</li>
+          <li><strong>PNG</strong> saves the current plot as an image using the selected export dimensions and recalculated layout.</li>
+          <li><strong>SVG</strong> saves the current plot as a vector graphic using the same selected export dimensions and layout.</li>
           <li><strong>Data</strong> exports the processed table with time, origin, <code>D<sub>app</sub></code>, a <code>D_app confidence</code> label, and measurement-aligned <code>D<sub>GTF</sub></code> values in the currently selected signal representation. In <strong>Current</strong> mode, both signal columns are exported in the chosen current unit; in <strong>Normalized</strong> mode, both are exported as normalized response values. If output smoothing is enabled, the export also includes the smoothed <code>D<sub>app</sub></code> column.</li>
         </ul>
         <p>The export always reflects the current display settings, including the selected signal representation, current display unit, reference values, and plot view. If you change the plot or the controls, export again to capture the updated state.</p>
