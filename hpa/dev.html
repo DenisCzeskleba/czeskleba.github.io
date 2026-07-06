@@ -538,7 +538,7 @@
               <li><strong>Global Transient Fit</strong> fits one constant <code>D</code> for the current <strong>Start Time Offset</strong> slider value. <strong>Optimize D<sub>GTF</sub></strong> runs a slower full-range search for the best total <code>t<sub>0</sub></code> and refitted <code>D</code> by RMSE, then applies that total offset to the slider.</li>
           </ul>
           <p>The low-confidence shade is a practical proxy, not a new physics claim. A useful intuition is <code>f(x) = 1 / (1-x)</code>: as <code>x</code> approaches 1, the inverse blows up, so the flat tail is less trustworthy.</p>
-          <p>The preview table shows <code>D<sub>app</sub></code> in mm&sup2;/s for readability and includes an <strong>Origin</strong> column that distinguishes measured rows from reconstructed prepended baseline. The CSV export writes <code>D<sub>app</sub></code> in m&sup2;/s, so the exported numbers look different even though they represent the same quantity.</p>
+          <p>The preview table shows <code>D<sub>app</sub></code> in mm&sup2;/s for readability and includes an <strong>Origin</strong> column that distinguishes measured rows from reconstructed prepended baseline. The CSV export writes <code>D<sub>app</sub></code> in m&sup2;/s, adds a <strong>D_app confidence</strong> label so external tools can separate trusted rows from the low-confidence inverse region, and includes the measurement-aligned simulated measurement from <code>D<sub>GTF</sub></code>.</p>
           </div>
 
             <div>
@@ -546,7 +546,7 @@
               <ul class="hpa-help-list">
                 <li><strong>PNG</strong> saves the current plot as an image.</li>
                 <li><strong>SVG</strong> saves the current plot as a vector graphic.</li>
-                <li><strong>Data</strong> exports the processed table with time, origin, current, and <code>D<sub>app</sub></code>. If output smoothing is enabled, the export also includes the smoothed <code>D<sub>app</sub></code> column.</li>
+                <li><strong>Data</strong> exports the processed table with time, origin, <code>D<sub>app</sub></code>, a <code>D_app confidence</code> label, and measurement-aligned <code>D<sub>GTF</sub></code> values in the currently selected signal representation. In <strong>Current</strong> mode, both signal columns are exported in the chosen current unit; in <strong>Normalized</strong> mode, both are exported as normalized response values. If output smoothing is enabled, the export also includes the smoothed <code>D<sub>app</sub></code> column.</li>
               </ul>
               <p>The export always reflects the current display settings, including the selected signal representation, current display unit, reference values, and plot view. If you change the plot or the controls, export again to capture the updated state.</p>
             </div>

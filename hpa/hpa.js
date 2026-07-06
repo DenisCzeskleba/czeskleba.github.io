@@ -5160,28 +5160,99 @@
   function buildExportCsv(dom, analysis) {
     const inputUnit = dom.currentUnit ? dom.currentUnit.value : "A";
     const displayUnit = getDisplayUnit(dom);
+    const signalMode = getPlotSignalMode(dom);
     const exportRows = Array.isArray(analysis.previewRows) && analysis.previewRows.length ? analysis.previewRows : analysis.rows;
     const showSmoothed = !!(analysis && Array.isArray(analysis.outputSmoothedPreviewRows) && analysis.outputSmoothedPreviewRows.length);
     const smoothedRows = showSmoothed ? analysis.outputSmoothedPreviewRows : [];
+    const fitRows = buildFitExportRows(analysis, exportRows, inputUnit, displayUnit);
+    const header = [
+      "Time [s]",
+      "Origin",
+      signalMode === "normalized" ? "Normalized response [-]" : `Current [${formatUnitLabel(displayUnit)}]`,
+      "D_app [m^2/s]",
+      "D_app confidence",
+    ];
+    if (showSmoothed) {
+      header.push("Smoothed D_app [m^2/s]");
+    }
+    header.push(
+      signalMode === "normalized"
+        ? "Simulated response from D_GTF [-]"
+        : `Simulated Measurement from D_GTF [${formatUnitLabel(displayUnit)}]`,
+    );
     const rows = [
-      showSmoothed
-        ? ["Time [s]", "Origin", `Current [${formatUnitLabel(displayUnit)}]`, "D_app [m^2/s]", "Smoothed D_app [m^2/s]"]
-        : ["Time [s]", "Origin", `Current [${formatUnitLabel(displayUnit)}]`, "D_app [m^2/s]"],
+      header,
       ...exportRows.map((row, index) => {
-        const current = convertCurrentValue(row.current, inputUnit, displayUnit);
+        const signalValue =
+          signalMode === "normalized"
+            ? Number.isFinite(row.normalized)
+              ? row.normalized
+              : null
+            : convertCurrentValue(row.current, inputUnit, displayUnit);
         const diffusivity = Number.isFinite(row.diffusivity) ? row.diffusivity : null;
         const origin = rowOrigin(row, ROW_ORIGIN_MEASURED);
+        const diffusivityConfidence = classifyDiffusivityConfidence(row);
+        const fitRow = fitRows[index] || null;
+        const fitSignalValue =
+          signalMode === "normalized"
+            ? Number.isFinite(fitRow && fitRow.normalized)
+              ? fitRow.normalized
+              : null
+            : Number.isFinite(fitRow && fitRow.currentDisplay)
+              ? fitRow.currentDisplay
+              : null;
         if (!showSmoothed) {
-          return [row.time, origin, current, diffusivity];
+          return [row.time, origin, signalValue, diffusivity, diffusivityConfidence, fitSignalValue];
         }
         const smoothedRow = smoothedRows[index] || null;
         const smoothedDiffusivity = Number.isFinite(smoothedRow && smoothedRow.smoothedDiffusivity) ? smoothedRow.smoothedDiffusivity : null;
-        return [row.time, origin, current, diffusivity, smoothedDiffusivity];
+        return [row.time, origin, signalValue, diffusivity, diffusivityConfidence, smoothedDiffusivity, fitSignalValue];
       }),
     ];
     return rows
       .map((row) => row.map((value) => csvCell(value)).join(","))
       .join("\n");
+  }
+
+  function buildFitExportRows(analysis, exportRows, inputUnit, displayUnit) {
+    const fit = analysis && analysis.fit;
+    if (!fit || !fit.available || !Number.isFinite(fit.diffusivity) || !Array.isArray(exportRows) || !exportRows.length) {
+      return [];
+    }
+    const thicknessMm = Number.isFinite(analysis && analysis.thicknessMm) ? analysis.thicknessMm : null;
+    if (!Number.isFinite(thicknessMm) || thicknessMm <= 0) return [];
+    const baselineValue = analysis && analysis.baseline && Number.isFinite(analysis.baseline.value) ? analysis.baseline.value : null;
+    const steadyValue = analysis && analysis.steady && Number.isFinite(analysis.steady.value) ? analysis.steady.value : null;
+    if (!Number.isFinite(baselineValue) || !Number.isFinite(steadyValue)) return [];
+
+    const thicknessMeters = thicknessMm / 1000;
+    const fitOffset = Number.isFinite(fit.timeOffset) ? fit.timeOffset : Number.isFinite(fit.t0Offset) ? fit.t0Offset : 0;
+    const currentSpan = steadyValue - baselineValue;
+
+    return exportRows.map((row) => {
+      if (rowOrigin(row, ROW_ORIGIN_MEASURED) !== ROW_ORIGIN_MEASURED || !Number.isFinite(row.time)) {
+        return { normalized: null, currentDisplay: null };
+      }
+      const modelTime = row.time + fitOffset;
+      const response = evaluateFickResponseDetailed(fit.diffusivity, modelTime, thicknessMeters);
+      const normalized = typeof response === "number" ? response : response && response.value;
+      if (!Number.isFinite(normalized)) {
+        return { normalized: null, currentDisplay: null };
+      }
+      const modelCurrent =
+        Number.isFinite(currentSpan) && currentSpan !== 0
+          ? baselineValue + normalized * currentSpan
+          : null;
+      return {
+        normalized,
+        currentDisplay: Number.isFinite(modelCurrent) ? convertCurrentValue(modelCurrent, inputUnit, displayUnit) : null,
+      };
+    });
+  }
+
+  function classifyDiffusivityConfidence(row) {
+    if (!row || !Number.isFinite(row.diffusivity)) return "";
+    return row.lowConfidence ? "low-confidence" : "trusted";
   }
 
   function buildExportSvg(dom, analysis) {
