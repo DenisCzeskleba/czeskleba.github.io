@@ -1,3 +1,5 @@
 title: czeskleba.com
 plugins:
   - jekyll-seo-tag
+include:
+  - CNAME
