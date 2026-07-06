@@ -357,6 +357,7 @@ test("classical inflection uses the normalized slope form directly", () => {
 
   assert.ok(classicalA.inflection.available, "expected inflection result");
   assert.ok(classicalB.inflection.available, "expected inflection result");
+  assert.ok(/hpa-formula-fraction/i.test(classicalA.inflection.noteHtml || ""));
   assert.ok(/a<sub>norm<\/sub>/i.test(classicalA.inflection.noteHtml || ""));
   assert.ok(Math.abs(classicalA.inflection.diffusivity - expectedDiffusivity) < 1e-16, `expected normalized-form diffusivity ${expectedDiffusivity}, got ${classicalA.inflection.diffusivity}`);
   assert.ok(Math.abs(classicalA.inflection.diffusivity - classicalB.inflection.diffusivity) < 1e-20, "expected inflection result to depend on normalized slope, not current scaling");

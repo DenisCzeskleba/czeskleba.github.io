@@ -159,8 +159,15 @@ permalink: /hpa/
             <summary class="hpa-button is-accent">Plot Options</summary>
             <div class="hpa-tool-panel-body">
               <div class="hpa-control">
-                <label for="hpa-plot-unit" title="Choose the unit shown on the plot and data preview.">Y-axis unit</label>
-              <select id="hpa-plot-unit" class="hpa-select" title="Choose the unit shown on the plot and data preview.">
+                <label for="hpa-plot-signal-mode" title="Choose whether the plotted transient is shown as current or as the normalized response.">Signal representation</label>
+              <select id="hpa-plot-signal-mode" class="hpa-select" title="Choose whether the plotted transient is shown as current or as the normalized response.">
+                <option value="current" selected>Current</option>
+                <option value="normalized">Normalized</option>
+              </select>
+              </div>
+              <div class="hpa-control">
+                <label for="hpa-plot-unit" title="Choose the current unit shown in the data preview, exports, reference fields, and the current-mode plot.">Current display unit</label>
+              <select id="hpa-plot-unit" class="hpa-select" title="Choose the current unit shown in the data preview, exports, reference fields, and the current-mode plot.">
                 <option value="A">A</option>
                 <option value="mA">mA</option>
                       <option value="uA" selected>&mu;A</option>
@@ -294,7 +301,7 @@ permalink: /hpa/
           </article>
           <article class="hpa-result-card hpa-result-card-fit">
             <h3>Global Transient Fit</h3>
-            <button type="button" class="hpa-button is-secondary hpa-fit-toggle" id="hpa-fit-toggle" aria-pressed="false" title="Show or hide the fitted permeation curve.">Show</button>
+            <button type="button" class="hpa-button is-secondary hpa-fit-toggle" id="hpa-fit-toggle" aria-pressed="false" title="Show or hide the fitted curve.">Show</button>
             <button type="button" class="hpa-button is-secondary hpa-fit-optimize" id="hpa-fit-optimize" title="Search the full Start Time Offset range for the best total Start Time Offset and fitted D by RMSE.">Optimize D<sub>GTF</sub></button>
             <div class="hpa-result-value" id="hpa-fit-value">D<sub>GTF</sub> = NaN</div>
             <div class="hpa-result-meta" id="hpa-fit-time">Load data to fit D for the current t<sub>0</sub>.</div>
@@ -366,17 +373,17 @@ permalink: /hpa/
 
       <div>
         <h3>Controls and plot</h3>
-        <p>The <strong>Current unit</strong> tells HPA how to interpret the uploaded current column. The <strong>Y-axis unit</strong> only changes how the plot, reference markers, and data preview are displayed. The app converts between them automatically, so you can keep the file in its original unit and still view it in a different one.</p>
+        <p>The <strong>Current unit</strong> tells HPA how to interpret the uploaded current column. The <strong>Current display unit</strong> controls how current values are shown in the data preview, exports, reference fields, and the plot when <strong>Signal representation</strong> is set to <strong>Current</strong>. The <strong>Signal representation</strong> switch only changes how the right-axis transient is drawn: either in current units or as the normalized response.</p>
         <ul class="hpa-help-list">
           <li>Supported current units are A, mA, &mu;A, nA, and pA.</li>
           <li>The membrane thickness is entered in mm. It matters because all diffusion coefficients scale with <code>L<sup>2</sup></code>, so a unit mistake changes every result by a large factor.</li>
           <li>The baseline and steady-state fields define the normalization used by the analysis. If they are left blank, HPA starts from the minimum and maximum values in the loaded data.</li>
-          <li>You can type baseline and steady-state values manually, or drag the reference lines directly on the plot. The values follow the currently selected display unit.</li>
+          <li>You can type baseline and steady-state values manually, or drag the reference lines directly on the plot while <strong>Signal representation</strong> is set to <strong>Current</strong>. In normalized mode the reference guides stay fixed at 0% and 100%, so the values remain editable from the <strong>Baseline</strong> panel.</li>
           <li>The <strong>Start Time Offset</strong> control shifts the trace before analysis. A positive offset reconstructs a dense baseline segment before the transient and moves the measured data forward. A negative offset removes early time and shifts the remaining data back to zero.</li>
-          <li>Plot Options let you change the y-axis unit, choose colors for the main lines, decide how inverse-conditioning-based low-confidence diffusion segments are drawn, turn grid lines and minor grid lines on or off, and switch the diffusion axis between linear and logarithmic scaling.</li>
+          <li>Plot Options let you change the signal representation, choose the current display unit, choose colors for the main lines, decide how inverse-conditioning-based low-confidence diffusion segments are drawn, turn grid lines and minor grid lines on or off, and switch the diffusion axis between linear and logarithmic scaling.</li>
           <li>The <strong>Reset</strong> button restores the default plot view. The <strong>Hide/Show</strong> buttons toggle the reference markers without deleting their values.</li>
         </ul>
-        <p>The plot itself is interactive. You can zoom and pan it directly, then use <strong>Reset</strong> to return to the default view. If you drag the baseline or steady-state line, HPA updates the corresponding value and reruns the analysis.</p>
+        <p>The plot itself is interactive. You can zoom and pan it directly, then use <strong>Reset</strong> to return to the default view. In current mode, dragging the baseline or steady-state line updates the corresponding value and reruns the analysis.</p>
       </div>
 
       <div>
@@ -396,7 +403,7 @@ permalink: /hpa/
         <h3>Results</h3>
         <p>HPA first normalizes the measured current with</p>
         <p><code>y(t) = (I(t) - I<sub>0</sub>) / (I<sub>ss</sub> - I<sub>0</sub>)</code></p>
-            <p>where <code>I<sub>0</sub></code> is the baseline current and <code>I<sub>ss</sub></code> is the steady-state current. That normalized curve is the common basis for the classical methods, the inverse solve, and the global fit.</p>
+            <p>where <code>I<sub>0</sub></code> is the baseline current and <code>I<sub>ss</sub></code> is the steady-state current. That normalized curve is the common basis for the classical methods, the inverse solve, and the global fit. Changing the plot representation does not change these calculations; it only changes how the transient is displayed on the right axis.</p>
         <p><code>D<sub>app</sub>(t)</code> is an apparent coefficient, not a claim about the true lattice diffusion constant. It is the constant <code>D</code> that the simplified 1D Fickian membrane model would need in order to reproduce the measured transient at that time point.</p>
         <ul class="hpa-help-list">
           <li><strong>Breakthrough</strong> uses the 9.6% normalized criterion: HPA finds when the baseline-corrected transient reaches 9.6% of the steady-state span and linearly interpolates that crossing time between the surrounding measured points. The reported value is shown for reference, but the diagnostic confidence and the global-fit seed do not use it because breakthrough remains less reliable than the other evaluation methods for this transient.</li>
@@ -416,7 +423,7 @@ permalink: /hpa/
           <li><strong>SVG</strong> saves the current plot as a vector graphic.</li>
           <li><strong>Data</strong> exports the processed table with time, origin, current, and <code>D<sub>app</sub></code>. If output smoothing is enabled, the export also includes the smoothed <code>D<sub>app</sub></code> column.</li>
         </ul>
-        <p>The export always reflects the current display settings, including the selected plot unit, reference values, and plot view. If you change the plot or the controls, export again to capture the updated state.</p>
+        <p>The export always reflects the current display settings, including the selected signal representation, current display unit, reference values, and plot view. If you change the plot or the controls, export again to capture the updated state.</p>
       </div>
 
       <div>

@@ -96,6 +96,7 @@
     diagnosticBusyTimer: null,
     diagnosticBusyStartedAt: 0,
     referenceVisibility: { baseline: true, steady: true },
+    plotSignalMode: "current",
     plotDiffusionScale: "linear",
     plotLowConfidenceMode: "shaded",
     plotColors: { ...DEFAULT_PLOT_COLORS },
@@ -146,6 +147,7 @@
       minorGridToggle: document.getElementById("hpa-minor-grid-toggle"),
       cropRange: document.getElementById("hpa-crop-range"),
       decimal: document.getElementById("hpa-decimal"),
+      plotSignalMode: document.getElementById("hpa-plot-signal-mode"),
       plotUnit: document.getElementById("hpa-plot-unit"),
       lowConfidence: document.getElementById("hpa-low-confidence"),
       currentColor: document.getElementById("hpa-color-current"),
@@ -219,6 +221,7 @@
     }
 
     state.timeLagMode = DEFAULT_TIME_LAG_MODE;
+    state.plotSignalMode = getPlotSignalMode(dom);
     state.plotDiffusionScale = dom.diffusionScale && dom.diffusionScale.checked ? "log" : "linear";
     state.plotLowConfidenceMode = dom.lowConfidence && dom.lowConfidence.value ? dom.lowConfidence.value : "shaded";
     state.plotColors = readPlotColors(dom);
@@ -345,6 +348,14 @@
         renderDerivedViews(dom);
       });
     }
+    if (dom.plotSignalMode) {
+      dom.plotSignalMode.addEventListener("change", () => {
+        state.plotSignalMode = getPlotSignalMode(dom);
+        state.plotViewport = null;
+        syncSignalRepresentationControls(dom);
+        renderDerivedViews(dom);
+      });
+    }
     if (dom.plotUnit) {
       dom.plotUnit.addEventListener("change", () => {
         renderDerivedViews(dom);
@@ -459,9 +470,13 @@
     if (dom.plotUnit) {
       dom.plotUnit.value = "uA";
     }
+    if (dom.plotSignalMode) {
+      dom.plotSignalMode.value = "current";
+    }
     if (dom.lowConfidence) {
       dom.lowConfidence.value = "shaded";
     }
+    syncSignalRepresentationControls(dom);
     syncPlotColorControls(dom, state.plotColors);
     applyPlotColorVars(dom);
     syncCitationMetadata(dom);
@@ -1084,7 +1099,7 @@
       const target = event.target && event.target.closest ? event.target.closest("[data-ref-kind]") : null;
       if (target) {
         const kind = target.getAttribute("data-ref-kind");
-        if (kind) {
+        if (kind && getPlotSignalMode(dom) === "current") {
           startReferenceDrag(dom, kind, event, svg);
           event.preventDefault();
         }
@@ -1311,14 +1326,19 @@
     legend.addEventListener("blur", hidePlotTooltip);
   }
 
+  function formatSignalValueText(value, unitLabel) {
+    const text = formatAxisTick(value);
+    if (!unitLabel) return text;
+    return unitLabel === "%" ? `${text}%` : `${text} ${unitLabel}`;
+  }
+
   function renderPlotTooltipContent(target) {
     if (!target) return "";
-    if (target.kind === "current") {
-      const unit = target.unitLabel || "";
+    if (target.kind === "signal") {
       return `
-        <strong>Measured Permeation Current I(t)</strong>
+        <strong>${escapeHtml(target.title || "Signal")}</strong>
         <div>t = ${escapeHtml(formatAxisTick(target.x))} s</div>
-        <div>I = ${escapeHtml(formatAxisTick(target.displayValue))} ${escapeHtml(unit)}</div>
+        <div>${escapeHtml(target.valueLabel || "y")} = ${escapeHtml(formatSignalValueText(target.displayValue, target.unitLabel || ""))}</div>
       `;
     }
     if (target.kind === "diffusion") {
@@ -1331,7 +1351,7 @@
     }
     return `
       <strong>${escapeHtml(target.label || "Reference")}</strong>
-      <div>I = ${escapeHtml(formatAxisTick(target.displayValue))} ${escapeHtml(target.unitLabel || "")}</div>
+      <div>${escapeHtml(target.valueLabel || "I")} = ${escapeHtml(formatSignalValueText(target.displayValue, target.unitLabel || ""))}</div>
     `;
   }
 
@@ -1394,18 +1414,15 @@
       }
     };
 
-    scanPolyline(
-      cache.currentPoints,
-      "current",
-      "Measured Permeation Current I(t)",
-      cache.currentUnitLabel || "",
-      (a, b, t) => a.y + (b.y - a.y) * t,
-    );
+    scanPolyline(cache.signalPoints, "signal", cache.signalTitle || "Signal", cache.signalUnitLabel || "", (a, b, t) => a.y + (b.y - a.y) * t, () => ({
+      title: cache.signalTitle || "Signal",
+      valueLabel: cache.signalValueLabel || "y",
+    }));
 
     scanPolyline(
       cache.diffusionPoints,
       "diffusion",
-      "Apparent diffusion coefficient Dapp(t)",
+      "Apparent diffusion coefficient Dapp",
       "mm²/s",
       (a, b, t) => {
         const value = a.displayY + (b.displayY - a.displayY) * t;
@@ -1425,7 +1442,8 @@
             kind: "reference",
             label: item.label,
             displayValue: item.displayValue,
-            unitLabel: item.currentUnitLabel || "",
+            unitLabel: item.unitLabel || "",
+            valueLabel: item.valueLabel || "I",
           },
           dy * dy,
           item.px,
@@ -1538,7 +1556,13 @@
 
   function startPlotPan(dom, event, svg) {
     if (!state.currentAnalysis || !state.currentAnalysis.rows || !state.currentAnalysis.rows.length) return;
-    const ranges = getPlotRanges(state.currentAnalysis, dom.currentUnit ? dom.currentUnit.value : "A", getDisplayUnit(dom), state.plotDiffusionScale);
+    const ranges = getPlotRanges(
+      state.currentAnalysis,
+      dom.currentUnit ? dom.currentUnit.value : "A",
+      getDisplayUnit(dom),
+      state.plotDiffusionScale,
+      getPlotSignalMode(dom),
+    );
     state.dragPlot = {
       pointerId: event.pointerId,
       svg,
@@ -1560,7 +1584,13 @@
     if (!state.currentAnalysis || !state.currentAnalysis.rows || !state.currentAnalysis.rows.length) return;
     const svg = getPlotSvg(dom, event);
     if (!svg) return;
-    const ranges = getPlotRanges(state.currentAnalysis, dom.currentUnit ? dom.currentUnit.value : "A", getDisplayUnit(dom), state.plotDiffusionScale);
+    const ranges = getPlotRanges(
+      state.currentAnalysis,
+      dom.currentUnit ? dom.currentUnit.value : "A",
+      getDisplayUnit(dom),
+      state.plotDiffusionScale,
+      getPlotSignalMode(dom),
+    );
     const point = pointerToPlotFractions(event, svg);
     if (!point) return;
 
@@ -1631,8 +1661,8 @@
     return { xMin, xMax, yMin, yMax };
   }
 
-  function getPlotRanges(analysis, inputUnit, displayUnit, diffusionScaleMode) {
-    const currentRanges = getCurrentPlotRanges(analysis, inputUnit, displayUnit);
+  function getPlotRanges(analysis, inputUnit, displayUnit, diffusionScaleMode, signalMode) {
+    const currentRanges = getSignalPlotRanges(analysis, inputUnit, displayUnit, signalMode);
     const diffusionBaseRanges = getDiffusionBaseRanges(analysis);
     const diffusionAxis = getDiffusionAxisScale(diffusionBaseRanges);
     const diffusionRanges = getDiffusionPlotRanges(analysis, diffusionScaleMode, diffusionAxis.factor);
@@ -1809,6 +1839,7 @@
   }
 
   function updateReferenceFromPointer(dom, kind, clientX, clientY, svg) {
+    if (getPlotSignalMode(dom) !== "current") return;
     if (!state.currentAnalysis) return;
     const y = pointerToPlotY(clientY, svg);
     if (y == null) return;
@@ -2361,6 +2392,7 @@
 
     updateParsedStatus(dom, analysis);
     syncReferenceControls(dom, analysis);
+    syncSignalRepresentationControls(dom);
     updateSummary(dom, analysis);
     renderDiagnostics(dom, analysis);
     renderDiagnosticDrawer(dom, state.diagnosticReport);
@@ -2377,6 +2409,7 @@
     }
 
     syncReferenceControls(dom, state.currentAnalysis);
+    syncSignalRepresentationControls(dom);
     updateSummary(dom, state.currentAnalysis);
     updateParsedStatus(dom, state.currentAnalysis);
     renderDiagnostics(dom, state.currentAnalysis);
@@ -2457,7 +2490,7 @@
     dom.fitToggle.textContent = visible ? "Hide" : "Show";
     dom.fitToggle.setAttribute("aria-pressed", visible ? "true" : "false");
     dom.fitToggle.title = available
-      ? "Show or hide the fitted permeation curve."
+      ? "Show or hide the fitted curve."
       : "No global transient fit is available for the current data.";
     if (dom.fitOptimize) {
       const optimizable = !!(state.currentAnalysis && state.currentAnalysis.fitOptimizable);
@@ -2532,28 +2565,26 @@
     return text || fallback;
   }
 
-  function buildFitOverlayPoints(analysis, fit, inputUnit, displayUnit, currentRanges) {
+  function buildFitOverlayPoints(analysis, fit, signalMode, inputUnit, displayUnit, signalRanges) {
     if (!analysis || !fit || !fit.available || !Number.isFinite(fit.diffusivity)) return [];
     const thicknessMm = Number.isFinite(analysis.thicknessMm) ? analysis.thicknessMm : null;
     if (!Number.isFinite(thicknessMm) || thicknessMm <= 0) return [];
     const thicknessMeters = thicknessMm / 1000;
-    const baselineValue = analysis.baseline && Number.isFinite(analysis.baseline.value) ? analysis.baseline.value : null;
-    const steadyValue = analysis.steady && Number.isFinite(analysis.steady.value) ? analysis.steady.value : null;
-    const baselineDisplay = Number.isFinite(baselineValue) ? convertCurrentValue(baselineValue, inputUnit, displayUnit) : null;
-    const steadyDisplay = Number.isFinite(steadyValue) ? convertCurrentValue(steadyValue, inputUnit, displayUnit) : null;
-    if (!Number.isFinite(baselineDisplay) || !Number.isFinite(steadyDisplay)) return [];
     const fitOffset = Number.isFinite(fit.timeOffset) ? fit.timeOffset : Number.isFinite(fit.t0Offset) ? fit.t0Offset : 0;
-    const denom = steadyDisplay - baselineDisplay;
-    if (!Number.isFinite(denom) || denom === 0) return [];
     const points = [];
-    const xMin = Number.isFinite(currentRanges && currentRanges.xMin) ? currentRanges.xMin : 0;
-    const xMax = Number.isFinite(currentRanges && currentRanges.xMax) ? currentRanges.xMax : xMin;
+    const xMin = Number.isFinite(signalRanges && signalRanges.xMin) ? signalRanges.xMin : 0;
+    const xMax = Number.isFinite(signalRanges && signalRanges.xMax) ? signalRanges.xMax : xMin;
     const fittedStartX = Math.max(0, -fitOffset);
     const startX = Math.max(xMin, fittedStartX);
     if (!(xMax > startX)) return [];
 
     const plotSpan = xMax - startX;
     const nextSampleCount = plotSpan > 0 ? Math.min(240, Math.max(80, Math.round(Math.max((analysis.rows && analysis.rows.length) || 80, 40) * 1.5))) : 1;
+    const baselineValue = analysis.baseline && Number.isFinite(analysis.baseline.value) ? analysis.baseline.value : null;
+    const steadyValue = analysis.steady && Number.isFinite(analysis.steady.value) ? analysis.steady.value : null;
+    const baselineDisplay = Number.isFinite(baselineValue) ? convertCurrentValue(baselineValue, inputUnit, displayUnit) : null;
+    const steadyDisplay = Number.isFinite(steadyValue) ? convertCurrentValue(steadyValue, inputUnit, displayUnit) : null;
+    const currentDenom = Number.isFinite(baselineDisplay) && Number.isFinite(steadyDisplay) ? steadyDisplay - baselineDisplay : null;
 
     for (let index = 0; index < nextSampleCount; index += 1) {
       const x = nextSampleCount === 1 ? startX : startX + (plotSpan * index) / (nextSampleCount - 1);
@@ -2561,7 +2592,12 @@
       const response = evaluateFickResponseDetailed(fit.diffusivity, modelTime, thicknessMeters);
       const normalized = typeof response === "number" ? response : response && response.value;
       if (!Number.isFinite(normalized)) continue;
-      points.push({ x, y: baselineDisplay + normalized * denom });
+      if (signalMode === "normalized") {
+        points.push({ x, y: normalized * 100 });
+        continue;
+      }
+      if (!Number.isFinite(currentDenom) || currentDenom === 0 || !Number.isFinite(baselineDisplay)) continue;
+      points.push({ x, y: baselineDisplay + normalized * currentDenom });
     }
 
     return points;
@@ -2812,7 +2848,7 @@
         diffusivity,
         timeText: `t = ${formatRoundedSeconds(inflection.time)} s`,
         noteHtml:
-          '<span class="hpa-formula-note"><span class="hpa-formula-title">Normalized inflection-slope form</span><span class="hpa-formula-display"><span class="hpa-formula-equals">D =</span> <span class="hpa-formula-expression">(0.04124 / 0.2442) L<sup>2</sup> a<sub>norm</sub></span></span></span>',
+          '<span class="hpa-formula-note"><span class="hpa-formula-display"><span class="hpa-formula-equals">D =</span> <span class="hpa-formula-fraction"><span class="hpa-formula-numerator">0.04124</span><span class="hpa-formula-denominator">0.2442</span></span> <span class="hpa-formula-expression">L<sup>2</sup> a<sub>norm</sub></span></span></span>',
       };
     }
 
@@ -3360,15 +3396,14 @@
 
     const inputUnit = dom.currentUnit ? dom.currentUnit.value : "A";
     const displayUnit = getDisplayUnit(dom);
+    const signalMode = getPlotSignalMode(dom);
     const currentUnitLabel = formatUnitLabel(displayUnit);
-    const plotColors = state.plotColors || DEFAULT_PLOT_COLORS;
+    const signalMeta = getSignalPlotMetadata(signalMode, currentUnitLabel);
     const showGrid = !dom.gridToggle || dom.gridToggle.checked;
     const showMinorGrid = !dom.minorGridToggle || dom.minorGridToggle.checked;
     const diffusionScaleMode = dom.diffusionScale && dom.diffusionScale.checked ? "log" : "linear";
 
-    const currentPoints = rows
-      .map((row) => ({ x: row.time, y: convertCurrentValue(row.current, inputUnit, displayUnit) }))
-      .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
+    const signalPoints = getSignalPlotPoints(analysis, inputUnit, displayUnit, signalMode);
     const diffusionPoints = (analysis.previewRows || [])
       .map((row) => ({
         x: row.time,
@@ -3384,15 +3419,15 @@
       }))
       .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
 
-    if (!currentPoints.length) {
+    if (!signalPoints.length) {
       renderPlotEmpty(dom);
       return;
     }
 
-    const orderedCurrent = currentPoints.slice().sort((a, b) => a.x - b.x);
+    const orderedSignal = signalPoints.slice().sort((a, b) => a.x - b.x);
     const orderedDiffusion = diffusionPoints.slice().sort((a, b) => a.x - b.x);
     const orderedSmoothedDiffusion = smoothedDiffusionPoints.slice().sort((a, b) => a.x - b.x);
-    const currentRanges = getCurrentPlotRanges(analysis, inputUnit, displayUnit);
+    const signalRanges = getSignalPlotRanges(analysis, inputUnit, displayUnit, signalMode);
     const diffusionBaseRanges = getDiffusionBaseRanges(analysis);
     const diffusionAxis = getDiffusionAxisScale(diffusionBaseRanges);
     const diffusionRanges = getDiffusionPlotRanges(analysis, diffusionScaleMode, diffusionAxis.factor);
@@ -3426,9 +3461,9 @@
             y: Math.log10(point.y),
           }))
         : orderedScaledSmoothedDiffusion;
-    const xTicks = buildNiceTicks(currentRanges.xMin, currentRanges.xMax, 5);
-    const xMinorTicks = buildLinearMinorTicks(currentRanges.xMin, currentRanges.xMax, xTicks, 4);
-    const currentTicks = buildNiceTicks(currentRanges.yMin, currentRanges.yMax, 5);
+    const xTicks = buildNiceTicks(signalRanges.xMin, signalRanges.xMax, 5);
+    const xMinorTicks = buildLinearMinorTicks(signalRanges.xMin, signalRanges.xMax, xTicks, 4);
+    const signalTicks = buildNiceTicks(signalRanges.yMin, signalRanges.yMax, 5);
     const diffusionMajorTicks =
       diffusionScaleMode === "log"
         ? buildLogTicks(diffusionRanges.yMin, diffusionRanges.yMax)
@@ -3438,17 +3473,17 @@
         ? buildLogMinorTicks(diffusionRanges.yMin, diffusionRanges.yMax)
         : buildLinearMinorTicks(diffusionRanges.yMin, diffusionRanges.yMax, diffusionMajorTicks, 4);
     const within = (value, min, max) => Number.isFinite(value) && value >= min - 1e-9 && value <= max + 1e-9;
-    const xTicksVisible = xTicks.filter((value) => within(value, currentRanges.xMin, currentRanges.xMax));
-    const xMinorTicksVisible = xMinorTicks.filter((value) => within(value, currentRanges.xMin, currentRanges.xMax));
-    const currentTicksVisible = currentTicks.filter((value) => within(value, currentRanges.yMin, currentRanges.yMax));
+    const xTicksVisible = xTicks.filter((value) => within(value, signalRanges.xMin, signalRanges.xMax));
+    const xMinorTicksVisible = xMinorTicks.filter((value) => within(value, signalRanges.xMin, signalRanges.xMax));
+    const signalTicksVisible = signalTicks.filter((value) => within(value, signalRanges.yMin, signalRanges.yMax));
     const diffusionMajorTicksVisible = diffusionMajorTicks.filter((value) => within(value, diffusionRanges.yMin, diffusionRanges.yMax));
     const diffusionMinorTicksVisible = diffusionMinorTicks.filter((value) => within(value, diffusionRanges.yMin, diffusionRanges.yMax));
 
     const innerWidth = PLOT_WIDTH - PLOT_MARGINS.left - PLOT_MARGINS.right;
     const innerHeight = PLOT_HEIGHT - PLOT_MARGINS.top - PLOT_MARGINS.bottom;
-    const scaleX = (value) => PLOT_MARGINS.left + ((value - currentRanges.xMin) / (currentRanges.xMax - currentRanges.xMin)) * innerWidth;
-    const scaleCurrentY = (value) =>
-      PLOT_MARGINS.top + (1 - (value - currentRanges.yMin) / (currentRanges.yMax - currentRanges.yMin)) * innerHeight;
+    const scaleX = (value) => PLOT_MARGINS.left + ((value - signalRanges.xMin) / (signalRanges.xMax - signalRanges.xMin)) * innerWidth;
+    const scaleSignalY = (value) =>
+      PLOT_MARGINS.top + (1 - (value - signalRanges.yMin) / (signalRanges.yMax - signalRanges.yMin)) * innerHeight;
     const scaleDiffusionY =
       diffusionScaleMode === "log"
         ? (value) =>
@@ -3459,8 +3494,8 @@
             (1 - (value - diffusionRanges.yMin) / (diffusionRanges.yMax - diffusionRanges.yMin)) * innerHeight;
     const yGridTicks = diffusionMajorTicks;
     const yGridScale = scaleDiffusionY;
-    const currentPath = orderedCurrent
-      .map((point, index) => `${index === 0 ? "M" : "L"} ${scaleX(point.x).toFixed(2)} ${scaleCurrentY(point.y).toFixed(2)}`)
+    const signalPath = orderedSignal
+      .map((point, index) => `${index === 0 ? "M" : "L"} ${scaleX(point.x).toFixed(2)} ${scaleSignalY(point.y).toFixed(2)}`)
       .join(" ");
     const lowConfidenceMode = dom.lowConfidence && dom.lowConfidence.value ? dom.lowConfidence.value : state.plotLowConfidenceMode;
     state.plotLowConfidenceMode = lowConfidenceMode || "shaded";
@@ -3478,10 +3513,10 @@
     const fitVisible = !!(fit && fit.available && state.fitOverlayVisible);
     syncFitToggle(dom, fit);
     const fitOverlayPoints = fitVisible
-      ? buildFitOverlayPoints(analysis, fit, inputUnit, displayUnit, currentRanges)
+      ? buildFitOverlayPoints(analysis, fit, signalMode, inputUnit, displayUnit, signalRanges)
       : [];
     const fitPath = fitOverlayPoints
-      .map((point, index) => `${index === 0 ? "M" : "L"} ${scaleX(point.x).toFixed(2)} ${scaleCurrentY(point.y).toFixed(2)}`)
+      .map((point, index) => `${index === 0 ? "M" : "L"} ${scaleX(point.x).toFixed(2)} ${scaleSignalY(point.y).toFixed(2)}`)
       .join(" ");
 
     const parts = [];
@@ -3493,7 +3528,7 @@
     const axisLabelInsetLeft = Math.max(15, PLOT_MARGINS.left - 31);
     const axisLabelInsetRight = Math.max(-3, PLOT_MARGINS.right - 31);
     const yGridParts = [];
-    parts.push(`<svg viewBox="0 0 ${PLOT_WIDTH} ${PLOT_HEIGHT}" role="img" aria-label="Preview of measured permeation current and diffusion coefficient">`);
+    parts.push(`<svg viewBox="0 0 ${PLOT_WIDTH} ${PLOT_HEIGHT}" role="img" aria-label="${escapeHtml(signalMeta.ariaLabel)}">`);
     parts.push(`
       <defs>
         <clipPath id="${chartClipId}">
@@ -3510,9 +3545,9 @@
     const lowConfidenceLegendTitle = dom.lowConfidence && dom.lowConfidence.title
       ? dom.lowConfidence.title
       : "Low-confidence region, where the inverse problem is poorly conditioned.";
-    const diffusionPlotLegendText = "Apparent Diffusion Coefficient Dapp(t)";
-    const smoothedDiffusionPlotLegendText = "Smoothed Dapp(t)";
-    const currentLegendText = "Measured Permeation Current I(t)";
+    const diffusionPlotLegendText = "Apparent Diffusion Coefficient Dapp";
+    const smoothedDiffusionPlotLegendText = "Smoothed Dapp";
+    const currentLegendText = signalMeta.legendText;
     const fitLegendText = "Global Transient Fit";
     const showLowConfidenceLegend = lowConfidenceMode === "shaded";
     const showSmoothedLegend = !!smoothedDiffusionPath;
@@ -3545,19 +3580,19 @@
         <g class="hpa-plot-legend-item hpa-plot-legend-diffusion" transform="translate(${(showLowConfidenceLegend ? lowConfidenceLegendWidth + legendGap : 0)} 0)">
           <line x1="0" y1="6" x2="18" y2="6" class="hpa-plot-legend-line"></line>
           <text x="26" y="10">
-            <tspan x="26" dy="0">Apparent Diffusion Coefficient </tspan><tspan font-style="italic">D</tspan><tspan baseline-shift="sub" font-size="8">app</tspan><tspan>(t)</tspan>
+            <tspan x="26" dy="0">Apparent Diffusion Coefficient </tspan><tspan font-style="italic">D</tspan><tspan baseline-shift="sub" font-size="8">app</tspan>
           </text>
         </g>
         ${showSmoothedLegend ? `
         <g class="hpa-plot-legend-item hpa-plot-legend-diffusion-smoothed" transform="translate(${(showLowConfidenceLegend ? lowConfidenceLegendWidth + legendGap : 0) + diffusionLegendWidth + legendGap} 0)">
           <line x1="0" y1="6" x2="18" y2="6" class="hpa-plot-legend-line"></line>
           <text x="26" y="10">
-            <tspan x="26" dy="0">Smoothed </tspan><tspan font-style="italic">D</tspan><tspan baseline-shift="sub" font-size="8">app</tspan><tspan>(t)</tspan>
+            <tspan x="26" dy="0">Smoothed </tspan><tspan font-style="italic">D</tspan><tspan baseline-shift="sub" font-size="8">app</tspan>
           </text>
         </g>` : ""}
         <g class="hpa-plot-legend-item hpa-plot-legend-current" transform="translate(${(showLowConfidenceLegend ? lowConfidenceLegendWidth + legendGap : 0) + diffusionLegendWidth + (showSmoothedLegend ? legendGap + smoothedDiffusionLegendWidth : 0) + legendGap} 0)">
           <line x1="0" y1="6" x2="18" y2="6" class="hpa-plot-legend-line"></line>
-          <text x="26" y="10">Measured Permeation Current I(t)</text>
+          <text x="26" y="10">${currentLegendText}</text>
         </g>
         ${showFitLegend ? `
         <g class="hpa-plot-legend-item hpa-plot-legend-fit" transform="translate(${(showLowConfidenceLegend ? lowConfidenceLegendWidth + legendGap : 0) + diffusionLegendWidth + (showSmoothedLegend ? legendGap + smoothedDiffusionLegendWidth : 0) + legendGap + currentLegendWidth + legendGap} 0)">
@@ -3567,15 +3602,39 @@
       </g>
     `);
 
-    const references = [
-      { kind: "baseline", ref: analysis.baseline, label: "Baseline", className: "hpa-plot-ref-baseline" },
-      { kind: "steady", ref: analysis.steady, label: "Steady State", className: "hpa-plot-ref-steady" },
-    ];
-    const currentHoverPoints = orderedCurrent.map((point) => ({
+    const references =
+      signalMode === "normalized"
+        ? [
+            { kind: "baseline", label: "Baseline", className: "hpa-plot-ref-baseline", plotValue: 0, displayValue: 0, unitLabel: "%", valueLabel: "y", draggable: false },
+            { kind: "steady", label: "Steady State", className: "hpa-plot-ref-steady", plotValue: 100, displayValue: 100, unitLabel: "%", valueLabel: "y", draggable: false },
+          ]
+        : [
+            {
+              kind: "baseline",
+              label: "Baseline",
+              className: "hpa-plot-ref-baseline",
+              plotValue: analysis.baseline && Number.isFinite(analysis.baseline.value) ? convertCurrentValue(analysis.baseline.value, inputUnit, displayUnit) : null,
+              displayValue: analysis.baseline && Number.isFinite(analysis.baseline.value) ? convertCurrentValue(analysis.baseline.value, inputUnit, displayUnit) : null,
+              unitLabel: currentUnitLabel,
+              valueLabel: "I",
+              draggable: true,
+            },
+            {
+              kind: "steady",
+              label: "Steady State",
+              className: "hpa-plot-ref-steady",
+              plotValue: analysis.steady && Number.isFinite(analysis.steady.value) ? convertCurrentValue(analysis.steady.value, inputUnit, displayUnit) : null,
+              displayValue: analysis.steady && Number.isFinite(analysis.steady.value) ? convertCurrentValue(analysis.steady.value, inputUnit, displayUnit) : null,
+              unitLabel: currentUnitLabel,
+              valueLabel: "I",
+              draggable: true,
+            },
+          ];
+    const signalHoverPoints = orderedSignal.map((point) => ({
       x: point.x,
       y: point.y,
       px: scaleX(point.x),
-      py: scaleCurrentY(point.y),
+      py: scaleSignalY(point.y),
     }));
     const diffusionHoverPoints = diffusionPlotPoints.map((point, index) => ({
       x: point.x,
@@ -3587,17 +3646,17 @@
       inverseSensitivity: point.inverseSensitivity,
     }));
     const referenceHoverItems = references
-      .filter((entry) => entry.ref && Number.isFinite(entry.ref.value) && state.referenceVisibility[entry.kind] !== false)
+      .filter((entry) => Number.isFinite(entry.plotValue) && state.referenceVisibility[entry.kind] !== false)
       .map((entry) => {
-        const refValue = convertCurrentValue(entry.ref.value, inputUnit, displayUnit);
-        const y = scaleCurrentY(refValue);
+        const y = scaleSignalY(entry.plotValue);
         return {
           kind: entry.kind,
           label: entry.label,
-          displayValue: refValue,
+          displayValue: entry.displayValue,
           px: PLOT_WIDTH - PLOT_MARGINS.right,
           py: y,
-          currentUnitLabel,
+          unitLabel: entry.unitLabel,
+          valueLabel: entry.valueLabel,
         };
       });
     state.plotHoverCache = {
@@ -3605,11 +3664,12 @@
       chartY,
       chartWidth,
       chartHeight,
-      currentUnitLabel,
-      displayUnit,
+      signalTitle: signalMeta.tooltipTitle,
+      signalUnitLabel: signalMeta.unitLabel,
+      signalValueLabel: signalMeta.valueLabel,
       diffusionScaleMode,
       diffusionAxis,
-      currentPoints: currentHoverPoints,
+      signalPoints: signalHoverPoints,
       diffusionPoints: diffusionHoverPoints,
       referenceItems: referenceHoverItems,
     };
@@ -3659,23 +3719,22 @@
     if (smoothedDiffusionPath) {
       parts.push(`<path class="hpa-plot-line hpa-plot-line-diffusion-smoothed" d="${smoothedDiffusionPath}"></path>`);
     }
-    if (currentPath) parts.push(`<path class="hpa-plot-line hpa-plot-line-current" d="${currentPath}"></path>`);
+    if (signalPath) parts.push(`<path class="hpa-plot-line hpa-plot-line-current" d="${signalPath}"></path>`);
     if (fitVisible && fitPath) {
       parts.push(`<path class="hpa-plot-line hpa-plot-line-fit" d="${fitPath}"></path>`);
     }
     references.forEach((entry) => {
-      if (!entry.ref || !Number.isFinite(entry.ref.value)) return;
+      if (!Number.isFinite(entry.plotValue)) return;
       if (state.referenceVisibility[entry.kind] === false) return;
-      const refValue = convertCurrentValue(entry.ref.value, inputUnit, displayUnit);
-      const y = scaleCurrentY(refValue);
-      const lineColorClass = entry.kind === "baseline" ? "hpa-plot-ref-baseline" : "hpa-plot-ref-steady";
-      parts.push(`<line class="hpa-plot-ref-hitline" data-ref-kind="${entry.kind}" x1="${chartX}" y1="${y.toFixed(2)}" x2="${chartX + chartWidth}" y2="${y.toFixed(2)}"></line>`);
-      parts.push(`<line class="hpa-plot-ref-line ${lineColorClass}" data-ref-kind="${entry.kind}" x1="${chartX}" y1="${y.toFixed(2)}" x2="${chartX + chartWidth}" y2="${y.toFixed(2)}"></line>`);
+      const y = scaleSignalY(entry.plotValue);
+      const staticCursor = entry.draggable ? "" : ' style="cursor:default"';
+      parts.push(`<line class="hpa-plot-ref-hitline" data-ref-kind="${entry.kind}"${staticCursor} x1="${chartX}" y1="${y.toFixed(2)}" x2="${chartX + chartWidth}" y2="${y.toFixed(2)}"></line>`);
+      parts.push(`<line class="hpa-plot-ref-line ${entry.className}" data-ref-kind="${entry.kind}"${staticCursor} x1="${chartX}" y1="${y.toFixed(2)}" x2="${chartX + chartWidth}" y2="${y.toFixed(2)}"></line>`);
     });
     parts.push(`</g>`);
 
-    currentTicksVisible.forEach((value) => {
-      const y = scaleCurrentY(value);
+    signalTicksVisible.forEach((value) => {
+      const y = scaleSignalY(value);
       parts.push(
         `<line class="hpa-plot-axis-tick hpa-plot-axis-tick-right" x1="${PLOT_WIDTH - PLOT_MARGINS.right}" y1="${y.toFixed(2)}" x2="${PLOT_WIDTH - PLOT_MARGINS.right + 4}" y2="${y.toFixed(2)}"></line>`,
         `<text class="hpa-plot-value hpa-plot-value-current" x="${PLOT_WIDTH - PLOT_MARGINS.right + 4}" y="${(y + 3).toFixed(2)}" text-anchor="start">${escapeHtml(formatAxisTick(value))}</text>`,
@@ -3722,18 +3781,18 @@
       diffusionScaleMode === "log"
         ? `
       <text class="hpa-plot-axis-label hpa-plot-axis-left" transform="translate(${axisLabelInsetLeft} ${PLOT_HEIGHT / 2}) rotate(-90)" text-anchor="middle">
-        <tspan>Apparent Diffusion Coefficient </tspan><tspan font-style="italic">D</tspan><tspan baseline-shift="sub" font-size="8">app</tspan><tspan>(t) [mm²/s]</tspan>
+        <tspan>Apparent Diffusion Coefficient </tspan><tspan font-style="italic">D</tspan><tspan baseline-shift="sub" font-size="8">app</tspan><tspan> [mm²/s]</tspan>
       </text>
     `
         : `
       <text class="hpa-plot-axis-label hpa-plot-axis-left" transform="translate(${axisLabelInsetLeft} ${PLOT_HEIGHT / 2}) rotate(-90)" text-anchor="middle">
-        <tspan>Apparent Diffusion Coefficient </tspan><tspan font-style="italic">D</tspan><tspan baseline-shift="sub" font-size="8">app</tspan><tspan>(t) [10</tspan><tspan baseline-shift="super" font-size="8">${diffusionAxis.exponent}</tspan><tspan> mm²/s]</tspan>
+        <tspan>Apparent Diffusion Coefficient </tspan><tspan font-style="italic">D</tspan><tspan baseline-shift="sub" font-size="8">app</tspan><tspan> [10</tspan><tspan baseline-shift="super" font-size="8">${diffusionAxis.exponent}</tspan><tspan> mm²/s]</tspan>
       </text>
     `,
     );
     parts.push(`
       <text class="hpa-plot-axis-label hpa-plot-axis-right" transform="translate(${PLOT_WIDTH - axisLabelInsetRight} ${PLOT_HEIGHT / 2}) rotate(270)" text-anchor="middle">
-        <tspan>Permeation current I(t) [${currentUnitLabel}]</tspan>
+        <tspan>${escapeHtml(signalMeta.axisLabel)}</tspan>
       </text>
     `);
     parts.push(`<text class="hpa-plot-axis-label hpa-plot-axis-x" x="${PLOT_WIDTH / 2}" y="${PLOT_HEIGHT - 5}" text-anchor="middle">Time [s]</text>`);
@@ -4042,6 +4101,7 @@
       inputValue: dom.input ? dom.input.value : "",
       currentFileName: state.currentFileName,
       currentUnit: dom.currentUnit ? dom.currentUnit.value : "A",
+      plotSignalMode: dom.plotSignalMode ? dom.plotSignalMode.value : "current",
       plotUnit: dom.plotUnit ? dom.plotUnit.value : "uA",
       thickness: dom.thickness ? dom.thickness.value : "",
       inputSmoothing: dom.inputSmoothing ? dom.inputSmoothing.value : DEFAULT_INPUT_SMOOTHING.method,
@@ -4079,6 +4139,7 @@
     if (dom.file) dom.file.value = "";
     state.currentFileName = snapshot.currentFileName || null;
     if (dom.currentUnit && snapshot.currentUnit) dom.currentUnit.value = snapshot.currentUnit;
+    if (dom.plotSignalMode && snapshot.plotSignalMode) dom.plotSignalMode.value = snapshot.plotSignalMode;
     if (dom.plotUnit && snapshot.plotUnit) dom.plotUnit.value = snapshot.plotUnit;
     if (dom.thickness && snapshot.thickness != null) dom.thickness.value = snapshot.thickness;
     if (dom.inputSmoothing && snapshot.inputSmoothing) dom.inputSmoothing.value = snapshot.inputSmoothing;
@@ -4106,8 +4167,10 @@
     state.timeLagMode = getTimeLagModeConfig(snapshot.timeLagMode).id;
     renderTimeLagModeButtons(dom, state.timeLagMode);
     state.plotViewport = snapshot.plotViewport ? { ...snapshot.plotViewport } : null;
+    state.plotSignalMode = getPlotSignalMode(dom);
     state.plotLowConfidenceMode = snapshot.plotLowConfidenceMode || "shaded";
     state.plotDiffusionScale = snapshot.plotDiffusionScale || (dom.diffusionScale && dom.diffusionScale.checked ? "log" : "linear");
+    syncSignalRepresentationControls(dom);
     syncSmoothingControls(dom);
     syncInputSmoothingStrengthDisplay(dom);
     syncT0OffsetDisplay(dom);
@@ -4437,6 +4500,86 @@
     if (dom && dom.plotUnit && dom.plotUnit.value) return dom.plotUnit.value;
     if (dom && dom.currentUnit && dom.currentUnit.value) return dom.currentUnit.value;
     return "A";
+  }
+
+  function getPlotSignalMode(dom) {
+    const value = dom && dom.plotSignalMode && dom.plotSignalMode.value ? dom.plotSignalMode.value : state.plotSignalMode;
+    return value === "normalized" ? "normalized" : "current";
+  }
+
+  function syncSignalRepresentationControls(dom) {
+    if (!dom) return;
+    const signalMode = getPlotSignalMode(dom);
+    state.plotSignalMode = signalMode;
+    if (dom.plotSignalMode && dom.plotSignalMode.value !== signalMode) {
+      dom.plotSignalMode.value = signalMode;
+    }
+    if (dom.plotUnit) {
+      dom.plotUnit.disabled = signalMode === "normalized";
+      dom.plotUnit.setAttribute("aria-disabled", dom.plotUnit.disabled ? "true" : "false");
+      dom.plotUnit.title =
+        signalMode === "normalized"
+          ? "Current display unit is fixed while the plot shows the normalized transient. Switch Signal representation back to Current to change it."
+          : "Choose the current unit shown in the data preview, exports, reference fields, and the current-mode plot.";
+    }
+  }
+
+  function getSignalPlotMetadata(signalMode, currentUnitLabel) {
+    if (signalMode === "normalized") {
+      return {
+        ariaLabel: "Preview of normalized transient and diffusion coefficient",
+        legendText: "Normalized Current Density",
+        axisLabel: "Normalized Current Density [%]",
+        tooltipTitle: "Normalized Current Density",
+        valueLabel: "y",
+        unitLabel: "%",
+      };
+    }
+    return {
+      ariaLabel: "Preview of measured permeation current and diffusion coefficient",
+      legendText: "Measured Permeation Current I(t)",
+      axisLabel: `Permeation current I(t) [${currentUnitLabel}]`,
+      tooltipTitle: "Measured Permeation Current I(t)",
+      valueLabel: "I",
+      unitLabel: currentUnitLabel,
+    };
+  }
+
+  function getSignalPlotPoints(analysis, inputUnit, displayUnit, signalMode) {
+    if (signalMode === "normalized") {
+      return (analysis && Array.isArray(analysis.previewRows) ? analysis.previewRows : [])
+        .map((row) => ({
+          x: row.time,
+          y: Number.isFinite(row.normalized) ? row.normalized * 100 : null,
+        }))
+        .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
+    }
+    return (analysis && Array.isArray(analysis.rows) ? analysis.rows : [])
+      .map((row) => ({
+        x: row.time,
+        y: convertCurrentValue(row.current, inputUnit || "A", displayUnit || inputUnit || "A"),
+      }))
+      .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
+  }
+
+  function getSignalPlotRanges(analysis, inputUnit, displayUnit, signalMode) {
+    if (signalMode !== "normalized") {
+      return getCurrentPlotRanges(analysis, inputUnit, displayUnit);
+    }
+    const points = getSignalPlotPoints(analysis, inputUnit, displayUnit, signalMode);
+    if (!points.length) {
+      return { xMin: 0, xMax: 1, yMin: 0, yMax: 1 };
+    }
+
+    const base = getBasePlotRanges(points);
+    if (!state.plotViewport) return base;
+
+    const xMin = Number.isFinite(state.plotViewport.xMin) ? state.plotViewport.xMin : base.xMin;
+    const xMax = Number.isFinite(state.plotViewport.xMax) ? state.plotViewport.xMax : base.xMax;
+    const yMin = Number.isFinite(state.plotViewport.yMin) ? state.plotViewport.yMin : base.yMin;
+    const yMax = Number.isFinite(state.plotViewport.yMax) ? state.plotViewport.yMax : base.yMax;
+    if (xMax <= xMin || yMax <= yMin) return base;
+    return { xMin, xMax, yMin, yMax };
   }
 
   function convertCurrentValue(value, fromUnit, toUnit) {

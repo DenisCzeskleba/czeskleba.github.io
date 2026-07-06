@@ -1049,7 +1049,7 @@
       diffusivity,
       timeText: `t = ${formatRoundedSeconds(inflection.time)} s`,
       noteHtml:
-        '<span class="hpa-formula-note"><span class="hpa-formula-title">Normalized inflection-slope form</span><span class="hpa-formula-display"><span class="hpa-formula-equals">D =</span> <span class="hpa-formula-expression">(0.04124 / 0.2442) L<sup>2</sup> a<sub>norm</sub></span></span></span>',
+        '<span class="hpa-formula-note"><span class="hpa-formula-display"><span class="hpa-formula-equals">D =</span> <span class="hpa-formula-fraction"><span class="hpa-formula-numerator">0.04124</span><span class="hpa-formula-denominator">0.2442</span></span> <span class="hpa-formula-expression">L<sup>2</sup> a<sub>norm</sub></span></span></span>',
       note: "D = (0.04124 / 0.2442) L^2 a_norm",
     };
   }
